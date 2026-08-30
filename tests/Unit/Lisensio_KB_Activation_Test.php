@@ -1,0 +1,548 @@
+<?php
+/**
+ * Activation smoke tests.
+ *
+ * Runs the real activation routine against WordPress function doubles and
+ * asserts it completes: the content model is registered, all four tables are
+ * created, the FULLTEXT probe result is stored, the visitor salt is seeded
+ * and the rotation cron is scheduled. Neither SLSWC nor WooCommerce is
+ * loaded in this process, which is exactly the environment the plugin has to
+ * survive.
+ *
+ * @package Lisensio_KB
+ * @since   1.0.0
+ */
+
+use Brain\Monkey\Functions;
+
+/**
+ * Tests Lisensio_KB_Lifecycle and the plugin container.
+ *
+ * @since 1.0.0
+ */
+class Lisensio_KB_Activation_Test extends Lisensio_KB_Test_Case {
+
+    /**
+     * Post types registered during the test.
+     *
+     * @since 1.0.0
+     * @var array<string, array<string, mixed>>
+     */
+    private $post_types = array();
+
+    /**
+     * Taxonomies registered during the test.
+     *
+     * @since 1.0.0
+     * @var array<string, array<string, mixed>>
+     */
+    private $taxonomies = array();
+
+    /**
+     * Cron events scheduled during the test.
+     *
+     * @since 1.0.0
+     * @var array<string, int>
+     */
+    private $cron = array();
+
+    /**
+     * Whether flush_rewrite_rules() was called.
+     *
+     * @since 1.0.0
+     * @var bool
+     */
+    private $flushed = false;
+
+    /**
+     * Stub the WordPress surface the activation routine touches.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    protected function setUp(): void {
+        parent::setUp();
+
+        $this->post_types = array();
+        $this->taxonomies = array();
+        $this->cron       = array();
+        $this->flushed    = false;
+
+        $GLOBALS['lisensio_kb_delta_calls'] = array();
+        $GLOBALS['wpdb']                    = new Lisensio_KB_Test_WPDB(); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+
+        $_SERVER['REMOTE_ADDR'] = '203.0.113.9';
+
+        Functions\when( 'get_bloginfo' )->justReturn( '6.4' );
+        Functions\when( 'flush_rewrite_rules' )->alias(
+            function () {
+                $this->flushed = true;
+            }
+        );
+        Functions\when( 'register_post_type' )->alias(
+            function ( $name, $args ) {
+                $this->post_types[ $name ] = $args;
+            }
+        );
+        Functions\when( 'register_taxonomy' )->alias(
+            function ( $name, $object_type, $args ) {
+                unset( $object_type );
+                $this->taxonomies[ $name ] = $args;
+            }
+        );
+        Functions\when( 'wp_next_scheduled' )->alias(
+            function ( $hook ) {
+                return isset( $this->cron[ $hook ] ) ? $this->cron[ $hook ] : false;
+            }
+        );
+        Functions\when( 'wp_schedule_event' )->alias(
+            function ( $timestamp, $recurrence, $hook ) {
+                unset( $recurrence );
+                $this->cron[ $hook ] = $timestamp;
+
+                return true;
+            }
+        );
+        Functions\when( 'wp_unschedule_event' )->alias(
+            function ( $timestamp, $hook ) {
+                unset( $timestamp );
+                unset( $this->cron[ $hook ] );
+
+                return true;
+            }
+        );
+        Functions\when( 'wp_clear_scheduled_hook' )->alias(
+            function ( $hook ) {
+                unset( $this->cron[ $hook ] );
+
+                return 1;
+            }
+        );
+        Functions\when( 'deactivate_plugins' )->justReturn( null );
+        Functions\when( 'wp_die' )->alias(
+            function () {
+                throw new RuntimeException( 'wp_die() was called during activation.' );
+            }
+        );
+    }
+
+    /**
+     * Clean the globals the test set.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    protected function tearDown(): void {
+        unset( $GLOBALS['wpdb'], $GLOBALS['lisensio_kb_delta_calls'], $_SERVER['REMOTE_ADDR'] );
+
+        parent::tearDown();
+    }
+
+    /**
+     * The requirements gate passes on a supported stack.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_requirements_are_met_on_a_supported_stack() {
+        $this->assertSame( '', Lisensio_KB_Lifecycle::requirements_error() );
+    }
+
+    /**
+     * The requirements gate reports an unsupported WordPress version.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_requirements_error_names_an_old_wordpress() {
+        Functions\when( 'get_bloginfo' )->justReturn( '6.0' );
+
+        $this->assertStringContainsString( '6.4', Lisensio_KB_Lifecycle::requirements_error() );
+    }
+
+    /**
+     * Activation completes without SLSWC or WooCommerce present.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_activation_completes_on_a_bare_wordpress() {
+        $this->assertFalse( class_exists( 'WooCommerce' ), 'WooCommerce must not be loaded in this process.' );
+        $this->assertFalse( class_exists( 'SLSWC' ), 'SLSWC must not be loaded in this process.' );
+
+        Lisensio_KB_Lifecycle::activate();
+
+        $this->assertTrue( $this->flushed, 'Activation must flush the rewrite rules.' );
+        $this->assertSame( LISENSIO_KB_VERSION, $this->options['lisensio_version'] );
+    }
+
+    /**
+     * Activation registers the article post type with the specified defaults.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_activation_registers_the_content_model() {
+        Lisensio_KB_Lifecycle::activate();
+
+        $this->assertArrayHasKey( 'lisensio_article', $this->post_types );
+        $this->assertArrayHasKey( 'lisensio_category', $this->taxonomies );
+        $this->assertArrayHasKey( 'lisensio_tag', $this->taxonomies );
+
+        $article = $this->post_types['lisensio_article'];
+
+        $this->assertTrue( $article['show_in_rest'] );
+        $this->assertSame( 'docs', $article['rewrite']['slug'] );
+        $this->assertSame( 'docs', $article['has_archive'] );
+
+        foreach ( array( 'editor', 'excerpt', 'author', 'thumbnail', 'revisions' ) as $support ) {
+            $this->assertContains( $support, $article['supports'] );
+        }
+
+        $this->assertTrue( $this->taxonomies['lisensio_category']['hierarchical'] );
+        $this->assertTrue( $this->taxonomies['lisensio_category']['show_in_rest'] );
+        $this->assertFalse( $this->taxonomies['lisensio_tag']['hierarchical'] );
+        $this->assertTrue( $this->taxonomies['lisensio_tag']['show_in_rest'] );
+    }
+
+    /**
+     * Activation creates all four tables and records the schema version.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_activation_creates_all_four_tables() {
+        Lisensio_KB_Lifecycle::activate();
+
+        $statements = $GLOBALS['lisensio_kb_delta_calls'];
+
+        $this->assertCount( 4, $statements );
+
+        foreach ( Lisensio_KB_DB_Installer::get_table_names() as $table ) {
+            $this->assertNotEmpty(
+                array_filter(
+                    $statements,
+                    static function ( $statement ) use ( $table ) {
+                        return false !== strpos( $statement, 'CREATE TABLE wptests_' . $table . ' (' );
+                    }
+                ),
+                sprintf( 'Activation must create the %s table.', $table )
+            );
+        }
+
+        $this->assertSame( LISENSIO_KB_DB_VERSION, $this->options['lisensio_db_version'] );
+    }
+
+    /**
+     * The FULLTEXT key is always requested, and the outcome is read back.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_fulltext_index_is_requested_and_the_outcome_recorded() {
+        Lisensio_KB_Lifecycle::activate();
+
+        $this->assertStringContainsStringIgnoringCase( 'ADD FULLTEXT KEY ft_all', implode( ' ', $GLOBALS['wpdb']->queries ) );
+        $this->assertSame( 'yes', $this->options['lisensio_fulltext_supported'] );
+        $this->assertTrue( Lisensio_KB_DB_Installer::supports_fulltext() );
+    }
+
+    /**
+     * The CREATE TABLE never carries the FULLTEXT key.
+     *
+     * A server that rejects the key rejects the entire CREATE TABLE, which would
+     * leave no search index table at all — strictly worse than having no index.
+     * The key is added out of band by a suppressed ALTER so a failure costs only
+     * the index. dbDelta() never drops indexes, so it survives later runs.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_create_table_statement_does_not_carry_the_fulltext_key() {
+        Lisensio_KB_Lifecycle::activate();
+
+        $deltas = implode( ' ', $GLOBALS['lisensio_kb_delta_calls'] );
+
+        $this->assertStringContainsString( 'lisensio_search_index', $deltas );
+        $this->assertStringNotContainsStringIgnoringCase( 'FULLTEXT', $deltas );
+    }
+
+    /**
+     * A server that refuses the index still gets its table.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_server_refusing_the_index_still_gets_the_table() {
+        $GLOBALS['wpdb']->server_supports_fulltext = false;
+
+        Lisensio_KB_Lifecycle::activate();
+
+        $this->assertStringContainsString( 'lisensio_search_index', implode( ' ', $GLOBALS['lisensio_kb_delta_calls'] ) );
+        $this->assertSame( 'no', $this->options['lisensio_fulltext_supported'] );
+    }
+
+    /**
+     * Support is never established with a temporary table.
+     *
+     * MySQL rejects `FULLTEXT` on a `TEMPORARY` InnoDB table (errno 1796) even
+     * where it accepts the same key on the permanent table, so probing that way
+     * reported no FULLTEXT support on every MySQL 8 host and silently disabled
+     * the search index. Creating temporary tables is a separate privilege that
+     * shared hosts withhold too. This pins the approach, not just the outcome.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_no_temporary_table_is_used_to_establish_support() {
+        Lisensio_KB_Lifecycle::activate();
+
+        $issued = implode( ' ', $GLOBALS['wpdb']->queries ) . ' ' . implode( ' ', $GLOBALS['lisensio_kb_delta_calls'] );
+
+        $this->assertStringNotContainsStringIgnoringCase( 'CREATE TEMPORARY TABLE', $issued );
+    }
+
+    /**
+     * A server that will not create the index is recorded as unsupported.
+     *
+     * The key is still requested; the plugin records what the server did with
+     * it rather than predicting the answer in advance.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_server_that_drops_the_index_is_recorded_as_unsupported() {
+        $GLOBALS['wpdb']->server_supports_fulltext = false;
+
+        Lisensio_KB_Lifecycle::activate();
+
+        $this->assertStringContainsStringIgnoringCase( 'ADD FULLTEXT KEY ft_all', implode( ' ', $GLOBALS['wpdb']->queries ) );
+        $this->assertSame( 'no', $this->options['lisensio_fulltext_supported'] );
+        $this->assertFalse( Lisensio_KB_DB_Installer::supports_fulltext() );
+    }
+
+    /**
+     * A concurrent upgrade is skipped rather than running the DDL twice.
+     *
+     * maybe_upgrade() runs on admin_init and only records the version once
+     * install() has returned, so without a lock two admin requests arriving
+     * together both read the old version and both run the schema DDL.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_concurrent_upgrade_is_skipped_while_the_lock_is_held() {
+        $this->options[ Lisensio_KB_Lifecycle::UPGRADE_LOCK_OPTION ] = time();
+
+        Lisensio_KB_Lifecycle::maybe_upgrade();
+
+        $this->assertArrayNotHasKey( 'lisensio_db_version', $this->options );
+        $this->assertArrayNotHasKey( Lisensio_KB_Lifecycle::VERSION_OPTION, $this->options );
+    }
+
+    /**
+     * A lock abandoned by a fatal mid-upgrade is reclaimed.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_abandoned_upgrade_lock_is_reclaimed() {
+        $this->options[ Lisensio_KB_Lifecycle::UPGRADE_LOCK_OPTION ] = time() - ( Lisensio_KB_Lifecycle::UPGRADE_LOCK_TTL + 60 );
+
+        Lisensio_KB_Lifecycle::maybe_upgrade();
+
+        $this->assertSame( LISENSIO_KB_VERSION, $this->options[ Lisensio_KB_Lifecycle::VERSION_OPTION ] );
+    }
+
+    /**
+     * The lock is released once the upgrade completes.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_upgrade_lock_is_released_on_success() {
+        Lisensio_KB_Lifecycle::maybe_upgrade();
+
+        $this->assertArrayNotHasKey( Lisensio_KB_Lifecycle::UPGRADE_LOCK_OPTION, $this->options );
+    }
+
+    /**
+     * Activation seeds the visitor salt and schedules its daily rotation.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_activation_seeds_the_salt_and_schedules_rotation() {
+        Lisensio_KB_Lifecycle::activate();
+
+        $this->assertArrayHasKey( Lisensio_KB_Visitor::OPTION_NAME, $this->options );
+        $this->assertNotEmpty( $this->options[ Lisensio_KB_Visitor::OPTION_NAME ]['current'] );
+        $this->assertArrayHasKey( Lisensio_KB_Visitor::CRON_HOOK, $this->cron );
+    }
+
+    /**
+     * Deactivation clears the rotation event and leaves the data alone.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_deactivation_clears_the_rotation_event() {
+        Lisensio_KB_Lifecycle::activate();
+
+        Lisensio_KB_Lifecycle::deactivate();
+
+        $this->assertArrayNotHasKey( Lisensio_KB_Visitor::CRON_HOOK, $this->cron );
+        $this->assertArrayHasKey( Lisensio_KB_Visitor::OPTION_NAME, $this->options );
+        $this->assertArrayHasKey( 'lisensio_db_version', $this->options );
+    }
+
+    /**
+     * A network activation installs into every site, not just the activating one.
+     *
+     * The tables, the visitor salt and — most visibly — the rewrite rules are
+     * all per-site, so without the loop every other subsite 404s on `/docs/…`
+     * until someone re-saves its permalinks by hand.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_network_activation_installs_into_every_site() {
+        $switched = array();
+
+        Functions\when( 'is_multisite' )->justReturn( true );
+        Functions\when( 'wp_is_large_network' )->justReturn( false );
+        Functions\when( 'get_sites' )->justReturn( array( 1, 2, 3 ) );
+        Functions\when( 'switch_to_blog' )->alias(
+            function ( $blog_id ) use ( &$switched ) {
+                $switched[] = (int) $blog_id;
+
+                return true;
+            }
+        );
+        Functions\when( 'restore_current_blog' )->justReturn( true );
+
+        Lisensio_KB_Lifecycle::activate( true );
+
+        $this->assertSame( array( 1, 2, 3 ), $switched, 'Every site of the network must be installed into.' );
+        $this->assertTrue( $this->flushed, 'Each site needs its rewrite rules built.' );
+    }
+
+    /**
+     * A single-site activation does not go near the network path.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_single_site_activation_does_not_switch_blogs() {
+        $switched = false;
+
+        Functions\when( 'switch_to_blog' )->alias(
+            function () use ( &$switched ) {
+                $switched = true;
+
+                return true;
+            }
+        );
+
+        Lisensio_KB_Lifecycle::activate();
+
+        $this->assertFalse( $switched );
+        $this->assertSame( LISENSIO_KB_VERSION, $this->options['lisensio_version'] );
+    }
+
+    /**
+     * A very large network is left to self-heal rather than walked inline.
+     *
+     * Walking thousands of sites inside one activation request would time out.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_large_network_is_not_walked_during_activation() {
+        $switched = false;
+
+        Functions\when( 'is_multisite' )->justReturn( true );
+        Functions\when( 'wp_is_large_network' )->justReturn( true );
+        Functions\when( 'switch_to_blog' )->alias(
+            function () use ( &$switched ) {
+                $switched = true;
+
+                return true;
+            }
+        );
+        Functions\when( 'restore_current_blog' )->justReturn( true );
+
+        Lisensio_KB_Lifecycle::activate( true );
+
+        $this->assertFalse( $switched, 'A large network must self-heal on admin_init instead.' );
+    }
+
+    /**
+     * A site installed for the first time asks for its rewrite rules.
+     *
+     * This is the self-heal path for a subsite that predates the plugin or was
+     * skipped as part of a large network.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_first_upgrade_on_a_site_requests_a_rewrite_flush() {
+        Lisensio_KB_Lifecycle::maybe_upgrade();
+
+        $this->assertTrue( Lisensio_KB_Settings::needs_rewrite_flush() );
+        $this->assertSame( LISENSIO_KB_VERSION, $this->options['lisensio_version'] );
+    }
+
+    /**
+     * The container boots and hands every scaffolded component to consumers.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_container_boots_and_exposes_every_component() {
+        $plugin = Lisensio_KB::instance();
+
+        $this->assertSame( $plugin, Lisensio_KB::instance() );
+        $this->assertInstanceOf( 'Lisensio_KB_Settings', $plugin->settings() );
+        $this->assertInstanceOf( 'Lisensio_KB_Post_Types', $plugin->post_types() );
+        $this->assertInstanceOf( 'Lisensio_KB_Assets', $plugin->assets() );
+        $this->assertInstanceOf( 'Lisensio_KB_Visitor', $plugin->visitor() );
+        $this->assertInstanceOf( 'Lisensio_KB_REST_API', $plugin->rest_api() );
+    }
+
+    /**
+     * The vendored query builder is present and prefixed for this plugin.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_vendored_query_builder_is_available() {
+        Lisensio_KB_DB::init();
+
+        $this->assertTrue( Lisensio_KB_DB::is_available() );
+        $this->assertSame( 'wptests_lisensio_feedback', Lisensio_KB_DB::table_name( 'feedback' ) );
+    }
+}
