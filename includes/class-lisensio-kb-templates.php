@@ -1,0 +1,601 @@
+<?php
+/**
+ * Classic template layer.
+ *
+ * Routes knowledge base requests to the plugin's PHP templates, enqueues the
+ * default stylesheet and supplies the data helpers the templates render:
+ * breadcrumb trails, category listings and recursive article counts.
+ *
+ * This class owns the classic (PHP) half of the dual template system only. The
+ * block-theme half is registered separately; every entry point here bails out
+ * when `lisensio_kb_use_block_templates()` is true, so the two layers never
+ * both claim the same request.
+ *
+ * @package Lisensio_KB
+ * @since   1.0.0
+ */
+
+defined( 'ABSPATH' ) || exit;
+
+/**
+ * Loads, styles and feeds the classic knowledge base templates.
+ *
+ * @since 1.0.0
+ */
+class Lisensio_KB_Templates {
+
+    /**
+     * Handle the default stylesheet is registered under.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    const STYLE_HANDLE = 'lisensio-kb-frontend';
+
+    /**
+     * Layout width setting values mapped to a CSS length.
+     *
+     * @since 1.0.0
+     * @var array<string, string>
+     */
+    const LAYOUT_WIDTHS = array(
+        'contained' => '72rem',
+        'wide'      => '90rem',
+        'full'      => '100%',
+    );
+
+    /**
+     * The settings store the custom properties are read from.
+     *
+     * @since 1.0.0
+     * @var Lisensio_KB_Settings
+     */
+    private $settings;
+
+    /**
+     * Constructor.
+     *
+     * @since 1.0.0
+     *
+     * @param Lisensio_KB_Settings $settings The settings store.
+     */
+    public function __construct( Lisensio_KB_Settings $settings ) {
+        $this->settings = $settings;
+    }
+
+    /**
+     * Attach the template loader and the stylesheet to WordPress.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function init_hooks() {
+        add_filter( 'template_include', array( $this, 'template_include' ), 20 );
+        add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_styles' ) );
+    }
+
+    /**
+     * Swap in a knowledge base template for a knowledge base request.
+     *
+     * Runs only under a classic theme. Under a block theme the block template
+     * layer answers the same requests through the Site Editor, and hijacking
+     * `template_include` there would bypass it entirely.
+     *
+     * A request the theme already answers with its own `lisensio-kb/` override
+     * still routes through here, because the override is resolved by
+     * `lisensio_kb_locate_template()` rather than by the template hierarchy.
+     *
+     * @since 1.0.0
+     *
+     * @param string $template The template WordPress resolved.
+     *
+     * @return string The knowledge base template, or the original one.
+     */
+    public function template_include( $template ) {
+        if ( lisensio_kb_use_block_templates() ) {
+            return $template;
+        }
+
+        $name = $this->template_name();
+
+        if ( '' === $name ) {
+            return $template;
+        }
+
+        $located = lisensio_kb_locate_template( $name );
+
+        return '' === $located ? (string) $template : $located;
+    }
+
+    /**
+     * The template name this request should be answered with.
+     *
+     * Order matters: a single article is matched before the archive, and both
+     * taxonomy archives before the post type archive, because a request can
+     * satisfy more than one conditional.
+     *
+     * @since 1.0.0
+     *
+     * @return string The template name, or an empty string for a non-knowledge-base request.
+     */
+    public function template_name() {
+        $name = '';
+
+        if ( is_singular( Lisensio_KB_Post_Types::POST_TYPE ) ) {
+            $name = 'single';
+        } elseif ( is_tax( Lisensio_KB_Post_Types::TAXONOMY_CATEGORY ) ) {
+            $name = 'taxonomy-category';
+        } elseif ( is_tax( Lisensio_KB_Post_Types::TAXONOMY_TAG ) ) {
+            $name = 'taxonomy-tag';
+        } elseif ( is_search() && self::is_article_search() ) {
+            $name = 'search-results';
+        } elseif ( is_post_type_archive( Lisensio_KB_Post_Types::POST_TYPE ) ) {
+            $name = 'archive';
+        }
+
+        /**
+         * Filter the classic template name chosen for the current request.
+         *
+         * @since 1.0.0
+         *
+         * @param string $name The template name, or an empty string for a non-knowledge-base request.
+         */
+        $name = (string) apply_filters( 'lisensio_template_name', $name );
+
+        return lisensio_kb_is_safe_template_name( $name ) ? $name : '';
+    }
+
+    /**
+     * Whether the current search request is scoped to knowledge base articles.
+     *
+     * A site-wide search is left to the theme; only a search that asked for the
+     * article post type is answered with the knowledge base results template.
+     *
+     * @since 1.0.0
+     *
+     * @return bool True when the search is restricted to articles.
+     */
+    public static function is_article_search() {
+        $post_type = get_query_var( 'post_type' );
+
+        if ( is_string( $post_type ) ) {
+            $post_type = '' === $post_type ? array() : array( $post_type );
+        }
+
+        return is_array( $post_type ) && in_array( Lisensio_KB_Post_Types::POST_TYPE, $post_type, true );
+    }
+
+    /**
+     * Whether the current request is rendered by the knowledge base.
+     *
+     * @since 1.0.0
+     *
+     * @return bool True on any knowledge base view.
+     */
+    public function is_kb_request() {
+        return '' !== $this->template_name();
+    }
+
+    /**
+     * Register the default stylesheet and its settings-driven custom properties.
+     *
+     * The stylesheet is enqueued only on knowledge base views, so a site that
+     * never links to the knowledge base pays nothing for it.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function enqueue_styles() {
+        wp_register_style(
+            self::STYLE_HANDLE,
+            LISENSIO_KB_ASSETS_URL . 'css/lisensio-kb.css',
+            array(),
+            LISENSIO_KB_VERSION
+        );
+
+        if ( ! $this->is_kb_request() ) {
+            return;
+        }
+
+        wp_enqueue_style( self::STYLE_HANDLE );
+        wp_add_inline_style( self::STYLE_HANDLE, $this->inline_css() );
+    }
+
+    /**
+     * The settings-driven custom property block.
+     *
+     * Everything the settings control is expressed as a custom property on
+     * `.lisensio-kb`, never as a rule-level override, so changing the brand
+     * colour restyles every component that derives from it without the
+     * stylesheet needing to know a setting exists.
+     *
+     * @since 1.0.0
+     *
+     * @return string A CSS rule, or an empty string when there is nothing to declare.
+     */
+    public function inline_css() {
+        $declarations = array();
+
+        foreach ( $this->custom_properties() as $property => $value ) {
+            $declarations[] = $property . ':' . $value;
+        }
+
+        if ( empty( $declarations ) ) {
+            return '';
+        }
+
+        return '.lisensio-kb{' . implode( ';', $declarations ) . '}';
+    }
+
+    /**
+     * The custom properties derived from the current settings.
+     *
+     * Every value is re-validated here rather than trusted from the option.
+     * The settings store already sanitizes on read and on write, but this
+     * string is printed inside a `<style>` element, where a single unvalidated
+     * character would end the declaration and start an attacker's own rule.
+     * Anything that fails validation falls back to the registered default.
+     *
+     * @since 1.0.0
+     *
+     * @return array<string, string> Custom property name to value.
+     */
+    public function custom_properties() {
+        $defaults = $this->settings->defaults();
+
+        $brand = sanitize_hex_color( (string) $this->settings->get( 'brand_color' ) );
+
+        if ( ! is_string( $brand ) || '' === $brand ) {
+            $brand = (string) ( isset( $defaults['brand_color'] ) ? $defaults['brand_color'] : '#2563eb' );
+        }
+
+        $layout         = (string) $this->settings->get( 'layout_width' );
+        $default_layout = (string) ( isset( $defaults['layout_width'] ) ? $defaults['layout_width'] : 'contained' );
+
+        if ( ! isset( self::LAYOUT_WIDTHS[ $layout ] ) ) {
+            $layout = isset( self::LAYOUT_WIDTHS[ $default_layout ] ) ? $default_layout : 'contained';
+        }
+
+        $card = (string) $this->settings->get( 'card_style' );
+
+        if ( ! in_array( $card, Lisensio_KB_Settings::CARD_STYLES, true ) ) {
+            $card = (string) ( isset( $defaults['card_style'] ) ? $defaults['card_style'] : 'shadow' );
+        }
+
+        $rgb = self::hex_to_rgb( $brand );
+
+        $properties = array(
+            '--lisensio-kb-brand'          => $brand,
+            '--lisensio-kb-brand-rgb'      => implode( ',', $rgb ),
+            '--lisensio-kb-brand-contrast' => self::contrast_color( $rgb ),
+            '--lisensio-kb-max-width'      => self::LAYOUT_WIDTHS[ $layout ],
+            '--lisensio-kb-card-shadow'    => 'shadow' === $card ? '0 1px 2px rgba(15,23,42,0.06), 0 8px 24px rgba(15,23,42,0.06)' : 'none',
+            '--lisensio-kb-card-border'    => 'border' === $card ? '1px solid var(--lisensio-kb-line)' : '1px solid transparent',
+            '--lisensio-kb-card-bg'        => 'flat' === $card ? 'transparent' : 'var(--lisensio-kb-surface)',
+        );
+
+        /**
+         * Filter the knowledge base CSS custom properties.
+         *
+         * Values are printed into a style element verbatim, so a callback that
+         * adds one is responsible for its own validation.
+         *
+         * @since 1.0.0
+         *
+         * @param array<string, string> $properties Custom property name to value.
+         */
+        return (array) apply_filters( 'lisensio_custom_properties', $properties );
+    }
+
+    /**
+     * Split a validated hex colour into its red, green and blue components.
+     *
+     * @since 1.0.0
+     *
+     * @param string $hex A `#rgb` or `#rrggbb` colour.
+     *
+     * @return array{0: int, 1: int, 2: int} The colour components, 0-255.
+     */
+    public static function hex_to_rgb( $hex ) {
+        $hex = ltrim( (string) $hex, '#' );
+
+        if ( 3 === strlen( $hex ) ) {
+            $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+        }
+
+        if ( 6 !== strlen( $hex ) ) {
+            return array( 37, 99, 235 );
+        }
+
+        return array(
+            (int) hexdec( substr( $hex, 0, 2 ) ),
+            (int) hexdec( substr( $hex, 2, 2 ) ),
+            (int) hexdec( substr( $hex, 4, 2 ) ),
+        );
+    }
+
+    /**
+     * A readable foreground colour for text sitting on the brand colour.
+     *
+     * Without this a pale brand colour produces white-on-white buttons. The
+     * threshold is the usual sRGB relative-luminance split point.
+     *
+     * @since 1.0.0
+     *
+     * @param array{0: int, 1: int, 2: int} $rgb The brand colour components.
+     *
+     * @return string `#000000` on a light brand colour, `#ffffff` on a dark one.
+     */
+    public static function contrast_color( array $rgb ) {
+        $luminance = ( ( 0.299 * $rgb[0] ) + ( 0.587 * $rgb[1] ) + ( 0.114 * $rgb[2] ) ) / 255;
+
+        return $luminance > 0.6 ? '#000000' : '#ffffff';
+    }
+
+    /**
+     * The top-level knowledge base categories.
+     *
+     * @since 1.0.0
+     *
+     * @param bool $hide_empty Whether to drop categories with no articles anywhere beneath them.
+     *
+     * @return WP_Term[] The categories, ordered by their menu order then name.
+     */
+    public static function top_level_categories( $hide_empty = true ) {
+        return self::child_categories( 0, $hide_empty );
+    }
+
+    /**
+     * The direct children of a knowledge base category.
+     *
+     * `hide_empty` is applied against the recursive article count rather than
+     * the term's own count, so a parent whose articles all live in its children
+     * is not hidden from the archive it is supposed to head.
+     *
+     * @since 1.0.0
+     *
+     * @param int  $parent_id  The parent term ID; 0 for the top level.
+     * @param bool $hide_empty Whether to drop categories with no articles anywhere beneath them.
+     *
+     * @return WP_Term[] The child categories.
+     */
+    public static function child_categories( $parent_id = 0, $hide_empty = true ) {
+        $terms = get_terms(
+            array(
+                'taxonomy'   => Lisensio_KB_Post_Types::TAXONOMY_CATEGORY,
+                'parent'     => (int) $parent_id,
+                'hide_empty' => false,
+                'orderby'    => 'name',
+                'order'      => 'ASC',
+            )
+        );
+
+        if ( ! is_array( $terms ) ) {
+            return array();
+        }
+
+        if ( ! $hide_empty ) {
+            return $terms;
+        }
+
+        $visible = array();
+
+        foreach ( $terms as $term ) {
+            if ( self::category_article_count( $term ) > 0 ) {
+                $visible[] = $term;
+            }
+        }
+
+        return $visible;
+    }
+
+    /**
+     * How many articles a category holds, including every sub-category.
+     *
+     * A term's own `count` only covers articles assigned directly to it, which
+     * on a knowledge base reads as a bug: a parent category that exists purely
+     * to group its children would report zero articles while listing dozens.
+     *
+     * @since 1.0.0
+     *
+     * @param WP_Term|int $term The category, or its term ID.
+     *
+     * @return int The number of articles in the category and its descendants.
+     */
+    public static function category_article_count( $term ) {
+        $term = get_term( $term, Lisensio_KB_Post_Types::TAXONOMY_CATEGORY );
+
+        if ( ! $term instanceof WP_Term ) {
+            return 0;
+        }
+
+        $count = (int) $term->count;
+
+        $children = get_terms(
+            array(
+                'taxonomy'   => Lisensio_KB_Post_Types::TAXONOMY_CATEGORY,
+                'child_of'   => (int) $term->term_id,
+                'hide_empty' => false,
+            )
+        );
+
+        if ( is_array( $children ) ) {
+            foreach ( $children as $child ) {
+                if ( $child instanceof WP_Term ) {
+                    $count += (int) $child->count;
+                }
+            }
+        }
+
+        return $count;
+    }
+
+    /**
+     * The breadcrumb trail for the current knowledge base view.
+     *
+     * The trail follows the real `lisensio_category` hierarchy, so a request
+     * for an article filed four levels deep produces all four ancestors in
+     * top-down order rather than a single flat parent.
+     *
+     * Every item is an array with a `label` and a `url`; the last item has an
+     * empty `url` because it is the current page.
+     *
+     * @since 1.0.0
+     *
+     * @return array<int, array{label: string, url: string}> The trail, outermost first.
+     */
+    public static function breadcrumb_items() {
+        $items = array(
+            array(
+                'label' => __( 'Home', 'lisensio-knowledge-base' ),
+                'url'   => home_url( '/' ),
+            ),
+        );
+
+        $archive = get_post_type_archive_link( Lisensio_KB_Post_Types::POST_TYPE );
+
+        if ( is_string( $archive ) && '' !== $archive ) {
+            $items[] = array(
+                'label' => __( 'Knowledge Base', 'lisensio-knowledge-base' ),
+                'url'   => $archive,
+            );
+        }
+
+        if ( is_singular( Lisensio_KB_Post_Types::POST_TYPE ) ) {
+            $items = array_merge( $items, self::category_trail( self::primary_category( get_post() ), true ) );
+
+            $items[] = array(
+                'label' => get_the_title(),
+                'url'   => '',
+            );
+        } elseif ( is_tax( Lisensio_KB_Post_Types::TAXONOMY_CATEGORY ) ) {
+            $items = array_merge( $items, self::category_trail( get_queried_object(), false ) );
+        } elseif ( is_tax( Lisensio_KB_Post_Types::TAXONOMY_TAG ) ) {
+            $term = get_queried_object();
+
+            if ( $term instanceof WP_Term ) {
+                $items[] = array(
+                    'label' => $term->name,
+                    'url'   => '',
+                );
+            }
+        } elseif ( is_search() ) {
+            $items[] = array(
+                'label' => sprintf(
+                    /* translators: %s: the search term. */
+                    __( 'Search results for “%s”', 'lisensio-knowledge-base' ),
+                    get_search_query()
+                ),
+                'url'   => '',
+            );
+        }
+
+        /**
+         * Filter the knowledge base breadcrumb trail.
+         *
+         * @since 1.0.0
+         *
+         * @param array<int, array{label: string, url: string}> $items The trail, outermost first.
+         */
+        return (array) apply_filters( 'lisensio_breadcrumb_items', $items );
+    }
+
+    /**
+     * The ancestor chain of a category, top-down, as breadcrumb items.
+     *
+     * @since 1.0.0
+     *
+     * @param WP_Term|mixed $term        The category the trail ends at.
+     * @param bool          $link_itself Whether the category itself should be a link, which it
+     *                                   is on an article page but not on its own archive.
+     *
+     * @return array<int, array{label: string, url: string}> The trail segment.
+     */
+    public static function category_trail( $term, $link_itself = true ) {
+        if ( ! $term instanceof WP_Term ) {
+            return array();
+        }
+
+        $items     = array();
+        $ancestors = array_reverse( (array) get_ancestors( $term->term_id, Lisensio_KB_Post_Types::TAXONOMY_CATEGORY, 'taxonomy' ) );
+
+        foreach ( $ancestors as $ancestor_id ) {
+            $ancestor = get_term( (int) $ancestor_id, Lisensio_KB_Post_Types::TAXONOMY_CATEGORY );
+
+            if ( ! $ancestor instanceof WP_Term ) {
+                continue;
+            }
+
+            $items[] = array(
+                'label' => $ancestor->name,
+                'url'   => self::term_link( $ancestor ),
+            );
+        }
+
+        $items[] = array(
+            'label' => $term->name,
+            'url'   => $link_itself ? self::term_link( $term ) : '',
+        );
+
+        return $items;
+    }
+
+    /**
+     * The most specific category an article is filed under.
+     *
+     * An article assigned to both a parent and its child should breadcrumb
+     * through the child, so the deepest term wins rather than whichever one
+     * `get_the_terms()` happened to return first.
+     *
+     * @since 1.0.0
+     *
+     * @param WP_Post|int|null $post The article, or its ID.
+     *
+     * @return WP_Term|null The category, or null when the article has none.
+     */
+    public static function primary_category( $post = null ) {
+        $terms = get_the_terms( $post, Lisensio_KB_Post_Types::TAXONOMY_CATEGORY );
+
+        if ( ! is_array( $terms ) || empty( $terms ) ) {
+            return null;
+        }
+
+        $primary = null;
+        $depth   = -1;
+
+        foreach ( $terms as $term ) {
+            if ( ! $term instanceof WP_Term ) {
+                continue;
+            }
+
+            $term_depth = count( (array) get_ancestors( $term->term_id, Lisensio_KB_Post_Types::TAXONOMY_CATEGORY, 'taxonomy' ) );
+
+            if ( $term_depth > $depth ) {
+                $primary = $term;
+                $depth   = $term_depth;
+            }
+        }
+
+        return $primary;
+    }
+
+    /**
+     * The permalink of a term, as a string.
+     *
+     * `get_term_link()` returns a WP_Error for a term whose taxonomy has gone
+     * away, which a template would otherwise print as the string `Array`.
+     *
+     * @since 1.0.0
+     *
+     * @param WP_Term $term The term.
+     *
+     * @return string The permalink, or an empty string when it cannot be built.
+     */
+    public static function term_link( WP_Term $term ) {
+        $link = get_term_link( $term );
+
+        return is_string( $link ) ? $link : '';
+    }
+}

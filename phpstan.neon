@@ -5,6 +5,7 @@ parameters:
         - lisensio-knowledge-base.php
         - uninstall.php
         - includes
+        - templates
         - tests
     bootstrapFiles:
         - phpstan-bootstrap.php

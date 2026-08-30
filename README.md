@@ -185,7 +185,44 @@ Template names are validated as plain slug paths (`single-article`, `parts/bread
 
 Classic templates receive their arguments as a single `$args` array. There is no `extract()`.
 
-The scaffold ships **no templates**; `templates/` is #5 and `block-templates/` is #6.
+#### The classic template set
+
+`templates/` ships nine templates. The four page templates are loaded by
+`Lisensio_KB_Templates` on `template_include`; the five partials are rendered
+by those pages through `lisensio_kb_get_template()`.
+
+| Template | Loaded for | Arguments |
+|---|---|---|
+| `archive.php` | the article post type archive | — |
+| `single.php` | a single article | — |
+| `taxonomy-category.php` | a `lisensio_category` archive | — |
+| `taxonomy-tag.php` | a `lisensio_tag` archive | — |
+| `search-results.php` | a search carrying `post_type=lisensio_article` | — |
+| `breadcrumbs.php` | partial | `items` |
+| `article-card.php` | partial | `post` |
+| `category-card.php` | partial | `term`, `show_children` |
+| `no-results.php` | partial | `title`, `description` |
+
+Copy any of them into `{theme}/lisensio-kb/` to override it.
+
+The loader stands aside entirely under a block theme, where the block template
+layer answers the same requests.
+
+Local variables inside a template carry the `lisensio_kb_` prefix, which the
+project's PHPCS ruleset requires of anything assigned at a file's top level.
+
+`block-templates/` is #6.
+
+#### Styling
+
+`assets/css/lisensio-kb.css` is scoped to `.lisensio-kb` and is enqueued only
+on knowledge base views. Everything the settings control — brand colour, the
+RGB triplet and readable foreground derived from it, layout width, card
+shadow, border and background — is emitted by
+`Lisensio_KB_Templates::inline_css()` as CSS custom properties on
+`.lisensio-kb`, never as a rule-level override, so changing a setting restyles
+every component that derives from it. Values are re-validated there before
+being printed into the style element rather than trusted from the option.
 
 ### Frontend hook contract
 
@@ -235,6 +272,9 @@ It cannot be a module: module scripts are always deferred and execute after ever
 | `lisensio_visitor_ip` | filter | Supply the client IP behind a trusted proxy. Hashed immediately, never stored. |
 | `lisensio_rest_controllers`, `lisensio_rest_stub_routes` | filter | Register controllers; release a reserved route. |
 | `lisensio_template_path`, `lisensio_use_block_templates`, `lisensio_locate_template`, `lisensio_locate_block_template`, `lisensio_get_template` | filter | Template resolution. |
+| `lisensio_template_name` | filter | The classic template chosen for the current request. |
+| `lisensio_breadcrumb_items` | filter | The breadcrumb trail. |
+| `lisensio_custom_properties` | filter | The CSS custom properties printed on `.lisensio-kb`. |
 | `lisensio_dev_server_host`, `lisensio_dev_server_port` | filter | Vite dev server location. |
 
 ## Privacy
