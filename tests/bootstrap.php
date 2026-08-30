@@ -27,6 +27,16 @@ define( 'LISENSIO_KB_DIST_URL', LISENSIO_KB_PLUGIN_URL . 'dist/' );
 define( 'LISENSIO_KB_DIST_PATH', LISENSIO_KB_ABSPATH . 'dist/' );
 define( 'LISENSIO_KB_REST_NAMESPACE', 'lisensio-kb/v1' );
 
+/*
+ * The output-format constants WordPress defines alongside wpdb. The vendored
+ * query builder names them in its default parameters, so any code path that
+ * reads a row fatals without them.
+ */
+defined( 'OBJECT' ) || define( 'OBJECT', 'OBJECT' );
+defined( 'OBJECT_K' ) || define( 'OBJECT_K', 'OBJECT_K' );
+defined( 'ARRAY_A' ) || define( 'ARRAY_A', 'ARRAY_A' );
+defined( 'ARRAY_N' ) || define( 'ARRAY_N', 'ARRAY_N' );
+
 require_once LISENSIO_KB_ABSPATH . 'tests/fixtures/class-wp-error.php';
 require_once LISENSIO_KB_ABSPATH . 'tests/fixtures/class-wp-post.php';
 require_once LISENSIO_KB_ABSPATH . 'tests/fixtures/class-wp-term.php';
