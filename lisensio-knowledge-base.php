@@ -46,6 +46,19 @@ require_once LISENSIO_KB_ABSPATH . 'includes/lisensio-kb-hooks.php';
 register_activation_hook( __FILE__, array( 'Lisensio_KB_Lifecycle', 'activate' ) );
 register_deactivation_hook( __FILE__, array( 'Lisensio_KB_Lifecycle', 'deactivate' ) );
 
+/*
+ * Install-time work that belongs to a component rather than to the lifecycle.
+ *
+ * These are registered here rather than in Lisensio_KB::boot() because boot()
+ * never runs during an activation request: WordPress includes this file after
+ * `plugins_loaded` has already fired, then fires the activation hook. They are
+ * hooked to `lisensio_activated` rather than to the activation hook itself so
+ * that a network activation runs them inside each site, where roles and rewrite
+ * rules actually live.
+ */
+add_action( 'lisensio_activated', array( 'Lisensio_KB_Capabilities', 'add_capabilities' ) );
+add_action( 'lisensio_activated', array( 'Lisensio_KB_Permalinks', 'request_flush' ) );
+
 /**
  * Return the main plugin instance.
  *
