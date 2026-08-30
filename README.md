@@ -187,9 +187,9 @@ Classic templates receive their arguments as a single `$args` array. There is no
 
 #### The classic template set
 
-`templates/` ships nine templates. The four page templates are loaded by
+`templates/` ships ten templates. The five page templates are loaded by
 `Lisensio_KB_Templates` on `template_include`; the five partials are rendered
-by those pages through `lisensio_kb_get_template()`.
+by those pages, or by a hook callback, through `lisensio_kb_get_template()`.
 
 | Template | Loaded for | Arguments |
 |---|---|---|
@@ -202,6 +202,7 @@ by those pages through `lisensio_kb_get_template()`.
 | `article-card.php` | partial | `post` |
 | `category-card.php` | partial | `term`, `show_children` |
 | `no-results.php` | partial | `title`, `description` |
+| `feedback-form.php` | partial | `article_id`, `score` |
 
 Copy any of them into `{theme}/lisensio-kb/` to override it.
 
@@ -263,6 +264,8 @@ It cannot be a module: module scripts are always deferred and execute after ever
 | `lisensio_db_installed` | action | Tables created or upgraded; passed the FULLTEXT flag. |
 | `lisensio_uninstalled` | action | The plugin is being removed from a site; fires once per site. Passed whether the data tables were dropped. |
 | `lisensio_visitor_salt_rotated` | action | The daily salt was rotated. |
+| `lisensio_feedback_recorded` | action | A vote was written. Passed the article ID and the vote; never the comment. |
+| `lisensio_feedback_score_updated` | action | An article's usefulness score was recomputed. Passed the article ID and the figures. |
 | `lisensio_before_article`, `lisensio_after_article`, `lisensio_article_footer` | action | The frontend hook contract. |
 | `lisensio_before_template`, `lisensio_after_template` | action | Around a classic template include. |
 | `lisensio_autoload_paths` | filter | Extra directories for the class autoloader. |
@@ -276,6 +279,39 @@ It cannot be a module: module scripts are always deferred and execute after ever
 | `lisensio_breadcrumb_items` | filter | The breadcrumb trail. |
 | `lisensio_custom_properties` | filter | The CSS custom properties printed on `.lisensio-kb`. |
 | `lisensio_dev_server_host`, `lisensio_dev_server_port` | filter | Vite dev server location. |
+
+### Feedback and voting
+
+`Lisensio_KB_Feedback` owns every read and write of `lisensio_feedback` and the
+derived usefulness score, and boots the three pieces around it: the frontend
+widget, the inbox screen and the REST controller.
+
+| Piece | Where |
+|---|---|
+| Voting UI | `Lisensio_KB_Feedback_Widget` on `lisensio_article_footer`, rendering `templates/feedback-form.php` |
+| Behaviour | `assets/js/feedback.js` — dependency-free, enhances the server-rendered markup, announces the outcome in a `role="status"` region |
+| Write endpoint | `POST /lisensio-kb/v1/feedback` — nonce, per-visitor rate limit, one vote per visitor per article |
+| Inbox endpoints | `GET /lisensio-kb/v1/feedback`, `PATCH /lisensio-kb/v1/feedback/{id}` — `manage_lisensio_kb` |
+| Inbox screen | Knowledge Base → Feedback, the Vue app in `apps/feedback/` |
+| Usefulness column | supplied through `lisensio_article_usefulness_column` |
+
+One vote per visitor per article is enforced by a lookup against every hash
+`Lisensio_KB_Visitor::get_hashes()` returns, plus the user ID for a logged-in
+reader. No cookie is consulted, so a rotation of the daily salt, a cleared
+cookie jar or a second browser does not buy a second vote. The rule and the
+score arithmetic are exercised against a real MySQL or MariaDB server in
+`tests/Integration/Lisensio_KB_Feedback_Integration_Test.php`, because a `$wpdb`
+double can only answer what it was told to.
+
+The score is cached in three post meta keys — `_lisensio_usefulness_score`,
+`_lisensio_usefulness_up` and `_lisensio_usefulness_down` — and recomputed from
+the raw rows on every vote. An article nobody has voted on reports a `null`
+score, which is not the same claim as nought per cent.
+
+Comments are stripped of markup by `sanitize_textarea_field()` before they are
+stored, escaped again wherever PHP prints them, and rendered by the inbox with
+Vue text interpolation. Nothing in this flow uses `v-html`, and nothing in it
+reads or writes an IP address.
 
 ## Privacy
 

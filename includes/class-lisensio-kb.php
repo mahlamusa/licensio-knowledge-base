@@ -110,6 +110,14 @@ final class Lisensio_KB {
     private $rest_api = null;
 
     /**
+     * Article feedback and voting.
+     *
+     * @since 1.0.0
+     * @var Lisensio_KB_Feedback|null
+     */
+    private $feedback = null;
+
+    /**
      * Return the single instance of the plugin.
      *
      * @since 1.0.0
@@ -162,6 +170,7 @@ final class Lisensio_KB {
         $this->templates    = new Lisensio_KB_Templates( $this->settings );
         $this->visitor      = new Lisensio_KB_Visitor();
         $this->rest_api     = new Lisensio_KB_REST_API();
+        $this->feedback     = new Lisensio_KB_Feedback( $this->settings );
 
         $this->block_templates = new Lisensio_KB_Block_Templates();
 
@@ -180,6 +189,7 @@ final class Lisensio_KB {
         $this->block_templates->init_hooks();
         $this->visitor->init_hooks();
         $this->rest_api->init_hooks();
+        $this->feedback->init_hooks();
 
         if ( is_admin() ) {
             $term_fields = new Lisensio_KB_Term_Fields();
@@ -406,5 +416,20 @@ final class Lisensio_KB {
         }
 
         return $this->rest_api;
+    }
+
+    /**
+     * Get the feedback and voting component.
+     *
+     * @since 1.0.0
+     *
+     * @return Lisensio_KB_Feedback
+     */
+    public function feedback() {
+        if ( ! $this->feedback instanceof Lisensio_KB_Feedback ) {
+            $this->feedback = new Lisensio_KB_Feedback( $this->settings() );
+        }
+
+        return $this->feedback;
     }
 }
