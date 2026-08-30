@@ -30,6 +30,7 @@ define( 'LISENSIO_KB_REST_NAMESPACE', 'lisensio-kb/v1' );
 require_once LISENSIO_KB_ABSPATH . 'tests/fixtures/class-wp-error.php';
 require_once LISENSIO_KB_ABSPATH . 'tests/fixtures/class-wp-post.php';
 require_once LISENSIO_KB_ABSPATH . 'tests/fixtures/class-wp-term.php';
+require_once LISENSIO_KB_ABSPATH . 'tests/fixtures/class-wp-block-template.php';
 require_once LISENSIO_KB_ABSPATH . 'tests/fixtures/class-wp-role.php';
 require_once LISENSIO_KB_ABSPATH . 'tests/fixtures/class-wp-screen.php';
 require_once LISENSIO_KB_ABSPATH . 'tests/fixtures/class-wp-rest-controller.php';

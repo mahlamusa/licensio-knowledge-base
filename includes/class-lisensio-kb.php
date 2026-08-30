@@ -86,6 +86,14 @@ final class Lisensio_KB {
     private $templates = null;
 
     /**
+     * Block template layer.
+     *
+     * @since 1.0.0
+     * @var Lisensio_KB_Block_Templates|null
+     */
+    private $block_templates = null;
+
+    /**
      * Privacy-safe visitor identity helper.
      *
      * @since 1.0.0
@@ -155,6 +163,8 @@ final class Lisensio_KB {
         $this->visitor      = new Lisensio_KB_Visitor();
         $this->rest_api     = new Lisensio_KB_REST_API();
 
+        $this->block_templates = new Lisensio_KB_Block_Templates();
+
         /*
          * Permalinks first. It adds a key to the settings registry, and
          * Lisensio_KB_Settings memoizes the resolved settings on first read, so
@@ -167,6 +177,7 @@ final class Lisensio_KB {
         $this->post_types->init_hooks();
         $this->assets->init_hooks();
         $this->templates->init_hooks();
+        $this->block_templates->init_hooks();
         $this->visitor->init_hooks();
         $this->rest_api->init_hooks();
 
@@ -350,6 +361,21 @@ final class Lisensio_KB {
         }
 
         return $this->templates;
+    }
+
+    /**
+     * Get the block template layer.
+     *
+     * @since 1.0.0
+     *
+     * @return Lisensio_KB_Block_Templates
+     */
+    public function block_templates() {
+        if ( ! $this->block_templates instanceof Lisensio_KB_Block_Templates ) {
+            $this->block_templates = new Lisensio_KB_Block_Templates();
+        }
+
+        return $this->block_templates;
     }
 
     /**
