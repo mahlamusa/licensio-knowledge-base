@@ -54,6 +54,14 @@ final class Lisensio_KB {
     private $assets = null;
 
     /**
+     * Classic template layer.
+     *
+     * @since 1.0.0
+     * @var Lisensio_KB_Templates|null
+     */
+    private $templates = null;
+
+    /**
      * Privacy-safe visitor identity helper.
      *
      * @since 1.0.0
@@ -116,11 +124,13 @@ final class Lisensio_KB {
         $this->settings   = new Lisensio_KB_Settings();
         $this->post_types = new Lisensio_KB_Post_Types( $this->settings );
         $this->assets     = new Lisensio_KB_Assets();
+        $this->templates  = new Lisensio_KB_Templates( $this->settings );
         $this->visitor    = new Lisensio_KB_Visitor();
         $this->rest_api   = new Lisensio_KB_REST_API();
 
         $this->post_types->init_hooks();
         $this->assets->init_hooks();
+        $this->templates->init_hooks();
         $this->visitor->init_hooks();
         $this->rest_api->init_hooks();
 
@@ -236,6 +246,21 @@ final class Lisensio_KB {
         }
 
         return $this->assets;
+    }
+
+    /**
+     * Get the classic template layer.
+     *
+     * @since 1.0.0
+     *
+     * @return Lisensio_KB_Templates
+     */
+    public function templates() {
+        if ( ! $this->templates instanceof Lisensio_KB_Templates ) {
+            $this->templates = new Lisensio_KB_Templates( $this->settings() );
+        }
+
+        return $this->templates;
     }
 
     /**
