@@ -45,13 +45,39 @@ class Lisensio_KB_Search_Integration_Test extends Lisensio_KB_Integration_Test_C
      */
     const PREFIX = 'lkbsearch_';
 
+    /*
+     * The three article IDs below are chosen so that the expected relevance
+     * order — TITLE, TERMS, CONTENT, or 102, 105, 101 — is neither ascending nor
+     * descending in the ID. That is not decoration.
+     *
+     * An earlier revision numbered them 101, 102, 103, so the expected ranking
+     * WAS ascending ID order. Replacing the driver's `ORDER BY field_score DESC`
+     * with `ORDER BY article_id ASC` — relevance ranking entirely gone — then
+     * produced exactly the expected answer, and the whole suite stayed green.
+     * The same coincidence carried the paging test and the both-drivers-agree
+     * test, which compares the drivers to each other and is equally happy when
+     * they agree on a wrong shared order.
+     *
+     * Three orderings a broken driver might fall back to must all be ruled out,
+     * and with these IDs and the seeded dates they are:
+     *
+     *   article_id ASC   -> 101, 102, 105
+     *   article_id DESC  -> 105, 102, 101
+     *   updated_at DESC  -> 101, 105, 102
+     *   expected         -> 102, 105, 101
+     *
+     * test_the_expected_ranking_cannot_be_produced_by_row_order() asserts this
+     * property directly, so renumbering these constants back into a sequence
+     * fails loudly instead of quietly disarming every ranking test in the file.
+     */
+
     /**
      * The article whose TITLE carries the query word.
      *
      * @since 1.0.0
      * @var int
      */
-    const TITLE_MATCH = 101;
+    const TITLE_MATCH = 102;
 
     /**
      * The article whose TERMS carry the query word.
@@ -59,7 +85,7 @@ class Lisensio_KB_Search_Integration_Test extends Lisensio_KB_Integration_Test_C
      * @since 1.0.0
      * @var int
      */
-    const TERMS_MATCH = 102;
+    const TERMS_MATCH = 105;
 
     /**
      * The article whose BODY carries the query word.
@@ -67,7 +93,7 @@ class Lisensio_KB_Search_Integration_Test extends Lisensio_KB_Integration_Test_C
      * @since 1.0.0
      * @var int
      */
-    const CONTENT_MATCH = 103;
+    const CONTENT_MATCH = 101;
 
     /**
      * The in-memory options table.
@@ -204,6 +230,11 @@ class Lisensio_KB_Search_Integration_Test extends Lisensio_KB_Integration_Test_C
      * still return the right answer by accident. Reversing the dates means the
      * expected order can only come from the weighting.
      *
+     * The article IDs carry the same requirement, for the same reason, and are
+     * chosen in the constant block above so that the expected order is neither
+     * ascending nor descending in the ID. Fixing only the date half of this
+     * left `ORDER BY article_id ASC` passing the entire suite.
+     *
      * @since 1.0.0
      *
      * @return void
@@ -290,6 +321,85 @@ class Lisensio_KB_Search_Integration_Test extends Lisensio_KB_Integration_Test_C
         return array(
             'fulltext' => array( new Lisensio_KB_Search_Fulltext_Driver() ),
             'like'     => array( new Lisensio_KB_Search_Like_Driver() ),
+        );
+    }
+
+    /**
+     * The expected ranking cannot be produced by any ordering of the row IDs.
+     *
+     * A guard on the fixture rather than on the code. Every ranking assertion in
+     * this file compares against one fixed sequence, and that sequence is only
+     * evidence of ranking if no ordering a broken driver might fall back to
+     * produces it by accident.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_expected_ranking_cannot_be_produced_by_row_order() {
+        $expected = array( self::TITLE_MATCH, self::TERMS_MATCH, self::CONTENT_MATCH );
+
+        $ascending = $expected;
+        sort( $ascending );
+
+        $descending = $expected;
+        rsort( $descending );
+
+        $this->assertNotSame(
+            $ascending,
+            $expected,
+            'The expected ranking is ascending article_id order, so ORDER BY article_id ASC would satisfy every ranking test in this file.'
+        );
+
+        $this->assertNotSame(
+            $descending,
+            $expected,
+            'The expected ranking is descending article_id order, so ORDER BY article_id DESC would satisfy every ranking test in this file.'
+        );
+
+        /*
+         * The seeded dates run oldest-first in expected-ranking order, so the
+         * recency fallback both drivers use once relevance ties produces the
+         * reverse. Asserted here rather than trusted from the seed method.
+         */
+        $recent_first = array( self::CONTENT_MATCH, self::TERMS_MATCH, self::TITLE_MATCH );
+
+        $this->assertNotSame(
+            $recent_first,
+            $expected,
+            'The expected ranking is updated_at DESC order, so a driver that had lost its ranking would still pass.'
+        );
+    }
+
+    /**
+     * The recency fallback really does disagree with the expected ranking.
+     *
+     * Reads the seeded dates back from the server rather than restating the
+     * seed method, so an edit to the fixture that quietly aligned recency with
+     * relevance is caught here instead of silently weakening every ranking
+     * assertion below.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_seeded_recency_order_is_not_the_expected_ranking() {
+        $rows = $this->db->query(
+            'SELECT article_id FROM ' . self::PREFIX . 'lisensio_search_index
+             WHERE article_id IN (' . self::TITLE_MATCH . ', ' . self::TERMS_MATCH . ', ' . self::CONTENT_MATCH . ')
+             ORDER BY updated_at DESC'
+        );
+
+        $order = array();
+
+        while ( $row = $rows->fetch_object() ) {
+            $order[] = (int) $row->article_id;
+        }
+
+        $this->assertSame(
+            array( self::CONTENT_MATCH, self::TERMS_MATCH, self::TITLE_MATCH ),
+            $order,
+            'The seeded dates must run opposite to the expected ranking.'
         );
     }
 
@@ -551,6 +661,8 @@ class Lisensio_KB_Search_Integration_Test extends Lisensio_KB_Integration_Test_C
      * a comment.
      *
      * @since 1.0.0
+     *
+     * @group perf
      *
      * @return void
      */
