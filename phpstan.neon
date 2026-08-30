@@ -1,0 +1,22 @@
+parameters:
+    level: 5
+    phpVersion: 70400
+    paths:
+        - lisensio-knowledge-base.php
+        - uninstall.php
+        - includes
+        - tests
+    bootstrapFiles:
+        - phpstan-bootstrap.php
+    scanDirectories:
+        - libraries
+    scanFiles:
+        - libraries/autoload.php
+    dynamicConstantNames:
+        - LISENSIO_KB_ABSPATH
+        - LISENSIO_KB_PLUGIN_URL
+        - LISENSIO_KB_DIST_URL
+        - LISENSIO_KB_DIST_PATH
+        - HMR_DEV
+    treatPhpDocTypesAsCertain: false
+    reportUnmatchedIgnoredErrors: false

@@ -7,6 +7,11 @@
 /build/
 /releases/
 
+# Test fixtures written into templates/ and block-templates/ by the template
+# suite. Removed in tearDown; ignored here so an aborted run cannot leave one
+# staged.
+lisensio-kb-test-fixture.*
+
 # Tooling caches
 .phpunit.result.cache
 .phpcs-cache

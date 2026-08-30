@@ -1,0 +1,96 @@
+<?xml version="1.0"?>
+<ruleset name="Lisensio Knowledge Base">
+    <description>WordPress Coding Standards for the Lisensio Knowledge Base plugin.</description>
+
+    <arg name="basepath" value="."/>
+    <arg name="extensions" value="php"/>
+    <arg name="parallel" value="8"/>
+    <arg name="colors"/>
+    <arg value="s"/>
+
+    <!-- What to check. -->
+    <file>lisensio-knowledge-base.php</file>
+    <file>uninstall.php</file>
+    <file>includes</file>
+    <file>templates</file>
+    <file>blocks</file>
+    <file>pro</file>
+    <file>tests</file>
+
+    <!-- What never to check. -->
+    <exclude-pattern>*/vendor/*</exclude-pattern>
+    <exclude-pattern>*/libraries/*</exclude-pattern>
+    <exclude-pattern>*/node_modules/*</exclude-pattern>
+    <exclude-pattern>*/dist/*</exclude-pattern>
+    <exclude-pattern>*/build/*</exclude-pattern>
+    <exclude-pattern>*/languages/*</exclude-pattern>
+    <exclude-pattern>*/tools/*</exclude-pattern>
+    <!-- Template fixtures written by the test suite; removed in tearDown. -->
+    <exclude-pattern>*/lisensio-kb-test-fixture.*</exclude-pattern>
+
+    <config name="minimum_supported_wp_version" value="6.4"/>
+    <config name="testVersion" value="7.4-"/>
+
+    <rule ref="PHPCompatibilityWP"/>
+
+    <rule ref="WordPress-Docs">
+        <exclude name="Generic.Commenting.DocComment.LongNotCapital"/>
+        <exclude name="Generic.Commenting.DocComment.ShortNotCapital"/>
+        <exclude name="Squiz.Commenting.FunctionComment.ParamCommentFullStop"/>
+    </rule>
+
+    <rule ref="WordPress">
+        <!-- The project uses four spaces, not tabs. -->
+        <exclude name="Generic.WhiteSpace.DisallowSpaceIndent"/>
+        <!-- Yoda conditions are not used in this codebase. -->
+        <exclude name="WordPress.PHP.YodaConditions.NotYoda"/>
+        <!-- Short array syntax is used in the JS/JSON layer only; PHP uses long arrays,
+             which this sniff already enforces, so no exclusion is needed here. -->
+    </rule>
+
+    <rule ref="WordPress-Extra"/>
+
+    <rule ref="Generic.WhiteSpace.DisallowTabIndent"/>
+
+    <rule ref="Generic.WhiteSpace.ScopeIndent">
+        <properties>
+            <property name="indent" value="4"/>
+            <property name="tabIndent" value="false"/>
+        </properties>
+    </rule>
+
+    <!-- Every global symbol carries a plugin prefix. -->
+    <rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+        <properties>
+            <property name="prefixes" type="array">
+                <element value="lisensio"/>
+                <element value="Lisensio_KB"/>
+                <element value="LISENSIO_KB"/>
+            </property>
+        </properties>
+    </rule>
+
+    <!-- All strings are translatable under one text domain. -->
+    <rule ref="WordPress.WP.I18n">
+        <properties>
+            <property name="text_domain" type="array">
+                <element value="lisensio-knowledge-base"/>
+            </property>
+        </properties>
+    </rule>
+
+    <!-- Tests do not need the plugin's file-level or i18n conventions. -->
+    <rule ref="WordPress.Files.FileName">
+        <exclude-pattern>*/tests/*</exclude-pattern>
+    </rule>
+    <rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+        <exclude-pattern>*/tests/*</exclude-pattern>
+    </rule>
+    <rule ref="Squiz.Commenting.ClassComment.SpacingAfter">
+        <exclude-pattern>*/tests/*</exclude-pattern>
+    </rule>
+    <!-- Test doubles live beside the test that uses them. -->
+    <rule ref="Generic.Files.OneObjectStructurePerFile">
+        <exclude-pattern>*/tests/Unit/*</exclude-pattern>
+    </rule>
+</ruleset>
