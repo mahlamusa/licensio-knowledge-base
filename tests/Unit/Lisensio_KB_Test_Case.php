@@ -153,6 +153,8 @@ abstract class Lisensio_KB_Test_Case extends TestCase {
 
         Functions\when( 'is_multisite' )->justReturn( false );
 
+        Functions\when( 'is_admin' )->justReturn( false );
+
         Functions\when( 'wp_json_encode' )->alias(
             function ( $value ) {
                 return json_encode( $value ); // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode

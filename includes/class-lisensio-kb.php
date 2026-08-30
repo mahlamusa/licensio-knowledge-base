@@ -46,6 +46,30 @@ final class Lisensio_KB {
     private $post_types = null;
 
     /**
+     * Capability model.
+     *
+     * @since 1.0.0
+     * @var Lisensio_KB_Capabilities|null
+     */
+    private $capabilities = null;
+
+    /**
+     * Permalink settings.
+     *
+     * @since 1.0.0
+     * @var Lisensio_KB_Permalinks|null
+     */
+    private $permalinks = null;
+
+    /**
+     * Category term meta registrar.
+     *
+     * @since 1.0.0
+     * @var Lisensio_KB_Term_Meta|null
+     */
+    private $term_meta = null;
+
+    /**
      * Build asset loader.
      *
      * @since 1.0.0
@@ -121,18 +145,38 @@ final class Lisensio_KB {
     private function boot() {
         Lisensio_KB_DB::init();
 
-        $this->settings   = new Lisensio_KB_Settings();
-        $this->post_types = new Lisensio_KB_Post_Types( $this->settings );
-        $this->assets     = new Lisensio_KB_Assets();
-        $this->templates  = new Lisensio_KB_Templates( $this->settings );
-        $this->visitor    = new Lisensio_KB_Visitor();
-        $this->rest_api   = new Lisensio_KB_REST_API();
+        $this->settings     = new Lisensio_KB_Settings();
+        $this->capabilities = new Lisensio_KB_Capabilities();
+        $this->permalinks   = new Lisensio_KB_Permalinks( $this->settings );
+        $this->term_meta    = new Lisensio_KB_Term_Meta();
+        $this->post_types   = new Lisensio_KB_Post_Types( $this->settings );
+        $this->assets       = new Lisensio_KB_Assets();
+        $this->templates    = new Lisensio_KB_Templates( $this->settings );
+        $this->visitor      = new Lisensio_KB_Visitor();
+        $this->rest_api     = new Lisensio_KB_REST_API();
 
+        /*
+         * Permalinks first. It adds a key to the settings registry, and
+         * Lisensio_KB_Settings memoizes the resolved settings on first read, so
+         * a registry filter attached after something has read a setting would be
+         * missing from that memo for the rest of the request.
+         */
+        $this->permalinks->init_hooks();
+        $this->capabilities->init_hooks();
+        $this->term_meta->init_hooks();
         $this->post_types->init_hooks();
         $this->assets->init_hooks();
         $this->templates->init_hooks();
         $this->visitor->init_hooks();
         $this->rest_api->init_hooks();
+
+        if ( is_admin() ) {
+            $term_fields = new Lisensio_KB_Term_Fields();
+            $term_fields->init_hooks();
+
+            $admin_columns = new Lisensio_KB_Admin_Columns();
+            $admin_columns->init_hooks();
+        }
 
         add_action( 'init', array( $this, 'load_textdomain' ) );
 
@@ -231,6 +275,51 @@ final class Lisensio_KB {
         }
 
         return $this->post_types;
+    }
+
+    /**
+     * Get the capability model.
+     *
+     * @since 1.0.0
+     *
+     * @return Lisensio_KB_Capabilities
+     */
+    public function capabilities() {
+        if ( ! $this->capabilities instanceof Lisensio_KB_Capabilities ) {
+            $this->capabilities = new Lisensio_KB_Capabilities();
+        }
+
+        return $this->capabilities;
+    }
+
+    /**
+     * Get the permalink settings.
+     *
+     * @since 1.0.0
+     *
+     * @return Lisensio_KB_Permalinks
+     */
+    public function permalinks() {
+        if ( ! $this->permalinks instanceof Lisensio_KB_Permalinks ) {
+            $this->permalinks = new Lisensio_KB_Permalinks( $this->settings() );
+        }
+
+        return $this->permalinks;
+    }
+
+    /**
+     * Get the category term meta registrar.
+     *
+     * @since 1.0.0
+     *
+     * @return Lisensio_KB_Term_Meta
+     */
+    public function term_meta() {
+        if ( ! $this->term_meta instanceof Lisensio_KB_Term_Meta ) {
+            $this->term_meta = new Lisensio_KB_Term_Meta();
+        }
+
+        return $this->term_meta;
     }
 
     /**
