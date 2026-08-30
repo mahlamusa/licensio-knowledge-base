@@ -176,6 +176,18 @@ abstract class Lisensio_KB_Test_Case extends TestCase {
      * @return void
      */
     protected function tearDown(): void {
+        /*
+         * Brain Monkey expectations are Mockery expectations, and PHPUnit cannot
+         * see them. Without this, a test whose whole point is an expectation —
+         * "this hook is registered", "this function is never called" — is
+         * reported as risky under `beStrictAboutTestsThatDoNotTestAnything`, and
+         * the honest fix of adding a filler assertion would hide that the
+         * expectation is the assertion.
+         */
+        if ( class_exists( 'Mockery' ) ) {
+            $this->addToAssertionCount( Mockery::getContainer()->mockery_getExpectationCount() );
+        }
+
         Monkey\tearDown();
         parent::tearDown();
     }

@@ -6,6 +6,11 @@
  * templates type-check what `get_post()` hands them, so the class has to exist
  * for a template to be rendered under test.
  *
+ * The search index reads the same object to decide what to store and whether to
+ * store anything at all, and guards both decisions on `instanceof WP_Post` —
+ * `transition_post_status` fires for every post on the site, so that guard is
+ * load-bearing rather than decorative.
+ *
  * @package Lisensio_KB
  * @since   1.0.0
  */
@@ -49,6 +54,30 @@ if ( ! class_exists( 'WP_Post' ) ) {
          * @var string
          */
         public $post_status = 'publish';
+
+        /**
+         * The post password.
+         *
+         * @since 1.0.0
+         * @var string
+         */
+        public $post_password = '';
+
+        /**
+         * The post excerpt.
+         *
+         * @since 1.0.0
+         * @var string
+         */
+        public $post_excerpt = '';
+
+        /**
+         * The post content.
+         *
+         * @since 1.0.0
+         * @var string
+         */
+        public $post_content = '';
 
         /**
          * Constructor.

@@ -1,0 +1,32 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "lisensio-kb/search",
+	"title": "Knowledge Base Search",
+	"category": "widgets",
+	"icon": "search",
+	"description": "An instant search box for the knowledge base, with keyboard-navigable suggestions.",
+	"keywords": [ "search", "knowledge base", "documentation", "help" ],
+	"textdomain": "lisensio-knowledge-base",
+	"supports": {
+		"html": false,
+		"align": [ "wide", "full" ]
+	},
+	"attributes": {
+		"placeholder": {
+			"type": "string",
+			"default": ""
+		},
+		"label": {
+			"type": "string",
+			"default": ""
+		},
+		"button": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"editorScript": "file:./index.js",
+	"style": "lisensio-kb-search",
+	"viewScript": "lisensio-kb-search"
+}

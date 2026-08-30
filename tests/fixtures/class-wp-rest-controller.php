@@ -36,6 +36,14 @@ if ( ! class_exists( 'WP_REST_Controller' ) ) {
         protected $rest_base = '';
 
         /**
+         * The memoized item schema.
+         *
+         * @since 1.0.0
+         * @var array<string, mixed>
+         */
+        protected $schema = array();
+
+        /**
          * Register the controller's routes.
          *
          * @since 1.0.0
@@ -54,6 +62,44 @@ if ( ! class_exists( 'WP_REST_Controller' ) ) {
          */
         public function get_namespace() {
             return $this->namespace;
+        }
+
+        /**
+         * Merge registered additional fields into a schema.
+         *
+         * Core walks the additional-field registry here. Nothing in the unit
+         * process registers one, so the schema is returned unchanged.
+         *
+         * @since 1.0.0
+         *
+         * @param array<string, mixed> $schema The item schema.
+         *
+         * @return array<string, mixed> The item schema.
+         */
+        protected function add_additional_fields_schema( $schema ) {
+            return $schema;
+        }
+
+        /**
+         * The item schema, with the read-only fields core adds.
+         *
+         * @since 1.0.0
+         *
+         * @return array<string, mixed> The public item schema.
+         */
+        public function get_public_item_schema() {
+            return $this->get_item_schema();
+        }
+
+        /**
+         * The item schema.
+         *
+         * @since 1.0.0
+         *
+         * @return array<string, mixed> The item schema.
+         */
+        public function get_item_schema() {
+            return array();
         }
     }
 }

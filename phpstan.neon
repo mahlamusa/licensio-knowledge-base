@@ -19,5 +19,6 @@ parameters:
         - LISENSIO_KB_DIST_URL
         - LISENSIO_KB_DIST_PATH
         - HMR_DEV
+        - WP_CLI
     treatPhpDocTypesAsCertain: false
     reportUnmatchedIgnoredErrors: false
