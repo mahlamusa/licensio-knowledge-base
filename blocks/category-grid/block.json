@@ -1,0 +1,53 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "lisensio-kb/category-grid",
+	"title": "Knowledge Base Categories",
+	"category": "lisensio-kb",
+	"icon": "grid-view",
+	"description": "A grid of knowledge base categories with their article counts.",
+	"keywords": [ "knowledge base", "categories", "documentation", "help" ],
+	"textdomain": "lisensio-knowledge-base",
+	"supports": {
+		"html": false,
+		"customClassName": false,
+		"reusable": true
+	},
+	"attributes": {
+		"parent": {
+			"type": "string",
+			"default": ""
+		},
+		"orderBy": {
+			"type": "string",
+			"default": "name"
+		},
+		"order": {
+			"type": "string",
+			"default": "asc"
+		},
+		"count": {
+			"type": "number",
+			"default": 0
+		},
+		"columns": {
+			"type": "number",
+			"default": 3
+		},
+		"showCount": {
+			"type": "boolean",
+			"default": true
+		},
+		"showIcon": {
+			"type": "boolean",
+			"default": true
+		},
+		"showChildren": {
+			"type": "boolean",
+			"default": true
+		}
+	},
+	"editorScript": "file:./index.js",
+	"style": "lisensio-kb-blocks",
+	"editorStyle": "lisensio-kb-blocks-editor"
+}
