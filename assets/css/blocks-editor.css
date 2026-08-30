@@ -1,0 +1,27 @@
+/**
+ * Lisensio Knowledge Base — block editor styles.
+ *
+ * The editor preview is produced by the same PHP render callback the front end
+ * uses, so nothing here restyles the block: it only makes the server-rendered
+ * preview behave inside the editor canvas, where the block is wrapped in
+ * editor chrome and where a click has to select the block rather than follow a
+ * link.
+ */
+
+.wp-block[data-type^="lisensio-kb/"] .lisensio-kb {
+	max-width: none;
+}
+
+.wp-block[data-type^="lisensio-kb/"] .lisensio-kb a {
+	pointer-events: none;
+}
+
+.wp-block[data-type^="lisensio-kb/"] .lisensio-kb-faq__question {
+	pointer-events: none;
+}
+
+/* The server renderer's own empty and loading states. */
+
+.wp-block[data-type^="lisensio-kb/"] .components-placeholder {
+	min-height: 0;
+}
