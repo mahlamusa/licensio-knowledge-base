@@ -23,9 +23,7 @@ class Lisensio_KB_DB_Gateway_Test extends Lisensio_KB_Test_Case {
     protected function setUp(): void {
         parent::setUp();
 
-        $GLOBALS['wpdb']           = new Lisensio_KB_Test_WPDB(); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
-        $GLOBALS['wpdb']->users    = 'wptests_users';
-        $GLOBALS['wpdb']->usermeta = 'wptests_usermeta';
+        $GLOBALS['wpdb'] = new Lisensio_KB_Test_WPDB(); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 
         // is_available() only answers truthfully once init() has loaded the library.
         Lisensio_KB_DB::init();
