@@ -1,0 +1,139 @@
+/**
+ * Knowledge base search form styles.
+ *
+ * Every value is derived from the design tokens the template layer already
+ * publishes on `.lisensio-kb` — `--lisensio-kb-brand`, `--lisensio-kb-line`,
+ * `--lisensio-kb-surface` and the rest — so the search form takes the site brand
+ * colour, radius and surface without this file knowing that a settings screen
+ * exists. Each one carries the same fallback the base stylesheet declares, so the
+ * form still renders correctly on a page that has the search block but not the
+ * knowledge base stylesheet.
+ *
+ * @since 1.0.0
+ */
+
+.lisensio-kb-search {
+	--lisensio-kb-search-radius: var( --lisensio-kb-radius, 0.5rem );
+	--lisensio-kb-search-border: var( --lisensio-kb-line, rgba( 15, 23, 42, 0.12 ) );
+	--lisensio-kb-search-surface: var( --lisensio-kb-surface, #fff );
+	--lisensio-kb-search-text: var( --lisensio-kb-text, #1f2937 );
+	--lisensio-kb-search-muted: var( --lisensio-kb-muted, #6b7280 );
+	--lisensio-kb-search-accent: var( --lisensio-kb-brand, #2563eb );
+	--lisensio-kb-search-on-accent: var( --lisensio-kb-brand-contrast, #fff );
+	--lisensio-kb-search-tint: var(
+		--lisensio-kb-tint,
+		rgba( var( --lisensio-kb-brand-rgb, 37, 99, 235 ), 0.08 )
+	);
+	--lisensio-kb-search-highlight: #fff3cd;
+
+	position: relative;
+}
+
+.lisensio-kb-search__field {
+	display: flex;
+	position: relative;
+	gap: 0.5rem;
+}
+
+.lisensio-kb-search__input {
+	flex: 1 1 auto;
+	min-width: 0;
+	padding: 0.6rem 0.85rem;
+	border: 1px solid var( --lisensio-kb-search-border );
+	border-radius: var( --lisensio-kb-search-radius );
+	background: var( --lisensio-kb-search-surface );
+	color: var( --lisensio-kb-search-text );
+	font: inherit;
+}
+
+.lisensio-kb-search__input:focus {
+	border-color: var( --lisensio-kb-search-accent );
+	outline: 2px solid var( --lisensio-kb-search-accent );
+	outline-offset: 1px;
+}
+
+.lisensio-kb-search__submit {
+	flex: 0 0 auto;
+	padding: 0.6rem 1.1rem;
+	border: 0;
+	border-radius: var( --lisensio-kb-search-radius );
+	background: var( --lisensio-kb-search-accent );
+	color: var( --lisensio-kb-search-on-accent );
+	font: inherit;
+	cursor: pointer;
+}
+
+.lisensio-kb-search__results {
+	position: absolute;
+	z-index: 30;
+	top: calc( 100% + 0.35rem );
+	left: 0;
+	right: 0;
+	max-height: 24rem;
+	margin: 0;
+	padding: 0;
+	overflow-y: auto;
+	list-style: none;
+	border: 1px solid var( --lisensio-kb-search-border );
+	border-radius: var( --lisensio-kb-search-radius );
+	background: var( --lisensio-kb-search-surface );
+	box-shadow: 0 8px 24px rgba( 0, 0, 0, 0.12 );
+}
+
+.lisensio-kb-search__results[ hidden ] {
+	display: none;
+}
+
+.lisensio-kb-search__option {
+	display: block;
+	padding: 0.65rem 0.85rem;
+	border-bottom: 1px solid var( --lisensio-kb-search-border );
+	color: var( --lisensio-kb-search-text );
+	cursor: pointer;
+}
+
+.lisensio-kb-search__option:last-child {
+	border-bottom: 0;
+}
+
+.lisensio-kb-search__option.is-active,
+.lisensio-kb-search__option:hover {
+	background: var( --lisensio-kb-search-tint );
+}
+
+.lisensio-kb-search__option-title {
+	display: block;
+	font-weight: 600;
+}
+
+.lisensio-kb-search__option-snippet,
+.lisensio-kb-search__option-category {
+	display: block;
+	color: var( --lisensio-kb-search-muted );
+	font-size: 0.875em;
+}
+
+.lisensio-kb-search__option-snippet mark {
+	padding: 0 0.1em;
+	background: var( --lisensio-kb-search-highlight );
+	color: inherit;
+}
+
+.lisensio-kb-search__empty {
+	padding: 0.85rem;
+	color: var( --lisensio-kb-search-muted );
+}
+
+/* Present in most themes, but the form must not depend on the theme for it. */
+.lisensio-kb-search .screen-reader-text {
+	position: absolute !important;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	border: 0;
+	clip: rect( 1px, 1px, 1px, 1px );
+	clip-path: inset( 50% );
+	white-space: nowrap;
+}

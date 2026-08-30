@@ -80,5 +80,38 @@ if ( ! class_exists( 'WP_Error' ) ) {
 
             return empty( $codes ) ? '' : (string) $codes[0];
         }
+
+        /**
+         * The first error message.
+         *
+         * @since 1.0.0
+         *
+         * @param string $code Optional code to read. Defaults to the first.
+         *
+         * @return string The message, or an empty string when there is none.
+         */
+        public function get_error_message( $code = '' ) {
+            $code = '' === $code ? $this->get_error_code() : $code;
+
+            return isset( $this->errors[ $code ][0] ) ? (string) $this->errors[ $code ][0] : '';
+        }
+
+        /**
+         * The data attached to an error.
+         *
+         * The REST layer puts the HTTP status here, so a test that wants to
+         * prove a refusal is a 429 rather than a 403 has to be able to read it.
+         *
+         * @since 1.0.0
+         *
+         * @param string $code Optional code to read. Defaults to the first.
+         *
+         * @return mixed The data, or null when there is none.
+         */
+        public function get_error_data( $code = '' ) {
+            $code = '' === $code ? $this->get_error_code() : $code;
+
+            return isset( $this->error_data[ $code ] ) ? $this->error_data[ $code ] : null;
+        }
     }
 }
