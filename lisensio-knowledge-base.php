@@ -42,6 +42,7 @@ Lisensio_KB_Autoloader::register();
 
 require_once LISENSIO_KB_ABSPATH . 'includes/lisensio-kb-template-functions.php';
 require_once LISENSIO_KB_ABSPATH . 'includes/lisensio-kb-hooks.php';
+require_once LISENSIO_KB_ABSPATH . 'includes/lisensio-kb-search-functions.php';
 
 register_activation_hook( __FILE__, array( 'Lisensio_KB_Lifecycle', 'activate' ) );
 register_deactivation_hook( __FILE__, array( 'Lisensio_KB_Lifecycle', 'deactivate' ) );
