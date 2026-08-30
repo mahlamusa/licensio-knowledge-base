@@ -98,7 +98,15 @@ class Lisensio_KB_DB {
             throw new RuntimeException( 'The Lisensio Knowledge Base database library is unavailable.' );
         }
 
-        return call_user_func( array( 'Lisensio_KB\StellarWP\DB\DB', 'table' ), self::table_name( $table ), $alias );
+        /*
+         * Pass the UNPREFIXED name. The query builder applies $wpdb->prefix
+         * itself in QueryBuilder\Concerns\TablePrefix::prefixTable(), so handing
+         * it an already-prefixed name yields wp_wp_lisensio_search_index and the
+         * query silently addresses a table that does not exist. delta() and
+         * query() are different: they take a fully qualified name because they
+         * bypass the builder entirely.
+         */
+        return call_user_func( array( 'Lisensio_KB\StellarWP\DB\DB', 'table' ), self::unprefixed_table_name( $table ), $alias );
     }
 
     /**
