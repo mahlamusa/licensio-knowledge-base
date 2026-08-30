@@ -1,0 +1,97 @@
+/**
+ * Lisensio Knowledge Base — block styles.
+ *
+ * Loaded by every knowledge base block, on the front end and in the editor.
+ * Depends on `lisensio-kb.css`, which declares the custom properties used here,
+ * so this file only adds what a block needs beyond the shared card and grid
+ * rules: an explicit column count and the FAQ disclosure list.
+ *
+ * Every rule is scoped to `.lisensio-kb`, so nothing here can reach the rest of
+ * the theme.
+ */
+
+.lisensio-kb-block {
+	padding-top: 0;
+	padding-bottom: 0;
+}
+
+/* Explicit column counts. The shared grid fills automatically; a block says how
+   many columns it wants, and drops to one on a narrow screen. */
+
+.lisensio-kb .lisensio-kb__grid--cols-1 {
+	grid-template-columns: 1fr;
+}
+
+.lisensio-kb .lisensio-kb__grid--cols-2 {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.lisensio-kb .lisensio-kb__grid--cols-3 {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.lisensio-kb .lisensio-kb__grid--cols-4 {
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 48rem) {
+	.lisensio-kb .lisensio-kb__grid--cols-2,
+	.lisensio-kb .lisensio-kb__grid--cols-3,
+	.lisensio-kb .lisensio-kb__grid--cols-4 {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* Category icons. */
+
+.lisensio-kb .lisensio-kb-card__icon {
+	display: block;
+	margin: 0 0 0.5rem;
+	color: var(--lisensio-kb-brand);
+	font-size: 1.5rem;
+	line-height: 1;
+}
+
+.lisensio-kb .lisensio-kb-card__icon-image {
+	display: block;
+	width: auto;
+	max-width: 3rem;
+	height: auto;
+	margin: 0 0 0.75rem;
+}
+
+/* FAQ disclosure list. */
+
+.lisensio-kb .lisensio-kb-faq {
+	display: grid;
+	gap: 0.5rem;
+}
+
+.lisensio-kb .lisensio-kb-faq__item {
+	padding: 0.875rem 1.25rem;
+	border: var(--lisensio-kb-card-border);
+	border-radius: var(--lisensio-kb-radius);
+	background: var(--lisensio-kb-card-bg);
+	box-shadow: var(--lisensio-kb-card-shadow);
+}
+
+.lisensio-kb .lisensio-kb-faq__question {
+	cursor: pointer;
+	font-weight: 600;
+	overflow-wrap: anywhere;
+}
+
+.lisensio-kb .lisensio-kb-faq__answer {
+	padding-top: 0.5rem;
+}
+
+.lisensio-kb .lisensio-kb-faq__text {
+	margin: 0;
+	color: var(--lisensio-kb-muted);
+	overflow-wrap: anywhere;
+}
+
+.lisensio-kb .lisensio-kb-faq__more {
+	margin: 0.5rem 0 0;
+	font-size: 0.9375rem;
+}

@@ -1,0 +1,179 @@
+/**
+ * The knowledge base blocks, in the editor and on the front end.
+ *
+ * Proves the acceptance criteria for #7 against a real WordPress: each block
+ * can be inserted from the Knowledge Base category, its editor preview is the
+ * server-rendered markup rather than a placeholder, and the published page
+ * carries the same block markup. The shortcode twin of each block is published
+ * alongside it, so the page also proves the two entry points agree outside the
+ * unit suite.
+ *
+ * The suite needs a running WordPress with this plugin active and an
+ * administrator account, so it is skipped unless `LISENSIO_KB_E2E=1` and the
+ * two credential variables are present. CI has no such site and runs Playwright
+ * with `--pass-with-no-tests`.
+ *
+ * @since 1.0.0
+ */
+
+import { expect, test, type Page } from '@playwright/test';
+
+const enabled = process.env.LISENSIO_KB_E2E === '1';
+const user = process.env.LISENSIO_KB_ADMIN_USER ?? '';
+const password = process.env.LISENSIO_KB_ADMIN_PASSWORD ?? '';
+
+type BlockFixture = {
+	name: string;
+	title: string;
+	shortcode: string;
+	marker: string;
+};
+
+const BLOCKS: BlockFixture[] = [
+	{
+		name: 'lisensio-kb/article-list',
+		title: 'Knowledge Base Articles',
+		shortcode: '[lisensio_kb_articles]',
+		marker: 'lisensio-kb-block--article-list',
+	},
+	{
+		name: 'lisensio-kb/category-grid',
+		title: 'Knowledge Base Categories',
+		shortcode: '[lisensio_kb_categories]',
+		marker: 'lisensio-kb-block--category-grid',
+	},
+	{
+		name: 'lisensio-kb/breadcrumbs',
+		title: 'Knowledge Base Breadcrumbs',
+		shortcode: '[lisensio_kb_breadcrumbs]',
+		marker: 'lisensio-kb-block--breadcrumbs',
+	},
+	{
+		name: 'lisensio-kb/faq',
+		title: 'Knowledge Base FAQ',
+		shortcode: '[lisensio_kb_faq]',
+		marker: 'lisensio-kb-block--faq',
+	},
+];
+
+async function logIn( page: Page ): Promise< void > {
+	await page.goto( '/wp-login.php' );
+	await page.fill( '#user_login', user );
+	await page.fill( '#user_pass', password );
+	await page.click( '#wp-submit' );
+	await expect( page.locator( '#wpadminbar' ) ).toBeVisible();
+}
+
+async function newPost( page: Page ): Promise< void > {
+	await page.goto( '/wp-admin/post-new.php?post_type=page' );
+
+	const modal = page.getByRole( 'button', { name: 'Close', exact: true } );
+
+	if ( await modal.isVisible().catch( () => false ) ) {
+		await modal.click();
+	}
+
+	await expect(
+		page.getByRole( 'button', { name: /Block Inserter|Toggle block inserter/ } )
+	).toBeVisible( { timeout: 20_000 } );
+}
+
+async function insertBlock( page: Page, title: string ): Promise< void > {
+	await page
+		.getByRole( 'button', { name: /Block Inserter|Toggle block inserter/ } )
+		.click();
+	await page.getByPlaceholder( 'Search' ).fill( title );
+	await page.getByRole( 'option', { name: title, exact: true } ).click();
+}
+
+test.describe( 'Knowledge base blocks', () => {
+	test.skip(
+		! enabled || '' === user || '' === password,
+		'Set LISENSIO_KB_E2E=1, LISENSIO_KB_ADMIN_USER and LISENSIO_KB_ADMIN_PASSWORD to run this suite.'
+	);
+
+	test.beforeEach( async ( { page } ) => {
+		await logIn( page );
+	} );
+
+	for ( const block of BLOCKS ) {
+		test( `${ block.title } inserts and previews with its render callback`, async ( {
+			page,
+		} ) => {
+			await newPost( page );
+			await insertBlock( page, block.title );
+
+			const canvas = page.frameLocator( 'iframe[name="editor-canvas"]' );
+
+			// The preview is the server-rendered markup, not a JSX stand-in.
+			await expect(
+				canvas.locator( `.${ block.marker }` ).first()
+			).toBeVisible( { timeout: 20_000 } );
+		} );
+	}
+
+	test( 'every block is filed under the Knowledge Base category', async ( {
+		page,
+	} ) => {
+		await newPost( page );
+		await page
+			.getByRole( 'button', { name: /Block Inserter|Toggle block inserter/ } )
+			.click();
+		await page.getByPlaceholder( 'Search' ).fill( 'Knowledge Base' );
+
+		await expect(
+			page.getByRole( 'heading', { name: 'Knowledge Base' } ).first()
+		).toBeVisible( { timeout: 20_000 } );
+
+		for ( const block of BLOCKS ) {
+			await expect(
+				page.getByRole( 'option', { name: block.title, exact: true } )
+			).toBeVisible();
+		}
+	} );
+
+	test( 'a published page renders every block and every shortcode', async ( {
+		page,
+		request,
+	} ) => {
+		const content = BLOCKS.map(
+			( block ) =>
+				`<!-- wp:${ block.name } /-->\n\n<!-- wp:shortcode -->${ block.shortcode }<!-- /wp:shortcode -->`
+		).join( '\n\n' );
+
+		await page.goto( '/wp-admin/post-new.php?post_type=page' );
+
+		const nonce = await page.evaluate( () =>
+			// eslint-disable-next-line no-undef
+			window.wpApiSettings ? window.wpApiSettings.nonce : ''
+		);
+
+		const cookies = await page.context().cookies();
+		const cookieHeader = cookies
+			.map( ( cookie ) => `${ cookie.name }=${ cookie.value }` )
+			.join( '; ' );
+
+		const created = await request.post( '/wp-json/wp/v2/pages', {
+			headers: {
+				'X-WP-Nonce': nonce,
+				Cookie: cookieHeader,
+			},
+			data: {
+				title: 'Lisensio KB block coverage',
+				status: 'publish',
+				content,
+			},
+		} );
+
+		expect( created.ok() ).toBeTruthy();
+
+		const body = await created.json();
+
+		await page.goto( body.link );
+
+		for ( const block of BLOCKS ) {
+			// One from the block, one from its shortcode.
+			await expect( page.locator( `.${ block.marker }` ) ).toHaveCount( 2 );
+		}
+	} );
+} );

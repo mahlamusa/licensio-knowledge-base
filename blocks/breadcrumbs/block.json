@@ -1,0 +1,25 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "lisensio-kb/breadcrumbs",
+	"title": "Knowledge Base Breadcrumbs",
+	"category": "lisensio-kb",
+	"icon": "menu",
+	"description": "The trail from the site home down to the article or category being viewed.",
+	"keywords": [ "breadcrumbs", "knowledge base", "navigation", "trail" ],
+	"textdomain": "lisensio-knowledge-base",
+	"supports": {
+		"html": false,
+		"customClassName": false,
+		"reusable": true
+	},
+	"attributes": {
+		"showHome": {
+			"type": "boolean",
+			"default": true
+		}
+	},
+	"editorScript": "file:./index.js",
+	"style": "lisensio-kb-blocks",
+	"editorStyle": "lisensio-kb-blocks-editor"
+}

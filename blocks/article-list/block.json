@@ -1,0 +1,45 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "lisensio-kb/article-list",
+	"title": "Knowledge Base Articles",
+	"category": "lisensio-kb",
+	"icon": "list-view",
+	"description": "A list of knowledge base articles, optionally filtered to one category.",
+	"keywords": [ "knowledge base", "articles", "documentation", "help" ],
+	"textdomain": "lisensio-knowledge-base",
+	"supports": {
+		"html": false,
+		"customClassName": false,
+		"reusable": true
+	},
+	"attributes": {
+		"category": {
+			"type": "string",
+			"default": ""
+		},
+		"orderBy": {
+			"type": "string",
+			"default": "date"
+		},
+		"order": {
+			"type": "string",
+			"default": "desc"
+		},
+		"count": {
+			"type": "number",
+			"default": 5
+		},
+		"columns": {
+			"type": "number",
+			"default": 1
+		},
+		"showExcerpt": {
+			"type": "boolean",
+			"default": true
+		}
+	},
+	"editorScript": "file:./index.js",
+	"style": "lisensio-kb-blocks",
+	"editorStyle": "lisensio-kb-blocks-editor"
+}

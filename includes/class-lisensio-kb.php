@@ -94,6 +94,14 @@ final class Lisensio_KB {
     private $block_templates = null;
 
     /**
+     * Blocks and their shortcodes.
+     *
+     * @since 1.0.0
+     * @var Lisensio_KB_Blocks|null
+     */
+    private $blocks = null;
+
+    /**
      * Privacy-safe visitor identity helper.
      *
      * @since 1.0.0
@@ -173,6 +181,7 @@ final class Lisensio_KB {
         $this->feedback     = new Lisensio_KB_Feedback( $this->settings );
 
         $this->block_templates = new Lisensio_KB_Block_Templates();
+        $this->blocks          = new Lisensio_KB_Blocks();
 
         /*
          * Permalinks first. It adds a key to the settings registry, and
@@ -187,6 +196,7 @@ final class Lisensio_KB {
         $this->assets->init_hooks();
         $this->templates->init_hooks();
         $this->block_templates->init_hooks();
+        $this->blocks->init_hooks();
         $this->visitor->init_hooks();
         $this->rest_api->init_hooks();
         $this->feedback->init_hooks();
@@ -386,6 +396,21 @@ final class Lisensio_KB {
         }
 
         return $this->block_templates;
+    }
+
+    /**
+     * Get the block and shortcode registrar.
+     *
+     * @since 1.0.0
+     *
+     * @return Lisensio_KB_Blocks
+     */
+    public function blocks() {
+        if ( ! $this->blocks instanceof Lisensio_KB_Blocks ) {
+            $this->blocks = new Lisensio_KB_Blocks();
+        }
+
+        return $this->blocks;
     }
 
     /**

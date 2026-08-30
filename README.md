@@ -187,9 +187,10 @@ Classic templates receive their arguments as a single `$args` array. There is no
 
 #### The classic template set
 
-`templates/` ships ten templates. The five page templates are loaded by
-`Lisensio_KB_Templates` on `template_include`; the five partials are rendered
-by those pages, or by a hook callback, through `lisensio_kb_get_template()`.
+`templates/` ships thirteen templates. The five page templates are loaded by
+`Lisensio_KB_Templates` on `template_include`; the partials are rendered by
+those pages, by a hook callback, and by the blocks, through
+`lisensio_kb_get_template()`.
 
 | Template | Loaded for | Arguments |
 |---|---|---|
@@ -199,10 +200,13 @@ by those pages, or by a hook callback, through `lisensio_kb_get_template()`.
 | `taxonomy-tag.php` | a `lisensio_tag` archive | — |
 | `search-results.php` | a search carrying `post_type=lisensio_article` | — |
 | `breadcrumbs.php` | partial | `items` |
-| `article-card.php` | partial | `post` |
-| `category-card.php` | partial | `term`, `show_children` |
+| `article-card.php` | partial | `post`, `show_excerpt` |
+| `category-card.php` | partial | `term`, `show_children`, `show_count`, `show_icon` |
 | `no-results.php` | partial | `title`, `description` |
 | `feedback-form.php` | partial | `article_id`, `score` |
+| `article-list.php` | the article list block and shortcode | `posts`, `columns`, `show_excerpt` |
+| `category-grid.php` | the category grid block and shortcode | `terms`, `columns`, `show_count`, `show_icon`, `show_children` |
+| `faq.php` | the FAQ block and shortcode | `items`, `open_first` |
 
 Copy any of them into `{theme}/lisensio-kb/` to override it.
 
@@ -224,6 +228,37 @@ shadow, border and background — is emitted by
 `.lisensio-kb`, never as a rule-level override, so changing a setting restyles
 every component that derives from it. Values are re-validated there before
 being printed into the style element rather than trusted from the option.
+
+### Blocks and shortcodes
+
+Every knowledge base block is dynamic, and its render callback is registered as
+a shortcode as well, so the block editor, a block theme and a page builder all
+reach one implementation and emit the same markup.
+
+| Block | Shortcode | Attributes |
+|---|---|---|
+| `lisensio-kb/article-list` | `[lisensio_kb_articles]` | `category`, `orderBy`, `order`, `count`, `columns`, `showExcerpt` |
+| `lisensio-kb/category-grid` | `[lisensio_kb_categories]` | `parent`, `orderBy`, `order`, `count`, `columns`, `showCount`, `showIcon`, `showChildren` |
+| `lisensio-kb/breadcrumbs` | `[lisensio_kb_breadcrumbs]` | `showHome` |
+| `lisensio-kb/faq` | `[lisensio_kb_faq]` | `category`, `orderBy`, `order`, `count`, `showExcerpt`, `openFirst` |
+
+WordPress lower-cases shortcode attribute names and hands every value over as a
+string, while the editor sends the camelCase names from `block.json` carrying
+real integers and booleans. `Lisensio_KB_Block::normalize()` matches names
+case-insensitively and casts each value to the type of its declared default, so
+`[lisensio_kb_articles showExcerpt="false"]` and the editor's
+`showExcerpt: false` produce the same markup.
+
+`get_block_wrapper_attributes()` is deliberately not used: it reads the block
+currently being rendered, which does not exist on the shortcode path, so it
+would make the two paths disagree. The wrapper is built by
+`Lisensio_KB_Block::wrapper()` and the blocks opt out of `customClassName`.
+
+Blocks are registered from `dist/blocks/<name>` when the plugin has been built
+and from `blocks/<name>` otherwise, so a checkout that has never run
+`npm run build` still renders — only the editor bundle is missing. The editor
+preview is `ServerSideRender` against the real callback, never a JSX
+re-implementation of the markup.
 
 ### Frontend hook contract
 
@@ -277,6 +312,8 @@ It cannot be a module: module scripts are always deferred and execute after ever
 | `lisensio_template_path`, `lisensio_use_block_templates`, `lisensio_locate_template`, `lisensio_locate_block_template`, `lisensio_get_template` | filter | Template resolution. |
 | `lisensio_template_name` | filter | The classic template chosen for the current request. |
 | `lisensio_breadcrumb_items` | filter | The breadcrumb trail. |
+| `lisensio_block_article_query_args` | filter | The `get_posts()` arguments a block lists articles with. Passed the block name. |
+| `lisensio_block_category_grid_terms` | filter | The categories a category grid lists, before ordering and trimming. |
 | `lisensio_custom_properties` | filter | The CSS custom properties printed on `.lisensio-kb`. |
 | `lisensio_dev_server_host`, `lisensio_dev_server_port` | filter | Vite dev server location. |
 
