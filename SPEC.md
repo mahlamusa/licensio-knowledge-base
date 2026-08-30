@@ -154,7 +154,11 @@ All tables created and versioned by `class-lisensio-kb-db-installer.php`, access
 **No `user_ip` column exists in any table.**
 
 ### Privacy layer
-`class-lisensio-kb-visitor.php` produces `visitor_hash = sha256( ip . user_agent . daily_salt )`. The daily salt is stored in an autoloaded option and rotated by cron; the previous salt is retained for 24 hours to avoid double-counting across a rotation. The raw IP is never persisted. Retention is `lisensio_analytics_retention_days` (default 90); `lisensio_analytics_cleanup` runs daily and deletes expired rows in chunks. WordPress privacy exporter/eraser handlers are registered against `visitor_hash` and `user_id`.
+`class-lisensio-kb-visitor.php` produces `visitor_hash = hash_hmac( 'sha256', ip . '|' . user_agent, daily_salt )`. The salt is a key, not a prefix, and the `|` delimiter keeps the inputs unambiguous — without it, IP `1.2.3.4` with user agent `5Mozilla` collides with IP `1.2.3.45` and `Mozilla`, collapsing two visitors into one identity and breaking the one-vote-per-visitor and rate-limiting rules built on the hash.
+
+The salt is stored in an autoloaded option and rotated **lazily on read as well as by cron**: `get_salts()` compares `current_created` against the rotation interval and rotates before returning. Cron is an optimisation, not the guarantee — a site with `DISABLE_WP_CRON` and a misconfigured system cron, or simply very little traffic, would otherwise hold one salt for the whole retention window, and anyone able to read the option could then brute-force the IPv4 space against a known user agent and recover every stored hash. The previous salt is retained for 24 hours to avoid double-counting across a rotation.
+
+The raw IP is never persisted. Retention is `lisensio_analytics_retention_days` (default 90); a value of `0` falls back to the default rather than being clamped to one day, since `0` is commonly meant as "keep forever" and silently applying one-day retention would destroy analytics history. Unbounded retention is deliberately not offered. `lisensio_analytics_cleanup` runs daily and deletes expired rows in chunks. WordPress privacy exporter/eraser handlers are registered against `visitor_hash` and `user_id`, and are owned by the analytics issue.
 
 ### Search
 
