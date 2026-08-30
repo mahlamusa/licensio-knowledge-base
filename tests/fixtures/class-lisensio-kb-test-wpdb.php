@@ -25,6 +25,25 @@ class Lisensio_KB_Test_WPDB {
     public $prefix = 'wptests_';
 
     /**
+     * The users table name.
+     *
+     * StellarWP's TablePrefix treats users and usermeta as shared tables and
+     * reads them off $wpdb directly, so the double must carry them.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    public $users = 'wptests_users';
+
+    /**
+     * The user meta table name.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    public $usermeta = 'wptests_usermeta';
+
+    /**
      * The last SQL error, always empty in the double.
      *
      * @since 1.0.0
