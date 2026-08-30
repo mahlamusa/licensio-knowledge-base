@@ -79,6 +79,34 @@
         </properties>
     </rule>
 
+    <!--
+        The integration suite exists to drive real DDL at a real database server,
+        which is the one thing the unit suite's doubles cannot do. Talking to the
+        database directly and swapping $wpdb for a mysqli-backed adapter is the
+        point of it, not an oversight.
+    -->
+    <rule ref="WordPress.DB.DirectDatabaseQuery">
+        <exclude-pattern>*/tests/Integration/*</exclude-pattern>
+    </rule>
+    <rule ref="WordPress.DB.RestrictedClasses">
+        <exclude-pattern>*/tests/Integration/*</exclude-pattern>
+    </rule>
+    <rule ref="WordPress.DB.PreparedSQL">
+        <exclude-pattern>*/tests/Integration/*</exclude-pattern>
+    </rule>
+    <rule ref="WordPress.WP.GlobalVariablesOverride">
+        <exclude-pattern>*/tests/Integration/*</exclude-pattern>
+    </rule>
+    <rule ref="Squiz.Commenting.FileComment">
+        <exclude-pattern>*/tests/*</exclude-pattern>
+    </rule>
+    <rule ref="Generic.CodeAnalysis.AssignmentInCondition">
+        <exclude-pattern>*/tests/*</exclude-pattern>
+    </rule>
+    <rule ref="WordPress.CodeAnalysis.AssignmentInTernaryCondition">
+        <exclude-pattern>*/tests/*</exclude-pattern>
+    </rule>
+
     <!-- Tests do not need the plugin's file-level or i18n conventions. -->
     <rule ref="WordPress.Files.FileName">
         <exclude-pattern>*/tests/*</exclude-pattern>

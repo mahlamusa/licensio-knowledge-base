@@ -13,6 +13,10 @@
         <testsuite name="Unit">
             <directory suffix="Test.php">tests/Unit</directory>
         </testsuite>
+        <!-- Skips entirely unless LISENSIO_KB_TEST_DB_HOST points at a live server. -->
+        <testsuite name="Integration">
+            <directory suffix="Test.php">tests/Integration</directory>
+        </testsuite>
     </testsuites>
     <coverage>
         <include>
