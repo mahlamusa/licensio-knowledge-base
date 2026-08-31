@@ -10,6 +10,7 @@
  */
 
 use Brain\Monkey\Filters;
+use Brain\Monkey\Functions;
 
 /**
  * Tests Lisensio_KB_Settings.
@@ -564,5 +565,379 @@ class Lisensio_KB_Settings_Test extends Lisensio_KB_Test_Case {
 
         $settings->set( 'deflection_mode', 'nonsense' );
         $this->assertSame( 'off', $settings->get( 'deflection_mode' ) );
+    }
+
+    /**
+     * The presentation settings default to the values the design already expects.
+     *
+     * These eleven were read off a running site rather than invented, so a
+     * change to any one of them is a change to what an existing knowledge base
+     * looks like the moment it upgrades. They are asserted literally for that
+     * reason: the point of the test is that these exact values are the ones a
+     * fresh install starts from.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_presentation_settings_default_to_the_live_values() {
+        $defaults = ( new Lisensio_KB_Settings() )->defaults();
+
+        $this->assertSame( 'solid', $defaults['header_style'] );
+        $this->assertSame( 0, $defaults['header_image_id'] );
+        $this->assertSame( 'How can we help?', $defaults['archive_header_text'] );
+        $this->assertSame( 'Search the Knowledge Base...', $defaults['search_placeholder'] );
+        $this->assertSame( 3, $defaults['archive_columns'] );
+        $this->assertFalse( $defaults['show_subcategories'] );
+        $this->assertTrue( $defaults['show_article_counts'] );
+        $this->assertTrue( $defaults['sticky_sidebar'] );
+        $this->assertSame( 'right', $defaults['archive_sidebar_position'] );
+        $this->assertSame( 'right', $defaults['article_sidebar_position'] );
+        $this->assertSame( 'right', $defaults['category_sidebar_position'] );
+    }
+
+    /**
+     * The header style is restricted to the three treatments the theme renders.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_header_style_is_allowlisted() {
+        $settings = new Lisensio_KB_Settings();
+
+        foreach ( array( 'solid', 'gradient', 'image' ) as $style ) {
+            $settings->set( 'header_style', $style );
+            $this->assertSame( $style, $settings->get( 'header_style' ) );
+        }
+
+        foreach ( array( 'parallax', 'SOLID', '"><script>', '' ) as $payload ) {
+            $settings->set( 'header_style', $payload );
+            $this->assertSame(
+                'solid',
+                $settings->get( 'header_style' ),
+                'An unknown header style must fall back to the default.'
+            );
+        }
+    }
+
+    /**
+     * All three sidebar positions accept the same three answers and no others.
+     *
+     * Asserted key by key rather than once, because they are three independent
+     * settings: a sanitiser wired to only one of them would still satisfy a test
+     * that checked a single key.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_every_sidebar_position_takes_the_same_allowlist() {
+        $settings = new Lisensio_KB_Settings();
+
+        $keys = array(
+            'archive_sidebar_position',
+            'article_sidebar_position',
+            'category_sidebar_position',
+        );
+
+        foreach ( $keys as $key ) {
+            foreach ( array( 'left', 'right', 'none' ) as $position ) {
+                $settings->set( $key, $position );
+                $this->assertSame( $position, $settings->get( $key ), $key . ' must accept ' . $position . '.' );
+            }
+
+            foreach ( array( 'top', 'both', 'Right', 'none;display:none', '' ) as $payload ) {
+                $settings->set( $key, $payload );
+                $this->assertSame(
+                    'right',
+                    $settings->get( $key ),
+                    $key . ' must refuse an unknown position and fall back to the default.'
+                );
+            }
+        }
+    }
+
+    /**
+     * One sidebar position does not drag the other two along with it.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_sidebar_positions_are_independent_of_one_another() {
+        $settings = new Lisensio_KB_Settings();
+
+        $settings->update(
+            array(
+                'archive_sidebar_position'  => 'left',
+                'article_sidebar_position'  => 'none',
+                'category_sidebar_position' => 'right',
+            )
+        );
+
+        $this->assertSame( 'left', $settings->get( 'archive_sidebar_position' ) );
+        $this->assertSame( 'none', $settings->get( 'article_sidebar_position' ) );
+        $this->assertSame( 'right', $settings->get( 'category_sidebar_position' ) );
+    }
+
+    /**
+     * The archive column count is held between one and four.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_archive_column_count_is_clamped() {
+        $settings = new Lisensio_KB_Settings();
+
+        $settings->set( 'archive_columns', 9 );
+        $this->assertSame( 4, $settings->get( 'archive_columns' ) );
+
+        $settings->set( 'archive_columns', 0 );
+        $this->assertSame( 1, $settings->get( 'archive_columns' ) );
+
+        $settings->set( 'archive_columns', -7 );
+        $this->assertSame( 1, $settings->get( 'archive_columns' ) );
+
+        $settings->set( 'archive_columns', '2' );
+        $this->assertSame( 2, $settings->get( 'archive_columns' ) );
+    }
+
+    /**
+     * A column count that is not a number at all falls back to the default.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_non_numeric_column_count_falls_back_to_the_default() {
+        $settings = new Lisensio_KB_Settings();
+
+        foreach ( array( 'three', 'col-md-4', '' ) as $payload ) {
+            $settings->set( 'archive_columns', $payload );
+            $this->assertSame( 3, $settings->get( 'archive_columns' ) );
+        }
+    }
+
+    /**
+     * The column count is stored as a number, not as a class name.
+     *
+     * Heroic stored `kb-columns-3`, which put a presentation decision in the
+     * database. The written value is inspected in the option itself rather than
+     * through get(), so a read-side cast cannot make a stored class name look
+     * like a number.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_column_count_is_stored_as_a_bare_number() {
+        $settings = new Lisensio_KB_Settings();
+
+        $settings->set( 'archive_columns', 4 );
+
+        $this->assertSame(
+            array( 'archive_columns' => 4 ),
+            $this->options[ Lisensio_KB_Settings::OPTION_NAME ]
+        );
+    }
+
+    /**
+     * The header text and the search placeholder are stripped of markup.
+     *
+     * Both are echoed into the archive header, one as a heading and one as an
+     * input placeholder attribute, so markup reaching the store is stored XSS.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_display_text_is_stripped_of_markup() {
+        $settings = new Lisensio_KB_Settings();
+
+        foreach ( array( 'archive_header_text', 'search_placeholder' ) as $key ) {
+            $settings->set( $key, '<script>alert(1)</script>How can we help?' );
+
+            $stored = $this->options[ Lisensio_KB_Settings::OPTION_NAME ][ $key ];
+
+            $this->assertStringNotContainsString( '<', $stored, $key . ' must not store markup.' );
+            $this->assertStringNotContainsString( '>', $stored, $key . ' must not store markup.' );
+        }
+    }
+
+    /**
+     * Display text can be cleared, because an empty heading is a real choice.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_display_text_can_be_emptied() {
+        $settings = new Lisensio_KB_Settings();
+
+        $settings->set( 'archive_header_text', '' );
+        $this->assertSame( '', $settings->get( 'archive_header_text' ) );
+
+        $settings->set( 'search_placeholder', 'Search the docs' );
+        $this->assertSame( 'Search the docs', $settings->get( 'search_placeholder' ) );
+    }
+
+    /**
+     * Display text that is not text at all falls back to the default on read.
+     *
+     * Driven through the stored option rather than through set(), so only the
+     * read-side sanitiser is exercised: a value shaped like this can only arrive
+     * by a route that skipped the write path.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_display_text_that_is_not_text_falls_back_to_the_default() {
+        $this->options[ Lisensio_KB_Settings::OPTION_NAME ] = array(
+            'archive_header_text' => array( 'How can we help?' ),
+            'search_placeholder'  => null,
+        );
+
+        $settings = new Lisensio_KB_Settings();
+
+        $this->assertSame( 'How can we help?', $settings->get( 'archive_header_text' ) );
+        $this->assertSame( 'Search the Knowledge Base...', $settings->get( 'search_placeholder' ) );
+    }
+
+    /**
+     * A header image ID is kept only when it names a real attachment.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_header_image_must_be_an_attachment() {
+        $this->stub_attachments( array( 42 ) );
+
+        $settings = new Lisensio_KB_Settings();
+
+        $settings->set( 'header_image_id', 42 );
+        $this->assertSame( 42, $settings->get( 'header_image_id' ) );
+
+        $settings->set( 'header_image_id', 7 );
+        $this->assertSame(
+            0,
+            $settings->get( 'header_image_id' ),
+            'A post ID that is not an attachment must be refused.'
+        );
+    }
+
+    /**
+     * Zero clears the header image rather than being refused as an ID.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_zero_header_image_clears_the_image() {
+        $this->stub_attachments( array( 42 ) );
+
+        $settings = new Lisensio_KB_Settings();
+
+        $settings->set( 'header_image_id', 42 );
+        $settings->set( 'header_image_id', 0 );
+
+        $this->assertSame( 0, $settings->get( 'header_image_id' ) );
+    }
+
+    /**
+     * A stored ID whose attachment has since been deleted stops being used.
+     *
+     * Driven through the stored option, so only the read-side sanitiser runs:
+     * the ID was a valid attachment when it was written and is not one now.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_header_image_that_no_longer_exists_is_dropped_on_read() {
+        $this->stub_attachments( array() );
+
+        $this->options[ Lisensio_KB_Settings::OPTION_NAME ] = array( 'header_image_id' => 42 );
+
+        $settings = new Lisensio_KB_Settings();
+
+        $this->assertSame( 0, $settings->get( 'header_image_id' ) );
+    }
+
+    /**
+     * The two display toggles behave as booleans.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_display_toggles_are_booleans() {
+        $settings = new Lisensio_KB_Settings();
+
+        $settings->set( 'show_subcategories', 'true' );
+        $settings->set( 'show_article_counts', 'false' );
+        $settings->set( 'sticky_sidebar', 0 );
+
+        $this->assertTrue( $settings->get( 'show_subcategories' ) );
+        $this->assertFalse( $settings->get( 'show_article_counts' ) );
+        $this->assertFalse( $settings->get( 'sticky_sidebar' ) );
+    }
+
+    /**
+     * None of the new settings rebuilds the rewrite rules.
+     *
+     * They change what the archive looks like, not what it is addressed as, so
+     * a save must not pay for a rewrite flush.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_presentation_setting_does_not_request_a_rewrite_flush() {
+        $this->stub_attachments( array( 42 ) );
+
+        $settings = new Lisensio_KB_Settings();
+
+        $settings->update(
+            array(
+                'header_style'             => 'gradient',
+                'header_image_id'          => 42,
+                'archive_header_text'      => 'Documentation',
+                'search_placeholder'       => 'Search',
+                'archive_columns'          => 2,
+                'show_subcategories'       => true,
+                'show_article_counts'      => false,
+                'sticky_sidebar'           => false,
+                'archive_sidebar_position' => 'left',
+            )
+        );
+
+        $this->assertFalse( Lisensio_KB_Settings::needs_rewrite_flush() );
+    }
+
+    /**
+     * Teach the fake WordPress which post IDs are attachments.
+     *
+     * @since 1.0.0
+     *
+     * @param int[] $attachments The post IDs that are attachments.
+     *
+     * @return void
+     */
+    private function stub_attachments( array $attachments ) {
+        Functions\when( 'absint' )->alias(
+            function ( $value ) {
+                return abs( (int) $value );
+            }
+        );
+
+        Functions\when( 'get_post_type' )->alias(
+            function ( $id ) use ( $attachments ) {
+                return in_array( (int) $id, $attachments, true ) ? 'attachment' : 'page';
+            }
+        );
     }
 }

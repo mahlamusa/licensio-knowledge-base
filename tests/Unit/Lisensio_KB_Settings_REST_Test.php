@@ -283,6 +283,148 @@ class Lisensio_KB_Settings_REST_Test extends Lisensio_KB_Test_Case {
     }
 
     /**
+     * The presentation sanitisers refuse bad values at the REST layer too.
+     *
+     * Wired into a spy store, which does not sanitise, so the refusal can only
+     * be the controller applying the sanitiser named in the registry entry. The
+     * keys are deliberately neutral for the reason given on registry(): the
+     * point is that these three sanitisers reject, not that the controller has
+     * heard of a setting called `article_sidebar_position`.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_presentation_sanitisers_refuse_bad_values() {
+        Functions\when( 'absint' )->alias(
+            function ( $value ) {
+                return abs( (int) $value );
+            }
+        );
+
+        Functions\when( 'get_post_type' )->justReturn( 'page' );
+
+        $spy        = new Lisensio_KB_Settings_Spy( $this->presentation_registry() );
+        $controller = new Lisensio_KB_REST_Settings_Controller( $spy );
+
+        $result = $controller->update_item(
+            $this->post(
+                array(
+                    'a_position' => 'top',
+                    'an_image'   => 7,
+                    'a_style'    => 'parallax',
+                )
+            )
+        );
+
+        $this->assertInstanceOf( 'WP_Error', $result );
+        $this->assertSame(
+            array( 'a_position', 'an_image', 'a_style' ),
+            array_keys( $result->get_error_data()['params'] )
+        );
+        $this->assertSame( array(), $spy->updates );
+    }
+
+    /**
+     * The same sanitisers pass an acceptable payload straight through.
+     *
+     * The companion to the refusal test: a sanitiser that rejected everything
+     * would satisfy that one on its own.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_presentation_sanitisers_pass_good_values() {
+        Functions\when( 'absint' )->alias(
+            function ( $value ) {
+                return abs( (int) $value );
+            }
+        );
+
+        Functions\when( 'get_post_type' )->justReturn( 'attachment' );
+
+        $spy        = new Lisensio_KB_Settings_Spy( $this->presentation_registry() );
+        $controller = new Lisensio_KB_REST_Settings_Controller( $spy );
+
+        $result = $controller->update_item(
+            $this->post(
+                array(
+                    'a_position' => 'left',
+                    'an_image'   => 42,
+                    'a_style'    => 'gradient',
+                )
+            )
+        );
+
+        $this->assertNotInstanceOf( 'WP_Error', $result );
+        $this->assertSame(
+            array(
+                'a_position' => 'left',
+                'an_image'   => 42,
+                'a_style'    => 'gradient',
+            ),
+            $spy->updates[0]
+        );
+    }
+
+    /**
+     * Clearing an attachment setting is a save, not a validation failure.
+     *
+     * Zero is how the settings screen says "no image". If the attachment
+     * sanitiser refused it the way it refuses a page ID, the header image would
+     * be a setting that could be chosen and never unchosen.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_attachment_setting_can_be_cleared() {
+        Functions\when( 'absint' )->alias(
+            function ( $value ) {
+                return abs( (int) $value );
+            }
+        );
+
+        Functions\when( 'get_post_type' )->justReturn( 'page' );
+
+        $spy        = new Lisensio_KB_Settings_Spy( $this->presentation_registry(), array( 'an_image' => 42 ) );
+        $controller = new Lisensio_KB_REST_Settings_Controller( $spy );
+
+        $result = $controller->update_item( $this->post( array( 'an_image' => 0 ) ) );
+
+        $this->assertNotInstanceOf( 'WP_Error', $result );
+        $this->assertSame( array( 'an_image' => 0 ), $spy->updates[0] );
+    }
+
+    /**
+     * A registry wired to the presentation sanitisers under neutral keys.
+     *
+     * @since 1.0.0
+     *
+     * @return array<string, array<string, mixed>> The registry.
+     */
+    private function presentation_registry() {
+        return array(
+            'a_position' => array(
+                'type'     => 'string',
+                'default'  => 'right',
+                'sanitize' => array( 'Lisensio_KB_Settings', 'sanitize_sidebar_position' ),
+            ),
+            'an_image'   => array(
+                'type'     => 'int',
+                'default'  => 0,
+                'sanitize' => array( 'Lisensio_KB_Settings', 'sanitize_attachment_id' ),
+            ),
+            'a_style'    => array(
+                'type'     => 'string',
+                'default'  => 'solid',
+                'sanitize' => array( 'Lisensio_KB_Settings', 'sanitize_header_style' ),
+            ),
+        );
+    }
+
+    /**
      * A value of the wrong type is refused rather than cast.
      *
      * @since 1.0.0
