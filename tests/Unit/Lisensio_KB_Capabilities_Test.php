@@ -296,4 +296,52 @@ class Lisensio_KB_Capabilities_Test extends Lisensio_KB_Test_Case {
         $this->assertTrue( Lisensio_KB_Capabilities::current_user_can_manage() );
         $this->assertSame( array( 'manage_lisensio_kb' ), $asked );
     }
+
+    /**
+     * The post type map declares no meta capabilities.
+     *
+     * edit_post, read_post and delete_post are meta capabilities. With
+     * map_meta_cap => true, core derives them from the primitives against a
+     * specific post. Naming them in the map puts this plugin's own capability
+     * into the meta-cap position, and core's map_meta_cap() then answers
+     * do_not_allow for every check made WITHOUT an object id - which is every
+     * admin screen check. On a clean install that locked an administrator out
+     * of every knowledge base page with a 403.
+     *
+     * Unit tests and CI both passed while that was true, because neither
+     * resolves a capability through core. This asserts the invariant directly.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_post_type_map_declares_no_meta_capabilities() {
+        $map = Lisensio_KB_Capabilities::post_type_capabilities();
+
+        foreach ( array( 'edit_post', 'read_post', 'delete_post' ) as $meta_cap ) {
+            $this->assertArrayNotHasKey(
+                $meta_cap,
+                $map,
+                sprintf( 'The meta capability %s must be left to core to derive.', $meta_cap )
+            );
+        }
+    }
+
+    /**
+     * The primitives core needs to derive those meta capabilities are present.
+     *
+     * Removing the meta caps only works because core can reach the primitives.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_primitives_core_derives_from_are_all_mapped() {
+        $map = Lisensio_KB_Capabilities::post_type_capabilities();
+
+        foreach ( array( 'edit_posts', 'edit_others_posts', 'edit_published_posts', 'edit_private_posts', 'delete_posts', 'delete_others_posts', 'delete_published_posts', 'delete_private_posts', 'read_private_posts', 'publish_posts' ) as $primitive ) {
+            $this->assertArrayHasKey( $primitive, $map, sprintf( 'Core needs %s to derive the meta capabilities.', $primitive ) );
+            $this->assertSame( Lisensio_KB_Capabilities::CAPABILITY, $map[ $primitive ] );
+        }
+    }
 }
