@@ -6,7 +6,8 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": ">=22",
+    "npm": ">=11"
   },
   "scripts": {
     "dev": "vite",
@@ -30,5 +31,6 @@
   },
   "overrides": {
     "esbuild": "0.21.5"
-  }
+  },
+  "packageManager": "npm@11.10.0"
 }
