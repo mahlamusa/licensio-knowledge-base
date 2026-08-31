@@ -148,10 +148,36 @@
 }
 
 /*
- * The hero is a contained band rather than a full-bleed one. The knowledge base
- * renders inside whatever column the active theme gives it, and breaking out of
- * an unknown container is not something a plugin can do reliably.
+ * The hero and the theme seam sit in their own wrapper, outside the contained
+ * one, so a theme override can render a band that reaches the viewport edges
+ * the way the rest of the site does. It still carries `.lisensio-kb`, because
+ * the design tokens and the settings-driven inline block are both scoped to
+ * that class - dropping it would leave the hero with no brand colour.
+ *
+ * The class is doubled so this wins over `.lisensio-kb` whatever the order.
  */
+.lisensio-kb.lisensio-kb--bleed {
+	max-width: none;
+	padding: 0;
+}
+
+/*
+ * The plugin's own hero stays a contained band. Only a theme knows it wants a
+ * full-bleed one; a plugin that breaks out of its theme's content column by
+ * default is wrong everywhere except the one site it was written against.
+ *
+ * Both halves of the containment are self-supplied, because the wrapper that
+ * used to provide them is no longer a parent. `max-width` restores the measure,
+ * and the `width` calculation restores the 1rem gutter - without it the band
+ * runs edge to edge below `--lisensio-kb-max-width` and presses its own corner
+ * radius flat against the viewport, which is not what it looked like before.
+ */
+.lisensio-kb--bleed > .lisensio-kb__hero {
+	width: calc(100% - 2rem);
+	max-width: var(--lisensio-kb-max-width);
+	margin-left: auto;
+	margin-right: auto;
+}
 
 .lisensio-kb__hero {
 	margin: 0 0 var(--lisensio-kb-space);
@@ -167,11 +193,28 @@
 	justify-content: center;
 }
 
-.lisensio-kb__hero .lisensio-kb__description,
-.lisensio-kb__hero .lisensio-kb__search {
+.lisensio-kb__hero .lisensio-kb__description {
 	max-width: 38rem;
 	margin-left: auto;
 	margin-right: auto;
+}
+
+/*
+ * The search form is a sibling of the hero, not a child of it. A theme that
+ * overrides `lisensio-kb/hero.php` renders its own markup there, so nothing the
+ * plugin owns can be nested inside the hero and still survive the override.
+ *
+ * Matched two ways on purpose. The hero may sit in the same wrapper as the form
+ * or in a full-bleed wrapper of its own above it, and the form has to keep its
+ * measure either way — an adjacency selector alone silently stops matching the
+ * moment the hero moves out of the wrapper.
+ */
+
+.lisensio-kb__hero + .lisensio-kb__search,
+.lisensio-kb--archive > .lisensio-kb__search,
+.lisensio-kb--search > .lisensio-kb__search {
+	max-width: 38rem;
+	margin: 0 auto var(--lisensio-kb-space);
 }
 
 .lisensio-kb__title-accent {
