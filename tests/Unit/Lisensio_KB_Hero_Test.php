@@ -645,8 +645,12 @@ class Lisensio_KB_Hero_Test extends Lisensio_KB_Test_Case {
              * The contained wrapper must open after the hero has closed. If it
              * opened first the hero would be nested inside it, which is the
              * exact defect this guards.
+             *
+             * The class list may carry a sidebar position modifier after the
+             * view modifier, so the match runs to the closing quote rather
+             * than assuming the view modifier is the last class on the tag.
              */
-            $contained = preg_match( '/<div class="lisensio-kb lisensio-kb--(?!bleed)[a-z]+"/', $markup, $m, PREG_OFFSET_CAPTURE );
+            $contained = preg_match( '/<div class="lisensio-kb lisensio-kb--(?!bleed)[a-z]+[^"]*"/', $markup, $m, PREG_OFFSET_CAPTURE );
 
             $this->assertSame( 1, $contained, $view . ' renders no contained wrapper' );
             $this->assertGreaterThan( $hero, $m[0][1], $view . ' nests its hero inside the contained wrapper' );

@@ -166,6 +166,16 @@ abstract class Lisensio_KB_Test_Case extends TestCase {
                 return rtrim( (string) $value, '/\\' ) . '/';
             }
         );
+
+        /*
+         * Both classes memoize across calls - the sidebar its settings store,
+         * the table of contents the headings it collected. The memo would
+         * otherwise outlive the test that filled it, carrying a settings object
+         * whose get_option() closure belongs to a torn-down Brain Monkey into
+         * the next test.
+         */
+        Lisensio_KB_Sidebar::reset();
+        Lisensio_KB_TOC::reset();
     }
 
     /**
