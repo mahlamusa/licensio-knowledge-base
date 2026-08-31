@@ -54,6 +54,7 @@ $lisensio_kb_icon           = $lisensio_kb_show_icon && '' === $lisensio_kb_icon
     : '';
 ?>
 <article class="lisensio-kb-card lisensio-kb-card--category">
+    <div class="lisensio-kb-card__heading">
     <?php if ( '' !== $lisensio_kb_icon_svg ) : ?>
         <span class="lisensio-kb-card__icon lisensio-kb-card__icon--svg" aria-hidden="true">
             <?php
@@ -98,6 +99,7 @@ $lisensio_kb_icon           = $lisensio_kb_show_icon && '' === $lisensio_kb_icon
             <?php echo esc_html( $lisensio_kb_category->name ); ?>
         </a>
     </h3>
+    </div>
 
     <?php if ( '' !== $lisensio_kb_category->description ) : ?>
         <p class="lisensio-kb-card__excerpt"><?php echo esc_html( $lisensio_kb_category->description ); ?></p>
