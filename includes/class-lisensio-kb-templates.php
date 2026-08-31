@@ -59,6 +59,14 @@ class Lisensio_KB_Templates {
     const UNCATEGORISED_LIMIT = 20;
 
     /**
+     * The archive column count used when nothing is stored.
+     *
+     * @since 1.0.0
+     * @var int
+     */
+    const DEFAULT_ARCHIVE_COLUMNS = 3;
+
+    /**
      * The settings store the custom properties are read from.
      *
      * @since 1.0.0
@@ -346,6 +354,30 @@ class Lisensio_KB_Templates {
         $luminance = ( ( 0.299 * $rgb[0] ) + ( 0.587 * $rgb[1] ) + ( 0.114 * $rgb[2] ) ) / 255;
 
         return $luminance > 0.6 ? '#000000' : '#ffffff';
+    }
+
+    /**
+     * How many columns the archive category grid uses.
+     *
+     * Reads the `archive_columns` setting, which was registered but consumed
+     * by nothing: the archive hardcoded three, so changing the setting did
+     * nothing and gave no sign that it had been ignored.
+     *
+     * No clamp here on purpose. `Lisensio_KB_Settings::clamp()` already holds
+     * the value to the registered 1-4, so a second clamp is unreachable code
+     * that no test can tell apart from its own absence - and the bounds would
+     * then live in two places, free to disagree. The stylesheet has `--cols-1`
+     * through `--cols-4`; if that range changes it is the registry entry that
+     * must change with it.
+     *
+     * @since 1.0.0
+     *
+     * @return int A column count between 1 and 4.
+     */
+    public static function archive_columns() {
+        $settings = new Lisensio_KB_Settings();
+
+        return (int) $settings->get( 'archive_columns', self::DEFAULT_ARCHIVE_COLUMNS );
     }
 
     /**

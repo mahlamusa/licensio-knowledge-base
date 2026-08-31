@@ -1262,4 +1262,58 @@ class Lisensio_KB_Hero_Test extends Lisensio_KB_Test_Case {
             'the archive kept its sidebar after its own position setting was turned off'
         );
     }
+    /**
+     * The archive grid honours the column setting.
+     *
+     * `archive_columns` was registered by #29 and consumed by nothing: the
+     * archive hardcoded three, so changing the setting did nothing and said
+     * nothing about it. A setting that silently does not apply is worse than
+     * an absent one, because it invites someone to conclude the feature is
+     * broken rather than unwired.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_archive_grid_honours_the_column_setting() {
+        Functions\when( 'get_option' )->alias(
+            function ( $name, $default_value = false ) {
+                if ( Lisensio_KB_Settings::OPTION_NAME === $name ) {
+                    return array( 'archive_columns' => 2 );
+                }
+
+                return $default_value;
+            }
+        );
+
+        $markup = $this->render_archive();
+
+        $this->assertStringContainsString( 'lisensio-kb__grid--cols-2', $markup );
+        $this->assertStringNotContainsString( 'lisensio-kb__grid--cols-3', $markup );
+    }
+
+    /**
+     * A column count the stylesheet has no class for is clamped.
+     *
+     * The grid rules stop at four. A stored 9 would emit `--cols-9`, which no
+     * rule matches, and the grid would collapse to a single column - a worse
+     * outcome than the value simply being out of range.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_out_of_range_column_count_is_clamped() {
+        Functions\when( 'get_option' )->alias(
+            function ( $name, $default_value = false ) {
+                if ( Lisensio_KB_Settings::OPTION_NAME === $name ) {
+                    return array( 'archive_columns' => 9 );
+                }
+
+                return $default_value;
+            }
+        );
+
+        $this->assertStringContainsString( 'lisensio-kb__grid--cols-4', $this->render_archive() );
+    }
 }
