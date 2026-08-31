@@ -13,6 +13,7 @@ import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import Antd from 'ant-design-vue';
 import 'ant-design-vue/dist/reset.css';
+import '../styles/admin.css';
 import App from './App.vue';
 
 const mount = document.getElementById( 'lisensio-kb-feedback-app' );

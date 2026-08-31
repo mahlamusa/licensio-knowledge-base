@@ -13,6 +13,7 @@ import { createPinia } from 'pinia';
 import Antd from 'ant-design-vue';
 import App from './App.vue';
 import 'ant-design-vue/dist/reset.css';
+import '../styles/admin.css';
 
 const container = document.getElementById( 'lisensio-kb-analytics' );
 

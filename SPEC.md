@@ -231,6 +231,43 @@ Menu: top-level **Knowledge Base** → Articles · Categories · Tags · Feedbac
 
 ---
 
+## Admin design system
+
+The three Vue admin screens — Analytics, Feedback, Settings — present as one product with License Server. The binding design context lives in `.impeccable.md` (users, brand personality, colour rules, naming); this section records only what the code must hold to.
+
+### Identity
+
+- **Menu.** The knowledge base is a top-level menu at position 51, directly below License Server at 50. Adjacency is the point: one product, found together in the rail.
+- **Icon.** `assets/images/logo/knowledge_base_icon.svg` — an open book in line art, same stroke weight and brand green as License Server's mark, deliberately a *different silhouette*. Two adjacent entries sharing a shape are unnavigable once the rail collapses and only the icon is left to read.
+- **No app header.** WordPress already prints the menu, the screen name and the screen context. A sticky bar repeating the logo and wordmark on every screen adds a row of chrome that says nothing new, and contradicts "light and data-dense, not sparse". The logo belongs in the menu and in empty states.
+
+### Colour
+
+`#40b58a` is the brand green and is **decorative only** — 2.56:1 on white, under the 3:1 WCAG 2.1 requires of a non-text UI component, and white on it is 2.56:1 against a 4.5:1 requirement. Every interactive or meaning-bearing surface uses `--lkb-accent` `#247a5c` (5.23:1 on the page ground; 5.23:1 for white on the button).
+
+This is also the Ant Design primary. Ant components take colour from a JS `ThemeConfig`, not from CSS custom properties, so `apps/styles/theme.ts` carries `colorPrimary: '#247a5c'` and every app wraps its root in `<a-config-provider :theme="lkbTheme">`. A token redefined in CSS alone leaves Ant on its default blue.
+
+The front end keeps `#2ba377`, the theme's `--primary`. Admin chrome and published pages are different surfaces, and the settings screen renders the front-end colour as a swatch — a swatch is content, not chrome.
+
+### The shared shell
+
+`Lisensio_KB_Admin_Page::shell()` prints the frame for all three screens, in PHP rather than in each app:
+
+```
+.wrap.lkb-wrap > .lkb-page > .lkb-page__inner > h1.lkb-page__title + #mount
+```
+
+- **One heading per screen, server-rendered.** The screen is named before its bundle parses. Previously Feedback printed a heading and the other two printed none.
+- **The heading sits inside the measured column**, not in `.wrap`, so the screen name and the screen share a left edge.
+- **A capped, centred column.** `.lkb-page__inner` is `max-width: 1240px; margin: 0 auto`. WordPress hands a screen the full width between rail and window edge — fine for a list table, wrong for form rows, where a label on the far left and its control on the far right are related only by empty space. `.lkb-wrap` zeroes `.wrap`'s asymmetric margins so the ground is full-bleed and the column centres truly.
+- Section headings within a screen are `h2`, so each screen has exactly one `h1`.
+
+### Tokens
+
+Colour, spacing and radius come from `apps/styles/tokens.css`; the shell from `apps/styles/admin.css`. A hex literal in a component is technical debt. Local custom properties must never shadow a shared token — the settings screen redefined `--lkb-accent` as WordPress blue and silently ignored the plugin's own palette.
+
+---
+
 ## Security considerations
 
 - All REST writes require a nonce; all reads that expose non-public data require `manage_lisensio_kb`.

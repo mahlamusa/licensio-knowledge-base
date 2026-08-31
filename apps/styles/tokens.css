@@ -1,0 +1,69 @@
+/**
+ * Lisensio Knowledge Base — admin design tokens.
+ *
+ * Deliberately the same vocabulary as the License Server plugin
+ * (`slswc/apps/styles/tokens.css`) so the two admins read as one product, but
+ * copied rather than imported: this plugin has to work with License Server
+ * absent, so it cannot depend on that file existing.
+ *
+ * ## The green, and why there are three of them
+ *
+ * `#40b58a` is the brand. Measured against a white surface it is 2.56:1 —
+ * below the 3:1 WCAG 2.1 requires of a non-text UI component, and white text
+ * on a `#40b58a` button is 2.56:1 against a 4.5:1 requirement. It is a
+ * perfectly good brand colour and an unusable interactive one.
+ *
+ * So it is kept for decoration only, and anything that carries meaning or
+ * takes a click uses `#247a5c` — 5.23:1 on white, passing AA for text and
+ * components alike. That value is not invented here: it is License Server's
+ * own `--slswc-primary-active`, so the palettes stay one family.
+ *
+ * The knowledge base front end keeps `#2ba377`, which is the theme's
+ * `--primary` and 3.18:1. Admin chrome and published pages are different
+ * surfaces with different jobs; the settings screen renders the front-end
+ * colour as a swatch, and a swatch is content, not chrome.
+ *
+ * @since 1.0.0
+ */
+
+:root {
+	/* Brand. Decorative only - see the note above before using for anything
+	   a reader has to perceive or act on. */
+	--lkb-brand: #40b58a;
+	--lkb-brand-tint: #edf9f4;
+
+	/* Interactive. Buttons, links, focus rings, active nav, status dots. */
+	--lkb-accent: #247a5c;
+	--lkb-accent-hover: #1d6249;
+	--lkb-accent-quiet: #2d9470;
+
+	/* Surfaces. Neutrals tinted toward the brand hue rather than pure grey,
+	   and no pure black or white on large areas. */
+	--lkb-surface: #ffffff;
+	--lkb-page: #fafbfa;
+	--lkb-sunken: #f4f7f5;
+	--lkb-border: #e4e9e6;
+	--lkb-border-strong: #cdd6d1;
+
+	/* Ink. */
+	--lkb-ink: #11221b;
+	--lkb-ink-muted: #5b6b64;
+	--lkb-ink-faint: #7d8a84;
+
+	/* Semantic. Carried across from License Server so a status reads the same
+	   in both admins. */
+	--lkb-success: #3f8600;
+	--lkb-success-tint: #f6ffed;
+	--lkb-error: #cf1322;
+	--lkb-error-tint: #fff2f0;
+	--lkb-warning: #d48806;
+	--lkb-warning-tint: #fffbe6;
+	--lkb-info: #1677ff;
+	--lkb-info-tint: #e6f4ff;
+
+	/* Structure. */
+	--lkb-radius: 8px;
+	--lkb-radius-lg: 12px;
+	--lkb-gap: 16px;
+	--lkb-gap-lg: 24px;
+}
