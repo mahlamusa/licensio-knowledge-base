@@ -148,12 +148,6 @@
 }
 
 /*
- * The hero is a contained band rather than a full-bleed one. The knowledge base
- * renders inside whatever column the active theme gives it, and breaking out of
- * an unknown container is not something a plugin can do reliably.
- */
-
-/*
  * The hero and the theme seam sit in their own wrapper, outside the contained
  * one, so a theme override can render a band that reaches the viewport edges
  * the way the rest of the site does. It still carries `.lisensio-kb`, because
@@ -168,11 +162,18 @@
 }
 
 /*
- * The plugin's own hero stays contained. Only a theme knows it wants a
- * full-bleed band; a plugin that breaks out of its theme's content column by
+ * The plugin's own hero stays a contained band. Only a theme knows it wants a
+ * full-bleed one; a plugin that breaks out of its theme's content column by
  * default is wrong everywhere except the one site it was written against.
+ *
+ * Both halves of the containment are self-supplied, because the wrapper that
+ * used to provide them is no longer a parent. `max-width` restores the measure,
+ * and the `width` calculation restores the 1rem gutter - without it the band
+ * runs edge to edge below `--lisensio-kb-max-width` and presses its own corner
+ * radius flat against the viewport, which is not what it looked like before.
  */
 .lisensio-kb--bleed > .lisensio-kb__hero {
+	width: calc(100% - 2rem);
 	max-width: var(--lisensio-kb-max-width);
 	margin-left: auto;
 	margin-right: auto;

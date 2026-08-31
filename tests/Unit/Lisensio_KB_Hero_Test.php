@@ -682,6 +682,37 @@ class Lisensio_KB_Hero_Test extends Lisensio_KB_Test_Case {
     }
 
     /**
+     * The plugin's own hero supplies the containment the wrapper used to.
+     *
+     * Releasing the bleed wrapper is only safe because the hero inside it
+     * re-supplies both halves of what the contained wrapper was giving it: the
+     * measure, and the gutter. Without the measure the heading runs the width
+     * of the viewport; without the gutter the band runs edge to edge below the
+     * max width and presses its corner radius flat.
+     *
+     * Only a theme should opt into a full-bleed band, so a plugin default that
+     * bled would be wrong on every theme but the one it was written against.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_stylesheet_keeps_the_plugin_hero_contained_inside_the_bleed_wrapper() {
+        $css = (string) file_get_contents( LISENSIO_KB_ABSPATH . 'assets/css/lisensio-kb.css' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+
+        $this->assertMatchesRegularExpression(
+            '/\.lisensio-kb--bleed > \.lisensio-kb__hero\s*\{[^}]*max-width:\s*var\(\s*--lisensio-kb-max-width\s*\);/',
+            $css,
+            'the hero does not restore its measure outside the contained wrapper'
+        );
+        $this->assertMatchesRegularExpression(
+            '/\.lisensio-kb--bleed > \.lisensio-kb__hero\s*\{[^}]*width:\s*calc\(\s*100% - 2rem\s*\);/',
+            $css,
+            'the hero does not restore its gutter outside the contained wrapper'
+        );
+    }
+
+    /**
      * Every view renders one hero, and exactly one.
      *
      * Zero means a view still collides with a theme's fixed header, which is
