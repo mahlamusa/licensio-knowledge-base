@@ -107,6 +107,7 @@ class Lisensio_KB_Term_Fields_Test extends Lisensio_KB_Test_Case {
      */
     public function test_a_valid_submission_is_stored() {
         $_POST['lisensio_icon']     = 'dashicons-book-alt';
+        $_POST['lisensio_icon_svg'] = '<svg viewBox="0 0 24 24"><path d="M4 4h16"/></svg>';
         $_POST['lisensio_icon_id']  = '42';
         $_POST['lisensio_image_id'] = '42';
         $_POST['lisensio_order']    = '7';
@@ -117,11 +118,61 @@ class Lisensio_KB_Term_Fields_Test extends Lisensio_KB_Test_Case {
         $this->assertSame(
             array(
                 '3|lisensio_icon'     => 'dashicons-book-alt',
+                '3|lisensio_icon_svg' => '<svg viewBox="0 0 24 24"><path d="M4 4h16"/></svg>',
                 '3|lisensio_icon_id'  => 42,
                 '3|lisensio_image_id' => 42,
                 '3|lisensio_order'    => 7,
             ),
             $this->written
+        );
+    }
+
+    /**
+     * A posted SVG is reduced by the allowlist before it is stored.
+     *
+     * The stored value is what the card prints unescaped, so the payload has to
+     * die at the boundary and not merely on the way back out. Asserted on the
+     * exact stored string: "does not contain script" would also pass if the
+     * handler had thrown the whole icon away.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_posted_svg_is_sanitized_before_it_is_stored() {
+        $_POST['lisensio_icon_svg'] = '<svg viewBox="0 0 24 24" onload="alert(1)"><script>alert(2)</script><use href="javascript:alert(3)"/><path d="M4 4h16"/></svg>';
+
+        $fields = new Lisensio_KB_Term_Fields();
+        $fields->save_fields( 3 );
+
+        $this->assertSame(
+            '<svg viewBox="0 0 24 24"><use/><path d="M4 4h16"/></svg>',
+            $this->written['3|lisensio_icon_svg']
+        );
+    }
+
+    /**
+     * The slashes WordPress adds to the request are removed, not stored.
+     *
+     * `$_POST` reaches a save handler magic-quoted, so a quoted attribute
+     * arrives as `viewBox=\"…\"`. Storing that gives a value that parses as
+     * nothing, which is how Heroic ended up calling `stripslashes()` at the
+     * point of output — the exact place where undoing an escape is a
+     * vulnerability rather than a fix.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_request_slashes_are_removed_before_sanitisation() {
+        $_POST['lisensio_icon_svg'] = '<svg viewBox=\"0 0 24 24\"><path d=\"M4 4h16\"/></svg>';
+
+        $fields = new Lisensio_KB_Term_Fields();
+        $fields->save_fields( 3 );
+
+        $this->assertSame(
+            '<svg viewBox="0 0 24 24"><path d="M4 4h16"/></svg>',
+            $this->written['3|lisensio_icon_svg']
         );
     }
 
@@ -344,9 +395,42 @@ class Lisensio_KB_Term_Fields_Test extends Lisensio_KB_Test_Case {
 
         $this->assertStringContainsString( 'name="lisensio_term_meta_nonce"', $markup );
         $this->assertStringContainsString( 'name="lisensio_icon"', $markup );
+        $this->assertStringContainsString( 'name="lisensio_icon_svg"', $markup );
         $this->assertStringContainsString( 'name="lisensio_icon_id"', $markup );
         $this->assertStringContainsString( 'name="lisensio_image_id"', $markup );
         $this->assertStringContainsString( 'name="lisensio_order"', $markup );
+    }
+
+    /**
+     * The icon fields are rendered in the order they take precedence.
+     *
+     * Nothing breaks if they are not, which is why it is asserted: the only
+     * thing telling an author that pasting an SVG overrides the icon they
+     * uploaded is reading the two fields in that order, with the descriptions
+     * that say so.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_icon_fields_are_rendered_in_precedence_order() {
+        Functions\when( 'wp_nonce_field' )->justReturn( '' );
+
+        $fields = new Lisensio_KB_Term_Fields();
+
+        ob_start();
+        $fields->render_add_fields( 'lisensio_category' );
+        $markup = (string) ob_get_clean();
+
+        $svg  = strpos( $markup, 'name="lisensio_icon_svg"' );
+        $file = strpos( $markup, 'name="lisensio_icon_id"' );
+        $name = strpos( $markup, 'name="lisensio_icon"' );
+
+        $this->assertIsInt( $svg );
+        $this->assertIsInt( $file );
+        $this->assertIsInt( $name );
+        $this->assertLessThan( $file, $svg, 'The SVG field wins, so it is read first.' );
+        $this->assertLessThan( $name, $file, 'The uploaded icon beats the dashicon name.' );
     }
 
     /**
@@ -387,5 +471,77 @@ class Lisensio_KB_Term_Fields_Test extends Lisensio_KB_Test_Case {
         $this->assertStringContainsString( 'value="42"', $markup );
         $this->assertStringContainsString( 'value="6"', $markup );
         $this->assertStringContainsString( '<img src="icon.svg"', $markup );
+    }
+
+    /**
+     * The SVG field shows the markup in the textarea and the icon in a preview.
+     *
+     * Two renderings of the same value, and they have to differ: the textarea
+     * is for reading and editing the source, and is escaped; the preview is the
+     * drawing, and is not. Both halves are asserted, because escaping the
+     * preview and escaping neither are equally wrong and a test that only
+     * looked for `<svg` would pass on either.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_svg_field_shows_the_source_escaped_and_the_icon_drawn() {
+        Functions\when( 'wp_nonce_field' )->justReturn( '' );
+        Functions\when( 'esc_textarea' )->alias(
+            function ( $value ) {
+                return htmlspecialchars( (string) $value, ENT_QUOTES );
+            }
+        );
+        Functions\when( 'get_term_meta' )->alias(
+            function ( $term_id, $key ) {
+                unset( $term_id );
+
+                return 'lisensio_icon_svg' === $key
+                    ? '<svg viewBox="0 0 24 24"><path d="M4 4h16"/></svg>'
+                    : '';
+            }
+        );
+
+        $fields = new Lisensio_KB_Term_Fields();
+
+        ob_start();
+        $fields->render_edit_fields( (object) array( 'term_id' => 3 ) );
+        $markup = (string) ob_get_clean();
+
+        $this->assertStringContainsString(
+            '<textarea id="lisensio_icon_svg" name="lisensio_icon_svg" rows="6" class="large-text code" placeholder="Paste SVG markup here">&lt;svg viewBox=&quot;0 0 24 24&quot;&gt;&lt;path d=&quot;M4 4h16&quot;/&gt;&lt;/svg&gt;</textarea>',
+            $markup,
+            'The textarea must show the source, escaped.'
+        );
+
+        $this->assertStringContainsString(
+            '<div class="lisensio-kb-svg-preview" style="max-width:80px;"><svg viewBox="0 0 24 24"><path d="M4 4h16"/></svg></div>',
+            $markup,
+            'The preview must show the icon, not its source.'
+        );
+    }
+
+    /**
+     * An empty SVG field renders the textarea and no preview.
+     *
+     * An empty preview box on every category that has never had an icon is the
+     * kind of thing that gets "fixed" by loosening something else.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_empty_svg_field_renders_no_preview() {
+        Functions\when( 'wp_nonce_field' )->justReturn( '' );
+
+        $fields = new Lisensio_KB_Term_Fields();
+
+        ob_start();
+        $fields->render_add_fields( 'lisensio_category' );
+        $markup = (string) ob_get_clean();
+
+        $this->assertStringContainsString( 'name="lisensio_icon_svg"', $markup );
+        $this->assertStringNotContainsString( 'lisensio-kb-svg-preview', $markup );
     }
 }

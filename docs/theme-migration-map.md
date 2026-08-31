@@ -83,10 +83,17 @@ the theme reads all of them. Our registry has twelve keys and none of these.
 
 ## Two gaps the migrator already reports
 
-1. **Category icons cannot cross.** Heroic's `meta_svg` is raw inline SVG;
-   `lisensio_icon` is a dashicon name printed into a `class` attribute. The
-   theme's `hkb_has_category_custom_icon()` reads that SVG. Carrying icons needs
-   an SVG-icon field in the content model.
+1. **Category icons have somewhere to go, but nothing carries them yet.**
+   Heroic's `meta_svg` is raw inline SVG; `lisensio_icon` is a dashicon name
+   printed into a `class` attribute and `lisensio_icon_id` is an attachment ID,
+   so neither can hold markup. `lisensio_icon_svg` now can: it stores inline
+   SVG reduced to an allowlist by `Lisensio_KB_SVG_Sanitizer`, which is the
+   field the theme's `hkb_has_category_custom_icon()` equivalent reads. The
+   migrator still reports `meta_svg` as unmapped — wiring it across is the
+   remaining step. `meta_svg_color` has no destination and is not getting one:
+   Heroic's importer bakes the colour into the markup and keeps that key as a
+   record of the choice, and an icon drawn with `currentColor` takes the
+   knowledge base colour from the card with nothing stored per category.
 2. **Per-category article ordering cannot cross.** Heroic stores
    `_ht_article_order_{term_id}`, one position per category; we have one
    `menu_order`.
