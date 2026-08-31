@@ -1,10 +1,11 @@
 <?php
 /**
- * Knowledge base home.
+ * Knowledge base archive.
  *
- * The article post type archive: the top-level categories with their article
- * counts, then the articles from the main query. Override from a theme by
- * copying this file to `lisensio-kb/archive.php`.
+ * A centred hero — breadcrumb, heading with the final word painted in the brand
+ * gradient, standfirst and search — above a three column grid of category cards,
+ * each listing the articles filed beneath it. Override from a theme by copying
+ * this file to `lisensio-kb/archive.php`.
  *
  * @package Lisensio_KB
  * @since   1.0.0
@@ -15,12 +16,25 @@ defined( 'ABSPATH' ) || exit;
 get_header();
 
 $lisensio_kb_categories = Lisensio_KB_Templates::top_level_categories();
+
+list( $lisensio_kb_title_lead, $lisensio_kb_title_accent ) = Lisensio_KB_Templates::split_title(
+    post_type_archive_title( '', false )
+);
 ?>
 <div class="lisensio-kb lisensio-kb--archive">
-    <?php lisensio_kb_get_template( 'breadcrumbs', array( 'items' => Lisensio_KB_Templates::breadcrumb_items() ) ); ?>
+    <header class="lisensio-kb__hero">
+        <?php lisensio_kb_get_template( 'breadcrumbs', array( 'items' => Lisensio_KB_Templates::breadcrumb_items() ) ); ?>
 
-    <header class="lisensio-kb__header">
-        <h1 class="lisensio-kb__title"><?php echo esc_html( post_type_archive_title( '', false ) ); ?></h1>
+        <h1 class="lisensio-kb__title">
+            <?php if ( '' !== $lisensio_kb_title_lead ) : ?>
+                <?php echo esc_html( $lisensio_kb_title_lead ); ?>
+            <?php endif; ?>
+            <span class="lisensio-kb__title-accent"><?php echo esc_html( $lisensio_kb_title_accent ); ?></span>
+        </h1>
+
+        <p class="lisensio-kb__description">
+            <?php esc_html_e( 'Guides, references and answers, organised by topic.', 'lisensio-knowledge-base' ); ?>
+        </p>
 
         <form role="search" method="get" class="lisensio-kb__search" action="<?php echo esc_url( home_url( '/' ) ); ?>">
             <label class="lisensio-kb__sr-only" for="lisensio-kb-search-field">
@@ -40,9 +54,17 @@ $lisensio_kb_categories = Lisensio_KB_Templates::top_level_categories();
     </header>
 
     <?php if ( ! empty( $lisensio_kb_categories ) ) : ?>
-        <div class="lisensio-kb__grid">
+        <div class="lisensio-kb__grid lisensio-kb__grid--cols-3">
             <?php foreach ( $lisensio_kb_categories as $lisensio_kb_category ) : ?>
-                <?php lisensio_kb_get_template( 'category-card', array( 'term' => $lisensio_kb_category ) ); ?>
+                <?php
+                lisensio_kb_get_template(
+                    'category-card',
+                    array(
+                        'term'      => $lisensio_kb_category,
+                        'show_icon' => true,
+                    )
+                );
+                ?>
             <?php endforeach; ?>
         </div>
     <?php endif; ?>

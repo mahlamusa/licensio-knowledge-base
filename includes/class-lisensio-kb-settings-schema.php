@@ -241,7 +241,7 @@ class Lisensio_KB_Settings_Schema {
                     'kind'   => 'map',
                     'values' => array(
                         'shadow' => array(
-                            '--lisensio-kb-card-shadow' => '0 1px 2px rgba(15,23,42,0.06), 0 8px 24px rgba(15,23,42,0.06)',
+                            '--lisensio-kb-card-shadow' => '0 4px 14px rgba(30,122,90,0.08)',
                             '--lisensio-kb-card-border' => '1px solid transparent',
                             '--lisensio-kb-card-bg'     => 'var(--lisensio-kb-surface)',
                         ),

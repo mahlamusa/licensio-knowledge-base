@@ -3,8 +3,8 @@
  * Unit tests for the category card template.
  *
  * Covers the icon precedence — inline SVG, then an uploaded attachment, then a
- * dashicon name — and the one place in the plugin that prints stored markup
- * without escaping it.
+ * dashicon name — the one place in the plugin that prints stored markup without
+ * escaping it, and the article list the card leads with.
  *
  * The sanitizer itself is not under test here; it has its own file, asserted
  * against its own return value. What is under test is that the template reads
@@ -12,7 +12,7 @@
  * the table by an importer is as safe as one written by the term form.
  *
  * @package Lisensio_KB
- * @since   1.0.0
+ * @since   1.0.0 Added the article list coverage.
  */
 
 use Brain\Monkey\Functions;
@@ -41,6 +41,22 @@ class Lisensio_KB_Category_Card_Test extends Lisensio_KB_Test_Case {
     private $reads = array();
 
     /**
+     * The articles get_posts() answers the card with.
+     *
+     * @since 1.0.0
+     * @var WP_Post[]
+     */
+    private $articles = array();
+
+    /**
+     * The arguments of the last get_posts() call the card made.
+     *
+     * @since 1.0.0
+     * @var array<string, mixed>
+     */
+    private $query_args = array();
+
+    /**
      * Stub the WordPress surface the card touches.
      *
      * @since 1.0.0
@@ -50,8 +66,10 @@ class Lisensio_KB_Category_Card_Test extends Lisensio_KB_Test_Case {
     protected function setUp(): void {
         parent::setUp();
 
-        $this->meta  = array();
-        $this->reads = array();
+        $this->meta       = array();
+        $this->reads      = array();
+        $this->articles   = array();
+        $this->query_args = array();
 
         Functions\when( 'absint' )->alias(
             function ( $value ) {
@@ -65,6 +83,32 @@ class Lisensio_KB_Category_Card_Test extends Lisensio_KB_Test_Case {
         Functions\when( 'number_format_i18n' )->returnArg();
         Functions\when( 'wp_kses_post' )->returnArg();
         Functions\when( 'wp_get_attachment_image' )->justReturn( '<img class="lisensio-kb-card__icon-image" src="https://example.test/icon.png" alt="" />' );
+
+        Functions\when( 'get_posts' )->alias(
+            function ( $args = array() ) {
+                $this->query_args = (array) $args;
+
+                return array_slice(
+                    $this->articles,
+                    0,
+                    isset( $args['posts_per_page'] ) ? (int) $args['posts_per_page'] : count( $this->articles )
+                );
+            }
+        );
+
+        Functions\when( 'get_permalink' )->alias(
+            function ( $post ) {
+                return $post instanceof WP_Post
+                    ? 'https://example.test/docs/article-' . $post->ID . '/'
+                    : '';
+            }
+        );
+
+        Functions\when( 'get_the_title' )->alias(
+            function ( $post ) {
+                return $post instanceof WP_Post ? $post->post_title : '';
+            }
+        );
 
         Functions\when( 'get_term' )->alias(
             function ( $term ) {
@@ -85,6 +129,26 @@ class Lisensio_KB_Category_Card_Test extends Lisensio_KB_Test_Case {
     }
 
     /**
+     * Build an article the stubbed query can answer with.
+     *
+     * @since 1.0.0
+     *
+     * @param int    $id    The post ID.
+     * @param string $title The article title.
+     *
+     * @return WP_Post The article.
+     */
+    private function article( $id, $title ) {
+        return new WP_Post(
+            array(
+                'ID'         => $id,
+                'post_title' => $title,
+                'post_type'  => 'lisensio_article',
+            )
+        );
+    }
+
+    /**
      * Render the card for a category with the icon turned on.
      *
      * The template is included directly rather than located through the theme
@@ -94,21 +158,26 @@ class Lisensio_KB_Category_Card_Test extends Lisensio_KB_Test_Case {
      *
      * @since 1.0.0
      *
+     * @param array<string, mixed> $overrides Template arguments to add or replace.
+     *
      * @return string The rendered markup.
      */
-    private function render_card() {
-        $args = array(
-            'term'          => new WP_Term(
-                array(
-                    'term_id'     => 9,
-                    'name'        => 'Getting started',
-                    'taxonomy'    => 'lisensio_category',
-                    'count'       => 3,
-                    'description' => '',
-                )
+    private function render_card( array $overrides = array() ) {
+        $args = array_merge(
+            array(
+                'term'          => new WP_Term(
+                    array(
+                        'term_id'     => 9,
+                        'name'        => 'Getting started',
+                        'taxonomy'    => 'lisensio_category',
+                        'count'       => 3,
+                        'description' => '',
+                    )
+                ),
+                'show_icon'     => true,
+                'show_children' => false,
             ),
-            'show_icon'     => true,
-            'show_children' => false,
+            $overrides
         );
 
         ob_start();
@@ -278,5 +347,208 @@ class Lisensio_KB_Category_Card_Test extends Lisensio_KB_Test_Case {
 
         $this->assertStringNotContainsString( '<svg', $markup );
         $this->assertStringContainsString( 'Getting started', $markup );
+    }
+
+    /**
+     * The card lists the articles in the category, each as a link.
+     *
+     * This is the whole point of the redesign: a card that names a category and
+     * counts it tells a reader nothing they can act on, so the titles and their
+     * permalinks are asserted rather than the presence of a list element.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_card_lists_the_articles_in_the_category() {
+        $this->articles = array(
+            $this->article( 11, 'Quick start: 4-step setup' ),
+            $this->article( 12, 'Installing the plugin' ),
+        );
+
+        $markup = $this->render_card();
+
+        $this->assertStringContainsString( '<ul class="lisensio-kb-card__articles">', $markup );
+        $this->assertStringContainsString(
+            '<a class="lisensio-kb-card__article-link" href="https://example.test/docs/article-11/">',
+            $markup
+        );
+        $this->assertStringContainsString( 'Quick start: 4-step setup', $markup );
+        $this->assertStringContainsString(
+            '<a class="lisensio-kb-card__article-link" href="https://example.test/docs/article-12/">',
+            $markup
+        );
+        $this->assertStringContainsString( 'Installing the plugin', $markup );
+    }
+
+    /**
+     * An article title reaches the card escaped.
+     *
+     * The titles are printed inside a link the card builds itself, so the
+     * escaping is this template's responsibility and not `get_the_title()`'s.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_article_title_reaches_the_card_escaped() {
+        $this->articles = array( $this->article( 11, '<script>alert(1)</script>' ) );
+
+        $markup = $this->render_card();
+
+        $this->assertStringContainsString( '&lt;script&gt;alert(1)&lt;/script&gt;', $markup );
+        $this->assertStringNotContainsString( '<script>', $markup );
+    }
+
+    /**
+     * The list is capped, and the cap is asked of the query rather than of PHP.
+     *
+     * A card that fetched every article in a category and then printed three of
+     * them would look identical, so the assertion is on the query the card made.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_article_list_is_capped_by_the_query() {
+        $this->articles = array(
+            $this->article( 11, 'One' ),
+            $this->article( 12, 'Two' ),
+            $this->article( 13, 'Three' ),
+            $this->article( 14, 'Four' ),
+        );
+
+        $markup = $this->render_card();
+
+        $this->assertSame( 3, $this->query_args['posts_per_page'] );
+        $this->assertStringContainsString( 'Three', $markup );
+        $this->assertStringNotContainsString( 'Four', $markup );
+
+        $markup = $this->render_card( array( 'article_limit' => 2 ) );
+
+        $this->assertSame( 2, $this->query_args['posts_per_page'] );
+        $this->assertStringContainsString( 'Two', $markup );
+        $this->assertStringNotContainsString( 'Three', $markup );
+    }
+
+    /**
+     * A cap of nothing is answered with nothing, and without a query.
+     *
+     * `posts_per_page` reads a non-positive number as "no limit", so a card
+     * asked for no articles would otherwise fetch every article in the
+     * category and print the lot.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_zero_article_cap_queries_nothing() {
+        $this->articles = array( $this->article( 11, 'One' ) );
+
+        $markup = $this->render_card( array( 'article_limit' => 0 ) );
+
+        $this->assertSame( array(), $this->query_args );
+        $this->assertStringNotContainsString( 'lisensio-kb-card__articles', $markup );
+    }
+
+    /**
+     * The list asks for published articles in this category and its children.
+     *
+     * A parent category that only groups its children reports a count in the
+     * dozens; without `include_children` its card would list nothing at all.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_article_query_is_scoped_to_the_category_and_its_children() {
+        $this->articles = array( $this->article( 11, 'One' ) );
+
+        $this->render_card();
+
+        $this->assertSame( 'lisensio_article', $this->query_args['post_type'] );
+        $this->assertSame( 'publish', $this->query_args['post_status'] );
+        $this->assertSame(
+            array(
+                'taxonomy'         => 'lisensio_category',
+                'field'            => 'term_id',
+                'terms'            => 9,
+                'include_children' => true,
+            ),
+            $this->query_args['tax_query'][0]
+        );
+    }
+
+    /**
+     * A card told not to list articles does not query for them at all.
+     *
+     * A category grid is a page of cards, so a query per card that nothing
+     * prints is a page of wasted queries.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_card_that_hides_the_articles_never_queries_for_them() {
+        $this->articles = array( $this->article( 11, 'One' ) );
+
+        $markup = $this->render_card( array( 'show_articles' => false ) );
+
+        $this->assertSame( array(), $this->query_args );
+        $this->assertStringContainsString( 'Getting started', $markup );
+        $this->assertStringNotContainsString( 'lisensio-kb-card__articles', $markup );
+    }
+
+    /**
+     * A category with no articles gets no empty list element.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_category_with_no_articles_renders_no_list() {
+        $markup = $this->render_card();
+
+        $this->assertStringContainsString( 'Getting started', $markup );
+        $this->assertStringNotContainsString( '<ul class="lisensio-kb-card__articles">', $markup );
+    }
+
+    /**
+     * The arrow is drawn by the stylesheet, on the class the card emits.
+     *
+     * The arrow is generated content, so no assertion on the markup can see it.
+     * What can be held to account is that the selector the rule is written for
+     * is the class the template actually prints — renaming one without the
+     * other is the way this breaks.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_stylesheet_draws_an_arrow_on_the_class_the_card_emits() {
+        $this->articles = array( $this->article( 11, 'One' ) );
+
+        $markup = $this->render_card();
+        $css    = (string) file_get_contents( LISENSIO_KB_ABSPATH . 'assets/css/lisensio-kb.css' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+
+        $this->assertStringContainsString( 'class="lisensio-kb-card__article-link"', $markup );
+        $this->assertStringContainsString( '.lisensio-kb .lisensio-kb-card__article-link::before', $css );
+        $this->assertStringContainsString( 'content: "\2192";', $css );
+    }
+
+    /**
+     * The article count survives the redesign, as secondary meta.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_article_count_is_still_rendered() {
+        $this->articles = array( $this->article( 11, 'One' ) );
+
+        $markup = $this->render_card();
+
+        $this->assertStringContainsString( '<p class="lisensio-kb-card__meta">', $markup );
+        $this->assertStringContainsString( '3 articles', $markup );
     }
 }

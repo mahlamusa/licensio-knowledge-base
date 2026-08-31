@@ -248,7 +248,7 @@ class Lisensio_KB_Templates {
         $brand = sanitize_hex_color( (string) $this->settings->get( 'brand_color' ) );
 
         if ( ! is_string( $brand ) || '' === $brand ) {
-            $brand = (string) ( isset( $defaults['brand_color'] ) ? $defaults['brand_color'] : '#2563eb' );
+            $brand = (string) ( isset( $defaults['brand_color'] ) ? $defaults['brand_color'] : '#2ba377' );
         }
 
         $layout         = (string) $this->settings->get( 'layout_width' );
@@ -271,7 +271,7 @@ class Lisensio_KB_Templates {
             '--lisensio-kb-brand-rgb'      => implode( ',', $rgb ),
             '--lisensio-kb-brand-contrast' => self::contrast_color( $rgb ),
             '--lisensio-kb-max-width'      => self::LAYOUT_WIDTHS[ $layout ],
-            '--lisensio-kb-card-shadow'    => 'shadow' === $card ? '0 1px 2px rgba(15,23,42,0.06), 0 8px 24px rgba(15,23,42,0.06)' : 'none',
+            '--lisensio-kb-card-shadow'    => 'shadow' === $card ? '0 4px 14px rgba(30,122,90,0.08)' : 'none',
             '--lisensio-kb-card-border'    => 'border' === $card ? '1px solid var(--lisensio-kb-line)' : '1px solid transparent',
             '--lisensio-kb-card-bg'        => 'flat' === $card ? 'transparent' : 'var(--lisensio-kb-surface)',
         );
@@ -306,7 +306,7 @@ class Lisensio_KB_Templates {
         }
 
         if ( 6 !== strlen( $hex ) ) {
-            return array( 37, 99, 235 );
+            return array( 43, 163, 119 );
         }
 
         return array(
@@ -430,6 +430,78 @@ class Lisensio_KB_Templates {
         }
 
         return $count;
+    }
+
+    /**
+     * The first few published articles a category card should list.
+     *
+     * Descendants are included for the same reason `category_article_count()`
+     * counts them: a parent category that only groups its children would list
+     * nothing at all while advertising a count in the dozens.
+     *
+     * @since 1.0.0
+     *
+     * @param WP_Term|int $term  The category, or its term ID.
+     * @param int         $limit How many articles to return at most.
+     *
+     * @return WP_Post[] The articles, by title. Empty when the category is unknown or the limit is not positive.
+     */
+    public static function category_articles( $term, $limit ) {
+        $term  = get_term( $term, Lisensio_KB_Post_Types::TAXONOMY_CATEGORY );
+        $limit = (int) $limit;
+
+        if ( ! $term instanceof WP_Term || $limit < 1 ) {
+            return array();
+        }
+
+        $posts = get_posts(
+            array(
+                'post_type'              => Lisensio_KB_Post_Types::POST_TYPE,
+                'post_status'            => 'publish',
+                'posts_per_page'         => $limit,
+                'orderby'                => 'title',
+                'order'                  => 'ASC',
+                'ignore_sticky_posts'    => true,
+                'no_found_rows'          => true,
+                'update_post_term_cache' => false,
+                // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
+                'tax_query'              => array(
+                    array(
+                        'taxonomy'         => Lisensio_KB_Post_Types::TAXONOMY_CATEGORY,
+                        'field'            => 'term_id',
+                        'terms'            => (int) $term->term_id,
+                        'include_children' => true,
+                    ),
+                ),
+            )
+        );
+
+        return is_array( $posts ) ? $posts : array();
+    }
+
+    /**
+     * Split a title into its leading words and its final word.
+     *
+     * The archive hero paints the last word of its heading with the brand
+     * gradient, the way the Lisensio documentation design does. Doing the split
+     * here rather than in the template keeps the template escaping both halves
+     * as plain text: nothing on this path ever builds a string of markup.
+     *
+     * @since 1.0.0
+     *
+     * @param string $title The heading.
+     *
+     * @return array{0: string, 1: string} The leading words, and the final word. The first is empty for a one-word title.
+     */
+    public static function split_title( $title ) {
+        $title = trim( (string) $title );
+        $space = strrpos( $title, ' ' );
+
+        if ( false === $space ) {
+            return array( '', $title );
+        }
+
+        return array( rtrim( substr( $title, 0, $space ) ), substr( $title, $space + 1 ) );
     }
 
     /**
