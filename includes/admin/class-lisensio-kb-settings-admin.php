@@ -105,6 +105,9 @@ class Lisensio_KB_Settings_Admin {
     /**
      * Render the mount point the Vue app takes over.
      *
+     * The shared shell prints the heading and the measured column so the three
+     * admin screens frame their applications identically.
+     *
      * @since 1.0.0
      *
      * @return void
@@ -114,10 +117,11 @@ class Lisensio_KB_Settings_Admin {
             wp_die( esc_html__( 'You are not allowed to manage the knowledge base settings.', 'lisensio-knowledge-base' ) );
         }
 
-        printf(
-            '<div class="wrap"><div id="%1$s" class="lisensio-kb-settings-app"><p>%2$s</p></div></div>',
-            esc_attr( self::SCRIPT_HANDLE ),
-            esc_html__( 'Loading the knowledge base settings…', 'lisensio-knowledge-base' )
+        Lisensio_KB_Admin_Page::shell(
+            __( 'Knowledge Base Settings', 'lisensio-knowledge-base' ),
+            self::SCRIPT_HANDLE,
+            __( 'Loading the knowledge base settings…', 'lisensio-knowledge-base' ),
+            'lisensio-kb-settings-app'
         );
     }
 

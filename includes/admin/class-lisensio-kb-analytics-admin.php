@@ -112,6 +112,9 @@ class Lisensio_KB_Analytics_Admin {
     /**
      * Render the mount point the Vue app takes over.
      *
+     * The shared shell prints the heading and the measured column so the three
+     * admin screens frame their applications identically.
+     *
      * @since 1.0.0
      *
      * @return void
@@ -121,10 +124,11 @@ class Lisensio_KB_Analytics_Admin {
             wp_die( esc_html__( 'You are not allowed to view the knowledge base analytics.', 'lisensio-knowledge-base' ) );
         }
 
-        printf(
-            '<div class="wrap"><div id="%1$s" class="lisensio-kb-analytics-app"><p>%2$s</p></div></div>',
-            esc_attr( self::SCRIPT_HANDLE ),
-            esc_html__( 'Loading the knowledge base analytics…', 'lisensio-knowledge-base' )
+        Lisensio_KB_Admin_Page::shell(
+            __( 'Knowledge Base Analytics', 'lisensio-knowledge-base' ),
+            self::SCRIPT_HANDLE,
+            __( 'Loading the knowledge base analytics…', 'lisensio-knowledge-base' ),
+            'lisensio-kb-analytics-app'
         );
     }
 

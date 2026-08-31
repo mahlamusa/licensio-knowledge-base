@@ -79,14 +79,14 @@ const declarations = computed( () =>
 }
 
 .lisensio-kb-settings__preview-link {
-	color: var( --lisensio-kb-brand, #2563eb );
+	color: var( --lisensio-kb-brand, #2ba377 );
 	font-weight: 600;
 	margin-inline-end: 16px;
 	text-decoration: none;
 }
 
 .lisensio-kb-settings__preview-button {
-	background: var( --lisensio-kb-brand, #2563eb );
+	background: var( --lisensio-kb-brand, #2ba377 );
 	border-radius: 6px;
 	color: var( --lisensio-kb-brand-contrast, #ffffff );
 	display: inline-block;

@@ -1,0 +1,86 @@
+/**
+ * Lisensio Knowledge Base — shared admin shell.
+ *
+ * Imported by every admin app so the three screens frame identically. Holds
+ * only what is common: the page ground, the contained column, and the page
+ * title. Anything specific to one screen stays in that screen.
+ *
+ * The markup this styles is printed by `Lisensio_KB_Admin_Page::shell()`, not
+ * by the applications, so the frame is on the page before a bundle has parsed.
+ *
+ * @since 1.0.0
+ */
+
+@import './tokens.css';
+
+/*
+ * `.wrap` carries `margin: 10px 20px 0 2px`, which would inset the ground and
+ * leave a white margin down the right of the screen. The ground is meant to be
+ * full-bleed, so the margins are dropped here and re-applied to the column
+ * inside it, where they can be symmetric.
+ */
+.lkb-wrap {
+	margin: 0;
+}
+
+/*
+ * The page ground.
+ *
+ * WordPress hands a screen the full width between the admin rail and the
+ * window edge, which on a wide monitor is 1600px of unbroken measure. Fine for
+ * a list table, wrong for anything with prose or form rows: a label on the far
+ * left and its control on the far right are related only by a line of empty
+ * space, and the eye loses the row. The column is capped and centred so the
+ * relationship stays readable.
+ *
+ * The negative left margin cancels `#wpcontent`'s 20px padding. With `.wrap`'s
+ * own margins already zeroed above, that leaves the ground spanning exactly
+ * from the admin rail to the window edge, so `margin: 0 auto` on the column
+ * below centres it truly rather than 18px off.
+ */
+.lkb-page {
+	margin: 0 0 0 -20px;
+	padding: var(--lkb-gap-lg) 0 96px;
+	background: var(--lkb-page);
+	min-height: calc( 100vh - 32px );
+	color: var(--lkb-ink);
+	font-size: 13px;
+}
+
+.lkb-page__inner {
+	max-width: 1240px;
+	margin: 0 auto;
+	padding: 0 var(--lkb-gap-lg);
+}
+
+/*
+ * The page heading.
+ *
+ * WordPress would print this in `.wrap`, hard against the left edge and clear
+ * of the column the content sits in — the screen name and the screen would not
+ * line up. It is printed inside the column instead, so the two share an edge.
+ */
+.lkb-page__title {
+	margin: 0 0 var(--lkb-gap-lg);
+	padding: 0;
+	color: var(--lkb-ink);
+	font-size: 20px;
+	font-weight: 600;
+	line-height: 1.3;
+}
+
+/* Shown only until the application replaces the mount point. */
+.lkb-page__loading {
+	margin: 0;
+	color: var(--lkb-ink-muted);
+}
+
+@media ( max-width: 782px ) {
+	.lkb-page {
+		margin-left: -10px;
+	}
+
+	.lkb-page__inner {
+		padding: 0 var(--lkb-gap);
+	}
+}

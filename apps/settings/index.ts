@@ -19,6 +19,7 @@ import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import {
 	Alert,
+	ConfigProvider,
 	Button,
 	Form,
 	FormItem,
@@ -34,6 +35,7 @@ import {
 } from 'ant-design-vue';
 import App from './App.vue';
 import 'ant-design-vue/dist/reset.css';
+import '../styles/admin.css';
 
 const container = document.getElementById( 'lisensio-kb-settings' );
 
@@ -44,6 +46,7 @@ if ( container ) {
 
 	[
 		Alert,
+		ConfigProvider,
 		Button,
 		Form,
 		FormItem,
