@@ -150,6 +150,14 @@ final class Lisensio_KB {
     private $analytics_privacy = null;
 
     /**
+     * The settings REST surface.
+     *
+     * @since 1.0.0
+     * @var Lisensio_KB_Settings_API|null
+     */
+    private $settings_api = null;
+
+    /**
      * Return the single instance of the plugin.
      *
      * @since 1.0.0
@@ -211,6 +219,8 @@ final class Lisensio_KB {
         $this->analytics_retention = new Lisensio_KB_Analytics_Retention( $this->settings );
         $this->analytics_privacy   = new Lisensio_KB_Analytics_Privacy();
 
+        $this->settings_api = new Lisensio_KB_Settings_API();
+
         /*
          * Permalinks first. It adds a key to the settings registry, and
          * Lisensio_KB_Settings memoizes the resolved settings on first read, so
@@ -231,6 +241,7 @@ final class Lisensio_KB {
         $this->analytics->init_hooks();
         $this->analytics_retention->init_hooks();
         $this->analytics_privacy->init_hooks();
+        $this->settings_api->init_hooks();
 
         if ( is_admin() ) {
             $term_fields = new Lisensio_KB_Term_Fields();
@@ -250,6 +261,9 @@ final class Lisensio_KB {
 
             $analytics_admin = new Lisensio_KB_Analytics_Admin( $this->assets );
             $analytics_admin->init_hooks();
+
+            $settings_admin = new Lisensio_KB_Settings_Admin( $this->assets );
+            $settings_admin->init_hooks();
         }
 
         add_action( 'init', array( $this, 'load_textdomain' ) );
