@@ -7,6 +7,12 @@ parameters:
         - includes
         - templates
         - tests
+        # Nothing under tools/ ships, and phpcs.xml excludes it for that reason.
+        # Static analysis is a different question: the disposable Heroic
+        # migrator is referenced by tests/, which IS analysed, so leaving it out
+        # would report every one of its classes as undefined. It is analysed at
+        # the same level as everything else.
+        - tools
     bootstrapFiles:
         - phpstan-bootstrap.php
     scanDirectories:
