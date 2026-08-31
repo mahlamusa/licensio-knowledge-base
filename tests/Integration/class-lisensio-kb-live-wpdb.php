@@ -120,6 +120,60 @@ class Lisensio_KB_Live_WPDB {
     public $usermeta = '';
 
     /**
+     * The posts table name.
+     *
+     * Core table names live on `$wpdb` as properties, and code that reads
+     * `$wpdb->posts` gets null from an adapter that does not carry them — which
+     * produces `FROM  WHERE …` and a syntax error rather than an obvious
+     * failure. The migrator suite creates real core tables on its scratch
+     * database so it can drive the real lookups, so the adapter has to name them.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    public $posts = '';
+
+    /**
+     * The post meta table name.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    public $postmeta = '';
+
+    /**
+     * The terms table name.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    public $terms = '';
+
+    /**
+     * The term taxonomy table name.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    public $term_taxonomy = '';
+
+    /**
+     * The term relationships table name.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    public $term_relationships = '';
+
+    /**
+     * The term meta table name.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    public $termmeta = '';
+
+    /**
      * Build the adapter.
      *
      * @since 1.0.0
@@ -128,10 +182,16 @@ class Lisensio_KB_Live_WPDB {
      * @param string $prefix The table prefix in use.
      */
     public function __construct( $db, $prefix ) {
-        $this->db       = $db;
-        $this->prefix   = $prefix;
-        $this->users    = $prefix . 'users';
-        $this->usermeta = $prefix . 'usermeta';
+        $this->db                 = $db;
+        $this->prefix             = $prefix;
+        $this->users              = $prefix . 'users';
+        $this->usermeta           = $prefix . 'usermeta';
+        $this->posts              = $prefix . 'posts';
+        $this->postmeta           = $prefix . 'postmeta';
+        $this->terms              = $prefix . 'terms';
+        $this->term_taxonomy      = $prefix . 'term_taxonomy';
+        $this->term_relationships = $prefix . 'term_relationships';
+        $this->termmeta           = $prefix . 'termmeta';
     }
 
     /**

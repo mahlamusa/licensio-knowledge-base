@@ -71,7 +71,7 @@
         ],
         "lint": "@php vendor/bin/phpcs",
         "fix": "@php vendor/bin/phpcbf",
-        "analyze": "@php vendor/bin/phpstan analyse --memory-limit=1G",
+        "analyze": "@php vendor/bin/phpstan analyse --memory-limit=2G",
         "unit": "@php vendor/bin/phpunit"
     }
 }

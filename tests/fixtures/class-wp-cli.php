@@ -24,6 +24,15 @@ if ( ! class_exists( 'WP_CLI' ) ) {
     class WP_CLI {
 
         /**
+         * Hooks registered through add_hook().
+         *
+         * @since 1.0.0
+         * @var array<int, array<string, mixed>>
+         */
+        public static $hooks = array();
+
+
+        /**
          * Commands registered through add_command().
          *
          * @since 1.0.0
@@ -143,6 +152,23 @@ if ( ! class_exists( 'WP_CLI' ) ) {
         public static function error( $message ) {
             // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- A test double; the message never reaches a browser.
             throw new RuntimeException( (string) $message );
+        }
+
+        /**
+         * Record a WP-CLI hook registration.
+         *
+         * @since 1.0.0
+         *
+         * @param string   $name     The hook name.
+         * @param callable $callback The callback.
+         *
+         * @return void
+         */
+        public static function add_hook( $name, $callback ) {
+            self::$hooks[] = array(
+                'name'     => (string) $name,
+                'callback' => $callback,
+            );
         }
     }
 }
