@@ -139,10 +139,47 @@ class Lisensio_KB_Analytics {
         add_action( 'lisensio_after_article', array( $this, 'handle_article_view' ) );
         add_action( 'wp', array( $this, 'handle_site_search' ) );
         add_action( 'lisensio_search_performed', array( $this, 'handle_search_event' ), 10, 3 );
+        add_action( 'deleted_post', array( $this, 'handle_deleted_post' ), 20 );
 
         add_filter( 'lisensio_article_views_column', array( $this, 'filter_views_column' ), 10, 2 );
         add_filter( 'lisensio_rest_controllers', array( $this, 'register_rest_controller' ) );
         add_filter( 'lisensio_rest_stub_routes', array( $this, 'release_stub_routes' ) );
+    }
+
+    /**
+     * Action handler: forget an article's analytics when the article is deleted.
+     *
+     * The search index already does this, and the two behaving differently is
+     * the bug this fixes: deleting an article removed its index row but left
+     * its view and feedback rows behind for good. Those rows are keyed on an
+     * article ID that will never resolve again, so they are unreachable
+     * through the admin screens and invisible to the retention purge, which
+     * trims by age rather than by whether the article still exists.
+
+     * It also matters for privacy. The plugin promises that analytics can be
+     * purged, and a row that outlives the article it describes - and the
+     * retention window - is a quiet contradiction of that.
+     *
+     * `deleted_post` fires for every post type. That is harmless here: the
+     * article ID is unique across all post types, so a delete keyed on it can
+     * only ever match rows belonging to the article that was removed.
+     *
+     * @since 1.0.0
+     *
+     * @param int $post_id The deleted post ID.
+     *
+     * @return void
+     */
+    public function handle_deleted_post( $post_id ) {
+        $post_id = (int) $post_id;
+
+        if ( $post_id <= 0 ) {
+            return;
+        }
+
+        foreach ( array( self::TABLE_ARTICLE_VIEWS, self::TABLE_FEEDBACK ) as $lisensio_kb_table ) {
+            Lisensio_KB_DB::table( $lisensio_kb_table )->where( 'article_id', $post_id )->delete();
+        }
     }
 
     /**
