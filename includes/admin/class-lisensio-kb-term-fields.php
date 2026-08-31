@@ -7,8 +7,15 @@
  * accessors for those keys live in Lisensio_KB_Term_Meta; this class is only
  * the admin surface over them.
  *
+ * Three of the fields are icons and only one of them is drawn. The precedence
+ * is inline SVG, then the uploaded icon, then the dashicon name — set out in
+ * full on Lisensio_KB_Term_Meta. Silent precedence is a support ticket waiting
+ * to happen, so each field's description says on screen what it overrides, and
+ * the fields are rendered in precedence order so the one that wins is the one
+ * read first.
+ *
  * @package Lisensio_KB
- * @since   1.0.0
+ * @since   1.0.0 Added the inline SVG icon field.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -104,7 +111,7 @@ class Lisensio_KB_Term_Fields {
     /**
      * Render the fields on the "add new category" form.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Added the inline SVG icon field.
      *
      * @param string $taxonomy The taxonomy the form belongs to.
      *
@@ -115,8 +122,9 @@ class Lisensio_KB_Term_Fields {
 
         wp_nonce_field( self::NONCE_ACTION, self::NONCE_FIELD );
 
-        $this->render_field_wrapper( 'icon', '', 'div' );
+        $this->render_field_wrapper( 'icon_svg', '', 'div' );
         $this->render_field_wrapper( 'icon_id', 0, 'div' );
+        $this->render_field_wrapper( 'icon', '', 'div' );
         $this->render_field_wrapper( 'image_id', 0, 'div' );
         $this->render_field_wrapper( 'order', 0, 'div' );
     }
@@ -124,7 +132,7 @@ class Lisensio_KB_Term_Fields {
     /**
      * Render the fields on the "edit category" form.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Added the inline SVG icon field.
      *
      * @param WP_Term|object $term The term being edited.
      *
@@ -135,8 +143,9 @@ class Lisensio_KB_Term_Fields {
 
         wp_nonce_field( self::NONCE_ACTION, self::NONCE_FIELD );
 
-        $this->render_field_wrapper( 'icon', Lisensio_KB_Term_Meta::get_icon( $term_id ), 'tr' );
+        $this->render_field_wrapper( 'icon_svg', Lisensio_KB_Term_Meta::get_icon_svg( $term_id ), 'tr' );
         $this->render_field_wrapper( 'icon_id', Lisensio_KB_Term_Meta::get_icon_id( $term_id ), 'tr' );
+        $this->render_field_wrapper( 'icon', Lisensio_KB_Term_Meta::get_icon( $term_id ), 'tr' );
         $this->render_field_wrapper( 'image_id', Lisensio_KB_Term_Meta::get_image_id( $term_id ), 'tr' );
         $this->render_field_wrapper( 'order', Lisensio_KB_Term_Meta::get_order( $term_id ), 'tr' );
     }
@@ -150,7 +159,7 @@ class Lisensio_KB_Term_Fields {
      *
      * @since 1.0.0
      *
-     * @param string     $field   One of `icon`, `icon_id`, `image_id` or `order`.
+     * @param string     $field   One of `icon_svg`, `icon`, `icon_id`, `image_id` or `order`.
      * @param string|int $value   The current value.
      * @param string     $wrapper Either `div` for the add form or `tr` for the edit form.
      *
@@ -158,6 +167,7 @@ class Lisensio_KB_Term_Fields {
      */
     private function render_field_wrapper( $field, $value, $wrapper ) {
         $labels = array(
+            'icon_svg' => __( 'Inline SVG icon', 'lisensio-knowledge-base' ),
             'icon'     => __( 'Icon', 'lisensio-knowledge-base' ),
             'icon_id'  => __( 'Uploaded icon', 'lisensio-knowledge-base' ),
             'image_id' => __( 'Image', 'lisensio-knowledge-base' ),
@@ -185,7 +195,7 @@ class Lisensio_KB_Term_Fields {
      *
      * @since 1.0.0
      *
-     * @param string $field One of `icon`, `icon_id`, `image_id` or `order`.
+     * @param string $field One of `icon_svg`, `icon`, `icon_id`, `image_id` or `order`.
      *
      * @return string The input name.
      */
@@ -196,9 +206,9 @@ class Lisensio_KB_Term_Fields {
     /**
      * Render the control and help text for one field.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Added the inline SVG icon field.
      *
-     * @param string     $field One of `icon`, `icon_id`, `image_id` or `order`.
+     * @param string     $field One of `icon_svg`, `icon`, `icon_id`, `image_id` or `order`.
      * @param string|int $value The current value.
      *
      * @return void
@@ -207,6 +217,14 @@ class Lisensio_KB_Term_Fields {
         $name = $this->field_name( $field );
 
         switch ( $field ) {
+            case 'icon_svg':
+                $this->render_svg_field( $name, (string) $value );
+                printf(
+                    '<p class="description">%s</p>',
+                    esc_html__( 'Paste an SVG icon. Everything outside a small allowlist of shape elements and presentation attributes is removed on save, so the preview shows what was actually kept. Takes precedence over the uploaded icon and the Dashicons name. An icon drawn with currentColor follows the knowledge base colour.', 'lisensio-knowledge-base' )
+                );
+                break;
+
             case 'icon':
                 printf(
                     '<input type="text" id="%1$s" name="%1$s" value="%2$s" class="regular-text" placeholder="dashicons-book-alt" />',
@@ -215,7 +233,7 @@ class Lisensio_KB_Term_Fields {
                 );
                 printf(
                     '<p class="description">%s</p>',
-                    esc_html__( 'A Dashicons name, for example dashicons-book-alt. Ignored when an icon is uploaded below.', 'lisensio-knowledge-base' )
+                    esc_html__( 'A Dashicons name, for example dashicons-book-alt. Ignored when an SVG icon or an uploaded icon is set.', 'lisensio-knowledge-base' )
                 );
                 break;
 
@@ -226,7 +244,7 @@ class Lisensio_KB_Term_Fields {
                 if ( 'icon_id' === $field ) {
                     printf(
                         '<p class="description">%s</p>',
-                        esc_html__( 'An uploaded icon, for example an SVG. Takes precedence over the Dashicons name.', 'lisensio-knowledge-base' )
+                        esc_html__( 'An uploaded icon, for example an SVG file. Takes precedence over the Dashicons name, and is itself ignored when an SVG icon is pasted above.', 'lisensio-knowledge-base' )
                     );
                 } else {
                     printf(
@@ -249,6 +267,48 @@ class Lisensio_KB_Term_Fields {
                 );
                 break;
         }
+    }
+
+    /**
+     * Render the inline SVG textarea and its preview.
+     *
+     * Two renderings of one value, escaped differently on purpose. The textarea
+     * shows the markup, so it is escaped with `esc_textarea()` and the author
+     * reads angle brackets. The preview shows the icon, so it is printed
+     * unescaped and the browser draws it.
+     *
+     * Printing it unescaped is safe because of where the value came from, not
+     * because of anything this method does: every route into the meta key runs
+     * Lisensio_KB_SVG_Sanitizer::sanitize(), and Lisensio_KB_Term_Meta runs it
+     * again on the way back out, so `$value` here is markup an allowlist of
+     * element and attribute names has already reduced — no `script`, no
+     * `foreignObject`, no `on*` handler, no `href` that is not a fragment. See
+     * that class for the list. Escaping it instead would print the source of
+     * the icon into the page where the icon should be, which is the failure
+     * this comment exists to stop a reviewer from "fixing".
+     *
+     * @since 1.0.0
+     *
+     * @param string $name  The input name.
+     * @param string $value The sanitized SVG markup.
+     *
+     * @return void
+     */
+    private function render_svg_field( $name, $value ) {
+        printf(
+            '<textarea id="%1$s" name="%1$s" rows="6" class="large-text code" placeholder="%2$s">%3$s</textarea>',
+            esc_attr( $name ),
+            esc_attr__( 'Paste SVG markup here', 'lisensio-knowledge-base' ),
+            esc_textarea( $value )
+        );
+
+        if ( '' === $value ) {
+            return;
+        }
+
+        echo '<div class="lisensio-kb-svg-preview" style="max-width:80px;">';
+        echo $value; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Allowlist-sanitized SVG; see the docblock above.
+        echo '</div>';
     }
 
     /**
@@ -298,7 +358,7 @@ class Lisensio_KB_Term_Fields {
      * write, an importer — posts none of them, and writing defaults for the
      * absent ones would erase metadata that call had no intention of touching.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Added the inline SVG icon field.
      *
      * @param int $term_id The term that was created or edited.
      *
@@ -319,6 +379,7 @@ class Lisensio_KB_Term_Fields {
 
         $fields = array(
             'lisensio_icon'     => array( Lisensio_KB_Term_Meta::META_ICON, array( 'Lisensio_KB_Term_Meta', 'sanitize_icon' ) ),
+            'lisensio_icon_svg' => array( Lisensio_KB_Term_Meta::META_ICON_SVG, array( 'Lisensio_KB_SVG_Sanitizer', 'sanitize' ) ),
             'lisensio_icon_id'  => array( Lisensio_KB_Term_Meta::META_ICON_ID, array( 'Lisensio_KB_Term_Meta', 'sanitize_attachment_id' ) ),
             'lisensio_image_id' => array( Lisensio_KB_Term_Meta::META_IMAGE_ID, array( 'Lisensio_KB_Term_Meta', 'sanitize_attachment_id' ) ),
             'lisensio_order'    => array( Lisensio_KB_Term_Meta::META_ORDER, array( 'Lisensio_KB_Term_Meta', 'sanitize_order' ) ),

@@ -6,8 +6,12 @@
  * sub-categories. Override from a theme by copying this file to
  * `lisensio-kb/category-card.php`.
  *
+ * Three meta keys can supply the icon and only one of them is drawn. The order
+ * is inline SVG, then the uploaded attachment, then the dashicon name — most
+ * specific first, and set out in full on Lisensio_KB_Term_Meta.
+ *
  * @package Lisensio_KB
- * @since   1.0.0 Added the `show_count` and `show_icon` arguments for the category grid block.
+ * @since   1.0.0 Added the inline SVG icon, ahead of the uploaded icon and the dashicon name.
  *
  * @var array $args {
  *     Template arguments.
@@ -33,13 +37,37 @@ $lisensio_kb_show_children  = ! isset( $args['show_children'] ) || (bool) $args[
 $lisensio_kb_show_count     = ! isset( $args['show_count'] ) || (bool) $args['show_count'];
 $lisensio_kb_show_icon      = isset( $args['show_icon'] ) && (bool) $args['show_icon'];
 $lisensio_kb_children       = $lisensio_kb_show_children ? Lisensio_KB_Templates::child_categories( $lisensio_kb_category->term_id ) : array();
-$lisensio_kb_icon_id        = $lisensio_kb_show_icon ? Lisensio_KB_Term_Meta::get_icon_id( $lisensio_kb_category->term_id ) : 0;
-$lisensio_kb_icon           = $lisensio_kb_show_icon && 0 === $lisensio_kb_icon_id
+$lisensio_kb_icon_svg       = $lisensio_kb_show_icon ? Lisensio_KB_Term_Meta::get_icon_svg( $lisensio_kb_category->term_id ) : '';
+$lisensio_kb_icon_id        = $lisensio_kb_show_icon && '' === $lisensio_kb_icon_svg
+    ? Lisensio_KB_Term_Meta::get_icon_id( $lisensio_kb_category->term_id )
+    : 0;
+$lisensio_kb_icon           = $lisensio_kb_show_icon && '' === $lisensio_kb_icon_svg && 0 === $lisensio_kb_icon_id
     ? Lisensio_KB_Term_Meta::get_icon( $lisensio_kb_category->term_id )
     : '';
 ?>
 <article class="lisensio-kb-card lisensio-kb-card--category">
-    <?php if ( $lisensio_kb_icon_id > 0 ) : ?>
+    <?php if ( '' !== $lisensio_kb_icon_svg ) : ?>
+        <span class="lisensio-kb-card__icon lisensio-kb-card__icon--svg" aria-hidden="true">
+            <?php
+            /*
+             * Printed unescaped, and it has to be: escaping it would put the
+             * source of the icon on the card instead of the icon.
+             *
+             * That is safe here because of what the value is, not because of
+             * where it is printed. Lisensio_KB_Term_Meta::get_icon_svg() runs
+             * every read through Lisensio_KB_SVG_Sanitizer::sanitize(), which
+             * rebuilds the markup from an allowlist of element and attribute
+             * names — so whatever is in the database, what arrives here has no
+             * `script`, no `foreignObject`, no `on*` handler and no `href` that
+             * is not a same-document fragment. Reading it back out is not a
+             * shortcut past the write-side sanitisation; it is the reason a row
+             * written by an importer or by hand is as safe as one written by
+             * the term form.
+             */
+            echo $lisensio_kb_icon_svg; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Allowlist-sanitized on read by Lisensio_KB_Term_Meta::get_icon_svg().
+            ?>
+        </span>
+    <?php elseif ( $lisensio_kb_icon_id > 0 ) : ?>
         <?php
         echo wp_kses_post(
             (string) wp_get_attachment_image(

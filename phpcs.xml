@@ -70,6 +70,24 @@
         </properties>
     </rule>
 
+    <!--
+        The DOM extension names its properties in camelCase and no amount of
+        coding standard changes that. The SVG sanitizer reads them, so they are
+        allowed by name rather than by silencing the sniff on the file, which
+        would also stop it catching a genuinely misnamed property there.
+    -->
+    <rule ref="WordPress.NamingConventions.ValidVariableName">
+        <properties>
+            <property name="allowed_custom_properties" type="array">
+                <element value="documentElement"/>
+                <element value="childNodes"/>
+                <element value="nodeName"/>
+                <element value="nodeValue"/>
+                <element value="namespaceURI"/>
+            </property>
+        </properties>
+    </rule>
+
     <!-- All strings are translatable under one text domain. -->
     <rule ref="WordPress.WP.I18n">
         <properties>
