@@ -625,6 +625,55 @@ class Lisensio_KB_Feedback {
     }
 
     /**
+     * How many rows sit in each triage status.
+     *
+     * The inbox offers a status filter, and a filter that cannot say how many
+     * rows it would leave is a guess: a triager wants to know there are four
+     * new entries before deciding to open the New view. Counted in one grouped
+     * query rather than one query per status, and the `status` argument is
+     * ignored on purpose - the counts describe every status under the *other*
+     * filters, which is what makes them useful next to the filter itself.
+     *
+     * @since 1.0.0
+     *
+     * @param array<string, mixed> $args The inbox query arguments.
+     *
+     * @return array<string, int> Status name to row count, plus `all`. Every known status is present, zero included.
+     */
+    public function counts_by_status( $args = array() ) {
+        $args           = $this->normalize_query_args( $args );
+        $args['status'] = '';
+        $counts         = array( 'all' => 0 );
+
+        foreach ( self::statuses() as $status ) {
+            $counts[ $status ] = 0;
+        }
+
+        $rows = $this->build_query( $args )
+            ->select( 'status' )
+            ->selectRaw( 'COUNT(*) AS total' )
+            ->groupBy( 'status' )
+            ->getAll();
+
+        foreach ( (array) $rows as $row ) {
+            if ( ! is_object( $row ) || ! isset( $row->status, $row->total ) ) {
+                continue;
+            }
+
+            $status = (string) $row->status;
+            $total  = (int) $row->total;
+
+            $counts['all'] += $total;
+
+            if ( array_key_exists( $status, $counts ) ) {
+                $counts[ $status ] = $total;
+            }
+        }
+
+        return $counts;
+    }
+
+    /**
      * One feedback row by ID.
      *
      * @since 1.0.0

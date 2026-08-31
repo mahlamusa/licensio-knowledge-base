@@ -10,10 +10,11 @@
 
 import { defineStore } from 'pinia';
 import { fetchPage, patchStatus, settings } from './api';
-import type { FeedbackItem, FeedbackStatus } from './types';
+import type { FeedbackCounts, FeedbackItem, FeedbackStatus } from './types';
 
 interface State {
 	items: FeedbackItem[];
+	counts: FeedbackCounts;
 	total: number;
 	pages: number;
 	page: number;
@@ -29,6 +30,7 @@ interface State {
 export const useFeedbackStore = defineStore( 'lisensioKBFeedback', {
 	state: (): State => ( {
 		items: [],
+		counts: {},
 		total: 0,
 		pages: 0,
 		page: 1,
@@ -62,6 +64,7 @@ export const useFeedbackStore = defineStore( 'lisensioKBFeedback', {
 				} );
 
 				this.items = page.items;
+				this.counts = page.counts ?? {};
 				this.total = page.total;
 				this.pages = page.pages;
 

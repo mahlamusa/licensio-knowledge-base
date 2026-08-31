@@ -515,6 +515,67 @@ class Lisensio_KB_Feedback_Integration_Test extends Lisensio_KB_Integration_Test
     }
 
     /**
+     * The status counts come back from one grouped query, zeroes included.
+     *
+     * The inbox draws its status filter from these, so a status with no rows
+     * still has to appear - a filter that hides its empty options makes the
+     * set of options change as rows are triaged.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_status_counts_cover_every_status() {
+        $this->feedback->record_vote( 42, Lisensio_KB_Feedback::VOTE_DOWN, 'a', self::HASH_A, 0 );
+        $this->feedback->record_vote( 43, Lisensio_KB_Feedback::VOTE_DOWN, 'b', self::HASH_A, 0 );
+        $this->feedback->record_vote( 44, Lisensio_KB_Feedback::VOTE_UP, 'c', self::HASH_A, 0 );
+
+        $first = $this->feedback->get_rows( array( 'per_page' => 1 ) )[0];
+        $this->feedback->update_status( (int) $first->id, Lisensio_KB_Feedback::STATUS_REVIEWED );
+
+        $counts = $this->feedback->counts_by_status();
+
+        $this->assertSame( 3, $counts['all'] );
+        $this->assertSame( 2, $counts[ Lisensio_KB_Feedback::STATUS_NEW ] );
+        $this->assertSame( 1, $counts[ Lisensio_KB_Feedback::STATUS_REVIEWED ] );
+        $this->assertSame( 0, $counts[ Lisensio_KB_Feedback::STATUS_ACTIONED ] );
+    }
+
+    /**
+     * The counts describe every status under the *other* filters.
+     *
+     * Narrowing to negative votes must narrow the counts, or the numbers beside
+     * the status filter would describe a different set of rows than the table
+     * below them. Narrowing to a status must not, or every count except the
+     * selected one would collapse to zero the moment a status was picked, and
+     * the filter could never be widened again by reading it.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_counts_follow_the_vote_filter_but_not_the_status_filter() {
+        $this->feedback->record_vote( 42, Lisensio_KB_Feedback::VOTE_DOWN, 'a', self::HASH_A, 0 );
+        $this->feedback->record_vote( 43, Lisensio_KB_Feedback::VOTE_DOWN, 'b', self::HASH_A, 0 );
+        $this->feedback->record_vote( 44, Lisensio_KB_Feedback::VOTE_UP, 'c', self::HASH_A, 0 );
+
+        $negative = $this->feedback->counts_by_status(
+            array( 'vote' => Lisensio_KB_Feedback::VOTE_DOWN )
+        );
+
+        $this->assertSame( 2, $negative['all'] );
+        $this->assertSame( 2, $negative[ Lisensio_KB_Feedback::STATUS_NEW ] );
+
+        $narrowed = $this->feedback->counts_by_status(
+            array( 'status' => Lisensio_KB_Feedback::STATUS_ACTIONED )
+        );
+
+        $this->assertSame( 3, $narrowed['all'] );
+        $this->assertSame( 3, $narrowed[ Lisensio_KB_Feedback::STATUS_NEW ] );
+        $this->assertSame( 0, $narrowed[ Lisensio_KB_Feedback::STATUS_ACTIONED ] );
+    }
+
+    /**
      * A stored row keeps the values it was given.
      *
      * @since 1.0.0

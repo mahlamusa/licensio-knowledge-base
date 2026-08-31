@@ -46,6 +46,12 @@ class Lisensio_KB_Settings_Admin_Test extends Lisensio_KB_Test_Case {
         Functions\when( 'wp_localize_script' )->justReturn( true );
         Functions\when( 'wp_set_script_translations' )->justReturn( true );
         Functions\when( 'esc_url_raw' )->returnArg();
+        Functions\when( 'admin_url' )->alias(
+            function ( $path = '' ) {
+                return 'https://example.test/wp-admin/' . ltrim( (string) $path, '/' );
+            }
+        );
+        Functions\when( 'get_post_type_archive_link' )->justReturn( 'https://example.test/docs/' );
         Functions\when( 'rest_url' )->alias(
             function ( $path = '' ) {
                 return 'https://example.test/wp-json/' . ltrim( (string) $path, '/' );

@@ -24,6 +24,8 @@ export interface FeedbackItem {
 	userName: string;
 }
 
+export type FeedbackCounts = Record< string, number >;
+
 export interface FeedbackPage {
 	items: FeedbackItem[];
 	total: number;
@@ -31,6 +33,7 @@ export interface FeedbackPage {
 	page: number;
 	perPage: number;
 	statuses: FeedbackStatus[];
+	counts: FeedbackCounts;
 }
 
 export interface InboxSettings {
@@ -38,4 +41,5 @@ export interface InboxSettings {
 	nonce: string;
 	perPage: number;
 	statuses: FeedbackStatus[];
+	settingsUrl?: string;
 }

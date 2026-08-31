@@ -22,11 +22,28 @@ defined( 'ABSPATH' ) || exit;
 class Lisensio_KB_Admin_Page {
 
     /**
+     * The address of the knowledge base settings screen.
+     *
+     * The three screens each carry the product header, and the header's cog
+     * links here. Built in one place so a change to the menu parent does not
+     * have to be found in three localised payloads.
+     *
+     * @since 1.0.0
+     *
+     * @return string The admin URL of the settings screen.
+     */
+    public static function settings_url() {
+        return admin_url( 'edit.php?post_type=' . Lisensio_KB_Post_Types::POST_TYPE . '&page=lisensio-kb-settings' );
+    }
+
+    /**
      * Print the page shell and the mount point.
      *
-     * The heading sits inside the measured column rather than in `.wrap` so it
-     * lines up with the content the application draws underneath it, and it is
-     * server-rendered so the screen is never nameless while the bundle loads.
+     * The heading and the placeholder sit *inside* the mount element, so they
+     * are what the screen shows until the bundle parses and then are replaced
+     * by the application wholesale. Printing the heading outside the mount
+     * would leave it on the page next to the one the application draws, and
+     * the screen would carry its own name twice.
      *
      * @since 1.0.0
      *
@@ -39,7 +56,7 @@ class Lisensio_KB_Admin_Page {
      */
     public static function shell( $title, $mount_id, $loading_text, $mount_class = '' ) {
         printf(
-            '<div class="wrap lkb-wrap"><div class="lkb-page"><div class="lkb-page__inner"><h1 class="lkb-page__title">%1$s</h1><div id="%2$s" class="%3$s"><p class="lkb-page__loading">%4$s</p></div></div></div></div>',
+            '<div class="wrap lkb-wrap"><div id="%2$s" class="lkb-page %3$s"><div class="lkb-page__boot"><h1 class="lkb-page__title">%1$s</h1><p class="lkb-page__loading">%4$s</p></div></div></div>',
             esc_html( $title ),
             esc_attr( $mount_id ),
             esc_attr( $mount_class ),

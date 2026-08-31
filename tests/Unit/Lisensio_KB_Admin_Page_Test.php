@@ -54,26 +54,28 @@ class Lisensio_KB_Admin_Page_Test extends Lisensio_KB_Test_Case {
     }
 
     /**
-     * The heading sits inside the measured column, not in `.wrap`.
+     * The heading sits inside the mount element, not beside it.
      *
-     * A heading printed in `.wrap` sits hard against the screen edge while the
-     * application draws its content in a centred 1240px column, so the screen
-     * name and the screen do not share an edge. Asserting on the order of the
-     * opening tags is what distinguishes the two arrangements.
+     * The application draws its own header and title. A heading printed
+     * outside the mount survives hydration and the screen then carries its
+     * name twice, once in server markup and once in the application. Inside
+     * the mount it is replaced by the thing that supersedes it.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_the_heading_is_inside_the_measured_column() {
-        $markup = $this->render();
+    public function test_the_heading_is_inside_the_mount_element() {
+        $markup = $this->render( 'Knowledge Base Settings', 'lisensio-kb-settings', 'Loading…' );
 
-        $inner   = strpos( $markup, 'lkb-page__inner' );
+        $mount   = strpos( $markup, 'id="lisensio-kb-settings"' );
         $heading = strpos( $markup, 'lkb-page__title' );
+        $closes  = strrpos( $markup, '</div></div>' );
 
-        $this->assertNotFalse( $inner );
+        $this->assertNotFalse( $mount );
         $this->assertNotFalse( $heading );
-        $this->assertLessThan( $heading, $inner );
+        $this->assertLessThan( $heading, $mount );
+        $this->assertLessThan( $closes, $heading );
     }
 
     /**
@@ -87,7 +89,7 @@ class Lisensio_KB_Admin_Page_Test extends Lisensio_KB_Test_Case {
         $markup = $this->render( 'Analytics', 'lisensio-kb-analytics', 'Loading…', 'lisensio-kb-analytics-app' );
 
         $this->assertStringContainsString( 'id="lisensio-kb-analytics"', $markup );
-        $this->assertStringContainsString( 'class="lisensio-kb-analytics-app"', $markup );
+        $this->assertStringContainsString( 'lisensio-kb-analytics-app', $markup );
     }
 
     /**

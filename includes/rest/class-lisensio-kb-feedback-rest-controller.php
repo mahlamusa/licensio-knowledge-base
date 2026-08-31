@@ -364,6 +364,7 @@ class Lisensio_KB_Feedback_REST_Controller extends Lisensio_KB_REST_Controller {
             'page'     => max( 1, (int) $args['page'] ),
             'perPage'  => $per_page,
             'statuses' => Lisensio_KB_Feedback::statuses(),
+            'counts'   => $this->feedback->counts_by_status( $args ),
         );
     }
 

@@ -118,7 +118,7 @@ class Lisensio_KB_Settings_Admin {
         }
 
         Lisensio_KB_Admin_Page::shell(
-            __( 'Knowledge Base Settings', 'lisensio-knowledge-base' ),
+            __( 'Settings', 'lisensio-knowledge-base' ),
             self::SCRIPT_HANDLE,
             __( 'Loading the knowledge base settings…', 'lisensio-knowledge-base' ),
             'lisensio-kb-settings-app'
@@ -168,8 +168,10 @@ class Lisensio_KB_Settings_Admin {
      */
     public function app_data() {
         return array(
-            'restUrl' => esc_url_raw( Lisensio_KB_REST_API::url( ltrim( Lisensio_KB_REST_Settings_Controller::ROUTE, '/' ) ) ),
-            'nonce'   => wp_create_nonce( 'wp_rest' ),
+            'restUrl'     => esc_url_raw( Lisensio_KB_REST_API::url( ltrim( Lisensio_KB_REST_Settings_Controller::ROUTE, '/' ) ) ),
+            'nonce'       => wp_create_nonce( 'wp_rest' ),
+            'settingsUrl' => Lisensio_KB_Admin_Page::settings_url(),
+            'archiveUrl'  => (string) get_post_type_archive_link( Lisensio_KB_Post_Types::POST_TYPE ),
         );
     }
 }
