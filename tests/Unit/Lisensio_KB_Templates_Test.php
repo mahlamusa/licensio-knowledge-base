@@ -1184,6 +1184,32 @@ class Lisensio_KB_Templates_Test extends Lisensio_KB_Test_Case {
         $this->assertStringContainsString( '--lisensio-kb-card-shadow: 0 4px 14px rgba(30, 122, 90, 0.08);', $css );
         $this->assertStringContainsString( '--lisensio-kb-font-head: var(--font-head, "Plus Jakarta Sans"', $css );
     }
+    /**
+     * An article card exposes exactly one link.
+     *
+     * The whole card is clickable, but by stretching a pseudo-element from the
+     * title's link - not by wrapping the card in an anchor, and not by adding a
+     * second hidden one. Either of those would give a screen reader two links
+     * to one destination, or one whose accessible name is the entire card.
+     *
+     * Asserted on the count because the visual result is identical either way:
+     * a card that became clickable the wrong way would look correct and read
+     * badly, which no screenshot would catch.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_article_card_exposes_exactly_one_link() {
+        $this->stub_article( 77, 'Rotating a licence key' );
+
+        ob_start();
+        lisensio_kb_get_template( 'article-card', array( 'post' => 77 ) );
+        $markup = (string) ob_get_clean();
+
+        $this->assertSame( 1, substr_count( $markup, '<a ' ), 'an article card must expose exactly one link' );
+        $this->assertStringContainsString( 'lisensio-kb-card__link', $markup );
+    }
 }
 
 /**
