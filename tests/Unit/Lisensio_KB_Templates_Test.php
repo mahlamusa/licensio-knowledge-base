@@ -671,6 +671,10 @@ class Lisensio_KB_Templates_Test extends Lisensio_KB_Test_Case {
         Functions\when( 'get_header' )->justReturn( null );
         Functions\when( 'get_footer' )->justReturn( null );
         Functions\when( 'get_the_term_list' )->justReturn( '' );
+
+        // The sidebar asks the taxonomies what to list; this file is about the hooks, so it lists nothing.
+        Functions\when( 'get_terms' )->justReturn( array() );
+        Functions\when( 'get_the_terms' )->justReturn( array() );
         Functions\when( 'get_the_modified_date' )->justReturn( '1 January 2026' );
         Functions\when( 'the_content' )->alias(
             function () {

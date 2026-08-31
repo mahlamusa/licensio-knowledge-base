@@ -422,7 +422,7 @@ class Lisensio_KB_Settings_Schema_Test extends Lisensio_KB_Test_Case {
         $this->assertNotSame( '', $sidebar['description'] );
         $this->assertSame( 'core', $sidebar['category'] );
         $this->assertNotSame( 'admin-settings', $sidebar['icon'] );
-        $this->assertSame( 4, $sidebar['count'] );
+        $this->assertSame( 5, $sidebar['count'] );
     }
 
     /**

@@ -158,6 +158,14 @@ final class Lisensio_KB {
     private $settings_api = null;
 
     /**
+     * Article heading ids and the table of contents.
+     *
+     * @since 1.0.0
+     * @var Lisensio_KB_TOC|null
+     */
+    private $toc = null;
+
+    /**
      * Return the single instance of the plugin.
      *
      * @since 1.0.0
@@ -220,6 +228,7 @@ final class Lisensio_KB {
         $this->analytics_privacy   = new Lisensio_KB_Analytics_Privacy();
 
         $this->settings_api = new Lisensio_KB_Settings_API();
+        $this->toc          = new Lisensio_KB_TOC();
 
         /*
          * Permalinks first. It adds a key to the settings registry, and
@@ -242,6 +251,7 @@ final class Lisensio_KB {
         $this->analytics_retention->init_hooks();
         $this->analytics_privacy->init_hooks();
         $this->settings_api->init_hooks();
+        $this->toc->init_hooks();
 
         if ( is_admin() ) {
             $term_fields = new Lisensio_KB_Term_Fields();
@@ -558,5 +568,20 @@ final class Lisensio_KB {
         }
 
         return $this->analytics_privacy;
+    }
+
+    /**
+     * Get the table of contents component.
+     *
+     * @since 1.0.0
+     *
+     * @return Lisensio_KB_TOC
+     */
+    public function toc() {
+        if ( ! $this->toc instanceof Lisensio_KB_TOC ) {
+            $this->toc = new Lisensio_KB_TOC();
+        }
+
+        return $this->toc;
     }
 }

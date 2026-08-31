@@ -209,6 +209,10 @@ class Lisensio_KB_Settings {
                 'default'  => 'right',
                 'sanitize' => array( 'Lisensio_KB_Settings', 'sanitize_sidebar_position' ),
             ),
+            'show_table_of_contents'    => array(
+                'type'    => 'bool',
+                'default' => true,
+            ),
             'enable_feedback'           => array(
                 'type'    => 'bool',
                 'default' => true,

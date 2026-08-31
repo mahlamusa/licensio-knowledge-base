@@ -114,7 +114,7 @@ class Lisensio_KB_Settings_Schema {
             ),
             'sidebar'           => array(
                 'label'       => __( 'Sidebar', 'lisensio-knowledge-base' ),
-                'description' => __( 'Which side the sidebar sits on, chosen separately for the archive, an article and a category, and whether it follows the reader down a long article.', 'lisensio-knowledge-base' ),
+                'description' => __( 'Which side the sidebar sits on, chosen separately for the archive, an article and a category, whether it follows the reader down a long article, and whether it opens with a table of contents.', 'lisensio-knowledge-base' ),
                 'category'    => 'core',
                 'icon'        => 'align-pull-right',
             ),
@@ -319,6 +319,20 @@ class Lisensio_KB_Settings_Schema {
                 'description' => __( 'Which side the sidebar sits on when a category archive is shown.', 'lisensio-knowledge-base' ),
                 'control'     => 'select',
                 'choices'     => self::sidebar_choices(),
+            ),
+
+            /*
+             * Grouped with the sidebar rather than with the content settings.
+             * The table of contents is one of the sidebar's three sections and
+             * has no existence outside it — setting the article sidebar to "No
+             * sidebar" already turns it off — so someone looking for the switch
+             * looks here, beside the setting that overrides it.
+             */
+            'show_table_of_contents'     => array(
+                'group'       => 'sidebar',
+                'label'       => __( 'Table of contents', 'lisensio-knowledge-base' ),
+                'description' => __( 'List an article\'s headings at the top of its sidebar, each one a link to that section. Articles with fewer than two headings never show it.', 'lisensio-knowledge-base' ),
+                'control'     => 'toggle',
             ),
             'search_results_limit'       => array(
                 'group'       => 'search',
