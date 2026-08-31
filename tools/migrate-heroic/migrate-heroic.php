@@ -20,17 +20,19 @@
  * @since   1.0.0
  */
 
-defined( 'ABSPATH' ) || exit;
+/*
+ * This file is loaded with `wp --require=`, which WP-CLI processes BEFORE it
+ * bootstraps WordPress. ABSPATH is therefore not defined yet, so the usual
+ * `defined( 'ABSPATH' ) || exit;` guard terminated the whole WP-CLI process
+ * silently and the command could never be reached at all.
+ *
+ * Guarding on WP_CLI keeps the file unreachable over the web, which is what the
+ * ABSPATH guard was there for, while letting the tool actually load.
+ */
+if ( ! defined( 'WP_CLI' ) ) {
+    return;
+}
 
-require_once __DIR__ . '/class-lisensio-kb-heroic-schema.php';
-require_once __DIR__ . '/class-lisensio-kb-heroic-map.php';
-require_once __DIR__ . '/class-lisensio-kb-heroic-state.php';
-require_once __DIR__ . '/class-lisensio-kb-heroic-report.php';
-require_once __DIR__ . '/class-lisensio-kb-heroic-source.php';
-require_once __DIR__ . '/class-lisensio-kb-heroic-redirects.php';
-require_once __DIR__ . '/class-lisensio-kb-heroic-content-migrator.php';
-require_once __DIR__ . '/class-lisensio-kb-heroic-data-migrator.php';
-require_once __DIR__ . '/class-lisensio-kb-heroic-cli.php';
 
 /**
  * Register the migration command once WordPress and the plugin are up.
@@ -43,6 +45,23 @@ require_once __DIR__ . '/class-lisensio-kb-heroic-cli.php';
  * @return void
  */
 function lisensio_kb_register_heroic_migrator() {
+    /*
+     * Required here rather than at file scope. Each class carries the standard
+     * direct-access guard, and WP-CLI loads a --require file before WordPress,
+     * so requiring them at the top meant the first guard exited the process
+     * before the command could be registered.
+     */
+    require_once __DIR__ . '/class-lisensio-kb-heroic-schema.php';
+    require_once __DIR__ . '/class-lisensio-kb-heroic-map.php';
+    require_once __DIR__ . '/class-lisensio-kb-heroic-state.php';
+    require_once __DIR__ . '/class-lisensio-kb-heroic-report.php';
+    require_once __DIR__ . '/class-lisensio-kb-heroic-source.php';
+    require_once __DIR__ . '/class-lisensio-kb-heroic-redirects.php';
+    require_once __DIR__ . '/class-lisensio-kb-heroic-content-migrator.php';
+    require_once __DIR__ . '/class-lisensio-kb-heroic-data-migrator.php';
+    require_once __DIR__ . '/class-lisensio-kb-heroic-cli.php';
+
+
     if ( ! class_exists( 'Lisensio_KB_Post_Types' ) ) {
         if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( 'WP_CLI' ) ) {
             WP_CLI::warning( 'The Lisensio Knowledge Base plugin is not active; the migrator has nothing to write into.' );
@@ -54,4 +73,10 @@ function lisensio_kb_register_heroic_migrator() {
     Lisensio_KB_Heroic_CLI::register();
 }
 
-add_action( 'plugins_loaded', 'lisensio_kb_register_heroic_migrator', 20 );
+/*
+ * WP_CLI::add_hook( 'after_wp_load' ), not add_action( 'plugins_loaded' ).
+ * A --require file is loaded before WordPress, so add_action() does not exist
+ * yet and plugins_loaded has already fired by the time WP-CLI hands over. This
+ * is WP-CLI's own hook for work that needs a loaded WordPress.
+ */
+WP_CLI::add_hook( 'after_wp_load', 'lisensio_kb_register_heroic_migrator' );

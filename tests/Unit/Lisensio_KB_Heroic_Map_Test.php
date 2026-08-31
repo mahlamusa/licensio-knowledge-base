@@ -590,4 +590,66 @@ class Lisensio_KB_Heroic_Map_Test extends Lisensio_KB_Test_Case {
         $this->assertSame( 6, $result['order'], 'An empty stored position must not win by having the lowest term ID.' );
         $this->assertSame( 31, $result['source_term_id'] );
     }
+
+    /**
+     * The CLI entry point can actually be loaded by wp --require.
+     *
+     * WP-CLI processes a --require file BEFORE it bootstraps WordPress, so the
+     * entry point must not depend on anything WordPress provides at file scope.
+     * It previously did three times over: a `defined( 'ABSPATH' ) || exit;`
+     * guard that terminated the process silently, requires of classes carrying
+     * the same guard, and an add_action() call that does not exist yet. The
+     * result was a fully built, fully tested tool that could not be invoked at
+     * all, because every test loaded the classes directly and none went through
+     * the entry point.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_cli_entry_point_survives_being_required_before_wordpress() {
+        $entry = dirname( dirname( __DIR__ ) ) . '/tools/migrate-heroic/migrate-heroic.php';
+
+        $this->assertFileExists( $entry );
+
+        /*
+         * Statements only. The file explains this history in a comment, so a
+         * plain substring search would match its own prose rather than any
+         * code, and pass or fail for the wrong reason.
+         */
+        $statements = array_values(
+            array_filter(
+                array_map( 'trim', (array) file( $entry ) ),
+                function ( $line ) {
+                    return '' !== $line
+                        && 0 !== strpos( $line, '*' )
+                        && 0 !== strpos( $line, '/*' )
+                        && 0 !== strpos( $line, '//' );
+                }
+            )
+        );
+
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a file from this repository, not a remote resource.
+        $source = (string) file_get_contents( $entry );
+
+        $this->assertNotContains(
+            "defined( 'ABSPATH' ) || exit;",
+            $statements,
+            'The entry point must not exit on a missing ABSPATH: WP-CLI loads it before WordPress.'
+        );
+
+        foreach ( $statements as $line ) {
+            $this->assertStringNotContainsString(
+                'add_action(',
+                $line,
+                'add_action() does not exist when a --require file is loaded; use WP_CLI::add_hook().'
+            );
+        }
+
+        $this->assertStringContainsString(
+            "WP_CLI::add_hook( 'after_wp_load'",
+            $source,
+            'The command must be registered on WP-CLI after_wp_load.'
+        );
+    }
 }
