@@ -38,6 +38,22 @@ require_once __DIR__ . '/class-lisensio-kb-live-wpdb.php';
 class Lisensio_KB_Search_Integration_Test extends Lisensio_KB_Integration_Test_Case {
 
     /**
+     * How many timed samples the performance budget is judged on.
+     *
+     * @since 1.0.0
+     * @var int
+     */
+    const PERF_SAMPLES = 5;
+
+    /**
+     * The median search budget, in milliseconds.
+     *
+     * @since 1.0.0
+     * @var int
+     */
+    const PERF_BUDGET_MS = 300;
+
+    /**
      * The table prefix used for the scratch schema.
      *
      * @since 1.0.0
@@ -654,6 +670,29 @@ class Lisensio_KB_Search_Integration_Test extends Lisensio_KB_Integration_Test_C
     }
 
     /**
+     * Render timing samples for a human reading a failure.
+     *
+     * The individual samples matter when the budget is missed: a single slow
+     * run among fast ones is a busy runner, whereas every sample being slow is
+     * a regression, and the message should let a reader tell them apart.
+     *
+     * @since 1.0.0
+     *
+     * @param float[] $samples Elapsed times in milliseconds.
+     *
+     * @return string Comma-separated, one decimal place.
+     */
+    private static function format_samples( array $samples ) {
+        $formatted = array();
+
+        foreach ( $samples as $ms ) {
+            $formatted[] = sprintf( '%.1f', $ms );
+        }
+
+        return implode( ', ', $formatted );
+    }
+
+    /**
      * A search of a 5,000-article index answers inside the performance budget.
      *
      * The specification's number is 300 ms server-side on a 5,000-article
@@ -674,26 +713,52 @@ class Lisensio_KB_Search_Integration_Test extends Lisensio_KB_Integration_Test_C
         // One untimed run so the measurement is not dominated by cache warming.
         $query->search( 'licence', array( 'limit' => 10 ) );
 
-        $started = microtime( true );
-        $found   = $query->search( 'licence', array( 'limit' => 10 ) );
-        $elapsed = ( microtime( true ) - $started ) * 1000;
+        /*
+         * Timed several times and judged on the median.
+         *
+         * A single sample on a shared CI runner measures the runner as much as
+         * the query: this assertion failed at 311.6 ms against a 300 ms budget
+         * and passed on an unchanged re-run. Widening the budget would have
+         * hidden the next real regression, so the measurement is made steadier
+         * instead of the bar being lowered. The median ignores one unlucky
+         * sample while a genuine slowdown moves every sample, so it still
+         * fails - which is the property that matters.
+         */
+        $samples = array();
+
+        for ( $run = 0; $run < self::PERF_SAMPLES; $run++ ) {
+            $started   = microtime( true );
+            $found     = $query->search( 'licence', array( 'limit' => 10 ) );
+            $samples[] = ( microtime( true ) - $started ) * 1000;
+        }
+
+        sort( $samples );
+
+        $median = $samples[ (int) floor( count( $samples ) / 2 ) ];
 
         // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- Reporting a measurement to the test runner's console.
         fwrite(
             STDOUT,
             sprintf(
-                "\n[perf] FULLTEXT search over %d indexed articles on %s: %.1f ms\n",
+                "\n[perf] FULLTEXT search over %d indexed articles on %s: median %.1f ms of [%s]\n",
                 5003,
                 $this->server_version(),
-                $elapsed
+                $median,
+                self::format_samples( $samples )
             )
         );
 
         $this->assertNotEmpty( $found['ids'] );
         $this->assertLessThan(
-            300,
-            $elapsed,
-            sprintf( 'Search took %.1f ms on %s.', $elapsed, $this->server_version() )
+            self::PERF_BUDGET_MS,
+            $median,
+            sprintf(
+                'Median search took %.1f ms on %s over %d samples: [%s].',
+                $median,
+                $this->server_version(),
+                self::PERF_SAMPLES,
+                self::format_samples( $samples )
+            )
         );
     }
 

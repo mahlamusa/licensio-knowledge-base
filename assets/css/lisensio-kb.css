@@ -236,26 +236,34 @@
 	color: var(--lisensio-kb-muted);
 }
 
-/*
- * On a wide screen a full-width search bar reads as a page-wide input rather
- * than as one thing to fill in, so it is held to a share of the hero. Applied
- * unscoped because the form renders in two places: inside the plugin's own
- * hero, and inside a theme hero through the `after` slot, where no
- * `.lisensio-kb` ancestor exists to scope to.
- */
-@media (min-width: 62rem) {
-	.lisensio-kb__search {
-		width: 60%;
-		margin-left: auto;
-		margin-right: auto;
-	}
-}
 
 .lisensio-kb__search {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 0.5rem;
 	margin: 1.25rem 0 0;
+}
+
+/*
+ * On a wide screen a full-width search bar reads as a page-wide input rather
+ * than as one thing to fill in, so it is held to a share of the hero.
+ *
+ * Left aligned, not centred: it shares a column with the breadcrumbs above it
+ * and the cards below, and a centred box between two left-aligned neighbours
+ * reads as the one thing on the page that is out of place. The heading above
+ * it is centred by the hero itself, which is a deliberate exception - a
+ * heading is a title, a form is part of the column.
+ *
+ * Applied unscoped because the form renders in two places: inside the plugin's
+ * own hero, and inside a theme hero through the `after` slot, where no
+ * `.lisensio-kb` ancestor exists to scope to.
+ */
+@media (min-width: 62rem) {
+	.lisensio-kb__search {
+		width: 60%;
+		margin-left: 0;
+		margin-right: auto;
+	}
 }
 
 .lisensio-kb__search-field {
