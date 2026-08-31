@@ -88,6 +88,78 @@ class Lisensio_KB_Test_WPDB {
     public $server_supports_fulltext = true;
 
     /**
+     * Every row passed to insert(), in order.
+     *
+     * Recorded rather than stored so a test can assert on exactly what the code
+     * under test tried to write — which is how "no IP reaches any table" is
+     * provable rather than assumed.
+     *
+     * @since 1.0.0
+     * @var array<int, array{table: string, data: array<string, mixed>, format: mixed}>
+     */
+    public $inserts = array();
+
+    /**
+     * What insert() returns.
+     *
+     * @since 1.0.0
+     * @var int|false
+     */
+    public $insert_result = 1;
+
+    /**
+     * The ID of the last inserted row.
+     *
+     * @since 1.0.0
+     * @var int
+     */
+    public $insert_id = 0;
+
+    /**
+     * Record a row instead of writing it.
+     *
+     * @since 1.0.0
+     *
+     * @param string               $table  The table name.
+     * @param array<string, mixed> $data   Column to value.
+     * @param mixed                $format The value formats.
+     *
+     * @return int|false The configured result.
+     */
+    public function insert( $table, $data, $format = null ) {
+        $this->inserts[] = array(
+            'table'  => (string) $table,
+            'data'   => (array) $data,
+            'format' => $format,
+        );
+
+        ++$this->insert_id;
+
+        return $this->insert_result;
+    }
+
+    /**
+     * The rows recorded for one table.
+     *
+     * @since 1.0.0
+     *
+     * @param string $table The table name, with or without the prefix.
+     *
+     * @return array<int, array<string, mixed>> The recorded row data.
+     */
+    public function inserted_rows( $table ) {
+        $rows = array();
+
+        foreach ( $this->inserts as $insert ) {
+            if ( false !== strpos( $insert['table'], $table ) ) {
+                $rows[] = $insert['data'];
+            }
+        }
+
+        return $rows;
+    }
+
+    /**
      * The charset and collation clause.
      *
      * @since 1.0.0
