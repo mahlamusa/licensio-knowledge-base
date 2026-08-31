@@ -530,6 +530,32 @@ class Lisensio_KB_Feedback_REST_Test extends Lisensio_KB_Test_Case {
     }
 
     /**
+     * Rotating the user agent does not buy a second vote.
+     *
+     * The one-vote-per-article rule is the only thing standing between an
+     * anonymous caller and every rating on the site, and it keyed on an
+     * identity built partly from a header the caller sets. Demonstrated
+     * against the live site: six accepted votes on one article from a single
+     * address, by varying that header alone.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_rotating_user_agent_does_not_buy_a_second_vote() {
+        $_SERVER['HTTP_USER_AGENT'] = 'Mozilla/5.0 (first client)';
+
+        $this->controller->create_item( $this->vote_request() );
+
+        $_SERVER['HTTP_USER_AGENT'] = 'Mozilla/5.0 (second client, quite different)';
+
+        $result = $this->controller->create_item( $this->vote_request() );
+
+        $this->assertInstanceOf( 'WP_Error', $result, 'a new user agent was allowed a second vote' );
+        $this->assertSame( 'lisensio_already_voted', $result->get_error_code() );
+    }
+
+    /**
      * A second vote from the same visitor is refused by the server.
      *
      * The refusal is a database question, not a cookie: nothing about the

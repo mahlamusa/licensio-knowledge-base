@@ -285,7 +285,16 @@ class Lisensio_KB_Feedback_REST_Controller extends Lisensio_KB_REST_Controller {
             );
         }
 
-        $hashes  = $this->visitor->get_hashes();
+        /*
+         * The abuse identity, not the analytics one. `get_hashes()` mixes in
+         * the user agent, which the caller supplies, so rotating that header
+         * minted a fresh identity and the one-vote-per-article rule fell over:
+         * six votes on one article from one address, all accepted.
+         *
+         * The same value is stored on the row it writes, so the next vote from
+         * that address is recognised.
+         */
+        $hashes  = $this->visitor->get_abuse_hashes();
         $user_id = (int) get_current_user_id();
 
         if ( $this->feedback->has_voted( $article_id, $hashes, $user_id ) ) {

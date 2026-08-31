@@ -330,6 +330,38 @@ class Lisensio_KB_Search_REST_Test extends Lisensio_KB_Test_Case {
     }
 
     /**
+     * Rotating the user agent does not buy a fresh budget.
+     *
+     * The user agent is a header the caller supplies. While the limiter keyed
+     * on an identity that included it, a client varying it minted a new
+     * identity - and a new budget - on every request, so the limit restrained
+     * nobody who did not want to be restrained. Demonstrated against the live
+     * site: 30 requests on a fixed agent then 429s, while a fresh agent was
+     * served immediately at the same instant.
+     *
+     * Spends the budget under one agent, then changes it and asserts the
+     * refusal stands.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_rotating_user_agent_does_not_reset_the_budget() {
+        $_SERVER['HTTP_USER_AGENT'] = 'Mozilla/5.0 (budget spender)';
+
+        for ( $i = 0; $i < Lisensio_KB_REST_Search_Controller::RATE_LIMIT; $i++ ) {
+            $this->assertTrue( $this->controller->search_permissions_check( new WP_REST_Request() ) );
+        }
+
+        $_SERVER['HTTP_USER_AGENT'] = 'Mozilla/5.0 (a completely different client)';
+
+        $refused = $this->controller->search_permissions_check( new WP_REST_Request() );
+
+        $this->assertInstanceOf( 'WP_Error', $refused, 'a new user agent was handed a fresh budget' );
+        $this->assertSame( 'lisensio_rate_limited', $refused->get_error_code() );
+    }
+
+    /**
      * A visitor over budget is refused with 429.
      *
      * The endpoint is public and writes a row to the search log on every call,
