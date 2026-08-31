@@ -61,6 +61,20 @@
 	--lkb-info: #1677ff;
 	--lkb-info-tint: #e6f4ff;
 
+	/* WordPress' own admin ink and rules. The screens sit inside wp-admin and
+	   have to agree with the chrome around them at their edges. */
+	--lkb-ink-wp: #1d2327;
+	--lkb-ink-wp-secondary: #50575e;
+	--lkb-ink-wp-muted: #646970;
+	--lkb-border-wp: #dcdcde;
+	--lkb-border-light: #f0f0f0;
+	--lkb-hover: #f6f7f7;
+
+	/* Elevation. Shallow: these screens are flat sheets with cards on them,
+	   not a stack of floating panels. */
+	--lkb-shadow-sm: 0 1px 2px rgba( 0, 0, 0, 0.04 );
+	--lkb-shadow-md: 0 2px 8px rgba( 0, 0, 0, 0.08 );
+
 	/* Structure. */
 	--lkb-radius: 8px;
 	--lkb-radius-lg: 12px;

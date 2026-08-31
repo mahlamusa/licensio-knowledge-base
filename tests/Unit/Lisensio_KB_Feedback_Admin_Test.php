@@ -56,6 +56,12 @@ class Lisensio_KB_Feedback_Admin_Test extends Lisensio_KB_Test_Case {
         $this->meta     = array();
         $this->submenus = array();
 
+        Functions\when( 'admin_url' )->alias(
+            function ( $path = '' ) {
+                return 'https://example.test/wp-admin/' . ltrim( (string) $path, '/' );
+            }
+        );
+
         Functions\when( 'get_post_meta' )->alias(
             function ( $post_id, $key, $single = false ) {
                 unset( $single );

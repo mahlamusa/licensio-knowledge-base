@@ -125,7 +125,7 @@ class Lisensio_KB_Analytics_Admin {
         }
 
         Lisensio_KB_Admin_Page::shell(
-            __( 'Knowledge Base Analytics', 'lisensio-knowledge-base' ),
+            __( 'Analytics', 'lisensio-knowledge-base' ),
             self::SCRIPT_HANDLE,
             __( 'Loading the knowledge base analytics…', 'lisensio-knowledge-base' ),
             'lisensio-kb-analytics-app'
@@ -174,6 +174,7 @@ class Lisensio_KB_Analytics_Admin {
             'maxDays'       => Lisensio_KB_REST_Analytics_Controller::MAX_DAYS,
             'defaultLimit'  => Lisensio_KB_Analytics_Repository::DEFAULT_LIMIT,
             'retentionDays' => $retention->retention_days(),
+            'settingsUrl'   => Lisensio_KB_Admin_Page::settings_url(),
         );
     }
 

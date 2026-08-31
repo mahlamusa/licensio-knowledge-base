@@ -248,6 +248,41 @@ class Lisensio_KB_Feedback_Memory_Store extends Lisensio_KB_Feedback {
     }
 
     /**
+     * How many rows sit in each triage status.
+     *
+     * Mirrors the real store: the status filter is ignored so the counts
+     * describe every status under the other filters.
+     *
+     * @since 1.0.0
+     *
+     * @param array<string, mixed> $args The filters.
+     *
+     * @return array<string, int> Status name to row count, plus `all`.
+     */
+    public function counts_by_status( $args = array() ) {
+        $args           = is_array( $args ) ? $args : array();
+        $args['status'] = '';
+
+        $counts = array( 'all' => 0 );
+
+        foreach ( self::statuses() as $status ) {
+            $counts[ $status ] = 0;
+        }
+
+        foreach ( $this->matching( $args ) as $row ) {
+            ++$counts['all'];
+
+            $status = (string) $row->status;
+
+            if ( array_key_exists( $status, $counts ) ) {
+                ++$counts[ $status ];
+            }
+        }
+
+        return $counts;
+    }
+
+    /**
      * Apply the inbox filters in memory.
      *
      * @since 1.0.0
