@@ -162,6 +162,13 @@ class Lisensio_KB_Post_Types {
                 'author',
                 'thumbnail',
                 'revisions',
+
+                /*
+                 * Comments are supported so readers can ask a follow-up on an
+                 * article, and so core contributes its own comment column to
+                 * the list table rather than this plugin reimplementing one.
+                 */
+                'comments',
                 'custom-fields',
                 'page-attributes',
             ),

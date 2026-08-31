@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-31T06:50:41+00:00\n"
+"POT-Creation-Date: 2026-08-31T07:35:30+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.7.1\n"
 "X-Domain: lisensio-knowledge-base\n"
@@ -67,8 +67,7 @@ msgstr ""
 #: .claude/worktrees/agent-ac6629c0ba019e37f/includes/class-lisensio-kb-post-types.php:202
 #: .claude/worktrees/agent-af4e03f29ef0f5e92/includes/admin/class-lisensio-kb-admin-columns.php:106
 #: .claude/worktrees/agent-af4e03f29ef0f5e92/includes/class-lisensio-kb-post-types.php:202
-#: includes/admin/class-lisensio-kb-admin-columns.php:106
-#: includes/class-lisensio-kb-post-types.php:202
+#: includes/class-lisensio-kb-post-types.php:209
 #: .claude/worktrees/agent-a08df57439f7474c7/blocks/category-grid/index.js:45
 #: .claude/worktrees/agent-a6cb936f457ce575d/blocks/category-grid/index.js:45
 #: .claude/worktrees/agent-a9d835433b1b2f40a/blocks/category-grid/index.js:45
@@ -99,8 +98,7 @@ msgstr ""
 #: .claude/worktrees/agent-ac6629c0ba019e37f/includes/class-lisensio-kb-post-types.php:249
 #: .claude/worktrees/agent-af4e03f29ef0f5e92/includes/admin/class-lisensio-kb-admin-columns.php:107
 #: .claude/worktrees/agent-af4e03f29ef0f5e92/includes/class-lisensio-kb-post-types.php:249
-#: includes/admin/class-lisensio-kb-admin-columns.php:107
-#: includes/class-lisensio-kb-post-types.php:249
+#: includes/class-lisensio-kb-post-types.php:256
 msgid "Tags"
 msgstr ""
 
@@ -114,7 +112,7 @@ msgstr ""
 #: .claude/worktrees/agent-a473d3ff08929f796/includes/admin/class-lisensio-kb-admin-columns.php:108
 #: .claude/worktrees/agent-ac6629c0ba019e37f/includes/admin/class-lisensio-kb-admin-columns.php:108
 #: .claude/worktrees/agent-af4e03f29ef0f5e92/includes/admin/class-lisensio-kb-admin-columns.php:108
-#: includes/admin/class-lisensio-kb-admin-columns.php:108
+#: includes/admin/class-lisensio-kb-admin-columns.php:206
 msgid "Views"
 msgstr ""
 
@@ -128,7 +126,6 @@ msgstr ""
 #: .claude/worktrees/agent-a473d3ff08929f796/includes/admin/class-lisensio-kb-admin-columns.php:109
 #: .claude/worktrees/agent-ac6629c0ba019e37f/includes/admin/class-lisensio-kb-admin-columns.php:109
 #: .claude/worktrees/agent-af4e03f29ef0f5e92/includes/admin/class-lisensio-kb-admin-columns.php:109
-#: includes/admin/class-lisensio-kb-admin-columns.php:109
 msgid "Usefulness"
 msgstr ""
 
@@ -142,7 +139,7 @@ msgstr ""
 #: .claude/worktrees/agent-a473d3ff08929f796/includes/admin/class-lisensio-kb-admin-columns.php:138
 #: .claude/worktrees/agent-ac6629c0ba019e37f/includes/admin/class-lisensio-kb-admin-columns.php:138
 #: .claude/worktrees/agent-af4e03f29ef0f5e92/includes/admin/class-lisensio-kb-admin-columns.php:138
-#: includes/admin/class-lisensio-kb-admin-columns.php:138
+#: includes/admin/class-lisensio-kb-admin-columns.php:236
 msgid "Author"
 msgstr ""
 
@@ -200,7 +197,7 @@ msgstr ""
 #: .claude/worktrees/agent-a82c3cf1a6613a254/includes/admin/class-lisensio-kb-feedback-admin.php:92
 #: .claude/worktrees/agent-a473d3ff08929f796/includes/admin/class-lisensio-kb-feedback-admin.php:92
 #: includes/admin/class-lisensio-kb-feedback-admin.php:92
-#: includes/class-lisensio-kb-settings-schema.php:84
+#: includes/class-lisensio-kb-settings-schema.php:122
 msgid "Feedback"
 msgstr ""
 
@@ -1182,7 +1179,7 @@ msgstr ""
 #: .claude/worktrees/agent-a473d3ff08929f796/includes/class-lisensio-kb-post-types.php:200
 #: .claude/worktrees/agent-ac6629c0ba019e37f/includes/class-lisensio-kb-post-types.php:200
 #: .claude/worktrees/agent-af4e03f29ef0f5e92/includes/class-lisensio-kb-post-types.php:200
-#: includes/class-lisensio-kb-post-types.php:200
+#: includes/class-lisensio-kb-post-types.php:207
 msgctxt "taxonomy general name"
 msgid "Categories"
 msgstr ""
@@ -1198,7 +1195,7 @@ msgstr ""
 #: .claude/worktrees/agent-a473d3ff08929f796/includes/class-lisensio-kb-post-types.php:201
 #: .claude/worktrees/agent-ac6629c0ba019e37f/includes/class-lisensio-kb-post-types.php:201
 #: .claude/worktrees/agent-af4e03f29ef0f5e92/includes/class-lisensio-kb-post-types.php:201
-#: includes/class-lisensio-kb-post-types.php:201
+#: includes/class-lisensio-kb-post-types.php:208
 msgctxt "taxonomy singular name"
 msgid "Category"
 msgstr ""
@@ -1214,7 +1211,7 @@ msgstr ""
 #: .claude/worktrees/agent-a473d3ff08929f796/includes/class-lisensio-kb-post-types.php:203
 #: .claude/worktrees/agent-ac6629c0ba019e37f/includes/class-lisensio-kb-post-types.php:203
 #: .claude/worktrees/agent-af4e03f29ef0f5e92/includes/class-lisensio-kb-post-types.php:203
-#: includes/class-lisensio-kb-post-types.php:203
+#: includes/class-lisensio-kb-post-types.php:210
 msgid "All Categories"
 msgstr ""
 
@@ -1229,7 +1226,7 @@ msgstr ""
 #: .claude/worktrees/agent-a473d3ff08929f796/includes/class-lisensio-kb-post-types.php:204
 #: .claude/worktrees/agent-ac6629c0ba019e37f/includes/class-lisensio-kb-post-types.php:204
 #: .claude/worktrees/agent-af4e03f29ef0f5e92/includes/class-lisensio-kb-post-types.php:204
-#: includes/class-lisensio-kb-post-types.php:204
+#: includes/class-lisensio-kb-post-types.php:211
 msgid "Parent Category"
 msgstr ""
 
@@ -1244,7 +1241,7 @@ msgstr ""
 #: .claude/worktrees/agent-a473d3ff08929f796/includes/class-lisensio-kb-post-types.php:205
 #: .claude/worktrees/agent-ac6629c0ba019e37f/includes/class-lisensio-kb-post-types.php:205
 #: .claude/worktrees/agent-af4e03f29ef0f5e92/includes/class-lisensio-kb-post-types.php:205
-#: includes/class-lisensio-kb-post-types.php:205
+#: includes/class-lisensio-kb-post-types.php:212
 msgid "Parent Category:"
 msgstr ""
 
@@ -1259,7 +1256,7 @@ msgstr ""
 #: .claude/worktrees/agent-a473d3ff08929f796/includes/class-lisensio-kb-post-types.php:206
 #: .claude/worktrees/agent-ac6629c0ba019e37f/includes/class-lisensio-kb-post-types.php:206
 #: .claude/worktrees/agent-af4e03f29ef0f5e92/includes/class-lisensio-kb-post-types.php:206
-#: includes/class-lisensio-kb-post-types.php:206
+#: includes/class-lisensio-kb-post-types.php:213
 msgid "Edit Category"
 msgstr ""
 
@@ -1274,7 +1271,7 @@ msgstr ""
 #: .claude/worktrees/agent-a473d3ff08929f796/includes/class-lisensio-kb-post-types.php:207
 #: .claude/worktrees/agent-ac6629c0ba019e37f/includes/class-lisensio-kb-post-types.php:207
 #: .claude/worktrees/agent-af4e03f29ef0f5e92/includes/class-lisensio-kb-post-types.php:207
-#: includes/class-lisensio-kb-post-types.php:207
+#: includes/class-lisensio-kb-post-types.php:214
 msgid "Update Category"
 msgstr ""
 
@@ -1289,7 +1286,7 @@ msgstr ""
 #: .claude/worktrees/agent-a473d3ff08929f796/includes/class-lisensio-kb-post-types.php:208
 #: .claude/worktrees/agent-ac6629c0ba019e37f/includes/class-lisensio-kb-post-types.php:208
 #: .claude/worktrees/agent-af4e03f29ef0f5e92/includes/class-lisensio-kb-post-types.php:208
-#: includes/class-lisensio-kb-post-types.php:208
+#: includes/class-lisensio-kb-post-types.php:215
 msgid "Add New Category"
 msgstr ""
 
@@ -1304,7 +1301,7 @@ msgstr ""
 #: .claude/worktrees/agent-a473d3ff08929f796/includes/class-lisensio-kb-post-types.php:209
 #: .claude/worktrees/agent-ac6629c0ba019e37f/includes/class-lisensio-kb-post-types.php:209
 #: .claude/worktrees/agent-af4e03f29ef0f5e92/includes/class-lisensio-kb-post-types.php:209
-#: includes/class-lisensio-kb-post-types.php:209
+#: includes/class-lisensio-kb-post-types.php:216
 msgid "New Category Name"
 msgstr ""
 
@@ -1319,7 +1316,7 @@ msgstr ""
 #: .claude/worktrees/agent-a473d3ff08929f796/includes/class-lisensio-kb-post-types.php:210
 #: .claude/worktrees/agent-ac6629c0ba019e37f/includes/class-lisensio-kb-post-types.php:210
 #: .claude/worktrees/agent-af4e03f29ef0f5e92/includes/class-lisensio-kb-post-types.php:210
-#: includes/class-lisensio-kb-post-types.php:210
+#: includes/class-lisensio-kb-post-types.php:217
 msgid "Search Categories"
 msgstr ""
 
@@ -1334,7 +1331,7 @@ msgstr ""
 #: .claude/worktrees/agent-a473d3ff08929f796/includes/class-lisensio-kb-post-types.php:211
 #: .claude/worktrees/agent-ac6629c0ba019e37f/includes/class-lisensio-kb-post-types.php:211
 #: .claude/worktrees/agent-af4e03f29ef0f5e92/includes/class-lisensio-kb-post-types.php:211
-#: includes/class-lisensio-kb-post-types.php:211
+#: includes/class-lisensio-kb-post-types.php:218
 msgid "No categories found."
 msgstr ""
 
@@ -1349,7 +1346,7 @@ msgstr ""
 #: .claude/worktrees/agent-a473d3ff08929f796/includes/class-lisensio-kb-post-types.php:247
 #: .claude/worktrees/agent-ac6629c0ba019e37f/includes/class-lisensio-kb-post-types.php:247
 #: .claude/worktrees/agent-af4e03f29ef0f5e92/includes/class-lisensio-kb-post-types.php:247
-#: includes/class-lisensio-kb-post-types.php:247
+#: includes/class-lisensio-kb-post-types.php:254
 msgctxt "taxonomy general name"
 msgid "Tags"
 msgstr ""
@@ -1365,7 +1362,7 @@ msgstr ""
 #: .claude/worktrees/agent-a473d3ff08929f796/includes/class-lisensio-kb-post-types.php:248
 #: .claude/worktrees/agent-ac6629c0ba019e37f/includes/class-lisensio-kb-post-types.php:248
 #: .claude/worktrees/agent-af4e03f29ef0f5e92/includes/class-lisensio-kb-post-types.php:248
-#: includes/class-lisensio-kb-post-types.php:248
+#: includes/class-lisensio-kb-post-types.php:255
 msgctxt "taxonomy singular name"
 msgid "Tag"
 msgstr ""
@@ -1381,7 +1378,7 @@ msgstr ""
 #: .claude/worktrees/agent-a473d3ff08929f796/includes/class-lisensio-kb-post-types.php:250
 #: .claude/worktrees/agent-ac6629c0ba019e37f/includes/class-lisensio-kb-post-types.php:250
 #: .claude/worktrees/agent-af4e03f29ef0f5e92/includes/class-lisensio-kb-post-types.php:250
-#: includes/class-lisensio-kb-post-types.php:250
+#: includes/class-lisensio-kb-post-types.php:257
 msgid "All Tags"
 msgstr ""
 
@@ -1396,7 +1393,7 @@ msgstr ""
 #: .claude/worktrees/agent-a473d3ff08929f796/includes/class-lisensio-kb-post-types.php:251
 #: .claude/worktrees/agent-ac6629c0ba019e37f/includes/class-lisensio-kb-post-types.php:251
 #: .claude/worktrees/agent-af4e03f29ef0f5e92/includes/class-lisensio-kb-post-types.php:251
-#: includes/class-lisensio-kb-post-types.php:251
+#: includes/class-lisensio-kb-post-types.php:258
 msgid "Edit Tag"
 msgstr ""
 
@@ -1411,7 +1408,7 @@ msgstr ""
 #: .claude/worktrees/agent-a473d3ff08929f796/includes/class-lisensio-kb-post-types.php:252
 #: .claude/worktrees/agent-ac6629c0ba019e37f/includes/class-lisensio-kb-post-types.php:252
 #: .claude/worktrees/agent-af4e03f29ef0f5e92/includes/class-lisensio-kb-post-types.php:252
-#: includes/class-lisensio-kb-post-types.php:252
+#: includes/class-lisensio-kb-post-types.php:259
 msgid "Update Tag"
 msgstr ""
 
@@ -1426,7 +1423,7 @@ msgstr ""
 #: .claude/worktrees/agent-a473d3ff08929f796/includes/class-lisensio-kb-post-types.php:253
 #: .claude/worktrees/agent-ac6629c0ba019e37f/includes/class-lisensio-kb-post-types.php:253
 #: .claude/worktrees/agent-af4e03f29ef0f5e92/includes/class-lisensio-kb-post-types.php:253
-#: includes/class-lisensio-kb-post-types.php:253
+#: includes/class-lisensio-kb-post-types.php:260
 msgid "Add New Tag"
 msgstr ""
 
@@ -1441,7 +1438,7 @@ msgstr ""
 #: .claude/worktrees/agent-a473d3ff08929f796/includes/class-lisensio-kb-post-types.php:254
 #: .claude/worktrees/agent-ac6629c0ba019e37f/includes/class-lisensio-kb-post-types.php:254
 #: .claude/worktrees/agent-af4e03f29ef0f5e92/includes/class-lisensio-kb-post-types.php:254
-#: includes/class-lisensio-kb-post-types.php:254
+#: includes/class-lisensio-kb-post-types.php:261
 msgid "New Tag Name"
 msgstr ""
 
@@ -1456,7 +1453,7 @@ msgstr ""
 #: .claude/worktrees/agent-a473d3ff08929f796/includes/class-lisensio-kb-post-types.php:255
 #: .claude/worktrees/agent-ac6629c0ba019e37f/includes/class-lisensio-kb-post-types.php:255
 #: .claude/worktrees/agent-af4e03f29ef0f5e92/includes/class-lisensio-kb-post-types.php:255
-#: includes/class-lisensio-kb-post-types.php:255
+#: includes/class-lisensio-kb-post-types.php:262
 msgid "Search Tags"
 msgstr ""
 
@@ -1471,7 +1468,7 @@ msgstr ""
 #: .claude/worktrees/agent-a473d3ff08929f796/includes/class-lisensio-kb-post-types.php:256
 #: .claude/worktrees/agent-ac6629c0ba019e37f/includes/class-lisensio-kb-post-types.php:256
 #: .claude/worktrees/agent-af4e03f29ef0f5e92/includes/class-lisensio-kb-post-types.php:256
-#: includes/class-lisensio-kb-post-types.php:256
+#: includes/class-lisensio-kb-post-types.php:263
 msgid "No tags found."
 msgstr ""
 
@@ -1651,7 +1648,7 @@ msgstr ""
 #: .claude/worktrees/agent-af4e03f29ef0f5e92/templates/archive.php:38
 #: .claude/worktrees/agent-af4e03f29ef0f5e92/templates/search-results.php:45
 #: includes/class-lisensio-kb-search-block.php:192
-#: includes/class-lisensio-kb-settings-schema.php:80
+#: includes/class-lisensio-kb-settings-schema.php:116
 #: templates/archive.php:38
 #: templates/search-results.php:45
 #: .claude/worktrees/agent-a08df57439f7474c7/blocks/search/index.js:41
@@ -1730,217 +1727,217 @@ msgid "Reindexed %1$d articles into %2$d index rows in %3$s seconds."
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:68
-#: includes/class-lisensio-kb-settings-schema.php:68
+#: includes/class-lisensio-kb-settings-schema.php:98
 msgid "General"
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:69
-#: includes/class-lisensio-kb-settings-schema.php:69
+#: includes/class-lisensio-kb-settings-schema.php:99
 msgid "How the knowledge base archive behaves."
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:72
-#: includes/class-lisensio-kb-settings-schema.php:72
+#: includes/class-lisensio-kb-settings-schema.php:104
 msgid "Slugs and permalinks"
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:73
-#: includes/class-lisensio-kb-settings-schema.php:73
+#: includes/class-lisensio-kb-settings-schema.php:105
 msgid "The URL bases for articles, categories and tags. Changing one rebuilds the rewrite rules automatically."
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:76
-#: includes/class-lisensio-kb-settings-schema.php:76
+#: includes/class-lisensio-kb-settings-schema.php:110
 msgid "Appearance"
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:77
-#: includes/class-lisensio-kb-settings-schema.php:77
+#: includes/class-lisensio-kb-settings-schema.php:111
 msgid "Every value here is published as a CSS custom property on the knowledge base root, so a theme can override it without fighting a rule."
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:81
-#: includes/class-lisensio-kb-settings-schema.php:81
+#: includes/class-lisensio-kb-settings-schema.php:117
 msgid "How many results the search endpoint and the type-ahead return."
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:85
-#: includes/class-lisensio-kb-settings-schema.php:85
+#: includes/class-lisensio-kb-settings-schema.php:123
 msgid "Article voting and the comment box that follows a negative vote."
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:88
-#: includes/class-lisensio-kb-settings-schema.php:88
+#: includes/class-lisensio-kb-settings-schema.php:128
 msgid "Privacy"
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:89
-#: includes/class-lisensio-kb-settings-schema.php:89
+#: includes/class-lisensio-kb-settings-schema.php:129
 msgid "What is collected, how long it is kept, and what happens to it when the plugin is deleted."
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:109
-#: includes/class-lisensio-kb-settings-schema.php:109
+#: includes/class-lisensio-kb-settings-schema.php:151
 msgid "Articles per page"
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:110
-#: includes/class-lisensio-kb-settings-schema.php:110
+#: includes/class-lisensio-kb-settings-schema.php:152
 msgid "How many articles a knowledge base archive lists before paging."
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:115
-#: includes/class-lisensio-kb-settings-schema.php:115
+#: includes/class-lisensio-kb-settings-schema.php:157
 msgid "Article base"
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:116
-#: includes/class-lisensio-kb-settings-schema.php:116
+#: includes/class-lisensio-kb-settings-schema.php:158
 msgid "The URL segment articles live under, for example \"docs\"."
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:121
-#: includes/class-lisensio-kb-settings-schema.php:121
+#: includes/class-lisensio-kb-settings-schema.php:163
 msgid "Category base"
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:122
-#: includes/class-lisensio-kb-settings-schema.php:122
+#: includes/class-lisensio-kb-settings-schema.php:164
 msgid "The URL segment category archives live under."
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:127
-#: includes/class-lisensio-kb-settings-schema.php:127
+#: includes/class-lisensio-kb-settings-schema.php:169
 msgid "Tag base"
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:128
-#: includes/class-lisensio-kb-settings-schema.php:128
+#: includes/class-lisensio-kb-settings-schema.php:170
 msgid "The URL segment tag archives live under."
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:133
-#: includes/class-lisensio-kb-settings-schema.php:133
+#: includes/class-lisensio-kb-settings-schema.php:175
 msgid "Nested category URLs"
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:134
-#: includes/class-lisensio-kb-settings-schema.php:134
+#: includes/class-lisensio-kb-settings-schema.php:176
 msgid "On, a child category is addressed as parent/child. Off, URLs stay short but every category slug must be unique across the whole taxonomy."
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:139
-#: includes/class-lisensio-kb-settings-schema.php:139
+#: includes/class-lisensio-kb-settings-schema.php:181
 msgid "Brand colour"
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:140
-#: includes/class-lisensio-kb-settings-schema.php:140
+#: includes/class-lisensio-kb-settings-schema.php:182
 msgid "Links, buttons and accents derive from this one colour. A readable text colour is chosen for you."
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:153
-#: includes/class-lisensio-kb-settings-schema.php:153
+#: includes/class-lisensio-kb-settings-schema.php:195
 msgid "Layout width"
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:154
-#: includes/class-lisensio-kb-settings-schema.php:154
+#: includes/class-lisensio-kb-settings-schema.php:196
 msgid "How wide the knowledge base content column is allowed to grow."
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:157
-#: includes/class-lisensio-kb-settings-schema.php:157
+#: includes/class-lisensio-kb-settings-schema.php:199
 msgid "Contained"
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:158
-#: includes/class-lisensio-kb-settings-schema.php:158
+#: includes/class-lisensio-kb-settings-schema.php:200
 msgid "Wide"
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:159
-#: includes/class-lisensio-kb-settings-schema.php:159
+#: includes/class-lisensio-kb-settings-schema.php:201
 msgid "Full width"
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:172
-#: includes/class-lisensio-kb-settings-schema.php:172
+#: includes/class-lisensio-kb-settings-schema.php:214
 msgid "Card style"
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:173
-#: includes/class-lisensio-kb-settings-schema.php:173
+#: includes/class-lisensio-kb-settings-schema.php:215
 msgid "How article and category cards are separated from the page behind them."
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:176
-#: includes/class-lisensio-kb-settings-schema.php:176
+#: includes/class-lisensio-kb-settings-schema.php:218
 msgid "Raised"
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:177
-#: includes/class-lisensio-kb-settings-schema.php:177
+#: includes/class-lisensio-kb-settings-schema.php:219
 msgid "Outlined"
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:178
-#: includes/class-lisensio-kb-settings-schema.php:178
+#: includes/class-lisensio-kb-settings-schema.php:220
 msgid "Flat"
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:203
-#: includes/class-lisensio-kb-settings-schema.php:203
+#: includes/class-lisensio-kb-settings-schema.php:245
 msgid "Results per search"
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:204
-#: includes/class-lisensio-kb-settings-schema.php:204
+#: includes/class-lisensio-kb-settings-schema.php:246
 msgid "How many articles the search endpoint returns per page, and how many the type-ahead offers."
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:209
-#: includes/class-lisensio-kb-settings-schema.php:209
+#: includes/class-lisensio-kb-settings-schema.php:251
 msgid "Article voting"
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:210
-#: includes/class-lisensio-kb-settings-schema.php:210
+#: includes/class-lisensio-kb-settings-schema.php:252
 msgid "Show the \"was this helpful?\" prompt at the foot of every article, with a comment box after a negative vote."
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:215
-#: includes/class-lisensio-kb-settings-schema.php:215
+#: includes/class-lisensio-kb-settings-schema.php:257
 msgid "Collect analytics"
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:216
-#: includes/class-lisensio-kb-settings-schema.php:216
+#: includes/class-lisensio-kb-settings-schema.php:258
 msgid "Record searches and article views. No IP address is ever stored; a visitor is a salted hash that rotates daily."
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:221
-#: includes/class-lisensio-kb-settings-schema.php:221
+#: includes/class-lisensio-kb-settings-schema.php:263
 msgid "Keep analytics for"
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:222
-#: includes/class-lisensio-kb-settings-schema.php:222
+#: includes/class-lisensio-kb-settings-schema.php:264
 msgid "How many days of search and view history the daily purge leaves in place."
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:224
-#: includes/class-lisensio-kb-settings-schema.php:224
+#: includes/class-lisensio-kb-settings-schema.php:266
 msgid "days"
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:228
-#: includes/class-lisensio-kb-settings-schema.php:228
+#: includes/class-lisensio-kb-settings-schema.php:270
 msgid "Delete everything on uninstall"
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/class-lisensio-kb-settings-schema.php:229
-#: includes/class-lisensio-kb-settings-schema.php:229
+#: includes/class-lisensio-kb-settings-schema.php:271
 msgid "On, deleting the plugin drops its tables, options and articles. Off, the data survives so a reinstall picks up where it left off."
 msgstr ""
 
@@ -2242,56 +2239,56 @@ msgid "No settings were submitted."
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/rest/class-lisensio-kb-rest-settings-controller.php:276
-#: includes/rest/class-lisensio-kb-rest-settings-controller.php:276
+#: includes/rest/class-lisensio-kb-rest-settings-controller.php:277
 msgid "This is not a knowledge base setting."
 msgstr ""
 
 #. translators: %s: comma-separated list of unrecognised setting names.
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/rest/class-lisensio-kb-rest-settings-controller.php:283
-#: includes/rest/class-lisensio-kb-rest-settings-controller.php:283
+#: includes/rest/class-lisensio-kb-rest-settings-controller.php:284
 msgid "These are not knowledge base settings: %s."
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/rest/class-lisensio-kb-rest-settings-controller.php:311
-#: includes/rest/class-lisensio-kb-rest-settings-controller.php:311
+#: includes/rest/class-lisensio-kb-rest-settings-controller.php:312
 msgid "One or more settings are invalid, so nothing was saved."
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/rest/class-lisensio-kb-rest-settings-controller.php:387
-#: includes/rest/class-lisensio-kb-rest-settings-controller.php:387
+#: includes/rest/class-lisensio-kb-rest-settings-controller.php:388
 msgid "This setting must be true or false."
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/rest/class-lisensio-kb-rest-settings-controller.php:408
-#: includes/rest/class-lisensio-kb-rest-settings-controller.php:408
+#: includes/rest/class-lisensio-kb-rest-settings-controller.php:409
 msgid "This setting must be a whole number."
 msgstr ""
 
 #. translators: 1: lowest accepted number, 2: highest accepted number.
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/rest/class-lisensio-kb-rest-settings-controller.php:423
-#: includes/rest/class-lisensio-kb-rest-settings-controller.php:423
+#: includes/rest/class-lisensio-kb-rest-settings-controller.php:424
 msgid "This setting must be between %1$d and %2$d."
 msgstr ""
 
 #. translators: %d: lowest accepted number.
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/rest/class-lisensio-kb-rest-settings-controller.php:435
-#: includes/rest/class-lisensio-kb-rest-settings-controller.php:435
+#: includes/rest/class-lisensio-kb-rest-settings-controller.php:436
 msgid "This setting must be %d or more."
 msgstr ""
 
 #. translators: %d: highest accepted number.
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/rest/class-lisensio-kb-rest-settings-controller.php:445
-#: includes/rest/class-lisensio-kb-rest-settings-controller.php:445
+#: includes/rest/class-lisensio-kb-rest-settings-controller.php:446
 msgid "This setting must be %d or less."
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/rest/class-lisensio-kb-rest-settings-controller.php:470
-#: includes/rest/class-lisensio-kb-rest-settings-controller.php:470
+#: includes/rest/class-lisensio-kb-rest-settings-controller.php:471
 msgid "This setting must be text."
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/includes/rest/class-lisensio-kb-rest-settings-controller.php:505
-#: includes/rest/class-lisensio-kb-rest-settings-controller.php:505
+#: includes/rest/class-lisensio-kb-rest-settings-controller.php:506
 msgid "This value is not accepted for this setting."
 msgstr ""
 
@@ -2665,6 +2662,57 @@ msgstr ""
 #: .claude/worktrees/agent-af4e03f29ef0f5e92/templates/taxonomy-tag.php:55
 #: templates/taxonomy-tag.php:55
 msgid "Try another tag, or search the knowledge base."
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-admin-columns.php:202
+msgid "Article Categories"
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-admin-columns.php:203
+msgid "Article Tags"
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-admin-columns.php:204
+msgid "Attachment(s)"
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-admin-columns.php:205
+msgid "Rating"
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-admin-columns.php:207
+msgid "Reading Time"
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-admin-columns.php:367
+msgid "No attachments"
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-admin-columns.php:395
+msgid "Nothing to read"
+msgstr ""
+
+#. translators: %s: number of minutes.
+#: includes/admin/class-lisensio-kb-admin-columns.php:402
+msgid "%s minute"
+msgid_plural "%s minutes"
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/class-lisensio-kb-settings-schema.php:80
+msgid "Core"
+msgstr ""
+
+#: includes/class-lisensio-kb-settings-schema.php:81
+msgid "Content"
+msgstr ""
+
+#: includes/class-lisensio-kb-settings-schema.php:82
+msgid "Engagement"
+msgstr ""
+
+#: includes/class-lisensio-kb-settings-schema.php:83
+msgid "Data"
 msgstr ""
 
 #: .claude/worktrees/agent-a08df57439f7474c7/blocks/article-list/index.js:44

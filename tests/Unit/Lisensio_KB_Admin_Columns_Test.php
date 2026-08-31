@@ -83,7 +83,7 @@ class Lisensio_KB_Admin_Columns_Test extends Lisensio_KB_Test_Case {
         $columns = new Lisensio_KB_Admin_Columns();
 
         $this->assertSame(
-            array( 'cb', 'title', 'author', 'lisensio_category', 'lisensio_tag', 'lisensio_views', 'lisensio_usefulness', 'date' ),
+            array( 'cb', 'title', 'author', 'lisensio_category', 'lisensio_tag', 'lisensio_attachments', 'lisensio_usefulness', 'lisensio_views', 'lisensio_reading_time', 'date' ),
             array_keys( $columns->filter_columns( $this->core_columns() ) )
         );
     }
@@ -149,7 +149,7 @@ class Lisensio_KB_Admin_Columns_Test extends Lisensio_KB_Test_Case {
         );
 
         $this->assertSame(
-            array( 'cb', 'title', 'author', 'lisensio_category', 'lisensio_tag', 'lisensio_views', 'lisensio_usefulness' ),
+            array( 'cb', 'title', 'author', 'lisensio_category', 'lisensio_tag', 'lisensio_attachments', 'lisensio_usefulness', 'lisensio_views', 'lisensio_reading_time' ),
             array_keys( $filtered )
         );
     }
@@ -381,5 +381,76 @@ class Lisensio_KB_Admin_Columns_Test extends Lisensio_KB_Test_Case {
         $this->assertNotFalse(
             has_action( 'manage_lisensio_article_posts_custom_column', array( $columns, 'render_column' ) )
         );
+    }
+
+    /**
+     * Every column the article screen is specified to show is registered.
+     *
+     * Named individually rather than as an ordered array so that reordering
+     * the screen does not silently drop one.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_every_specified_column_is_registered() {
+        $columns = new Lisensio_KB_Admin_Columns();
+        $keys    = array_keys( $columns->filter_columns( $this->core_columns() ) );
+
+        foreach ( array( 'author', 'lisensio_category', 'lisensio_tag', 'lisensio_attachments', 'lisensio_usefulness', 'lisensio_views', 'lisensio_reading_time', 'date' ) as $expected ) {
+            $this->assertContains( $expected, $keys, sprintf( 'The %s column is missing from the article screen.', $expected ) );
+        }
+    }
+
+    /**
+     * Only the column backed by stored meta is offered as sortable.
+     *
+     * Views lives in the analytics tables, and attachments and reading time are
+     * both derived at render time, so a sort on any of them would be a control
+     * that silently does nothing.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_only_the_stored_metric_is_sortable() {
+        $columns  = new Lisensio_KB_Admin_Columns();
+        $sortable = $columns->filter_sortable_columns( array() );
+
+        $this->assertArrayHasKey( 'lisensio_usefulness', $sortable );
+        $this->assertArrayNotHasKey( 'lisensio_views', $sortable );
+        $this->assertArrayNotHasKey( 'lisensio_attachments', $sortable );
+        $this->assertArrayNotHasKey( 'lisensio_reading_time', $sortable );
+    }
+
+    /**
+     * Reading time rounds up and never reports zero for real content.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_reading_time_rounds_up_and_floors_at_one_minute() {
+        Brain\Monkey\Functions\when( 'strip_shortcodes' )->returnArg();
+        Brain\Monkey\Functions\when( 'wp_strip_all_tags' )->returnArg();
+
+        $short               = new WP_Post();
+        $short->post_content = 'one two three';
+
+        $long               = new WP_Post();
+        $long->post_content = implode( ' ', array_fill( 0, 450, 'word' ) );
+
+        $empty               = new WP_Post();
+        $empty->post_content = '';
+
+        Brain\Monkey\Functions\when( 'get_post' )->alias(
+            function ( $post ) {
+                return $post;
+            }
+        );
+
+        $this->assertSame( 1, Lisensio_KB_Admin_Columns::reading_time( $short ) );
+        $this->assertSame( 3, Lisensio_KB_Admin_Columns::reading_time( $long ) );
+        $this->assertSame( 0, Lisensio_KB_Admin_Columns::reading_time( $empty ) );
     }
 }

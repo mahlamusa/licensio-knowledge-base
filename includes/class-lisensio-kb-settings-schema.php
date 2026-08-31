@@ -56,6 +56,36 @@ class Lisensio_KB_Settings_Schema {
     }
 
     /**
+     * The categories the sidebar is divided into, in display order.
+     *
+     * A category is presentation only: it heads a block of groups in the
+     * navigation and names the section above the page title. Groups carry the
+     * settings; categories carry nothing but an order and a label.
+     *
+     * @since 1.0.0
+     *
+     * @return array<string, string> Category id to label.
+     */
+    public function categories() {
+        /**
+         * Filter the settings screen categories.
+         *
+         * @since 1.0.0
+         *
+         * @param array<string, string> $categories Category id to label, in display order.
+         */
+        return (array) apply_filters(
+            'lisensio_settings_categories',
+            array(
+                'core'       => __( 'Core', 'lisensio-knowledge-base' ),
+                'content'    => __( 'Content', 'lisensio-knowledge-base' ),
+                'engagement' => __( 'Engagement', 'lisensio-knowledge-base' ),
+                'data'       => __( 'Data', 'lisensio-knowledge-base' ),
+            )
+        );
+    }
+
+    /**
      * The groups the settings screen is divided into, in display order.
      *
      * @since 1.0.0
@@ -67,26 +97,38 @@ class Lisensio_KB_Settings_Schema {
             self::GROUP_GENERAL => array(
                 'label'       => __( 'General', 'lisensio-knowledge-base' ),
                 'description' => __( 'How the knowledge base archive behaves.', 'lisensio-knowledge-base' ),
+                'category'    => 'core',
+                'icon'        => 'admin-settings',
             ),
             'slugs'             => array(
                 'label'       => __( 'Slugs and permalinks', 'lisensio-knowledge-base' ),
                 'description' => __( 'The URL bases for articles, categories and tags. Changing one rebuilds the rewrite rules automatically.', 'lisensio-knowledge-base' ),
+                'category'    => 'content',
+                'icon'        => 'admin-links',
             ),
             'appearance'        => array(
                 'label'       => __( 'Appearance', 'lisensio-knowledge-base' ),
                 'description' => __( 'Every value here is published as a CSS custom property on the knowledge base root, so a theme can override it without fighting a rule.', 'lisensio-knowledge-base' ),
+                'category'    => 'core',
+                'icon'        => 'art',
             ),
             'search'            => array(
                 'label'       => __( 'Search', 'lisensio-knowledge-base' ),
                 'description' => __( 'How many results the search endpoint and the type-ahead return.', 'lisensio-knowledge-base' ),
+                'category'    => 'content',
+                'icon'        => 'search',
             ),
             'feedback'          => array(
                 'label'       => __( 'Feedback', 'lisensio-knowledge-base' ),
                 'description' => __( 'Article voting and the comment box that follows a negative vote.', 'lisensio-knowledge-base' ),
+                'category'    => 'engagement',
+                'icon'        => 'thumbs-up',
             ),
             'privacy'           => array(
                 'label'       => __( 'Privacy', 'lisensio-knowledge-base' ),
                 'description' => __( 'What is collected, how long it is kept, and what happens to it when the plugin is deleted.', 'lisensio-knowledge-base' ),
+                'category'    => 'data',
+                'icon'        => 'privacy',
             ),
         );
     }
@@ -270,6 +312,9 @@ class Lisensio_KB_Settings_Schema {
                 'id'          => (string) $id,
                 'label'       => $group['label'],
                 'description' => $group['description'],
+                'category'    => isset( $group['category'] ) ? (string) $group['category'] : 'core',
+                'icon'        => isset( $group['icon'] ) ? (string) $group['icon'] : 'admin-settings',
+                'count'       => count( $fields[ $id ] ),
                 'fields'      => $fields[ $id ],
             );
         }

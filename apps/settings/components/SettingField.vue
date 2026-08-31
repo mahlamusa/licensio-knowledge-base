@@ -52,12 +52,14 @@ function update( value: SettingValue ): void {
 </script>
 
 <template>
-	<a-form-item
-		:label="field.label"
-		:validate-status="error ? 'error' : ''"
-		:help="error || field.description"
-		class="lisensio-kb-settings__field"
-	>
+	<div class="lkb-field" :class="{ 'is-changed': changed, 'is-invalid': !! error }">
+		<div class="lkb-field__label">
+			<label :for="'lkb-' + field.key">{{ field.label }}</label>
+			<span v-if="bounds" class="lkb-field__bounds">{{ bounds }}</span>
+		</div>
+
+		<div class="lkb-field__control">
+			<div class="lkb-field__input">
 		<a-switch
 			v-if="field.control === 'toggle'"
 			:checked="value === true"
@@ -115,35 +117,105 @@ function update( value: SettingValue ): void {
 		<span v-if="bounds" class="lisensio-kb-settings__bounds">{{ bounds }}</span>
 
 		<span v-if="changed" class="lisensio-kb-settings__changed">•</span>
-	</a-form-item>
+			</div>
+
+			<p v-if="error" class="lkb-field__error">{{ error }}</p>
+			<p v-else-if="field.description" class="lkb-field__help">
+				{{ field.description }}
+			</p>
+		</div>
+	</div>
 </template>
 
-<style scoped>
-.lisensio-kb-settings__color {
+<style>
+/*
+ * A settings row reads as a label and its control, not as a stacked form. The
+ * dashed rule separates rows without the weight of a table border.
+ */
+.lkb-field {
+	display: grid;
+	grid-template-columns: 220px minmax(0, 1fr);
+	gap: 24px;
+	align-items: start;
+	padding: 18px 0;
+	border-bottom: 1px dashed var(--lkb-line, #e5e7eb);
+}
+
+.lkb-field:last-child {
+	border-bottom: 0;
+}
+
+.lkb-field__label {
+	padding-top: 5px;
+	font-size: 13px;
+	line-height: 1.45;
+}
+
+.lkb-field__label label {
+	font-weight: 500;
+}
+
+.lkb-field__bounds {
+	display: block;
+	margin-top: 2px;
+	font-size: 12px;
+	color: var(--lkb-muted, #6b7280);
+	font-variant-numeric: tabular-nums;
+}
+
+.lkb-field__input {
+	display: flex;
 	align-items: center;
-	display: inline-flex;
 	gap: 8px;
+	flex-wrap: wrap;
 }
 
-.lisensio-kb-settings__color input[type='color'] {
-	block-size: 32px;
-	border: 1px solid #d9d9d9;
-	border-radius: 6px;
-	cursor: pointer;
-	inline-size: 48px;
-	padding: 2px;
+/* Text and number controls fill the column; switches and selects size to content. */
+.lkb-field__input > .ant-input,
+.lkb-field__input > .ant-input-number {
+	max-width: 480px;
+	width: 100%;
 }
 
-.lisensio-kb-settings__unit,
-.lisensio-kb-settings__bounds {
-	color: #646970;
-	margin-inline-start: 8px;
+.lkb-field__help,
+.lkb-field__error {
+	margin: 8px 0 0;
+	font-size: 12px;
+	line-height: 1.5;
 }
 
-.lisensio-kb-settings__changed {
-	color: #d97706;
-	font-size: 20px;
-	line-height: 1;
-	margin-inline-start: 8px;
+.lkb-field__help {
+	color: var(--lkb-muted, #6b7280);
+}
+
+.lkb-field__error {
+	color: #d63638;
+}
+
+/* An edited row is marked, so a change stays visible after scrolling past it. */
+.lkb-field.is-changed .lkb-field__label label::after {
+	content: '';
+	display: inline-block;
+	width: 6px;
+	height: 6px;
+	margin-left: 6px;
+	border-radius: 50%;
+	background: #3858e9;
+	vertical-align: middle;
+}
+
+.lkb-field.is-invalid .lkb-field__label label {
+	color: #d63638;
+}
+
+@media (max-width: 782px) {
+	.lkb-field {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 8px;
+	}
+
+	.lkb-field__label {
+		padding-top: 0;
+	}
 }
 </style>

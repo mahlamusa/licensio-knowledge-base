@@ -246,9 +246,10 @@ class Lisensio_KB_REST_Settings_Controller extends Lisensio_KB_REST_Controller {
      */
     private function payload() {
         return array(
-            'settings' => $this->settings->all(),
-            'defaults' => $this->settings->defaults(),
-            'schema'   => $this->screen_schema->schema(),
+            'settings'   => $this->settings->all(),
+            'defaults'   => $this->settings->defaults(),
+            'categories' => $this->screen_schema->categories(),
+            'schema'     => $this->screen_schema->schema(),
         );
     }
 
