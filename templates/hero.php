@@ -27,6 +27,7 @@
  *     @type string $title       The heading. Printed as plain text, split so its last word takes the gradient.
  *     @type string $subtitle    Optional. A standfirst below the heading. Omitted entirely when empty. Default ''.
  *     @type bool   $breadcrumbs Optional. Whether to render the breadcrumb trail. Default true.
+ *     @type bool   $search      Optional. Whether to render the search form below the heading. Default false.
  * }
  */
 
@@ -35,6 +36,7 @@ defined( 'ABSPATH' ) || exit;
 $lisensio_kb_hero_title       = isset( $args['title'] ) ? (string) $args['title'] : '';
 $lisensio_kb_hero_subtitle    = isset( $args['subtitle'] ) ? (string) $args['subtitle'] : '';
 $lisensio_kb_hero_breadcrumbs = ! isset( $args['breadcrumbs'] ) || (bool) $args['breadcrumbs'];
+$lisensio_kb_hero_search      = isset( $args['search'] ) && (bool) $args['search'];
 
 list( $lisensio_kb_hero_lead, $lisensio_kb_hero_accent ) = Lisensio_KB_Templates::split_title( $lisensio_kb_hero_title );
 ?>
@@ -52,5 +54,9 @@ list( $lisensio_kb_hero_lead, $lisensio_kb_hero_accent ) = Lisensio_KB_Templates
 
     <?php if ( '' !== $lisensio_kb_hero_subtitle ) : ?>
         <p class="lisensio-kb__description"><?php echo esc_html( $lisensio_kb_hero_subtitle ); ?></p>
+    <?php endif; ?>
+
+    <?php if ( $lisensio_kb_hero_search ) : ?>
+        <?php lisensio_kb_get_template( 'search-field' ); ?>
     <?php endif; ?>
 </header>
