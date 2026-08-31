@@ -1,0 +1,82 @@
+<?xml version="1.0"?>
+<ruleset name="Lisensio Knowledge Base Heroic Migrator">
+    <description>
+        The project ruleset excludes tools/ from the plugin's lint gate, because
+        nothing under tools/ ships. That exclusion is about scope, not about
+        standards, so this ruleset applies the same WordPress standards to the
+        migrator explicitly. Run it with:
+
+            vendor/bin/phpcs --standard=tools/migrate-heroic/phpcs.xml
+
+        It lives inside the disposable directory and is deleted with the tool.
+    </description>
+
+    <arg name="basepath" value="../.."/>
+    <arg name="extensions" value="php"/>
+    <arg name="colors"/>
+    <arg value="s"/>
+
+    <file>.</file>
+
+    <config name="minimum_supported_wp_version" value="6.4"/>
+    <config name="testVersion" value="7.4-"/>
+
+    <rule ref="PHPCompatibilityWP"/>
+
+    <rule ref="WordPress-Docs">
+        <exclude name="Generic.Commenting.DocComment.LongNotCapital"/>
+        <exclude name="Generic.Commenting.DocComment.ShortNotCapital"/>
+        <exclude name="Squiz.Commenting.FunctionComment.ParamCommentFullStop"/>
+    </rule>
+
+    <rule ref="WordPress">
+        <!-- The project uses four spaces, not tabs. -->
+        <exclude name="Generic.WhiteSpace.DisallowSpaceIndent"/>
+        <!-- Yoda conditions are not used in this codebase. -->
+        <exclude name="WordPress.PHP.YodaConditions.NotYoda"/>
+    </rule>
+
+    <rule ref="WordPress-Extra"/>
+
+    <rule ref="Generic.WhiteSpace.DisallowTabIndent"/>
+
+    <rule ref="Generic.WhiteSpace.ScopeIndent">
+        <properties>
+            <property name="indent" value="4"/>
+            <property name="tabIndent" value="false"/>
+        </properties>
+    </rule>
+
+    <rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+        <properties>
+            <property name="prefixes" type="array">
+                <element value="lisensio"/>
+                <element value="Lisensio_KB"/>
+                <element value="LISENSIO_KB"/>
+            </property>
+        </properties>
+    </rule>
+
+    <!--
+        The migrator reads Heroic's own tables, which no WordPress API knows
+        about, and writes through the plugin's gateway. Direct queries are the
+        job, not an oversight, and there is nothing to cache in a one-shot
+        migration that runs once and is then deleted.
+    -->
+    <rule ref="WordPress.DB.DirectDatabaseQuery.DirectQuery">
+        <severity>0</severity>
+    </rule>
+    <rule ref="WordPress.DB.DirectDatabaseQuery.NoCaching">
+        <severity>0</severity>
+    </rule>
+
+    <!--
+        This is an operator-facing WP-CLI tool. Its output goes to a terminal
+        through WP_CLI, never to a browser, and it carries no user interface, so
+        it is deliberately not translated: an operator running a one-time
+        migration needs the message to match the documentation, not the locale.
+    -->
+    <rule ref="WordPress.WP.I18n">
+        <severity>0</severity>
+    </rule>
+</ruleset>
