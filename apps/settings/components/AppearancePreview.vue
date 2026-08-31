@@ -56,13 +56,20 @@ const declarations = computed( () =>
 </template>
 
 <style scoped>
+/*
+ * The preview sits above the section whose values it is drawing, and the pane
+ * stacks its children with each owning its own bottom margin - the way the
+ * notice above it does. Without one the preview's lower edge landed exactly on
+ * the section card's header strip and the two read as one collided block.
+ */
 .lisensio-kb-settings__preview {
 	--lisensio-kb-surface: #ffffff;
 	--lisensio-kb-line: #e2e8f0;
 
 	display: grid;
-	gap: 16px;
+	gap: var(--lkb-gap);
 	grid-template-columns: minmax(0, 1fr) minmax(0, 20rem);
+	margin-bottom: var(--lkb-gap-lg);
 }
 
 .lisensio-kb-settings__preview-card {
