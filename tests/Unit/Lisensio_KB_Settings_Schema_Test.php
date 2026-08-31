@@ -59,7 +59,7 @@ class Lisensio_KB_Settings_Schema_Test extends Lisensio_KB_Test_Case {
      *
      * @return void
      */
-    public function test_the_screen_has_the_six_groups() {
+    public function test_the_screen_has_the_seven_groups() {
         $ids = array();
 
         foreach ( $this->schema() as $group ) {
@@ -67,7 +67,7 @@ class Lisensio_KB_Settings_Schema_Test extends Lisensio_KB_Test_Case {
         }
 
         $this->assertSame(
-            array( 'general', 'slugs', 'appearance', 'search', 'feedback', 'privacy' ),
+            array( 'general', 'slugs', 'appearance', 'sidebar', 'search', 'feedback', 'privacy' ),
             $ids
         );
     }
@@ -240,6 +240,209 @@ class Lisensio_KB_Settings_Schema_Test extends Lisensio_KB_Test_Case {
 
         $this->assertSame( '#ff0000', $published[ $preview['properties']['value'] ] );
         $this->assertSame( '255,0,0', $published[ $preview['properties']['rgb'] ] );
+    }
+
+    /**
+     * Each presentation setting reaches the group the issue asked for.
+     *
+     * Asserted per key rather than by counting a group, because a count is
+     * satisfied by the right number of the wrong fields.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_presentation_settings_land_in_their_groups() {
+        $fields = $this->fields();
+
+        $expected = array(
+            'header_style'              => 'appearance',
+            'header_image_id'           => 'appearance',
+            'archive_header_text'       => 'appearance',
+            'search_placeholder'        => 'appearance',
+            'archive_columns'           => 'appearance',
+            'show_subcategories'        => 'general',
+            'show_article_counts'       => 'general',
+            'sticky_sidebar'            => 'sidebar',
+            'archive_sidebar_position'  => 'sidebar',
+            'article_sidebar_position'  => 'sidebar',
+            'category_sidebar_position' => 'sidebar',
+        );
+
+        foreach ( $expected as $key => $group ) {
+            $this->assertArrayHasKey( $key, $fields, $key . ' must reach the settings screen.' );
+            $this->assertSame( $group, $fields[ $key ]['group'], $key . ' is in the wrong group.' );
+        }
+    }
+
+    /**
+     * Every presentation setting is written into the field map, not inferred.
+     *
+     * Checked against field_map() rather than against the rendered field,
+     * because an unmapped key still renders: it falls into General with a
+     * label derived from its own key, which for a setting that belongs in
+     * General anyway is indistinguishable from a mapped one.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_every_presentation_setting_is_mapped() {
+        $map = ( new Lisensio_KB_Settings_Schema( new Lisensio_KB_Settings() ) )->field_map();
+
+        $keys = array(
+            'header_style',
+            'header_image_id',
+            'archive_header_text',
+            'search_placeholder',
+            'archive_columns',
+            'show_subcategories',
+            'show_article_counts',
+            'sticky_sidebar',
+            'archive_sidebar_position',
+            'article_sidebar_position',
+            'category_sidebar_position',
+        );
+
+        foreach ( $keys as $key ) {
+            $this->assertArrayHasKey( $key, $map, $key . ' has no presentation metadata.' );
+
+            foreach ( array( 'group', 'label', 'description', 'control' ) as $part ) {
+                $this->assertArrayHasKey( $part, $map[ $key ], $key . ' declares no ' . $part . '.' );
+                $this->assertNotSame( '', $map[ $key ][ $part ], $key . ' declares an empty ' . $part . '.' );
+            }
+        }
+    }
+
+    /**
+     * The controls match what each setting actually is.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_presentation_settings_get_the_right_controls() {
+        $fields = $this->fields();
+
+        $this->assertSame( 'select', $fields['header_style']['control'] );
+        $this->assertSame( 'number', $fields['header_image_id']['control'] );
+        $this->assertSame( 'text', $fields['archive_header_text']['control'] );
+        $this->assertSame( 'text', $fields['search_placeholder']['control'] );
+        $this->assertSame( 'number', $fields['archive_columns']['control'] );
+        $this->assertSame( 'toggle', $fields['show_subcategories']['control'] );
+        $this->assertSame( 'toggle', $fields['show_article_counts']['control'] );
+        $this->assertSame( 'toggle', $fields['sticky_sidebar']['control'] );
+        $this->assertSame( 'select', $fields['archive_sidebar_position']['control'] );
+    }
+
+    /**
+     * The header style select offers exactly the values the sanitiser accepts.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_header_style_choices_match_the_allowlist() {
+        $values = array_column( $this->fields()['header_style']['choices'], 'value' );
+
+        $this->assertSame( Lisensio_KB_Settings::HEADER_STYLES, $values );
+    }
+
+    /**
+     * Every sidebar select offers exactly the values the sanitiser accepts.
+     *
+     * A select that offered a fourth position would produce a setting the store
+     * silently replaced with the default, which reads to the user as a save
+     * that did not save.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_every_sidebar_select_matches_the_allowlist() {
+        $fields = $this->fields();
+
+        $keys = array(
+            'archive_sidebar_position',
+            'article_sidebar_position',
+            'category_sidebar_position',
+        );
+
+        foreach ( $keys as $key ) {
+            $choices = $fields[ $key ]['choices'];
+
+            $this->assertSame(
+                Lisensio_KB_Settings::SIDEBAR_POSITIONS,
+                array_column( $choices, 'value' ),
+                $key . ' offers something other than the allowlist.'
+            );
+
+            foreach ( $choices as $choice ) {
+                $this->assertNotSame(
+                    $choice['value'],
+                    $choice['label'],
+                    $key . ' is showing a raw value instead of a label.'
+                );
+            }
+        }
+    }
+
+    /**
+     * The archive column bounds reach the number control from the registry.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_archive_column_bounds_reach_the_screen() {
+        $field = $this->fields()['archive_columns'];
+
+        $this->assertSame( 1, $field['min'] );
+        $this->assertSame( 4, $field['max'] );
+    }
+
+    /**
+     * The sidebar group is announced with a category and an icon, like the rest.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_sidebar_group_is_described_like_every_other_group() {
+        $sidebar = null;
+
+        foreach ( $this->schema() as $group ) {
+            if ( 'sidebar' === $group['id'] ) {
+                $sidebar = $group;
+            }
+        }
+
+        $this->assertIsArray( $sidebar );
+        $this->assertNotSame( '', $sidebar['label'] );
+        $this->assertNotSame( '', $sidebar['description'] );
+        $this->assertSame( 'core', $sidebar['category'] );
+        $this->assertNotSame( 'admin-settings', $sidebar['icon'] );
+        $this->assertSame( 4, $sidebar['count'] );
+    }
+
+    /**
+     * Every group names a category the sidebar actually renders.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_every_group_belongs_to_a_declared_category() {
+        $schema     = new Lisensio_KB_Settings_Schema( new Lisensio_KB_Settings() );
+        $categories = array_keys( $schema->categories() );
+
+        foreach ( $schema->schema() as $group ) {
+            $this->assertContains(
+                $group['category'],
+                $categories,
+                $group['id'] . ' names a category that does not exist.'
+            );
+        }
     }
 
     /**

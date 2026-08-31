@@ -58,6 +58,26 @@ class Lisensio_KB_Settings {
     const CARD_STYLES = array( 'shadow', 'border', 'flat' );
 
     /**
+     * Accepted values for the `header_style` setting.
+     *
+     * @since 1.0.0
+     * @var string[]
+     */
+    const HEADER_STYLES = array( 'solid', 'gradient', 'image' );
+
+    /**
+     * Accepted values for every sidebar position setting.
+     *
+     * The archive, the article and the category page each choose a side
+     * independently, but they choose from the same three answers, so the
+     * allowlist and its sanitizer are written once and shared.
+     *
+     * @since 1.0.0
+     * @var string[]
+     */
+    const SIDEBAR_POSITIONS = array( 'left', 'right', 'none' );
+
+    /**
      * Runtime cache of the resolved settings.
      *
      * @since 1.0.0
@@ -89,67 +109,122 @@ class Lisensio_KB_Settings {
      */
     public function registry() {
         $registry = array(
-            'article_slug'             => array(
+            'article_slug'              => array(
                 'type'           => 'string',
                 'default'        => 'docs',
                 'sanitize'       => array( 'Lisensio_KB_Settings', 'sanitize_slug' ),
                 'flush_rewrites' => true,
             ),
-            'category_slug'            => array(
+            'category_slug'             => array(
                 'type'           => 'string',
                 'default'        => 'docs-category',
                 'sanitize'       => array( 'Lisensio_KB_Settings', 'sanitize_slug' ),
                 'flush_rewrites' => true,
             ),
-            'tag_slug'                 => array(
+            'tag_slug'                  => array(
                 'type'           => 'string',
                 'default'        => 'docs-tag',
                 'sanitize'       => array( 'Lisensio_KB_Settings', 'sanitize_slug' ),
                 'flush_rewrites' => true,
             ),
-            'articles_per_page'        => array(
+            'articles_per_page'         => array(
                 'type'    => 'int',
                 'default' => 20,
                 'min'     => 1,
                 'max'     => 500,
             ),
-            'search_results_limit'     => array(
+            'search_results_limit'      => array(
                 'type'    => 'int',
                 'default' => 10,
                 'min'     => 1,
                 'max'     => 100,
             ),
-            'brand_color'              => array(
+            'brand_color'               => array(
                 'type'     => 'string',
                 'default'  => '#2563eb',
                 'sanitize' => array( 'Lisensio_KB_Settings', 'sanitize_brand_color' ),
             ),
-            'layout_width'             => array(
+            'layout_width'              => array(
                 'type'     => 'string',
                 'default'  => 'contained',
                 'sanitize' => array( 'Lisensio_KB_Settings', 'sanitize_layout_width' ),
             ),
-            'card_style'               => array(
+            'card_style'                => array(
                 'type'     => 'string',
                 'default'  => 'shadow',
                 'sanitize' => array( 'Lisensio_KB_Settings', 'sanitize_card_style' ),
             ),
-            'enable_feedback'          => array(
+            'header_style'              => array(
+                'type'     => 'string',
+                'default'  => 'solid',
+                'sanitize' => array( 'Lisensio_KB_Settings', 'sanitize_header_style' ),
+            ),
+            'header_image_id'           => array(
+                'type'     => 'int',
+                'default'  => 0,
+                'min'      => 0,
+                'sanitize' => array( 'Lisensio_KB_Settings', 'sanitize_attachment_id' ),
+            ),
+            'archive_header_text'       => array(
+                'type'     => 'string',
+                'default'  => 'How can we help?',
+                'sanitize' => array( 'Lisensio_KB_Settings', 'sanitize_display_text' ),
+            ),
+            'search_placeholder'        => array(
+                'type'     => 'string',
+                'default'  => 'Search the Knowledge Base...',
+                'sanitize' => array( 'Lisensio_KB_Settings', 'sanitize_display_text' ),
+            ),
+            'archive_columns'           => array(
+                'type'     => 'int',
+                'default'  => 3,
+                'min'      => 1,
+                'max'      => 4,
+                'sanitize' => array( 'Lisensio_KB_Settings', 'sanitize_archive_columns' ),
+            ),
+            'show_subcategories'        => array(
+                'type'    => 'bool',
+                'default' => false,
+            ),
+            'show_article_counts'       => array(
                 'type'    => 'bool',
                 'default' => true,
             ),
-            'enable_analytics'         => array(
+            'sticky_sidebar'            => array(
                 'type'    => 'bool',
                 'default' => true,
             ),
-            'analytics_retention_days' => array(
+            'archive_sidebar_position'  => array(
+                'type'     => 'string',
+                'default'  => 'right',
+                'sanitize' => array( 'Lisensio_KB_Settings', 'sanitize_sidebar_position' ),
+            ),
+            'article_sidebar_position'  => array(
+                'type'     => 'string',
+                'default'  => 'right',
+                'sanitize' => array( 'Lisensio_KB_Settings', 'sanitize_sidebar_position' ),
+            ),
+            'category_sidebar_position' => array(
+                'type'     => 'string',
+                'default'  => 'right',
+                'sanitize' => array( 'Lisensio_KB_Settings', 'sanitize_sidebar_position' ),
+            ),
+            'enable_feedback'           => array(
+                'type'    => 'bool',
+                'default' => true,
+            ),
+            'enable_analytics'          => array(
+                'type'    => 'bool',
+                'default' => true,
+            ),
+            'analytics_retention_days'  => array(
                 'type'     => 'int',
                 'default'  => 90,
                 'min'      => 1,
                 'max'      => 3650,
                 'sanitize' => array( 'Lisensio_KB_Settings', 'sanitize_retention_days' ),
             ),
-            'delete_data_on_uninstall' => array(
+            'delete_data_on_uninstall'  => array(
                 'type'    => 'bool',
                 'default' => false,
             ),
@@ -275,6 +350,116 @@ class Lisensio_KB_Settings {
      */
     public static function sanitize_card_style( $value ) {
         return in_array( (string) $value, self::CARD_STYLES, true ) ? (string) $value : null;
+    }
+
+    /**
+     * Restrict the archive header style to a known value.
+     *
+     * The value names a header treatment the theme renders, so an unknown one
+     * is not a harmless typo: it either selects nothing at all or, if a theme
+     * interpolates it into a class name, injects an attacker-chosen token into
+     * markup. The allowlist closes both.
+     *
+     * @since 1.0.0
+     *
+     * @param mixed $value The raw value.
+     *
+     * @return string|null The header style, or null when it is not a known one.
+     */
+    public static function sanitize_header_style( $value ) {
+        return in_array( (string) $value, self::HEADER_STYLES, true ) ? (string) $value : null;
+    }
+
+    /**
+     * Restrict a sidebar position to a known value.
+     *
+     * Shared by `archive_sidebar_position`, `article_sidebar_position` and
+     * `category_sidebar_position`: three independent settings answering the
+     * same question, so they are validated against the same allowlist rather
+     * than against three copies of it that could drift apart.
+     *
+     * @since 1.0.0
+     *
+     * @param mixed $value The raw value.
+     *
+     * @return string|null The sidebar position, or null when it is not a known one.
+     */
+    public static function sanitize_sidebar_position( $value ) {
+        return in_array( (string) $value, self::SIDEBAR_POSITIONS, true ) ? (string) $value : null;
+    }
+
+    /**
+     * Reduce a value to plain display text.
+     *
+     * Shared by `archive_header_text` and `search_placeholder`. Both are echoed
+     * into the archive header — one as a heading, one as an input placeholder
+     * attribute — so markup is stripped here rather than trusted to every
+     * template that renders them. An empty result is kept rather than rejected:
+     * clearing the heading is a legitimate choice, and silently restoring
+     * "How can we help?" over it would be a setting that refuses to be unset.
+     * Only a value that is not text at all falls back to the default.
+     *
+     * @since 1.0.0
+     *
+     * @param mixed $value The raw value.
+     *
+     * @return string|null The plain text, or null when the value is not text.
+     */
+    public static function sanitize_display_text( $value ) {
+        if ( ! is_scalar( $value ) ) {
+            return null;
+        }
+
+        return sanitize_text_field( (string) $value );
+    }
+
+    /**
+     * Reduce a value to a knowledge base archive column count.
+     *
+     * Only the number is stored. Heroic stored a CSS class name instead, which
+     * put a presentation decision in the database and left the theme unable to
+     * lay the grid out any other way; the mapping from 3 to whatever grid the
+     * theme uses belongs in the theme. Non-numeric input falls back to the
+     * default; a number outside 1-4 is clamped by the registry bounds.
+     *
+     * @since 1.0.0
+     *
+     * @param mixed $value The raw value.
+     *
+     * @return int|null The column count, or null when the value is not a number.
+     */
+    public static function sanitize_archive_columns( $value ) {
+        if ( ! is_numeric( $value ) ) {
+            return null;
+        }
+
+        return (int) $value;
+    }
+
+    /**
+     * Reduce a value to the ID of an attachment that actually exists.
+     *
+     * An integer is not proof of an attachment. A post ID that belongs to a
+     * page, a draft or nothing at all would be handed to `wp_get_attachment_image()`
+     * on every archive render, so the post type is checked here instead. Zero is
+     * accepted as it stands, because zero is how the header image is cleared;
+     * any other ID that is not an attachment is refused, and the registry
+     * substitutes the default.
+     *
+     * @since 1.0.0
+     *
+     * @param mixed $value The raw value.
+     *
+     * @return int|null The attachment ID, 0 for no image, or null when the ID is not an attachment.
+     */
+    public static function sanitize_attachment_id( $value ) {
+        $id = is_scalar( $value ) ? absint( $value ) : 0;
+
+        if ( 0 === $id ) {
+            return 0;
+        }
+
+        return ( 'attachment' === get_post_type( $id ) ) ? $id : null;
     }
 
     /**
