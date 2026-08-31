@@ -161,7 +161,10 @@ abstract class Lisensio_KB_REST_Controller extends WP_REST_Controller {
         $window = max( 1, (int) $window );
 
         $visitor = new Lisensio_KB_Visitor();
-        $hashes  = $visitor->get_hashes();
+
+        // Keyed on the address alone: a caller who varies its user agent would
+        // otherwise mint a fresh identity, and a fresh budget, per request.
+        $hashes = $visitor->get_abuse_hashes();
 
         if ( empty( $hashes ) ) {
             return true;
