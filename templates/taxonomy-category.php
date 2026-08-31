@@ -27,6 +27,7 @@ $lisensio_kb_children = $lisensio_kb_category instanceof WP_Term ? Lisensio_KB_T
         array(
             'title'    => single_term_title( '', false ),
             'subtitle' => $lisensio_kb_category instanceof WP_Term ? $lisensio_kb_category->description : '',
+            'search'   => true,
         )
     );
     ?>
