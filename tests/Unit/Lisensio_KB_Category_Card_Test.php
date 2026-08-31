@@ -551,4 +551,32 @@ class Lisensio_KB_Category_Card_Test extends Lisensio_KB_Test_Case {
         $this->assertStringContainsString( '<p class="lisensio-kb-card__meta">', $markup );
         $this->assertStringContainsString( '3 articles', $markup );
     }
+    /**
+     * The icon sits beside the category name, not above it.
+     *
+     * A layout contract, so it is asserted structurally: the icon and the title
+     * must be siblings inside one heading row. Checking only that both appear
+     * on the card would pass just as happily with the icon stacked above the
+     * name again, which is the arrangement this replaced.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_icon_shares_a_row_with_the_category_name() {
+        $this->meta['9|lisensio_icon_svg'] = '<svg viewBox="0 0 24 24"><path d="M4 4h16"/></svg>';
+
+        $markup = $this->render_card();
+
+        $heading = strpos( $markup, '<div class="lisensio-kb-card__heading">' );
+        $icon    = strpos( $markup, 'lisensio-kb-card__icon' );
+        $title   = strpos( $markup, 'lisensio-kb-card__title' );
+        $close   = strpos( $markup, '</div>', $title );
+
+        $this->assertNotFalse( $heading, 'the card renders no heading row' );
+        $this->assertNotFalse( $icon, 'the card renders no icon' );
+        $this->assertLessThan( $icon, $heading, 'the icon is outside the heading row' );
+        $this->assertLessThan( $title, $icon, 'the icon does not precede the name' );
+        $this->assertNotFalse( $close, 'the heading row is never closed' );
+    }
 }
