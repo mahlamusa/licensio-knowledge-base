@@ -751,9 +751,29 @@ class Lisensio_KB_Search_Index {
     public static function plain_text( $content ) {
         $content = (string) $content;
         $content = strip_shortcodes( $content );
+
+        /*
+         * Decode before stripping, not after.
+         *
+         * The other order resurrects the markup the strip just removed: run on
+         * `Intro &lt;script&gt;alert(1)&lt;/script&gt; end` it returned
+         * `Intro <script>alert(1)</script> end` - live markup out of a method
+         * named for plain text. Nothing prints that today (the content column
+         * is only ever compared with `mb_stripos`, the excerpt column is never
+         * read back, and the REST snippet is escaped before its `mark` is
+         * inserted), so this was latent rather than exploitable. It is still
+         * one `echo` from being real, and a `public static` helper should not
+         * depend on every future caller knowing that.
+         *
+         * The cost is that an article *about* markup loses the tag it quotes:
+         * text displayed as `&lt;script&gt;` decodes to a tag and is then
+         * stripped, so the word is gone from the index. That is a small search
+         * quality loss against a method that no longer hands back executable
+         * markup, which is the right way round.
+         */
+        $content = html_entity_decode( $content, ENT_QUOTES, 'UTF-8' );
         $content = str_replace( array( '<br>', '<br/>', '<br />', '</p>', '</div>', '</li>' ), ' ', $content );
         $content = wp_strip_all_tags( $content );
-        $content = html_entity_decode( $content, ENT_QUOTES, 'UTF-8' );
         $content = (string) preg_replace( '/\s+/u', ' ', $content );
 
         return trim( $content );
