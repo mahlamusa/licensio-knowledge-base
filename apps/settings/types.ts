@@ -54,12 +54,29 @@ export interface Group {
 	id: string;
 	label: string;
 	description: string;
+	category: string;
+	icon: string;
+	count: number;
 	fields: Field[];
+}
+
+/**
+ * A sidebar heading with the groups filed under it.
+ *
+ * Built in the app rather than sent by the server: the server declares the
+ * category order and each group's category, and the shape the navigation wants
+ * is the join of the two.
+ */
+export interface CategoryBlock {
+	id: string;
+	label: string;
+	groups: Group[];
 }
 
 export interface SettingsResponse {
 	settings: SettingsMap;
 	defaults: SettingsMap;
+	categories: Record< string, string >;
 	schema: Group[];
 }
 

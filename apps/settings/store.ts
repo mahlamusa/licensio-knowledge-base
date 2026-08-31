@@ -23,6 +23,7 @@ import {
 	saveSettings,
 } from './api';
 import type {
+	CategoryBlock,
 	Field,
 	FieldErrors,
 	Group,
@@ -39,6 +40,7 @@ interface SettingsState {
 	notice: string;
 	fieldErrors: FieldErrors;
 	schema: Group[];
+	categories: Record< string, string >;
 	saved: SettingsMap;
 	draft: SettingsMap;
 	defaults: SettingsMap;
@@ -53,12 +55,42 @@ export const useSettingsStore = defineStore( 'lisensioKbSettings', {
 		notice: '',
 		fieldErrors: {},
 		schema: [],
+		categories: {},
 		saved: {},
 		draft: {},
 		defaults: {},
 	} ),
 
 	getters: {
+		/**
+		 * The sidebar: each declared category with its groups, in order.
+		 *
+		 * A group whose category the server does not declare would otherwise
+		 * vanish from the navigation while its settings stayed stored, so any
+		 * such group is collected under a trailing block rather than dropped.
+		 * @param state
+		 */
+		categoryBlocks( state ): CategoryBlock[] {
+			const declared = Object.keys( state.categories );
+			const blocks: CategoryBlock[] = declared.map( ( id ) => ( {
+				id,
+				label: state.categories[ id ],
+				groups: state.schema.filter(
+					( group ) => group.category === id
+				),
+			} ) );
+
+			const orphans = state.schema.filter(
+				( group ) => ! declared.includes( group.category )
+			);
+
+			if ( orphans.length > 0 ) {
+				blocks.push( { id: 'other', label: 'Other', groups: orphans } );
+			}
+
+			return blocks.filter( ( block ) => block.groups.length > 0 );
+		},
+
 		/**
 		 * Every field in the schema, flattened out of its group.
 		 *
@@ -130,6 +162,7 @@ export const useSettingsStore = defineStore( 'lisensioKbSettings', {
 		 */
 		adopt( payload: SettingsResponse ): void {
 			this.schema = payload.schema ?? [];
+			this.categories = payload.categories ?? {};
 			this.saved = { ...payload.settings };
 			this.draft = { ...payload.settings };
 			this.defaults = { ...payload.defaults };
