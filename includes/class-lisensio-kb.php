@@ -126,6 +126,30 @@ final class Lisensio_KB {
     private $feedback = null;
 
     /**
+     * Search and article-view capture.
+     *
+     * @since 1.0.0
+     * @var Lisensio_KB_Analytics|null
+     */
+    private $analytics = null;
+
+    /**
+     * Analytics retention job.
+     *
+     * @since 1.0.0
+     * @var Lisensio_KB_Analytics_Retention|null
+     */
+    private $analytics_retention = null;
+
+    /**
+     * Personal-data exporter and eraser.
+     *
+     * @since 1.0.0
+     * @var Lisensio_KB_Analytics_Privacy|null
+     */
+    private $analytics_privacy = null;
+
+    /**
      * Return the single instance of the plugin.
      *
      * @since 1.0.0
@@ -183,6 +207,10 @@ final class Lisensio_KB {
         $this->block_templates = new Lisensio_KB_Block_Templates();
         $this->blocks          = new Lisensio_KB_Blocks();
 
+        $this->analytics           = new Lisensio_KB_Analytics( $this->settings, $this->visitor );
+        $this->analytics_retention = new Lisensio_KB_Analytics_Retention( $this->settings );
+        $this->analytics_privacy   = new Lisensio_KB_Analytics_Privacy();
+
         /*
          * Permalinks first. It adds a key to the settings registry, and
          * Lisensio_KB_Settings memoizes the resolved settings on first read, so
@@ -200,6 +228,9 @@ final class Lisensio_KB {
         $this->visitor->init_hooks();
         $this->rest_api->init_hooks();
         $this->feedback->init_hooks();
+        $this->analytics->init_hooks();
+        $this->analytics_retention->init_hooks();
+        $this->analytics_privacy->init_hooks();
 
         if ( is_admin() ) {
             $term_fields = new Lisensio_KB_Term_Fields();
@@ -207,6 +238,18 @@ final class Lisensio_KB {
 
             $admin_columns = new Lisensio_KB_Admin_Columns();
             $admin_columns->init_hooks();
+
+            /*
+             * Shared menu registration, promoted out of #9 and #10 because both
+             * need pages under the Knowledge Base menu. Consumers register
+             * through `lisensio_admin_menu_pages`; nothing calls
+             * add_submenu_page() itself.
+             */
+            $admin_menu = new Lisensio_KB_Admin_Menu();
+            $admin_menu->init_hooks();
+
+            $analytics_admin = new Lisensio_KB_Analytics_Admin( $this->assets );
+            $analytics_admin->init_hooks();
         }
 
         add_action( 'init', array( $this, 'load_textdomain' ) );
@@ -456,5 +499,50 @@ final class Lisensio_KB {
         }
 
         return $this->feedback;
+    }
+
+    /**
+     * Get the search and article-view recorder.
+     *
+     * @since 1.0.0
+     *
+     * @return Lisensio_KB_Analytics
+     */
+    public function analytics() {
+        if ( ! $this->analytics instanceof Lisensio_KB_Analytics ) {
+            $this->analytics = new Lisensio_KB_Analytics( $this->settings(), $this->visitor() );
+        }
+
+        return $this->analytics;
+    }
+
+    /**
+     * Get the analytics retention job.
+     *
+     * @since 1.0.0
+     *
+     * @return Lisensio_KB_Analytics_Retention
+     */
+    public function analytics_retention() {
+        if ( ! $this->analytics_retention instanceof Lisensio_KB_Analytics_Retention ) {
+            $this->analytics_retention = new Lisensio_KB_Analytics_Retention( $this->settings() );
+        }
+
+        return $this->analytics_retention;
+    }
+
+    /**
+     * Get the personal-data exporter and eraser.
+     *
+     * @since 1.0.0
+     *
+     * @return Lisensio_KB_Analytics_Privacy
+     */
+    public function analytics_privacy() {
+        if ( ! $this->analytics_privacy instanceof Lisensio_KB_Analytics_Privacy ) {
+            $this->analytics_privacy = new Lisensio_KB_Analytics_Privacy();
+        }
+
+        return $this->analytics_privacy;
     }
 }

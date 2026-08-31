@@ -59,6 +59,17 @@ register_deactivation_hook( __FILE__, array( 'Lisensio_KB_Lifecycle', 'deactivat
  */
 add_action( 'lisensio_activated', array( 'Lisensio_KB_Capabilities', 'add_capabilities' ) );
 add_action( 'lisensio_activated', array( 'Lisensio_KB_Permalinks', 'request_flush' ) );
+add_action( 'lisensio_activated', array( 'Lisensio_KB_Analytics_Retention', 'schedule' ) );
+
+/*
+ * Teardown that belongs to a component rather than to the uninstaller.
+ *
+ * Registered here for the same reason: `uninstall.php` includes this file and
+ * calls Lisensio_KB_Uninstaller::run() directly, without ever booting the
+ * plugin, so a listener attached inside Lisensio_KB::boot() would never be
+ * present when `lisensio_uninstalled` fires.
+ */
+add_action( 'lisensio_uninstalled', array( 'Lisensio_KB_Analytics_Retention', 'unschedule' ) );
 
 /**
  * Return the main plugin instance.
