@@ -112,6 +112,12 @@ class Lisensio_KB_Settings_Schema {
                 'category'    => 'core',
                 'icon'        => 'art',
             ),
+            'sidebar'           => array(
+                'label'       => __( 'Sidebar', 'lisensio-knowledge-base' ),
+                'description' => __( 'Which side the sidebar sits on, chosen separately for the archive, an article and a category, and whether it follows the reader down a long article.', 'lisensio-knowledge-base' ),
+                'category'    => 'core',
+                'icon'        => 'align-pull-right',
+            ),
             'search'            => array(
                 'label'       => __( 'Search', 'lisensio-knowledge-base' ),
                 'description' => __( 'How many results the search endpoint and the type-ahead return.', 'lisensio-knowledge-base' ),
@@ -151,6 +157,18 @@ class Lisensio_KB_Settings_Schema {
                 'label'       => __( 'Articles per page', 'lisensio-knowledge-base' ),
                 'description' => __( 'How many articles a knowledge base archive lists before paging.', 'lisensio-knowledge-base' ),
                 'control'     => 'number',
+            ),
+            'show_subcategories'         => array(
+                'group'       => self::GROUP_GENERAL,
+                'label'       => __( 'Show subcategories', 'lisensio-knowledge-base' ),
+                'description' => __( 'On, a category card lists the categories nested inside it. Off, it lists only articles.', 'lisensio-knowledge-base' ),
+                'control'     => 'toggle',
+            ),
+            'show_article_counts'        => array(
+                'group'       => self::GROUP_GENERAL,
+                'label'       => __( 'Show article counts', 'lisensio-knowledge-base' ),
+                'description' => __( 'Print the number of articles beside every category name.', 'lisensio-knowledge-base' ),
+                'control'     => 'toggle',
             ),
             'article_slug'               => array(
                 'group'       => 'slugs',
@@ -239,6 +257,68 @@ class Lisensio_KB_Settings_Schema {
                         ),
                     ),
                 ),
+            ),
+            'header_style'               => array(
+                'group'       => 'appearance',
+                'label'       => __( 'Archive header style', 'lisensio-knowledge-base' ),
+                'description' => __( 'How the band behind the archive heading and search box is filled.', 'lisensio-knowledge-base' ),
+                'control'     => 'select',
+                'choices'     => array(
+                    'solid'    => __( 'Solid colour', 'lisensio-knowledge-base' ),
+                    'gradient' => __( 'Gradient', 'lisensio-knowledge-base' ),
+                    'image'    => __( 'Image', 'lisensio-knowledge-base' ),
+                ),
+            ),
+            'header_image_id'            => array(
+                'group'       => 'appearance',
+                'label'       => __( 'Archive header image', 'lisensio-knowledge-base' ),
+                'description' => __( 'The media library ID of the image behind the archive header. Used only when the header style is Image; 0 for none.', 'lisensio-knowledge-base' ),
+                'control'     => 'number',
+            ),
+            'archive_header_text'        => array(
+                'group'       => 'appearance',
+                'label'       => __( 'Archive heading', 'lisensio-knowledge-base' ),
+                'description' => __( 'The heading printed above the search box on the knowledge base archive.', 'lisensio-knowledge-base' ),
+                'control'     => 'text',
+            ),
+            'search_placeholder'         => array(
+                'group'       => 'appearance',
+                'label'       => __( 'Search box placeholder', 'lisensio-knowledge-base' ),
+                'description' => __( 'The prompt shown inside the search box before anything is typed.', 'lisensio-knowledge-base' ),
+                'control'     => 'text',
+            ),
+            'archive_columns'            => array(
+                'group'       => 'appearance',
+                'label'       => __( 'Archive columns', 'lisensio-knowledge-base' ),
+                'description' => __( 'How many category cards sit side by side on a wide screen. Narrow screens collapse the grid regardless.', 'lisensio-knowledge-base' ),
+                'control'     => 'number',
+            ),
+            'sticky_sidebar'             => array(
+                'group'       => 'sidebar',
+                'label'       => __( 'Sticky sidebar', 'lisensio-knowledge-base' ),
+                'description' => __( 'On, the article sidebar follows the reader down the page instead of scrolling away.', 'lisensio-knowledge-base' ),
+                'control'     => 'toggle',
+            ),
+            'archive_sidebar_position'   => array(
+                'group'       => 'sidebar',
+                'label'       => __( 'Archive sidebar', 'lisensio-knowledge-base' ),
+                'description' => __( 'Which side the sidebar sits on when the knowledge base archive is shown.', 'lisensio-knowledge-base' ),
+                'control'     => 'select',
+                'choices'     => self::sidebar_choices(),
+            ),
+            'article_sidebar_position'   => array(
+                'group'       => 'sidebar',
+                'label'       => __( 'Article sidebar', 'lisensio-knowledge-base' ),
+                'description' => __( 'Which side the sidebar sits on when a single article is shown.', 'lisensio-knowledge-base' ),
+                'control'     => 'select',
+                'choices'     => self::sidebar_choices(),
+            ),
+            'category_sidebar_position'  => array(
+                'group'       => 'sidebar',
+                'label'       => __( 'Category sidebar', 'lisensio-knowledge-base' ),
+                'description' => __( 'Which side the sidebar sits on when a category archive is shown.', 'lisensio-knowledge-base' ),
+                'control'     => 'select',
+                'choices'     => self::sidebar_choices(),
             ),
             'search_results_limit'       => array(
                 'group'       => 'search',
@@ -374,6 +454,33 @@ class Lisensio_KB_Settings_Schema {
         }
 
         return $field;
+    }
+
+    /**
+     * The labelled choices offered by every sidebar position setting.
+     *
+     * Built from Lisensio_KB_Settings::SIDEBAR_POSITIONS rather than repeated
+     * three times, so the select can never offer a value the sanitizer would
+     * refuse, nor omit one it would accept.
+     *
+     * @since 1.0.0
+     *
+     * @return array<string, string> Sidebar position value to label.
+     */
+    private static function sidebar_choices() {
+        $labels = array(
+            'left'  => __( 'Left', 'lisensio-knowledge-base' ),
+            'right' => __( 'Right', 'lisensio-knowledge-base' ),
+            'none'  => __( 'No sidebar', 'lisensio-knowledge-base' ),
+        );
+
+        $choices = array();
+
+        foreach ( Lisensio_KB_Settings::SIDEBAR_POSITIONS as $position ) {
+            $choices[ $position ] = isset( $labels[ $position ] ) ? $labels[ $position ] : $position;
+        }
+
+        return $choices;
     }
 
     /**
