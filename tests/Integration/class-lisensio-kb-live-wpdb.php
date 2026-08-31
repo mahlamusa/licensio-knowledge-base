@@ -162,19 +162,40 @@ class Lisensio_KB_Live_WPDB {
      * @param string $query  The SQL statement.
      * @param mixed  $output Ignored; rows are always objects.
      *
-     * @return array<int, object> The result rows.
+     * @return array<int, object|array<string, mixed>> The result rows, shaped by $output.
      * @throws RuntimeException When the statement fails and errors are not suppressed.
      */
-    public function get_results( $query = '', $output = null ) {
-        unset( $output );
-
+    public function get_results( $query = '', $output = OBJECT ) {
         $result = $this->run( $query );
 
         if ( ! $result instanceof mysqli_result ) {
             return array();
         }
 
+        /*
+         * Honour the output format the way wpdb does. An earlier version of this
+         * adapter discarded $output and always returned objects, so code calling
+         * getAll( ARRAY_A ) - which is correct against real WordPress - received
+         * stdClass and fataled on array access. A double that answers in a shape
+         * the real thing would not is worse than no double at all.
+         */
         $rows = array();
+
+        if ( ARRAY_A === $output ) {
+            while ( $row = $result->fetch_assoc() ) {
+                $rows[] = $row;
+            }
+
+            return $rows;
+        }
+
+        if ( ARRAY_N === $output ) {
+            while ( $row = $result->fetch_row() ) {
+                $rows[] = $row;
+            }
+
+            return $rows;
+        }
 
         while ( $row = $result->fetch_object() ) {
             $rows[] = $row;
