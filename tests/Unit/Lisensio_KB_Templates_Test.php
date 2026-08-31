@@ -702,6 +702,14 @@ class Lisensio_KB_Templates_Test extends Lisensio_KB_Test_Case {
         );
 
         Functions\when( 'get_post' )->justReturn( $article );
+
+        /*
+         * A single article view has exactly one post, so the queried object and
+         * the post the loop yields are the same article. Both are stubbed
+         * because the hero may be resolved from either, depending on whether it
+         * renders inside the loop or above it.
+         */
+        Functions\when( 'get_queried_object' )->justReturn( $article );
         Functions\when( 'get_the_title' )->justReturn( $title );
         Functions\when( 'get_permalink' )->justReturn( 'https://example.test/docs/article/' );
         Functions\when( 'get_the_excerpt' )->justReturn( 'A short summary.' );

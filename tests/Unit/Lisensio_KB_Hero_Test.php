@@ -236,6 +236,14 @@ class Lisensio_KB_Hero_Test extends Lisensio_KB_Test_Case {
         );
 
         Functions\when( 'get_post' )->justReturn( $article );
+
+        /*
+         * A single article view has exactly one post, so the queried object and
+         * the post the loop yields are the same article. Both are stubbed
+         * because the hero may be resolved from either, depending on whether it
+         * renders inside the loop or above it.
+         */
+        Functions\when( 'get_queried_object' )->justReturn( $article );
         Functions\when( 'get_the_title' )->justReturn( 'Resetting your password' );
         Functions\when( 'get_the_terms' )->justReturn( array() );
         Functions\when( 'get_the_term_list' )->justReturn( '' );
@@ -618,6 +626,72 @@ class Lisensio_KB_Hero_Test extends Lisensio_KB_Test_Case {
      *
      * @return void
      */
+    /**
+     * The hero is rendered outside the contained wrapper, in a bleed wrapper.
+     *
+     * This is a layout contract, not a cosmetic one. A theme overrides
+     * `lisensio-kb/hero.php` to render its own site-wide hero band, and that
+     * band is only able to reach the viewport edges if nothing above it caps
+     * its width. `.lisensio-kb` sets `max-width` and horizontal padding, and a
+     * child element cannot escape its parent, so a hero rendered inside it is
+     * permanently inset however the theme styles it.
+     *
+     * The bleed wrapper still carries `.lisensio-kb` because the design tokens
+     * and the settings-driven inline block are both scoped to that class.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_hero_is_rendered_outside_the_contained_wrapper() {
+        foreach ( $this->render_every_view() as $view => $markup ) {
+            $bleed = strpos( $markup, 'class="lisensio-kb lisensio-kb--bleed"' );
+            $hero  = strpos( $markup, '<header class="lisensio-kb__hero">' );
+
+            $this->assertNotFalse( $bleed, $view . ' renders no bleed wrapper' );
+            $this->assertNotFalse( $hero, $view . ' renders no hero' );
+            $this->assertLessThan( $hero, $bleed, $view . ' opens its hero before the bleed wrapper' );
+
+            /*
+             * The contained wrapper must open after the hero has closed. If it
+             * opened first the hero would be nested inside it, which is the
+             * exact defect this guards.
+             */
+            $contained = preg_match( '/<div class="lisensio-kb lisensio-kb--(?!bleed)[a-z]+"/', $markup, $m, PREG_OFFSET_CAPTURE );
+
+            $this->assertSame( 1, $contained, $view . ' renders no contained wrapper' );
+            $this->assertGreaterThan( $hero, $m[0][1], $view . ' nests its hero inside the contained wrapper' );
+        }
+    }
+
+    /**
+     * The stylesheet lets the bleed wrapper span its container.
+     *
+     * The markup contract above is only half of it: if `--bleed` still
+     * inherited the contained wrapper's `max-width`, moving the hero out would
+     * change nothing on the page. Asserted against the stylesheet for the same
+     * reason the list arrow is - the two layers have to agree, and nothing
+     * else fails when they stop agreeing.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_stylesheet_releases_the_bleed_wrapper_from_its_max_width() {
+        $css = (string) file_get_contents( LISENSIO_KB_ABSPATH . 'assets/css/lisensio-kb.css' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+
+        $this->assertMatchesRegularExpression(
+            '/\.lisensio-kb\.lisensio-kb--bleed\s*\{[^}]*max-width:\s*none;/',
+            $css,
+            'the bleed wrapper does not release its max-width'
+        );
+        $this->assertMatchesRegularExpression(
+            '/\.lisensio-kb\.lisensio-kb--bleed\s*\{[^}]*padding:\s*0;/',
+            $css,
+            'the bleed wrapper does not drop its padding'
+        );
+    }
+
     public function test_every_view_renders_exactly_one_hero() {
         foreach ( $this->render_every_view() as $view => $markup ) {
             $this->assertSame(
