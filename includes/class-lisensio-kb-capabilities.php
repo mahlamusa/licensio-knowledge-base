@@ -171,10 +171,19 @@ class Lisensio_KB_Capabilities {
      * @return array<string, string> Capability name to the capability that satisfies it.
      */
     public static function post_type_capabilities() {
+        /*
+         * Only PRIMITIVE capabilities belong here.
+         *
+         * edit_post, read_post and delete_post are META capabilities: with
+         * map_meta_cap => true core derives them from the primitives below,
+         * against a specific post. Naming them here put this plugin's own
+         * capability into the meta-cap position, so core's map_meta_cap()
+         * answered do_not_allow whenever anything asked for it WITHOUT an
+         * object - which is every admin screen check. The result was a clean
+         * install where an administrator got 403 on every knowledge base page,
+         * plus a stream of _doing_it_wrong notices about delete_post.
+         */
         return array(
-            'edit_post'              => self::CAPABILITY,
-            'read_post'              => self::CAPABILITY,
-            'delete_post'            => self::CAPABILITY,
             'create_posts'           => self::CAPABILITY,
             'edit_posts'             => self::CAPABILITY,
             'edit_others_posts'      => self::CAPABILITY,
