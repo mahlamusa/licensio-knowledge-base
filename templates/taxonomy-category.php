@@ -9,8 +9,13 @@
  * The heading and breadcrumb trail come from the shared hero, which carries
  * the term description as its standfirst when the term has one.
  *
+ * The sidebar carries no table of contents here: a category view has no
+ * article body to collect headings from, and the template skips a section it
+ * cannot fill rather than printing an empty one.
+ *
  * @package Lisensio_KB
  * @since   1.0.0 Rendered the heading and breadcrumbs through `templates/hero.php`.
+ * @since   1.0.0 Added the sidebar.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -19,6 +24,25 @@ get_header();
 
 $lisensio_kb_category = get_queried_object();
 $lisensio_kb_children = $lisensio_kb_category instanceof WP_Term ? Lisensio_KB_Templates::child_categories( $lisensio_kb_category->term_id ) : array();
+
+$lisensio_kb_position = Lisensio_KB_Sidebar::position( Lisensio_KB_Sidebar::CONTEXT_CATEGORY );
+$lisensio_kb_sidebar  = '';
+
+if ( Lisensio_KB_Sidebar::POSITION_NONE !== $lisensio_kb_position ) {
+    $lisensio_kb_sidebar = lisensio_kb_get_template(
+        'sidebar',
+        array(
+            'sticky'     => Lisensio_KB_Sidebar::is_sticky(),
+            'categories' => Lisensio_KB_Sidebar::categories(),
+            'tags'       => Lisensio_KB_Sidebar::tags(),
+            'current'    => $lisensio_kb_category instanceof WP_Term ? (int) $lisensio_kb_category->term_id : 0,
+        ),
+        false
+    );
+}
+
+$lisensio_kb_has_sidebar = '' !== trim( $lisensio_kb_sidebar );
+$lisensio_kb_modifier    = $lisensio_kb_has_sidebar ? Lisensio_KB_Sidebar::modifier_class( $lisensio_kb_position ) : '';
 ?>
 <div class="lisensio-kb lisensio-kb--bleed">
     <?php
@@ -33,7 +57,11 @@ $lisensio_kb_children = $lisensio_kb_category instanceof WP_Term ? Lisensio_KB_T
     ?>
 </div>
 
-<div class="lisensio-kb lisensio-kb--category">
+<div class="lisensio-kb lisensio-kb--category<?php echo '' === $lisensio_kb_modifier ? '' : ' ' . esc_attr( $lisensio_kb_modifier ); ?>">
+    <?php if ( $lisensio_kb_has_sidebar ) : ?>
+        <div class="lisensio-kb__layout">
+        <div class="lisensio-kb__main">
+    <?php endif; ?>
 
     <?php if ( ! empty( $lisensio_kb_children ) ) : ?>
         <section class="lisensio-kb__section">
@@ -81,6 +109,13 @@ $lisensio_kb_children = $lisensio_kb_category instanceof WP_Term ? Lisensio_KB_T
             )
         );
         ?>
+    <?php endif; ?>
+
+    <?php if ( $lisensio_kb_has_sidebar ) : ?>
+        </div>
+
+        <?php echo $lisensio_kb_sidebar; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped inside templates/sidebar.php. ?>
+        </div>
     <?php endif; ?>
 </div>
 <?php

@@ -582,6 +582,248 @@
 	margin-right: 0.25rem;
 }
 
+/* Sidebar layout.
+ *
+ * The side is carried by a modifier class on the wrapper rather than by the
+ * order of the markup, so the article always comes first in the document and a
+ * reader on a narrow screen or a screen reader meets the content before the
+ * navigation. On a wide screen the grid places the sidebar, and `order` moves
+ * it into the first track when the setting asks for a sidebar on the left.
+ *
+ * The proportions are the reference implementation's: 70% for the article, 27%
+ * for the sidebar, and the remaining 3% as the gutter between them.
+ */
+
+.lisensio-kb__layout {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--lisensio-kb-space);
+}
+
+.lisensio-kb__main {
+	min-width: 0;
+}
+
+.lisensio-kb__sidebar {
+	min-width: 0;
+	align-self: start;
+}
+
+@media (min-width: 62rem) {
+	.lisensio-kb--sidebarright > .lisensio-kb__layout {
+		grid-template-columns: 70% 27%;
+		gap: 3%;
+	}
+
+	.lisensio-kb--sidebarleft > .lisensio-kb__layout {
+		grid-template-columns: 27% 70%;
+		gap: 3%;
+	}
+
+	.lisensio-kb--sidebarleft > .lisensio-kb__layout > .lisensio-kb__sidebar {
+		order: -1;
+	}
+
+	/*
+	 * Sticky needs `align-self: start` above to have any effect: a grid item
+	 * stretches to the row height by default, and an element that is already
+	 * as tall as its container has nothing to stick within.
+	 */
+	.lisensio-kb__sidebar--sticky {
+		position: sticky;
+		top: 1.5rem;
+		max-height: calc(100vh - 3rem);
+		overflow-y: auto;
+	}
+}
+
+/* Sidebar widgets. */
+
+.lisensio-kb-widget {
+	padding: 1.5rem 1.375rem;
+	border: 1px solid var(--lisensio-kb-line);
+	border-radius: var(--lisensio-kb-radius);
+	background: var(--lisensio-kb-card-bg);
+	box-shadow: var(--lisensio-kb-card-shadow);
+	font-size: 0.9375rem;
+}
+
+.lisensio-kb-widget + .lisensio-kb-widget {
+	margin-top: var(--lisensio-kb-gap);
+}
+
+/*
+ * The title is set apart by a hairline rather than by size alone. Three
+ * stacked panels of similar text need a visible boundary between "what this
+ * list is" and "the list", and at 1rem the heading is not big enough to do
+ * that on its own.
+ */
+.lisensio-kb-widget__title {
+	margin: 0 0 0.875rem;
+	padding-bottom: 0.75rem;
+	border-bottom: 1px solid var(--lisensio-kb-line);
+	font-family: var(--lisensio-kb-font-head);
+	font-size: 0.9375rem;
+	font-weight: 700;
+	letter-spacing: 0.01em;
+}
+
+.lisensio-kb-widget__list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.lisensio-kb-widget__item + .lisensio-kb-widget__item {
+	margin-top: 0.125rem;
+}
+
+/*
+ * Each row is the full width of the panel so the hover target matches what the
+ * reader sees, rather than being only as wide as the words.
+ */
+.lisensio-kb-widget__link {
+	display: block;
+	padding: 0.4375rem 0.625rem;
+	border-radius: 0.5rem;
+	color: var(--lisensio-kb-text);
+	text-decoration: none;
+	transition: background-color 0.15s, color 0.15s;
+}
+
+.lisensio-kb-widget__link:hover,
+.lisensio-kb-widget__link:focus {
+	background: var(--lisensio-kb-soft);
+	color: var(--lisensio-kb-brand);
+}
+
+/*
+ * The category being read.
+ *
+ * Marked three ways on purpose, because any one of them alone fails somebody:
+ * the tint is invisible to a reader who cannot distinguish it from the panel,
+ * the weight is subtle at this size, and the bar carries in a high-contrast or
+ * forced-colours mode where backgrounds are dropped. The markup also sets
+ * `aria-current`, which is what actually announces it.
+ */
+.lisensio-kb-widget__item.is-current > .lisensio-kb-widget__link {
+	position: relative;
+	background: var(--lisensio-kb-tint);
+	color: var(--lisensio-kb-brand);
+	font-weight: 600;
+}
+
+.lisensio-kb-widget__item.is-current > .lisensio-kb-widget__link::before {
+	content: "";
+	position: absolute;
+	inset: 0.375rem auto 0.375rem 0;
+	width: 3px;
+	border-radius: 999px;
+	background: var(--lisensio-kb-brand);
+}
+
+/* Table of contents. */
+
+.lisensio-kb-toc {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.lisensio-kb-toc__item {
+	margin: 0;
+}
+
+.lisensio-kb-toc__item + .lisensio-kb-toc__item {
+	margin-top: 0.125rem;
+}
+
+/*
+ * A rail down the left rather than indentation alone: a contents list is read
+ * as a shape, and the line makes the nesting legible without pushing deeper
+ * levels so far right that long headings wrap every line.
+ */
+.lisensio-kb-toc {
+	border-left: 2px solid var(--lisensio-kb-line);
+}
+
+.lisensio-kb-toc__link {
+	display: block;
+	padding: 0.3125rem 0.625rem;
+	margin-left: -2px;
+	border-left: 2px solid transparent;
+	color: var(--lisensio-kb-muted);
+	text-decoration: none;
+	overflow-wrap: anywhere;
+	transition: color 0.15s, border-color 0.15s;
+}
+
+.lisensio-kb-toc__link:hover,
+.lisensio-kb-toc__link:focus {
+	border-left-color: var(--lisensio-kb-brand);
+	color: var(--lisensio-kb-brand);
+	text-decoration: none;
+}
+
+.lisensio-kb-toc--nested {
+	margin: 0.5rem 0 0;
+	padding-left: 0.875rem;
+	border-left: 1px solid var(--lisensio-kb-line);
+}
+
+/*
+ * A heading the table of contents links to must not sit flush against the top
+ * of the viewport when it is jumped to. How far down it should land is the one
+ * thing the plugin cannot know: it depends on how tall the theme's fixed header
+ * is, if it has one at all. So the offset is a custom property with a small
+ * default, and a theme with a sticky header sets
+ * `--lisensio-kb-anchor-offset: <its own height>` rather than overriding a rule.
+ */
+.lisensio-kb-article__body h2[id],
+.lisensio-kb-article__body h3[id] {
+	scroll-margin-top: var(--lisensio-kb-anchor-offset, 1.5rem);
+}
+
+/* Tag list. */
+
+.lisensio-kb-tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.lisensio-kb-tags__item {
+	margin: 0;
+}
+
+.lisensio-kb .lisensio-kb-tag {
+	display: inline-block;
+	padding: 0.3125rem 0.6875rem;
+	border: 1px solid var(--lisensio-kb-line);
+	border-radius: 999px;
+	background: var(--lisensio-kb-surface);
+	color: var(--lisensio-kb-muted);
+	font-size: 0.8125rem;
+	line-height: 1.2;
+	text-decoration: none;
+	transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+
+/*
+ * Bordered rather than filled, so a dense cloud does not read as a solid block
+ * of colour, and the fill is kept for the hover state where it marks one chip
+ * out of many.
+ */
+.lisensio-kb .lisensio-kb-tag:hover,
+.lisensio-kb .lisensio-kb-tag:focus {
+	border-color: var(--lisensio-kb-brand);
+	background: var(--lisensio-kb-tint);
+	color: var(--lisensio-kb-brand);
+}
+
 /* Empty state and pagination. */
 
 .lisensio-kb__empty {
