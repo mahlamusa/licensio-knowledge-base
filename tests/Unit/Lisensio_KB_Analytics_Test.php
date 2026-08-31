@@ -12,6 +12,7 @@
  */
 
 use Brain\Monkey\Filters;
+use Brain\Monkey\Actions;
 use Brain\Monkey\Functions;
 
 /**
@@ -523,5 +524,81 @@ class Lisensio_KB_Analytics_Test extends Lisensio_KB_Test_Case {
             array( '/search', '/feedback', '/settings' ),
             array_keys( $analytics->release_stub_routes( $routes ) )
         );
+    }
+    /**
+     * The cleanup handler is actually wired to the delete.
+     *
+     * Without this, a test that calls the handler directly passes even when
+     * nothing ever calls it - which is exactly what happened: removing the
+     * `add_action` left every assertion green while the bug was untouched.
+     * The search index pins its own `deleted_post` registration the same way.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_delete_cleanup_is_hooked() {
+        Actions\expectAdded( 'deleted_post' )->once();
+
+        $this->analytics()->init_hooks();
+    }
+
+    /**
+     * Deleting an article forgets its analytics.
+     *
+     * The search index has always cleaned up after a deleted article; views
+     * and feedback did not, so they accumulated rows keyed on an article ID
+     * that would never resolve again. Those rows are unreachable from the
+     * admin screens and invisible to the retention purge, which trims by age
+     * rather than by whether the article still exists - so they were kept for
+     * good, which is also at odds with the plugin's retention promise.
+     *
+     * Asserted on the SQL actually issued rather than on a row count, because
+     * the fake database records statements: a handler that silently issued no
+     * delete would otherwise look identical to one that deleted nothing.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_deleting_an_article_forgets_its_views_and_feedback() {
+        $analytics = $this->analytics();
+
+        $analytics->handle_deleted_post( 4242 );
+
+        $deletes = array_filter(
+            $this->wpdb->queries,
+            function ( $query ) {
+                return false !== stripos( (string) $query, 'DELETE' );
+            }
+        );
+
+        $sql = implode( ' | ', $deletes );
+
+        $this->assertStringContainsString( 'lisensio_article_views', $sql, 'views were not cleaned up' );
+        $this->assertStringContainsString( 'lisensio_feedback', $sql, 'feedback was not cleaned up' );
+        $this->assertStringContainsString( '4242', $sql, 'the delete did not name the article' );
+    }
+
+    /**
+     * A meaningless post ID issues no statement at all.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_deleting_a_meaningless_id_touches_nothing() {
+        $analytics = $this->analytics();
+
+        $analytics->handle_deleted_post( 0 );
+
+        $deletes = array_filter(
+            $this->wpdb->queries,
+            function ( $query ) {
+                return false !== stripos( (string) $query, 'DELETE' );
+            }
+        );
+
+        $this->assertSame( array(), array_values( $deletes ) );
     }
 }
