@@ -350,6 +350,7 @@ class Lisensio_KB_Templates_Test extends Lisensio_KB_Test_Case {
             'taxonomy-category',
             'taxonomy-tag',
             'search-results',
+            'hero',
             'breadcrumbs',
             'article-card',
             'category-card',

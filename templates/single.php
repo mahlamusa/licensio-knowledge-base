@@ -6,8 +6,13 @@
  * without touching this file. Override from a theme by copying it to
  * `lisensio-kb/single.php`.
  *
+ * The article's heading and breadcrumb trail come from the shared hero, the
+ * same one the archive and every taxonomy view render. The article header that
+ * remains carries only the modified date, which is the article's own metadata
+ * rather than part of the page heading.
+ *
  * @package Lisensio_KB
- * @since   1.0.0
+ * @since   1.0.0 Rendered the heading and breadcrumbs through `templates/hero.php`.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -21,7 +26,10 @@ get_header();
 
         $lisensio_kb_article = get_post();
 
-        lisensio_kb_get_template( 'breadcrumbs', array( 'items' => Lisensio_KB_Templates::breadcrumb_items() ) );
+        lisensio_kb_get_template(
+            'hero',
+            array( 'title' => get_the_title( $lisensio_kb_article ) )
+        );
 
         $lisensio_kb_article_tags = get_the_term_list(
             $lisensio_kb_article->ID,
@@ -33,7 +41,6 @@ get_header();
         ?>
         <article id="lisensio-kb-article-<?php echo esc_attr( (string) $lisensio_kb_article->ID ); ?>" class="lisensio-kb-article">
             <header class="lisensio-kb-article__header">
-                <h1 class="lisensio-kb-article__title"><?php echo esc_html( get_the_title( $lisensio_kb_article ) ); ?></h1>
                 <p class="lisensio-kb-article__meta">
                     <?php
                     printf(

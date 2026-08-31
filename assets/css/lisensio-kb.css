@@ -167,11 +167,21 @@
 	justify-content: center;
 }
 
-.lisensio-kb__hero .lisensio-kb__description,
-.lisensio-kb__hero .lisensio-kb__search {
+.lisensio-kb__hero .lisensio-kb__description {
 	max-width: 38rem;
 	margin-left: auto;
 	margin-right: auto;
+}
+
+/*
+ * The search form is a sibling of the hero, not a child of it. A theme that
+ * overrides `lisensio-kb/hero.php` renders its own markup there, so nothing the
+ * plugin owns can be nested inside the hero and still survive the override.
+ */
+
+.lisensio-kb__hero + .lisensio-kb__search {
+	max-width: 38rem;
+	margin: 0 auto var(--lisensio-kb-space);
 }
 
 .lisensio-kb__title-accent {

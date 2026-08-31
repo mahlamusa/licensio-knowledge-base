@@ -251,7 +251,7 @@ Classic templates receive their arguments as a single `$args` array. There is no
 
 #### The classic template set
 
-`templates/` ships thirteen templates. The five page templates are loaded by
+`templates/` ships fourteen templates. The five page templates are loaded by
 `Lisensio_KB_Templates` on `template_include`; the partials are rendered by
 those pages, by a hook callback, and by the blocks, through
 `lisensio_kb_get_template()`.
@@ -263,6 +263,7 @@ those pages, by a hook callback, and by the blocks, through
 | `taxonomy-category.php` | a `lisensio_category` archive | — |
 | `taxonomy-tag.php` | a `lisensio_tag` archive | — |
 | `search-results.php` | a search carrying `post_type=lisensio_article` | — |
+| `hero.php` | partial, rendered by all five page templates | `title`, `subtitle`, `breadcrumbs` |
 | `breadcrumbs.php` | partial | `items` |
 | `article-card.php` | partial | `post`, `show_excerpt` |
 | `category-card.php` | partial | `term`, `show_children`, `show_count`, `show_icon` |
@@ -273,6 +274,15 @@ those pages, by a hook callback, and by the blocks, through
 | `faq.php` | the FAQ block and shortcode | `items`, `open_first` |
 
 Copy any of them into `{theme}/lisensio-kb/` to override it.
+
+`hero.php` is the one heading block every page template renders — breadcrumbs,
+the heading with its last word in the brand gradient, and an optional
+standfirst. A theme that overrides it replaces the hero on all five views at
+once, which is how a theme hands the knowledge base the hero it already uses
+elsewhere. That is also what clears a fixed site header: the hero's own top
+padding is the only thing standing between a theme's fixed header and the first
+line of knowledge base content, so a theme with a taller header should override
+this template rather than the five pages.
 
 The loader stands aside entirely under a block theme, where the block template
 layer answers the same requests.
@@ -366,6 +376,7 @@ It cannot be a module: module scripts are always deferred and execute after ever
 | `lisensio_feedback_recorded` | action | A vote was written. Passed the article ID and the vote; never the comment. |
 | `lisensio_feedback_score_updated` | action | An article's usefulness score was recomputed. Passed the article ID and the figures. |
 | `lisensio_before_article`, `lisensio_after_article`, `lisensio_article_footer` | action | The frontend hook contract. |
+| `lisensio_kb_after_archive` | action | The last thing in the archive, inside its wrapper. The seam a theme attaches its own closing section to — a call to action band, a support link. The plugin ships no such copy itself. No arguments. |
 | `lisensio_before_template`, `lisensio_after_template` | action | Around a classic template include. |
 | `lisensio_autoload_paths` | filter | Extra directories for the class autoloader. |
 | `lisensio_settings_registry`, `lisensio_settings` | filter | Extend or override settings. |

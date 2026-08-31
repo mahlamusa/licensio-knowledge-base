@@ -5,8 +5,11 @@
  * Every article carrying one tag. Override from a theme by copying this file
  * to `lisensio-kb/taxonomy-tag.php`.
  *
+ * The heading and breadcrumb trail come from the shared hero, which carries
+ * the term description as its standfirst when the term has one.
+ *
  * @package Lisensio_KB
- * @since   1.0.0
+ * @since   1.0.0 Rendered the heading and breadcrumbs through `templates/hero.php`.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -16,23 +19,15 @@ get_header();
 $lisensio_kb_tag = get_queried_object();
 ?>
 <div class="lisensio-kb lisensio-kb--tag">
-    <?php lisensio_kb_get_template( 'breadcrumbs', array( 'items' => Lisensio_KB_Templates::breadcrumb_items() ) ); ?>
-
-    <header class="lisensio-kb__header">
-        <h1 class="lisensio-kb__title">
-            <?php
-            printf(
-                /* translators: %s: the tag name. */
-                esc_html__( 'Articles tagged %s', 'lisensio-knowledge-base' ),
-                esc_html( single_term_title( '', false ) )
-            );
-            ?>
-        </h1>
-
-        <?php if ( $lisensio_kb_tag instanceof WP_Term && '' !== $lisensio_kb_tag->description ) : ?>
-            <p class="lisensio-kb__description"><?php echo esc_html( $lisensio_kb_tag->description ); ?></p>
-        <?php endif; ?>
-    </header>
+    <?php
+    lisensio_kb_get_template(
+        'hero',
+        array(
+            'title'    => single_term_title( '', false ),
+            'subtitle' => $lisensio_kb_tag instanceof WP_Term ? $lisensio_kb_tag->description : '',
+        )
+    );
+    ?>
 
     <?php if ( have_posts() ) : ?>
         <div class="lisensio-kb__list">
