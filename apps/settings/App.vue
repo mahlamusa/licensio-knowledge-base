@@ -476,7 +476,8 @@ onBeforeUnmount( () => {
 /*
  * The section heading, one level under the screen heading printed by the
  * shared shell. It was set in Georgia italic, which matched neither the
- * Lisensio brand face (Plus Jakarta Sans) nor the admin stack SLSWC uses, and
+ * Lisensio brand face (Plus Jakarta Sans) nor the admin stack License Server
+ * uses, and
  * WordPress' own `.wrap h1` rule was overriding its size anyway.
  */
 .lkb-pane__title {

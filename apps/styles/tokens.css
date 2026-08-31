@@ -1,10 +1,10 @@
 /**
  * Lisensio Knowledge Base — admin design tokens.
  *
- * Deliberately the same vocabulary as the License Server plugin
- * (`slswc/apps/styles/tokens.css`) so the two admins read as one product, but
- * copied rather than imported: this plugin has to work with License Server
- * absent, so it cannot depend on that file existing.
+ * Deliberately the same vocabulary as the License Server plugin's own admin
+ * tokens, so the two admins read as one product — but copied rather than
+ * imported: this plugin has to work with License Server absent, so it cannot
+ * depend on that file existing.
  *
  * ## The green, and why there are three of them
  *
@@ -16,7 +16,7 @@
  * So it is kept for decoration only, and anything that carries meaning or
  * takes a click uses `#247a5c` — 5.23:1 on white, passing AA for text and
  * components alike. That value is not invented here: it is License Server's
- * own `--slswc-primary-active`, so the palettes stay one family.
+ * own active-primary token, so the palettes stay one family.
  *
  * The knowledge base front end keeps `#2ba377`, which is the theme's
  * `--primary` and 3.18:1. Admin chrome and published pages are different
