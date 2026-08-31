@@ -72,7 +72,7 @@ $lisensio_kb_modifier    = $lisensio_kb_has_sidebar ? Lisensio_KB_Sidebar::modif
     <?php endif; ?>
 
     <?php if ( ! empty( $lisensio_kb_categories ) ) : ?>
-        <div class="lisensio-kb__grid lisensio-kb__grid--cols-3">
+        <div class="lisensio-kb__grid lisensio-kb__grid--cols-<?php echo esc_attr( (string) Lisensio_KB_Templates::archive_columns() ); ?>">
             <?php foreach ( $lisensio_kb_categories as $lisensio_kb_category ) : ?>
                 <?php
                 lisensio_kb_get_template(
