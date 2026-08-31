@@ -100,13 +100,26 @@ const declarations = computed( () =>
 	padding: 6px 14px;
 }
 
+/*
+ * The published custom properties.
+ *
+ * These wrap rather than scroll. The longest declaration is wider than the
+ * column it sits in, and a horizontal scrollbar hid the start of every line -
+ * the property name, which is the half worth reading. A wrapped continuation
+ * is indented so it is still obvious where one declaration ends and the next
+ * begins.
+ */
 .lisensio-kb-settings__preview-code {
 	background: rgba( var( --lisensio-kb-brand-rgb, 37, 99, 235 ), 0.06 );
 	border-radius: 8px;
 	font-size: 12px;
+	line-height: 1.6;
 	margin: 0;
-	overflow-x: auto;
 	padding: 12px;
+	padding-left: 2em;
+	text-indent: -1.25em;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
 }
 
 @media ( max-width: 782px ) {
