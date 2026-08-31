@@ -1097,21 +1097,58 @@ class Lisensio_KB_Hero_Test extends Lisensio_KB_Test_Case {
     }
 
     /**
-     * The search form survives the move out of the hero.
+     * The archive search form sits inside the hero, below the heading.
+     *
+     * The hero is where a reader looks for it, and it is where the reference
+     * design puts it. This asserts the position rather than only the presence,
+     * because the form was previously a sibling of the hero and reverting to
+     * that would still render a working form in roughly the right area - the
+     * kind of regression a presence check cannot see.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_the_archive_keeps_its_search_form_beside_the_hero() {
+    public function test_the_archive_renders_its_search_form_inside_the_hero_below_the_title() {
         $markup = $this->render_archive();
 
-        $this->assertStringContainsString( '</header>', $markup );
-        $this->assertStringContainsString( 'class="lisensio-kb__search"', $markup );
-        $this->assertLessThan(
-            strpos( $markup, 'class="lisensio-kb__search"' ),
-            strpos( $markup, '</header>' ),
-            'the search form must follow the hero, not sit inside it'
-        );
+        $title  = strpos( $markup, 'class="lisensio-kb__title"' );
+        $search = strpos( $markup, 'class="lisensio-kb__search"' );
+        $close  = strpos( $markup, '</header>' );
+
+        $this->assertNotFalse( $search, 'the archive renders no search form' );
+        $this->assertNotFalse( $title, 'the archive renders no hero title' );
+        $this->assertGreaterThan( $title, $search, 'the search form must follow the heading' );
+        $this->assertLessThan( $close, $search, 'the search form must sit inside the hero' );
+    }
+
+    /**
+     * The search form exists once, in one template.
+     *
+     * The archive and the search results page both render a search form. They
+     * used to carry their own copy of the markup, so a fix to one silently
+     * left the other behind. Both now go through the hero, which renders the
+     * single `search-field` template.
+     *
+     * The name matters: `search-form` is already the search block's override
+     * seam, and a template at that name would replace the block's ARIA
+     * combobox with this plain form.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_only_one_template_carries_the_search_form_markup() {
+        $carriers = array();
+
+        foreach ( glob( LISENSIO_KB_ABSPATH . 'templates/*.php' ) as $template ) {
+            $contents = (string) file_get_contents( $template ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+
+            if ( false !== strpos( $contents, '<form role="search"' ) ) {
+                $carriers[] = basename( $template );
+            }
+        }
+
+        $this->assertSame( array( 'search-field.php' ), $carriers );
     }
 }
