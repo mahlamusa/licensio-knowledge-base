@@ -9,6 +9,31 @@
  * the front end too, or the REST representation of a category loses its meta
  * and a programmatic `update_term_meta()` stores unsanitized values.
  *
+ * Three of those keys are icons, and only one of them can be drawn, so their
+ * precedence is fixed and documented rather than left to whichever template
+ * happens to read first:
+ *
+ * 1. `lisensio_icon_svg` — inline SVG.
+ * 2. `lisensio_icon_id`  — an uploaded attachment.
+ * 3. `lisensio_icon`     — a dashicon name.
+ *
+ * Most specific first, in the sense of how completely the stored value
+ * describes the icon. Inline SVG is the whole drawing, needs no second request
+ * to render, scales to any size and inherits its colour from the card through
+ * `currentColor`; an attachment is a reference to a file whose contents this
+ * plugin has not inspected; a dashicon name is a reference to one of a fixed
+ * set of glyphs somebody else drew. A field is only ever ignored in favour of
+ * one that says more, never one that says less, and each form field says on
+ * screen what it takes precedence over.
+ *
+ * There is deliberately no colour field beside the SVG. Heroic carried a
+ * `meta_svg_color`, but it stored a copy of a colour its importer had already
+ * baked into the markup, so it described the icon rather than controlling it.
+ * The card sets `color` in CSS, so an icon authored with `currentColor` follows
+ * the knowledge base brand colour with nothing stored per category at all — and
+ * an icon that wants a fixed colour can simply say so in its own `fill` and
+ * `stroke` attributes, which the sanitizer keeps.
+ *
  * The term description is deliberately not duplicated here. Core already gives
  * every term a description, edits it on both term forms and exposes it in
  * REST; a second description meta would be two fields that mean the same thing
@@ -50,6 +75,28 @@ class Lisensio_KB_Term_Meta {
      * @var string
      */
     const META_ICON_ID = 'lisensio_icon_id';
+
+    /**
+     * Meta key holding an inline SVG icon.
+     *
+     * A third icon field rather than an overload of META_ICON_ID, for the same
+     * reason META_ICON_ID is separate from META_ICON: the markup is printed
+     * into the page, not linked from it, and the two are not interchangeable.
+     * An uploaded SVG is a file the browser fetches and sandboxes; inline SVG
+     * is part of the document, which is what lets it inherit `currentColor` —
+     * and what makes it the one icon field whose stored value has to be
+     * sanitized as markup. See Lisensio_KB_SVG_Sanitizer.
+     *
+     * This is the key Heroic's `meta_svg` migrates into. Heroic echoed that
+     * value with `stripslashes()` and no escaping at all
+     * (php/ht-knowledge-base-category-meta.php:147), which is a stored XSS in
+     * their plugin; the field exists here so the icons can cross without the
+     * vulnerability crossing with them.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    const META_ICON_SVG = 'lisensio_icon_svg';
 
     /**
      * Meta key holding the attachment ID of the category image.
@@ -125,6 +172,15 @@ class Lisensio_KB_Term_Meta {
                 'default'           => 0,
                 'show_in_rest'      => true,
                 'sanitize_callback' => array( __CLASS__, 'sanitize_attachment_id' ),
+                'auth_callback'     => array( __CLASS__, 'auth_callback' ),
+            ),
+            self::META_ICON_SVG => array(
+                'type'              => 'string',
+                'description'       => __( 'Inline SVG markup used as the category icon.', 'lisensio-knowledge-base' ),
+                'single'            => true,
+                'default'           => '',
+                'show_in_rest'      => true,
+                'sanitize_callback' => array( 'Lisensio_KB_SVG_Sanitizer', 'sanitize' ),
                 'auth_callback'     => array( __CLASS__, 'auth_callback' ),
             ),
             self::META_IMAGE_ID => array(
@@ -312,6 +368,26 @@ class Lisensio_KB_Term_Meta {
      */
     public static function get_icon_id( $term_id ) {
         return absint( get_term_meta( (int) $term_id, self::META_ICON_ID, true ) );
+    }
+
+    /**
+     * The inline SVG icon stored on a category.
+     *
+     * Re-sanitized on the way out, like the dashicon name is. A value that was
+     * stored before an element left the allowlist, or that never went through
+     * `update_term_meta()` at all — an importer writing straight to the table,
+     * a hand-edited row — is sanitized by the time a caller sees it, so the
+     * renderer's freedom not to escape rests on this function and not on the
+     * history of the row.
+     *
+     * @since 1.0.0
+     *
+     * @param int $term_id The category term ID.
+     *
+     * @return string The sanitized SVG markup, or an empty string when none is set.
+     */
+    public static function get_icon_svg( $term_id ) {
+        return Lisensio_KB_SVG_Sanitizer::sanitize( get_term_meta( (int) $term_id, self::META_ICON_SVG, true ) );
     }
 
     /**

@@ -89,9 +89,9 @@ class Lisensio_KB_Term_Meta_Test extends Lisensio_KB_Test_Case {
     }
 
     /**
-     * All four keys are registered against the category taxonomy.
+     * All five keys are registered against the category taxonomy.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Added the inline SVG icon key.
      *
      * @return void
      */
@@ -99,7 +99,7 @@ class Lisensio_KB_Term_Meta_Test extends Lisensio_KB_Test_Case {
         $term_meta = new Lisensio_KB_Term_Meta();
         $term_meta->register_meta();
 
-        $expected = array( 'lisensio_icon', 'lisensio_icon_id', 'lisensio_image_id', 'lisensio_order' );
+        $expected = array( 'lisensio_icon', 'lisensio_icon_id', 'lisensio_icon_svg', 'lisensio_image_id', 'lisensio_order' );
 
         $this->assertSame( $expected, array_keys( $this->registered ) );
 
@@ -137,6 +137,29 @@ class Lisensio_KB_Term_Meta_Test extends Lisensio_KB_Test_Case {
                 $key
             );
         }
+    }
+
+    /**
+     * The SVG key is registered with the SVG sanitizer, not something weaker.
+     *
+     * The generic "every key has a sanitize callback" assertion above is
+     * satisfied by any callable, including one that returns its argument. This
+     * key is the only one whose stored value is printed into a page as markup,
+     * so which callable it got is asserted by name — a REST write reaching
+     * `wp_kses_post()`, or nothing at all, would leave that assertion green.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_svg_key_is_registered_with_the_svg_sanitizer() {
+        $term_meta = new Lisensio_KB_Term_Meta();
+        $term_meta->register_meta();
+
+        $this->assertSame(
+            array( 'Lisensio_KB_SVG_Sanitizer', 'sanitize' ),
+            $this->registered['lisensio_icon_svg']['args']['sanitize_callback']
+        );
     }
 
     /**
@@ -257,22 +280,34 @@ class Lisensio_KB_Term_Meta_Test extends Lisensio_KB_Test_Case {
      * WP-CLI, a hand-edited row — so a consumer must not have to trust what is
      * in the table.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Added the inline SVG icon key.
      *
      * @return void
      */
     public function test_reads_are_sanitized_too() {
-        $this->meta['9|lisensio_icon']  = 'dashicons-book" onload="alert(1)';
-        $this->meta['9|lisensio_order'] = '-4';
+        $this->meta['9|lisensio_icon']     = 'dashicons-book" onload="alert(1)';
+        $this->meta['9|lisensio_order']    = '-4';
+        $this->meta['9|lisensio_icon_svg'] = '<svg viewBox="0 0 24 24" onload="alert(1)"><script>alert(2)</script><path d="M4 4h16"/></svg>';
 
         $this->assertSame( '', Lisensio_KB_Term_Meta::get_icon( 9 ) );
         $this->assertSame( 0, Lisensio_KB_Term_Meta::get_order( 9 ) );
+        $this->assertSame(
+            '<svg viewBox="0 0 24 24"><path d="M4 4h16"/></svg>',
+            Lisensio_KB_Term_Meta::get_icon_svg( 9 ),
+            'A row written outside the form must be sanitized on the way out.'
+        );
 
-        $this->meta['9|lisensio_icon']  = 'dashicons-sos';
-        $this->meta['9|lisensio_order'] = '3';
+        $this->meta['9|lisensio_icon']     = 'dashicons-sos';
+        $this->meta['9|lisensio_order']    = '3';
+        $this->meta['9|lisensio_icon_svg'] = '<svg viewBox="0 0 24 24"><path d="M4 4h16"/></svg>';
 
         $this->assertSame( 'dashicons-sos', Lisensio_KB_Term_Meta::get_icon( 9 ) );
         $this->assertSame( 3, Lisensio_KB_Term_Meta::get_order( 9 ) );
+        $this->assertSame(
+            '<svg viewBox="0 0 24 24"><path d="M4 4h16"/></svg>',
+            Lisensio_KB_Term_Meta::get_icon_svg( 9 ),
+            'A legitimate icon must survive the read.'
+        );
     }
 
     /**

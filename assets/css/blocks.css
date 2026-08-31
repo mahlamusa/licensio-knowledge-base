@@ -52,6 +52,26 @@
 	line-height: 1;
 }
 
+/*
+ * The wrapper carries the brand colour and the size; the SVG inside carries
+ * neither. Nothing here sets `fill` or `stroke` on the icon, because a CSS
+ * declaration always beats a presentation attribute, so a rule for the icons
+ * that need a colour would repaint the ones that already have one. An icon
+ * drawn with `currentColor` picks the brand colour up from here instead.
+ */
+
+.lisensio-kb .lisensio-kb-card__icon--svg {
+	width: 3rem;
+	height: 3rem;
+	margin: 0 0 0.75rem;
+	font-size: 0;
+}
+
+.lisensio-kb .lisensio-kb-card__icon--svg svg {
+	width: 100%;
+	height: 100%;
+}
+
 .lisensio-kb .lisensio-kb-card__icon-image {
 	display: block;
 	width: auto;
