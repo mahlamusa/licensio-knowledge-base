@@ -45,6 +45,20 @@ class Lisensio_KB_Templates {
     );
 
     /**
+     * How many uncategorised articles the archive lists at most.
+     *
+     * The list is a safety net for articles that would otherwise be reachable
+     * from nowhere, not a second archive, so it is capped rather than
+     * paginated: the archive's own pagination belongs to the main query, and a
+     * second paginated list on the same URL would fight it for `paged`. A site
+     * showing this cap has a filing problem the cap is meant to make visible.
+     *
+     * @since 1.0.0
+     * @var int
+     */
+    const UNCATEGORISED_LIMIT = 20;
+
+    /**
      * The settings store the custom properties are read from.
      *
      * @since 1.0.0
@@ -471,6 +485,59 @@ class Lisensio_KB_Templates {
                         'field'            => 'term_id',
                         'terms'            => (int) $term->term_id,
                         'include_children' => true,
+                    ),
+                ),
+            )
+        );
+
+        return is_array( $posts ) ? $posts : array();
+    }
+
+    /**
+     * The published articles filed under no category at all.
+     *
+     * The archive lists categories, and every article is reached through the
+     * category it sits in. An article with no category is therefore reachable
+     * from nowhere on the archive: it exists, it is published, and no link on
+     * `/docs/` leads to it. This is the query behind the list that fixes that.
+     *
+     * The result is capped rather than paginated. See `UNCATEGORISED_LIMIT`.
+     *
+     * @since 1.0.0
+     *
+     * @param int $limit How many articles to return at most.
+     *
+     * @return WP_Post[] The uncategorised articles, newest first. Empty when there are none, or when the limit is not positive.
+     */
+    public static function uncategorised_articles( $limit = self::UNCATEGORISED_LIMIT ) {
+        /**
+         * Filter how many uncategorised articles the archive lists.
+         *
+         * @since 1.0.0
+         *
+         * @param int $limit The cap. Zero or less disables the list entirely.
+         */
+        $limit = (int) apply_filters( 'lisensio_uncategorised_limit', (int) $limit );
+
+        if ( $limit < 1 ) {
+            return array();
+        }
+
+        $posts = get_posts(
+            array(
+                'post_type'              => Lisensio_KB_Post_Types::POST_TYPE,
+                'post_status'            => 'publish',
+                'posts_per_page'         => $limit,
+                'orderby'                => 'date',
+                'order'                  => 'DESC',
+                'ignore_sticky_posts'    => true,
+                'no_found_rows'          => true,
+                'update_post_term_cache' => false,
+                // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
+                'tax_query'              => array(
+                    array(
+                        'taxonomy' => Lisensio_KB_Post_Types::TAXONOMY_CATEGORY,
+                        'operator' => 'NOT EXISTS',
                     ),
                 ),
             )

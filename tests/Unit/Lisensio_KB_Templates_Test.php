@@ -557,7 +557,23 @@ class Lisensio_KB_Templates_Test extends Lisensio_KB_Test_Case {
             }
         );
 
-        Functions\when( 'get_posts' )->justReturn( array( $article ) );
+        /*
+         * The archive makes two article queries: the cards ask for the articles
+         * in one category, and the uncategorised list asks for the articles in
+         * none. This site has none, so the second query answers empty and the
+         * list renders nothing — which is the state these archive tests are
+         * about.
+         */
+        Functions\when( 'get_posts' )->alias(
+            function ( $args = array() ) use ( $article ) {
+                $clause = isset( $args['tax_query'][0] ) ? (array) $args['tax_query'][0] : array();
+
+                return isset( $clause['operator'] ) && 'NOT EXISTS' === $clause['operator']
+                    ? array()
+                    : array( $article );
+            }
+        );
+
         Functions\when( 'get_permalink' )->alias(
             function ( $post ) {
                 return $post instanceof WP_Post ? 'https://example.test/docs/article-' . $post->ID . '/' : '';

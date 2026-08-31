@@ -11,15 +11,21 @@
  * category archive lists its own. Nothing in the plugin listens for a per
  * article hook here, so no contract is lost by leaving the loop unrendered.
  *
+ * The one thing the category grid cannot reach is an article filed under no
+ * category, which would otherwise be published and linked from nowhere. Those
+ * get a list of their own below the grid, which renders nothing at all when
+ * every article is filed — so a well-organised site never sees it.
+ *
  * @package Lisensio_KB
- * @since   1.0.0 Rendered the hero through `templates/hero.php`, dropped the article loop and added `lisensio_kb_after_archive`.
+ * @since   1.0.0 Rendered the hero through `templates/hero.php`, replaced the article loop with the uncategorised list and added `lisensio_kb_after_archive`.
  */
 
 defined( 'ABSPATH' ) || exit;
 
 get_header();
 
-$lisensio_kb_categories = Lisensio_KB_Templates::top_level_categories();
+$lisensio_kb_categories    = Lisensio_KB_Templates::top_level_categories();
+$lisensio_kb_uncategorised = Lisensio_KB_Templates::uncategorised_articles();
 ?>
 <div class="lisensio-kb lisensio-kb--archive">
     <?php
@@ -60,7 +66,21 @@ $lisensio_kb_categories = Lisensio_KB_Templates::top_level_categories();
                 ?>
             <?php endforeach; ?>
         </div>
-    <?php else : ?>
+    <?php endif; ?>
+
+    <?php if ( ! empty( $lisensio_kb_uncategorised ) ) : ?>
+        <section class="lisensio-kb__section">
+            <h2 class="lisensio-kb__section-title"><?php esc_html_e( 'Uncategorised', 'lisensio-knowledge-base' ); ?></h2>
+
+            <div class="lisensio-kb__list">
+                <?php foreach ( $lisensio_kb_uncategorised as $lisensio_kb_article ) : ?>
+                    <?php lisensio_kb_get_template( 'article-card', array( 'post' => $lisensio_kb_article ) ); ?>
+                <?php endforeach; ?>
+            </div>
+        </section>
+    <?php endif; ?>
+
+    <?php if ( empty( $lisensio_kb_categories ) && empty( $lisensio_kb_uncategorised ) ) : ?>
         <?php
         lisensio_kb_get_template(
             'no-results',

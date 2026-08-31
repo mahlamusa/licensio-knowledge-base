@@ -18,6 +18,7 @@
  */
 
 use Brain\Monkey\Actions;
+use Brain\Monkey\Filters;
 use Brain\Monkey\Functions;
 
 /**
@@ -39,6 +40,17 @@ class Lisensio_KB_Hero_Test extends Lisensio_KB_Test_Case {
     private $theme_dir = '';
 
     /**
+     * The articles the stubbed query answers the uncategorised list with.
+     *
+     * Empty by default, which is the state of a well-organised site and the
+     * one every other test in this file assumes.
+     *
+     * @since 1.0.0
+     * @var WP_Post[]
+     */
+    private $uncategorised = array();
+
+    /**
      * Stub the WordPress surface the templates touch.
      *
      * @since 1.0.0
@@ -47,6 +59,8 @@ class Lisensio_KB_Hero_Test extends Lisensio_KB_Test_Case {
      */
     protected function setUp(): void {
         parent::setUp();
+
+        $this->uncategorised = array();
 
         Functions\when( 'untrailingslashit' )->alias(
             function ( $value ) {
@@ -182,11 +196,17 @@ class Lisensio_KB_Hero_Test extends Lisensio_KB_Test_Case {
      *
      * @since 1.0.0
      *
+     * @param bool $with_categories Whether the taxonomy answers with a category at all.
+     *
      * @return string The rendered markup.
      */
-    private function render_archive() {
+    private function render_archive( $with_categories = true ) {
         $this->stub_conditionals( 'archive' );
         $this->stub_one_category();
+
+        if ( ! $with_categories ) {
+            Functions\when( 'get_terms' )->justReturn( array() );
+        }
 
         Functions\when( 'post_type_archive_title' )->justReturn( 'Knowledge Base' );
 
@@ -380,12 +400,77 @@ class Lisensio_KB_Hero_Test extends Lisensio_KB_Test_Case {
 
         Functions\when( 'get_term_link' )->justReturn( 'https://example.test/docs-category/getting-started/' );
         Functions\when( 'get_term_meta' )->justReturn( '' );
-        Functions\when( 'get_posts' )->justReturn( array( $article ) );
         Functions\when( 'get_permalink' )->justReturn( 'https://example.test/docs/article-7/' );
+
+        /*
+         * The archive makes two article queries: the cards ask for the articles
+         * in one category, and the uncategorised list asks for the articles in
+         * none. A double that answered both the same way would report the
+         * uncategorised list as always populated, which is precisely the state
+         * the template is supposed to be able to distinguish, so the double
+         * discriminates on the operator the way the database would.
+         */
+        Functions\when( 'get_posts' )->alias(
+            function ( $args = array() ) use ( $article ) {
+                return $this->is_uncategorised_query( $args )
+                    ? array_slice( $this->uncategorised, 0, isset( $args['posts_per_page'] ) ? (int) $args['posts_per_page'] : count( $this->uncategorised ) )
+                    : array( $article );
+            }
+        );
+
         Functions\when( 'get_the_title' )->alias(
             function ( $post ) {
                 return $post instanceof WP_Post ? $post->post_title : '';
             }
+        );
+
+        Functions\when( 'get_post' )->alias(
+            function ( $post = null ) {
+                return $post instanceof WP_Post ? $post : null;
+            }
+        );
+
+        Functions\when( 'get_the_excerpt' )->justReturn( '' );
+    }
+
+    /**
+     * Whether a query asked for the articles filed under no category.
+     *
+     * @since 1.0.0
+     *
+     * @param array<string, mixed> $args The query arguments.
+     *
+     * @return bool True when the query carries a NOT EXISTS clause for the category taxonomy.
+     */
+    private function is_uncategorised_query( array $args ) {
+        if ( ! isset( $args['tax_query'][0] ) || ! is_array( $args['tax_query'][0] ) ) {
+            return false;
+        }
+
+        $clause = $args['tax_query'][0];
+
+        return isset( $clause['taxonomy'], $clause['operator'] )
+            && Lisensio_KB_Post_Types::TAXONOMY_CATEGORY === $clause['taxonomy']
+            && 'NOT EXISTS' === $clause['operator'];
+    }
+
+    /**
+     * Build an uncategorised article the stubbed query can answer with.
+     *
+     * @since 1.0.0
+     *
+     * @param int    $id    The post ID.
+     * @param string $title The article title.
+     *
+     * @return WP_Post The article.
+     */
+    private function orphan( $id, $title ) {
+        return new WP_Post(
+            array(
+                'ID'         => $id,
+                'post_title' => $title,
+                'post_type'  => Lisensio_KB_Post_Types::POST_TYPE,
+            )
         );
     }
 
@@ -723,6 +808,169 @@ class Lisensio_KB_Hero_Test extends Lisensio_KB_Test_Case {
         $this->assertSame( 0, substr_count( $markup, 'Latest articles' ) );
         $this->assertSame( 0, substr_count( $markup, 'lisensio-kb__section-title' ) );
         $this->assertSame( 0, substr_count( $markup, 'lisensio-kb-card--article' ) );
+    }
+
+    /**
+     * An article filed under no category is still reachable from the archive.
+     *
+     * The archive renders categories and the articles inside them, so an
+     * article with no category is linked from nowhere on `/docs/` — published
+     * and unreachable. The list exists to close that hole, and this is the
+     * assertion that it does.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_uncategorised_article_is_listed_on_the_archive() {
+        $this->uncategorised = array( $this->orphan( 31, 'A stray note' ) );
+
+        $markup = $this->render_archive();
+
+        $this->assertStringContainsString( 'Uncategorised', $markup );
+        $this->assertStringContainsString( 'lisensio-kb-card--article', $markup );
+        $this->assertStringContainsString( 'A stray note', $markup );
+    }
+
+    /**
+     * The list renders nothing at all when every article is filed.
+     *
+     * Design parity depends on this: on a well-organised site the archive is
+     * the grid and nothing else, exactly as the documentation design has it.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_uncategorised_list_is_absent_when_every_article_is_filed() {
+        $markup = $this->render_archive();
+
+        $this->assertStringContainsString( 'lisensio-kb__grid--cols-3', $markup );
+        $this->assertSame( 0, substr_count( $markup, 'Uncategorised' ) );
+        $this->assertSame( 0, substr_count( $markup, 'lisensio-kb__section' ) );
+    }
+
+    /**
+     * The uncategorised query asks for exactly that, and respects the cap.
+     *
+     * `NOT EXISTS` against the category taxonomy is the whole behaviour: any
+     * other clause would return categorised articles too and the list would
+     * duplicate the grid.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_uncategorised_query_asks_for_articles_in_no_category() {
+        $seen = array();
+
+        Functions\when( 'get_posts' )->alias(
+            function ( $args = array() ) use ( &$seen ) {
+                $seen = (array) $args;
+
+                return array();
+            }
+        );
+
+        Lisensio_KB_Templates::uncategorised_articles();
+
+        $this->assertSame( Lisensio_KB_Post_Types::POST_TYPE, $seen['post_type'] );
+        $this->assertSame( 'publish', $seen['post_status'] );
+        $this->assertSame( Lisensio_KB_Templates::UNCATEGORISED_LIMIT, $seen['posts_per_page'] );
+        $this->assertSame(
+            array(
+                'taxonomy' => Lisensio_KB_Post_Types::TAXONOMY_CATEGORY,
+                'operator' => 'NOT EXISTS',
+            ),
+            $seen['tax_query'][0]
+        );
+    }
+
+    /**
+     * The cap is honoured, and a filter can move it.
+     *
+     * The list is capped rather than paginated, so the cap is the only thing
+     * standing between a badly filed site and an unbounded query.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_uncategorised_cap_is_applied_and_filterable() {
+        $requested = 0;
+
+        Functions\when( 'get_posts' )->alias(
+            function ( $args = array() ) use ( &$requested ) {
+                $requested = (int) $args['posts_per_page'];
+
+                return array();
+            }
+        );
+
+        Lisensio_KB_Templates::uncategorised_articles( 5 );
+
+        $this->assertSame( 5, $requested );
+
+        Filters\expectApplied( 'lisensio_uncategorised_limit' )->andReturn( 2 );
+
+        Lisensio_KB_Templates::uncategorised_articles();
+
+        $this->assertSame( 2, $requested );
+    }
+
+    /**
+     * A cap of zero turns the list off without running a query.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_zero_uncategorised_cap_runs_no_query() {
+        $ran = false;
+
+        Functions\when( 'get_posts' )->alias(
+            function () use ( &$ran ) {
+                $ran = true;
+
+                return array();
+            }
+        );
+
+        $this->assertSame( array(), Lisensio_KB_Templates::uncategorised_articles( 0 ) );
+        $this->assertFalse( $ran );
+    }
+
+    /**
+     * The empty state waits until there is neither a category nor a stray.
+     *
+     * A site whose only content is uncategorised must not be told it is empty
+     * while that content is on the page underneath the message.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_empty_state_yields_to_an_uncategorised_article() {
+        $this->uncategorised = array( $this->orphan( 31, 'A stray note' ) );
+
+        $markup = $this->render_archive( false );
+
+        $this->assertStringContainsString( 'A stray note', $markup );
+        $this->assertSame( 0, substr_count( $markup, 'The knowledge base is empty' ) );
+    }
+
+    /**
+     * With no categories and no strays the archive says it is empty.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_archive_with_nothing_on_it_says_so() {
+        $markup = $this->render_archive( false );
+
+        $this->assertStringContainsString( 'The knowledge base is empty', $markup );
+        $this->assertSame( 0, substr_count( $markup, 'lisensio-kb__grid--cols-3' ) );
     }
 
     /**

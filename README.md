@@ -275,6 +275,15 @@ those pages, by a hook callback, and by the blocks, through
 
 Copy any of them into `{theme}/lisensio-kb/` to override it.
 
+`archive.php` renders the category grid, not the main loop. Below the grid it
+lists the published articles filed under **no** category — otherwise those are
+reachable from nowhere on the archive — and renders nothing at all when there
+are none, so a well-organised site sees only the grid. That list is capped at
+`Lisensio_KB_Templates::UNCATEGORISED_LIMIT` rather than paginated, because the
+archive's own pagination belongs to the main query and two paginated lists on
+one URL would fight over `paged`. Raise or disable the cap with
+`lisensio_uncategorised_limit`.
+
 `hero.php` is the one heading block every page template renders — breadcrumbs,
 the heading with its last word in the brand gradient, and an optional
 standfirst. A theme that overrides it replaces the hero on all five views at
@@ -377,6 +386,7 @@ It cannot be a module: module scripts are always deferred and execute after ever
 | `lisensio_feedback_score_updated` | action | An article's usefulness score was recomputed. Passed the article ID and the figures. |
 | `lisensio_before_article`, `lisensio_after_article`, `lisensio_article_footer` | action | The frontend hook contract. |
 | `lisensio_kb_after_archive` | action | The last thing in the archive, inside its wrapper. The seam a theme attaches its own closing section to — a call to action band, a support link. The plugin ships no such copy itself. No arguments. |
+| `lisensio_uncategorised_limit` | filter | How many uncategorised articles the archive lists. Default `Lisensio_KB_Templates::UNCATEGORISED_LIMIT` (20); zero or less turns the list off. |
 | `lisensio_before_template`, `lisensio_after_template` | action | Around a classic template include. |
 | `lisensio_autoload_paths` | filter | Extra directories for the class autoloader. |
 | `lisensio_settings_registry`, `lisensio_settings` | filter | Extend or override settings. |
