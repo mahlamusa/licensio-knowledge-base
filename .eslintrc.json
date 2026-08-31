@@ -1,0 +1,10 @@
+{
+	"root": true,
+	"extends": [ "plugin:@wordpress/eslint-plugin/recommended" ],
+	"rules": {
+		"@wordpress/i18n-text-domain": [
+			"error",
+			{ "allowedTextDomain": [ "lisensio-knowledge-base" ] }
+		]
+	}
+}

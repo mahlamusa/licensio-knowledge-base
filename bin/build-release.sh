@@ -1,0 +1,395 @@
+#!/usr/bin/env bash
+#
+# Release build.
+#
+# Produces the two shippable artifacts from a clean checkout:
+#
+#   lisensio-knowledge-base.zip      free build, no pro/ anywhere in it
+#   lisensio-knowledge-base-pro.zip  the same tree plus pro/
+#
+# Both are staged from an allowlist rather than pruned from a copy of the
+# repository. An exclude list silently ships whatever it has not heard of yet:
+# add `tools/migrate-heroic/` and it lands in the artifact until someone notices.
+# An allowlist fails the other way, which is the direction that cannot leak.
+#
+# The staged tree carries compiled output only. `apps/` and `blocks/` are built
+# into `dist/` and neither the sources nor the build tooling is shipped.
+#
+# Nothing here publishes anywhere. `--dry-run` exists to build and report the
+# artifact contents without writing them into releases/.
+#
+# Usage:
+#   bin/build-release.sh [--dry-run] [--skip-build] [--output DIR]
+#
+#   --dry-run     Build, verify and print both manifests, then discard. The
+#                 repository is left untouched apart from dist/, which is build
+#                 output and is not tracked.
+#   --skip-build  Reuse the dist/ that is already there. For iterating on the
+#                 packaging itself; never for a real release.
+#   --output DIR  Where the zips land. Defaults to releases/.
+#
+# @since 1.0.0
+
+set -euo pipefail
+
+SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" && pwd )"
+ROOT="$( dirname "$SCRIPT_DIR" )"
+
+SLUG='lisensio-knowledge-base'
+TEXT_DOMAIN='lisensio-knowledge-base'
+
+DRY_RUN=0
+SKIP_BUILD=0
+OUTPUT_DIR="${ROOT}/releases"
+
+# Everything the shipped plugin needs, and nothing else. Paths are relative to
+# the repository root. `pro/` is added to the pro build only, and `languages/`
+# is generated during the run.
+SHIP_PATHS=(
+    'lisensio-knowledge-base.php'
+    'uninstall.php'
+    'readme.txt'
+    'includes'
+    'templates'
+    'block-templates'
+    'block-template-parts'
+    'assets'
+    'libraries'
+    'dist'
+)
+
+# Anything on this list in a staged tree is a packaging bug. The allowlist above
+# should already make every one of these impossible, which is exactly why the
+# assertion is worth having: it is what notices when the allowlist grows an
+# entry that drags one of them in.
+#
+# Checked at the top level only, because some of these names are legitimate
+# deeper down: the compiled blocks live at dist/blocks/.
+FORBIDDEN_ROOT_PATHS=(
+    'apps'
+    'blocks'
+    'bin'
+    'tools'
+    'tests'
+    'docs'
+    '.github'
+    'composer.json'
+    'composer.lock'
+    'package.json'
+    'package-lock.json'
+    'phpcs.xml'
+    'phpstan.neon'
+    'phpstan-bootstrap.php'
+    'phpunit.xml'
+    'playwright.config.ts'
+    'vite.config.mjs'
+    '.eslintrc.json'
+    '.editorconfig'
+    '.nvmrc'
+    '.gitignore'
+    '.env.example'
+    'README.md'
+    'SPEC.md'
+)
+
+# These must not appear at any depth.
+FORBIDDEN_ANYWHERE=(
+    'node_modules'
+    'vendor'
+    '.git'
+    '*.map'
+)
+
+WORK_DIR=''
+
+# Remove the scratch directory on the way out, however we leave.
+#
+# @since 1.0.0
+cleanup() {
+    if [ -n "$WORK_DIR" ] && [ -d "$WORK_DIR" ]; then
+        rm -rf "$WORK_DIR"
+    fi
+}
+trap cleanup EXIT
+
+# Print a step heading.
+#
+# @since 1.0.0
+step() {
+    printf '\n== %s ==\n' "$1"
+}
+
+# Abort with a message.
+#
+# @since 1.0.0
+abort() {
+    printf 'Release build FAILED: %s\n' "$1" >&2
+    exit 1
+}
+
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --dry-run)
+            DRY_RUN=1
+            ;;
+        --skip-build)
+            SKIP_BUILD=1
+            ;;
+        --output)
+            [ "$#" -ge 2 ] || abort '--output needs a directory.'
+            OUTPUT_DIR="$2"
+            shift
+            ;;
+        -h|--help)
+            sed -n '2,30p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+            exit 0
+            ;;
+        *)
+            abort "unknown option: $1"
+            ;;
+    esac
+    shift
+done
+
+for tool in php zip unzip; do
+    command -v "$tool" > /dev/null 2>&1 || abort "$tool is required and is not on PATH."
+done
+
+# Resolve the WP-CLI binary used to generate the .pot file.
+#
+# @since 1.0.0
+resolve_wp_cli() {
+    if [ -n "${WP_CLI_BIN:-}" ]; then
+        printf '%s\n' "$WP_CLI_BIN"
+        return 0
+    fi
+
+    if command -v wp > /dev/null 2>&1; then
+        command -v wp
+        return 0
+    fi
+
+    phar="${ROOT}/.tmp/wp-cli.phar"
+
+    if [ ! -f "$phar" ]; then
+        mkdir -p "${ROOT}/.tmp"
+        printf 'WP-CLI is not on PATH; downloading wp-cli.phar into .tmp/ ...\n' >&2
+
+        if command -v curl > /dev/null 2>&1; then
+            curl -fsSL -o "$phar" 'https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar'
+        elif command -v wget > /dev/null 2>&1; then
+            wget -q -O "$phar" 'https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar'
+        else
+            return 1
+        fi
+    fi
+
+    printf 'php %s\n' "$phar"
+}
+
+printf 'Lisensio Knowledge Base release build\n'
+printf 'Repository: %s\n' "$ROOT"
+if [ "$DRY_RUN" -eq 1 ]; then
+    printf 'Mode: dry run - artifacts are reported and then discarded.\n'
+else
+    printf 'Mode: release - artifacts are written to %s\n' "$OUTPUT_DIR"
+fi
+
+step 'Version consistency'
+bash "${SCRIPT_DIR}/check-versions.sh" "$ROOT"
+
+VERSION="$(
+    grep -m1 -E "define\([[:space:]]*'LISENSIO_KB_VERSION'" "${ROOT}/lisensio-knowledge-base.php" \
+        | sed -E "s/.*'LISENSIO_KB_VERSION'[[:space:]]*,[[:space:]]*'([^']*)'.*/\1/"
+)"
+
+step 'Text domains'
+bash "${SCRIPT_DIR}/check-i18n.sh"
+
+step 'Production build'
+if [ "$SKIP_BUILD" -eq 1 ]; then
+    printf 'Skipping the JS build at your request; reusing dist/.\n'
+else
+    command -v npm > /dev/null 2>&1 || abort 'npm is required and is not on PATH.'
+    # Vite is configured not to empty dist/, because wp-scripts writes there
+    # too. Across two builds that leaves last release's hashed bundles behind,
+    # so the directory is cleared here instead.
+    rm -rf "${ROOT}/dist"
+    ( cd "$ROOT" && NODE_ENV=production npm run build )
+fi
+
+[ -d "${ROOT}/dist" ] || abort 'dist/ does not exist. Run without --skip-build.'
+
+WORK_DIR="$( mktemp -d )"
+FREE_STAGE="${WORK_DIR}/free/${SLUG}"
+PRO_STAGE="${WORK_DIR}/pro/${SLUG}"
+
+step 'Translation template'
+WP_CLI="$( resolve_wp_cli || true )"
+[ -n "$WP_CLI" ] || abort 'WP-CLI is needed to generate the .pot file. Install it, or set WP_CLI_BIN.'
+
+POT_FILE="${WORK_DIR}/${SLUG}.pot"
+
+# shellcheck disable=SC2086
+$WP_CLI i18n make-pot "$ROOT" "$POT_FILE" \
+    --domain="$TEXT_DOMAIN" \
+    --slug="$SLUG" \
+    --exclude='node_modules,vendor,libraries,dist,tests,tools,bin,docs,.github,releases,.tmp' \
+    --headers='{"Report-Msgid-Bugs-To":"https://wordpress.org/support/plugin/lisensio-knowledge-base"}' \
+    --allow-root
+
+printf 'Extracted %s strings.\n' "$( grep -c '^msgid ' "$POT_FILE" )"
+
+# Copy the allowlisted paths into a staging directory.
+#
+# $1 - Destination directory.
+#
+# @since 1.0.0
+stage_plugin() {
+    stage="$1"
+    mkdir -p "$stage"
+
+    for path in "${SHIP_PATHS[@]}"; do
+        if [ ! -e "${ROOT}/${path}" ]; then
+            abort "shipped path ${path} is missing from the repository."
+        fi
+
+        if [ -d "${ROOT}/${path}" ]; then
+            mkdir -p "${stage}/${path}"
+            # -a keeps dotfiles, which matters: dist/.vite/manifest.json is one.
+            cp -a "${ROOT}/${path}/." "${stage}/${path}/"
+        else
+            cp -a "${ROOT}/${path}" "${stage}/${path}"
+        fi
+    done
+
+    mkdir -p "${stage}/languages"
+    cp -a "$POT_FILE" "${stage}/languages/${SLUG}.pot"
+
+    # Placeholders that only exist to keep an empty directory in git.
+    find "$stage" -name '.gitkeep' -type f -delete
+}
+
+# Fail if a staged tree contains anything that must never ship.
+#
+# $1 - Staged directory.
+#
+# @since 1.0.0
+assert_no_forbidden_paths() {
+    stage="$1"
+    found=0
+
+    for path in "${FORBIDDEN_ROOT_PATHS[@]}"; do
+        if [ -e "${stage}/${path}" ]; then
+            printf '  %s\n' "$path" >&2
+            found=$(( found + 1 ))
+        fi
+    done
+
+    for path in "${FORBIDDEN_ANYWHERE[@]}"; do
+        while IFS= read -r -d '' hit; do
+            printf '  %s\n' "${hit#"$stage"/}" >&2
+            found=$(( found + 1 ))
+        done < <( find "$stage" -name "$path" -print0 )
+    done
+
+    if [ "$found" -gt 0 ]; then
+        abort "the staged tree contains ${found} path(s) that must never ship (listed above)."
+    fi
+}
+
+# Print what an artifact contains.
+#
+# $1 - Staged directory.
+# $2 - Label.
+#
+# @since 1.0.0
+report_stage() {
+    stage="$1"
+    label="$2"
+    count="$( find "$stage" -type f | wc -l | tr -d ' ' )"
+    bytes="$( du -sk "$stage" | cut -f1 )"
+
+    printf '\n%s: %s files, %s KiB unpacked\n' "$label" "$count" "$bytes"
+    printf 'Top-level contents:\n'
+    ( cd "$stage" && find . -mindepth 1 -maxdepth 1 | sed 's|^\./|  |' | sort )
+    printf 'Files by directory:\n'
+    (
+        cd "$stage" && find . -type f | while IFS= read -r file; do
+            directory="$( dirname "$file" )"
+
+            if [ "$directory" = '.' ]; then
+                printf '(root)\n'
+            else
+                printf '%s\n' "${directory#./}"
+            fi
+        done | sort | uniq -c | sed 's/^/  /'
+    )
+}
+
+step 'Staging the free build'
+stage_plugin "$FREE_STAGE"
+assert_no_forbidden_paths "$FREE_STAGE"
+[ ! -e "${FREE_STAGE}/pro" ] || abort 'the free stage somehow contains pro/.'
+report_stage "$FREE_STAGE" 'Free build'
+
+step 'Staging the pro build'
+stage_plugin "$PRO_STAGE"
+mkdir -p "${PRO_STAGE}/pro"
+cp -a "${ROOT}/pro/." "${PRO_STAGE}/pro/"
+find "${PRO_STAGE}/pro" -name '.gitkeep' -type f -delete
+assert_no_forbidden_paths "$PRO_STAGE"
+report_stage "$PRO_STAGE" 'Pro build'
+
+step 'Free/pro boundary check'
+bash "${SCRIPT_DIR}/check-free-boundary.sh" "$FREE_STAGE" "${ROOT}/apps" "${ROOT}/blocks"
+
+step 'Packaging'
+ZIP_DIR="${WORK_DIR}/zips"
+mkdir -p "$ZIP_DIR"
+
+( cd "${WORK_DIR}/free" && zip -qr "${ZIP_DIR}/${SLUG}.zip" "$SLUG" )
+( cd "${WORK_DIR}/pro" && zip -qr "${ZIP_DIR}/${SLUG}-pro.zip" "$SLUG" )
+
+for zip_file in "${ZIP_DIR}/${SLUG}.zip" "${ZIP_DIR}/${SLUG}-pro.zip"; do
+    printf '  %s (%s bytes)\n' "$( basename "$zip_file" )" "$( wc -c < "$zip_file" | tr -d ' ' )"
+done
+
+# The boundary check ran against the staged directory. Read the zips back so the
+# assertions also cover whatever packaging did to them.
+#
+# The listings are captured before being matched. Piping straight into `grep -q`
+# under `set -o pipefail` reports the pipeline as failed when grep matches and
+# closes the pipe early, which inverts both of these assertions.
+FREE_LISTING="$( unzip -Z1 "${ZIP_DIR}/${SLUG}.zip" )"
+PRO_LISTING="$( unzip -Z1 "${ZIP_DIR}/${SLUG}-pro.zip" )"
+
+if printf '%s\n' "$FREE_LISTING" | grep -q "^${SLUG}/pro/"; then
+    abort 'the packaged free zip contains pro/ paths.'
+fi
+
+if ! printf '%s\n' "$PRO_LISTING" | grep -q "^${SLUG}/lisensio-knowledge-base\.php$"; then
+    abort 'the packaged pro zip does not contain the plugin bootstrap.'
+fi
+
+if ! printf '%s\n' "$FREE_LISTING" | grep -q "^${SLUG}/lisensio-knowledge-base\.php$"; then
+    abort 'the packaged free zip does not contain the plugin bootstrap.'
+fi
+
+step 'Result'
+if [ "$DRY_RUN" -eq 1 ]; then
+    printf 'Dry run complete for version %s. Nothing was written to %s.\n' "$VERSION" "$OUTPUT_DIR"
+    exit 0
+fi
+
+mkdir -p "$OUTPUT_DIR"
+cp -a "${ZIP_DIR}/${SLUG}.zip" "${OUTPUT_DIR}/${SLUG}.zip"
+cp -a "${ZIP_DIR}/${SLUG}-pro.zip" "${OUTPUT_DIR}/${SLUG}-pro.zip"
+
+mkdir -p "${ROOT}/languages"
+cp -a "$POT_FILE" "${ROOT}/languages/${SLUG}.pot"
+
+printf 'Version %s built.\n' "$VERSION"
+printf '  %s/%s.zip\n' "$OUTPUT_DIR" "$SLUG"
+printf '  %s/%s-pro.zip\n' "$OUTPUT_DIR" "$SLUG"
+printf '  %s/languages/%s.pot refreshed\n' "$ROOT" "$SLUG"
