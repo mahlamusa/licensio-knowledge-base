@@ -25,6 +25,7 @@ $lisensio_kb_tag = get_queried_object();
         array(
             'title'    => single_term_title( '', false ),
             'subtitle' => $lisensio_kb_tag instanceof WP_Term ? $lisensio_kb_tag->description : '',
+            'search'   => true,
         )
     );
     ?>

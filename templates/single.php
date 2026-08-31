@@ -31,7 +31,10 @@ $lisensio_kb_hero_post = get_post();
     <?php
     lisensio_kb_get_template(
         'hero',
-        array( 'title' => $lisensio_kb_hero_post instanceof WP_Post ? get_the_title( $lisensio_kb_hero_post ) : '' )
+        array(
+            'title'  => $lisensio_kb_hero_post instanceof WP_Post ? get_the_title( $lisensio_kb_hero_post ) : '',
+            'search' => true,
+        )
     );
     ?>
 </div>

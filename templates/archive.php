@@ -85,19 +85,23 @@ $lisensio_kb_uncategorised = Lisensio_KB_Templates::uncategorised_articles();
 
 </div>
 
-<div class="lisensio-kb lisensio-kb--bleed">
-    <?php
-    /**
-     * Fires at the end of the knowledge base archive, inside its wrapper.
-     *
-     * The seam a theme attaches its own closing section to — a call to action
-     * band, a support link, a contact form. The plugin ships none of that
-     * itself: the copy would belong to one site rather than to every install.
-     *
-     * @since 1.0.0
-     */
-    do_action( 'lisensio_kb_after_archive' );
-    ?>
-</div>
+<?php
+/**
+ * Fires at the end of the knowledge base archive.
+ *
+ * The seam a theme attaches its own closing section to — a call to action
+ * band, a support link, a contact form. The plugin ships none of that itself:
+ * the copy would belong to one site rather than to every install.
+ *
+ * Fired outside every `.lisensio-kb` wrapper, deliberately. What a theme hangs
+ * here is the theme's own markup, and inside that wrapper it would inherit the
+ * plugin's link colour, focus ring and type — which is not a hypothetical:
+ * a theme button rendered inside it came out with `color: var(--lisensio-kb-brand)`
+ * over a brand-coloured background, green on green and unreadable.
+ *
+ * @since 1.0.0
+ */
+do_action( 'lisensio_kb_after_archive' );
+?>
 <?php
 get_footer();

@@ -650,6 +650,9 @@ class Lisensio_KB_Templates_Test extends Lisensio_KB_Test_Case {
         $this->stub_conditionals( 'single' );
         $this->stub_article( 42, $title );
 
+        // The hero now carries the search field, which reads the current query.
+        Functions\when( 'get_search_query' )->justReturn( '' );
+
         $remaining = 1;
 
         Functions\when( 'have_posts' )->alias(
