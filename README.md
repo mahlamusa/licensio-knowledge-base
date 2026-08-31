@@ -115,7 +115,7 @@ $slug = lisensio_kb()->settings()->get( 'article_slug' );   // 'docs'
 lisensio_kb()->settings()->set( 'analytics_retention_days', 30 );
 ```
 
-Unregistered keys are rejected. There is no admin UI here; that is #10.
+Unregistered keys are rejected. The admin UI is **Knowledge Base → Settings**, described below.
 
 Add your own with the `lisensio_settings_registry` filter. A registry entry is:
 
@@ -133,7 +133,31 @@ Add your own with the `lisensio_settings_registry` filter. A registry entry is:
 
 Changing a setting marked `flush_rewrites` records a request that `Lisensio_KB_Post_Types` honours late on `init`; you do not need to call `flush_rewrite_rules()` yourself, and you should not, because settings are written long before the permastructs are registered.
 
-`delete_data_on_uninstall` (default **false**) decides whether the four data tables are dropped when the plugin is deleted. The default preserves visitor-written feedback; #10 surfaces the toggle.
+`delete_data_on_uninstall` (default **false**) decides whether the four data tables are dropped when the plugin is deleted. The default preserves visitor-written feedback; the Privacy group on the settings screen surfaces the toggle.
+
+### Settings screen
+
+**Knowledge Base → Settings** is a Vue app (`apps/settings/`) over `GET`, `POST` and `DELETE /wp-json/lisensio-kb/v1/settings`, all three gated on `manage_lisensio_kb`. Every response carries the same three keys:
+
+| Key | What it is |
+|---|---|
+| `settings` | the current values, as `Lisensio_KB_Settings::all()` resolves them |
+| `defaults` | the registry defaults |
+| `schema` | the groups and fields the screen renders itself from |
+
+`POST` takes the values nested under one object — `{ "settings": { "brand_color": "#b91c1c" } }` — not as top-level parameters, because WordPress merges its own `_locale` and `context` into the request and a flat body could not tell those apart from a setting. `DELETE` deletes the option, which restores exactly whatever the registry declares, and raises the rewrite flag if a slug moved.
+
+**The write route is stricter than the store, deliberately.** `Lisensio_KB_Settings::update()` coerces: it skips a key it does not recognise, clamps a number outside its bounds and substitutes the default for a value its sanitizer rejects. That is right for a store reading an option somebody may have edited by hand, and wrong for an API, where storing something other than what was sent is indistinguishable from a bug. So the controller:
+
+- refuses an unknown key with a `400`, rather than dropping it and answering `200`;
+- refuses an out-of-range number rather than clamping it;
+- validates **every** field before writing **any**, so a payload with one bad value writes nothing at all and comes back with a message per failing field in `data.params`.
+
+Nothing in the controller knows the name of a setting. A key you add through `lisensio_settings_registry` is validated against its own declared `type`, `min`, `max` and `sanitize` with no change there.
+
+`Lisensio_KB_Settings_Schema` supplies the part the registry does not: a label, a description, a control and a group per key. A key it has never heard of still gets an editor — it falls into **General** with a control inferred from its type — so an extension is never stored-but-invisible. Filter `lisensio_settings_schema` to move it somewhere better.
+
+The Appearance group previews live against the same CSS custom properties `Lisensio_KB_Templates::custom_properties()` publishes on `.lisensio-kb`; the enumerated values come from the server so the preview cannot drift from the front end, and a unit test pins the two together.
 
 ### Visitor identity
 
@@ -305,6 +329,8 @@ It cannot be a module: module scripts are always deferred and execute after ever
 | `lisensio_before_template`, `lisensio_after_template` | action | Around a classic template include. |
 | `lisensio_autoload_paths` | filter | Extra directories for the class autoloader. |
 | `lisensio_settings_registry`, `lisensio_settings` | filter | Extend or override settings. |
+| `lisensio_settings_schema` | filter | The groups and fields the settings screen renders itself from. |
+| `lisensio_admin_menu_pages` | filter | Register a page under the Knowledge Base menu. |
 | `lisensio_article_post_type_args`, `lisensio_category_taxonomy_args`, `lisensio_tag_taxonomy_args` | filter | Content model registration arguments. |
 | `lisensio_supports_fulltext` | filter | Override the FULLTEXT capability probe. |
 | `lisensio_visitor_ip` | filter | Supply the client IP behind a trusted proxy. Hashed immediately, never stored. |
