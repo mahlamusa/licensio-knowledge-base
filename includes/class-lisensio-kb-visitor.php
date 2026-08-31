@@ -164,6 +164,44 @@ class Lisensio_KB_Visitor {
     }
 
     /**
+     * The identities the abuse controls key on, current salt first.
+     *
+     * Deliberately **not** `get_hashes()`. That identity includes the user
+     * agent, which is a request header the caller chooses, so a client that
+     * varies it mints a fresh identity on every request. That is harmless for
+     * counting distinct visitors — two browsers on one machine genuinely are
+     * two readers — but it is fatal for anything meant to *restrain* a caller:
+     * the rate limiter and the one-vote-per-article rule were both defeated by
+     * rotating a header, which was demonstrated by voting six times on one
+     * article from a single address.
+     *
+     * So the abuse controls key on the address alone. The tradeoff is real and
+     * chosen: readers sharing an address — an office, a school, carrier-grade
+     * NAT — now share one identity and one vote per article between them. That
+     * costs a handful of honest votes; the alternative costs the integrity of
+     * every rating on the site to anyone able to set a header.
+     *
+     * Still an HMAC under the rotating salt, so this changes what the identity
+     * is derived from and not the promise that no address is ever stored.
+     *
+     * @since 1.0.0
+     *
+     * @return string[] One or two 64-character hex digests, current salt first.
+     */
+    public function get_abuse_hashes() {
+        $salts    = $this->get_salts();
+        $ip       = $this->get_request_ip();
+        $hashes   = array( self::hash( $ip, '', $salts['current'] ) );
+        $previous = $salts['previous'];
+
+        if ( '' !== $previous ) {
+            $hashes[] = self::hash( $ip, '', $previous );
+        }
+
+        return $hashes;
+    }
+
+    /**
      * Hash an identity triple.
      *
      * Pure function: given the same inputs it always returns the same digest,

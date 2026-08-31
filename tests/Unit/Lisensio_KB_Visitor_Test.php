@@ -382,4 +382,95 @@ class Lisensio_KB_Visitor_Test extends Lisensio_KB_Test_Case {
         $this->assertStringNotContainsString( self::TEST_IP, $visitor->get_hash() );
         $this->assertMatchesRegularExpression( '/^[0-9a-f]{64}$/', $visitor->get_hash() );
     }
+    /**
+     * The abuse identity ignores the user agent.
+     *
+     * This is the whole point of the split. `get_hashes()` mixes in the user
+     * agent, which is a header the caller supplies, so a client that varies it
+     * mints a fresh identity per request. Anything meant to *restrain* a caller
+     * keyed on that is defeated by changing a header - as the rate limiter and
+     * the one-vote rule both were.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_abuse_identity_survives_a_rotating_user_agent() {
+        $visitor = new Lisensio_KB_Visitor();
+
+        $_SERVER['HTTP_USER_AGENT'] = 'Mozilla/5.0 (first)';
+        $first                      = $visitor->get_abuse_hashes();
+
+        $_SERVER['HTTP_USER_AGENT'] = 'Mozilla/5.0 (second, entirely different)';
+        $second                     = $visitor->get_abuse_hashes();
+
+        $_SERVER['HTTP_USER_AGENT'] = '';
+        $third                      = $visitor->get_abuse_hashes();
+
+        $this->assertSame( $first, $second, 'a changed user agent produced a new abuse identity' );
+        $this->assertSame( $first, $third, 'an emptied user agent produced a new abuse identity' );
+    }
+
+    /**
+     * A different address is still a different caller.
+     *
+     * The counterpart to the test above: an identity that ignored everything
+     * would also survive a rotating user agent, and would restrain the entire
+     * internet as one visitor.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_abuse_identity_still_separates_addresses() {
+        $visitor = new Lisensio_KB_Visitor();
+
+        $_SERVER['REMOTE_ADDR'] = '203.0.113.10';
+        $first                  = $visitor->get_abuse_hashes();
+
+        $_SERVER['REMOTE_ADDR'] = '203.0.113.11';
+        $second                 = $visitor->get_abuse_hashes();
+
+        $this->assertNotSame( $first, $second );
+    }
+
+    /**
+     * The analytics identity still counts two browsers as two readers.
+     *
+     * The split must not flatten analytics: for counting distinct visitors the
+     * user agent is a genuine signal, and two browsers on one machine really
+     * are two readers. Only the abuse controls give it up.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_analytics_identity_still_varies_with_the_user_agent() {
+        $visitor = new Lisensio_KB_Visitor();
+
+        $_SERVER['HTTP_USER_AGENT'] = 'Mozilla/5.0 (first)';
+        $first                      = $visitor->get_hashes();
+
+        $_SERVER['HTTP_USER_AGENT'] = 'Mozilla/5.0 (second)';
+        $second                     = $visitor->get_hashes();
+
+        $this->assertNotSame( $first, $second );
+    }
+
+    /**
+     * The abuse identity is not the analytics identity.
+     *
+     * Guards the split itself: if `get_abuse_hashes()` were ever quietly
+     * aliased back to `get_hashes()`, every test above would still pass on a
+     * request whose user agent happens not to change.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_two_identities_are_not_the_same_value() {
+        $visitor = new Lisensio_KB_Visitor();
+
+        $this->assertNotSame( $visitor->get_hashes(), $visitor->get_abuse_hashes() );
+    }
 }
