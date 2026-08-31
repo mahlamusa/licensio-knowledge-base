@@ -144,3 +144,72 @@ jobs:
 
       - name: End-to-end tests (Playwright)
         run: npm run test
+
+  release:
+    # Everything above proves the code is correct. This job proves the thing we
+    # actually ship is correct, which is a different question: the free artifact
+    # must contain no pro/ path and no SLSWC or WooCommerce symbol, the version
+    # must agree in all four places it is written, and every translatable string
+    # must carry the text domain.
+    name: Release artifacts
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+          # WP-CLI generates the .pot. bin/build-release.sh can fall back to
+          # downloading wp-cli.phar, but installing it here keeps the build off
+          # the network.
+          tools: composer:v2, wp-cli
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+
+      # Same reasoning as the js job: Node 22 bundles npm 10 and the lockfile is
+      # written by the npm named in packageManager, so both halves are pinned.
+      - name: Use the pinned npm
+        run: npm i -g "npm@$(node -p "require('./package.json').packageManager.split('@')[1]")"
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      # A gate that cannot fail is worse than no gate: it turns an unchecked
+      # assumption into a false assurance. This runs each release gate against
+      # fixtures that violate it and against fixtures that only look like they
+      # do, so a gate stuck green and a gate stuck red both fail here.
+      - name: Prove the release gates still fail on a violation
+        run: bash bin/check-gates-selftest.sh
+
+      # Runs the version, text domain and free/pro boundary gates against the
+      # real tree on the way to producing both zips.
+      - name: Build both release artifacts
+        run: bash bin/build-release.sh --output "${RUNNER_TEMP}/release"
+
+      # Costs nothing once dist/ exists, and is the only thing that proves
+      # --dry-run reports without writing.
+      - name: Dry run reports without publishing
+        run: |
+          bash bin/build-release.sh --dry-run --skip-build
+          if [ -e releases ]; then
+            echo "::error::--dry-run wrote into releases/."
+            exit 1
+          fi
+
+      - name: Upload the artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts
+          path: ${{ runner.temp }}/release/*.zip
+          if-no-files-found: error

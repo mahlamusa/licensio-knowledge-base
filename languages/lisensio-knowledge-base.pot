@@ -1,0 +1,1041 @@
+# Copyright (C) 2026 Lisensio
+# This file is distributed under the GPL-2.0-or-later.
+msgid ""
+msgstr ""
+"Project-Id-Version: Lisensio Knowledge Base 1.0.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/lisensio-knowledge-base\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-08-31T06:26:41+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.7.1\n"
+"X-Domain: lisensio-knowledge-base\n"
+
+#. Plugin Name of the plugin
+#: includes/class-lisensio-kb-lifecycle.php:72
+msgid "Lisensio Knowledge Base"
+msgstr ""
+
+#. Plugin URI of the plugin
+msgid "https://licenseserver.io/plugins/lisensio-knowledge-base"
+msgstr ""
+
+#. Description of the plugin
+msgid "A fast, standalone WordPress knowledge base with block-first authoring, relevant search and privacy-safe analytics."
+msgstr ""
+
+#. Author of the plugin
+msgid "Lisensio"
+msgstr ""
+
+#. Author URI of the plugin
+msgid "https://licenseserver.io"
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-admin-columns.php:106
+#: includes/class-lisensio-kb-post-types.php:202
+#: blocks/category-grid/index.js:45
+msgid "Categories"
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-admin-columns.php:107
+#: includes/class-lisensio-kb-post-types.php:249
+msgid "Tags"
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-admin-columns.php:108
+msgid "Views"
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-admin-columns.php:109
+msgid "Usefulness"
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-admin-columns.php:138
+msgid "Author"
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-analytics-admin.php:103
+msgid "Knowledge Base Analytics"
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-analytics-admin.php:104
+msgid "Analytics"
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-analytics-admin.php:121
+msgid "You are not allowed to view the knowledge base analytics."
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-analytics-admin.php:127
+msgid "Loading the knowledge base analytics…"
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-feedback-admin.php:91
+#: includes/admin/class-lisensio-kb-feedback-admin.php:172
+msgid "Knowledge Base Feedback"
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-feedback-admin.php:92
+msgid "Feedback"
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-feedback-admin.php:167
+#: includes/class-lisensio-kb-rest-controller.php:124
+msgid "You are not allowed to manage the knowledge base."
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-feedback-admin.php:174
+msgid "Loading feedback…"
+msgstr ""
+
+#. translators: 1: usefulness percentage, 2: total number of votes.
+#: includes/admin/class-lisensio-kb-feedback-admin.php:203
+msgid "%1$d%% (%2$d vote)"
+msgid_plural "%1$d%% (%2$d votes)"
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/admin/class-lisensio-kb-term-fields.php:98
+msgid "Select an image"
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-term-fields.php:99
+msgid "Use this image"
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-term-fields.php:161
+msgid "Icon"
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-term-fields.php:162
+msgid "Uploaded icon"
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-term-fields.php:163
+msgid "Image"
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-term-fields.php:164
+#: blocks/article-list/index.js:97
+#: blocks/category-grid/index.js:78
+#: blocks/faq/index.js:84
+msgid "Order"
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-term-fields.php:218
+msgid "A Dashicons name, for example dashicons-book-alt. Ignored when an icon is uploaded below."
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-term-fields.php:229
+msgid "An uploaded icon, for example an SVG. Takes precedence over the Dashicons name."
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-term-fields.php:234
+msgid "Shown on the category card and at the top of the category page."
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-term-fields.php:248
+msgid "Lower numbers appear first. Categories with the same order fall back to their name."
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-term-fields.php:287
+msgid "Select"
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-term-fields.php:288
+msgid "Remove"
+msgstr ""
+
+#: includes/class-lisensio-kb-analytics-privacy.php:78
+#: includes/class-lisensio-kb-analytics-privacy.php:98
+#: includes/class-lisensio-kb-blocks.php:164
+#: includes/class-lisensio-kb-templates.php:461
+msgid "Knowledge Base"
+msgstr ""
+
+#: includes/class-lisensio-kb-analytics-privacy.php:435
+msgid "Knowledge Base searches"
+msgstr ""
+
+#: includes/class-lisensio-kb-analytics-privacy.php:439
+msgid "Search term"
+msgstr ""
+
+#: includes/class-lisensio-kb-analytics-privacy.php:443
+msgid "Results returned"
+msgstr ""
+
+#: includes/class-lisensio-kb-analytics-privacy.php:447
+msgid "Source"
+msgstr ""
+
+#: includes/class-lisensio-kb-analytics-privacy.php:451
+#: includes/class-lisensio-kb-analytics-privacy.php:482
+#: includes/class-lisensio-kb-analytics-privacy.php:527
+msgid "Visitor identifier"
+msgstr ""
+
+#: includes/class-lisensio-kb-analytics-privacy.php:455
+#: includes/class-lisensio-kb-analytics-privacy.php:486
+#: includes/class-lisensio-kb-analytics-privacy.php:531
+msgid "Date"
+msgstr ""
+
+#: includes/class-lisensio-kb-analytics-privacy.php:474
+msgid "Knowledge Base article views"
+msgstr ""
+
+#: includes/class-lisensio-kb-analytics-privacy.php:478
+#: includes/class-lisensio-kb-analytics-privacy.php:509
+msgid "Article"
+msgstr ""
+
+#: includes/class-lisensio-kb-analytics-privacy.php:505
+msgid "Knowledge Base feedback"
+msgstr ""
+
+#: includes/class-lisensio-kb-analytics-privacy.php:513
+msgid "Vote"
+msgstr ""
+
+#: includes/class-lisensio-kb-analytics-privacy.php:515
+msgid "Helpful"
+msgstr ""
+
+#: includes/class-lisensio-kb-analytics-privacy.php:516
+msgid "Not helpful"
+msgstr ""
+
+#: includes/class-lisensio-kb-analytics-privacy.php:519
+msgid "Comment"
+msgstr ""
+
+#: includes/class-lisensio-kb-analytics-privacy.php:523
+msgid "Status"
+msgstr ""
+
+#: includes/class-lisensio-kb-block-templates.php:124
+msgid "Single Article"
+msgstr ""
+
+#: includes/class-lisensio-kb-block-templates.php:125
+msgid "Displays a single knowledge base article."
+msgstr ""
+
+#: includes/class-lisensio-kb-block-templates.php:128
+msgid "Article Archive"
+msgstr ""
+
+#: includes/class-lisensio-kb-block-templates.php:129
+msgid "Displays the knowledge base home, listing every published article."
+msgstr ""
+
+#: includes/class-lisensio-kb-block-templates.php:132
+msgid "Article Category"
+msgstr ""
+
+#: includes/class-lisensio-kb-block-templates.php:133
+msgid "Displays the articles filed under one knowledge base category."
+msgstr ""
+
+#: includes/class-lisensio-kb-block-templates.php:136
+msgid "Article Tag"
+msgstr ""
+
+#: includes/class-lisensio-kb-block-templates.php:137
+msgid "Displays the articles carrying one knowledge base tag."
+msgstr ""
+
+#: includes/class-lisensio-kb-block-templates.php:140
+msgid "Article Search Results"
+msgstr ""
+
+#: includes/class-lisensio-kb-block-templates.php:141
+msgid "Displays the results of a search scoped to knowledge base articles."
+msgstr ""
+
+#: includes/class-lisensio-kb-block-templates.php:156
+msgid "Knowledge Base Header"
+msgstr ""
+
+#: includes/class-lisensio-kb-block-templates.php:157
+msgid "Shown at the top of every knowledge base template. Edit it once to change them all."
+msgstr ""
+
+#: includes/class-lisensio-kb-feedback-widget.php:134
+#: includes/rest/class-lisensio-kb-feedback-rest-controller.php:320
+msgid "Thanks for your feedback."
+msgstr ""
+
+#: includes/class-lisensio-kb-feedback-widget.php:135
+#: includes/rest/class-lisensio-kb-feedback-rest-controller.php:321
+msgid "Thanks — your feedback helps us improve this article."
+msgstr ""
+
+#: includes/class-lisensio-kb-feedback-widget.php:136
+msgid "Sending your feedback…"
+msgstr ""
+
+#: includes/class-lisensio-kb-feedback-widget.php:137
+#: includes/rest/class-lisensio-kb-feedback-rest-controller.php:306
+msgid "Your feedback could not be saved. Please try again."
+msgstr ""
+
+#: includes/class-lisensio-kb-feedback-widget.php:138
+#: includes/rest/class-lisensio-kb-feedback-rest-controller.php:294
+msgid "You have already given feedback on this article."
+msgstr ""
+
+#. translators: 1: required PHP version, 2: running PHP version
+#: includes/class-lisensio-kb-lifecycle.php:294
+msgid "Lisensio Knowledge Base requires PHP %1$s or newer. This site runs PHP %2$s."
+msgstr ""
+
+#. translators: 1: required WordPress version, 2: running WordPress version
+#: includes/class-lisensio-kb-lifecycle.php:305
+msgid "Lisensio Knowledge Base requires WordPress %1$s or newer. This site runs WordPress %2$s."
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:122
+msgctxt "post type general name"
+msgid "Articles"
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:123
+msgctxt "post type singular name"
+msgid "Article"
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:124
+msgctxt "admin menu"
+msgid "Knowledge Base"
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:125
+msgctxt "add new on admin bar"
+msgid "Article"
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:126
+msgid "Add New"
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:127
+msgid "Add New Article"
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:128
+msgid "New Article"
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:129
+msgid "Edit Article"
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:130
+msgid "View Article"
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:131
+msgid "View Articles"
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:132
+msgid "All Articles"
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:133
+msgid "Search Articles"
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:134
+msgid "No articles found."
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:135
+msgid "No articles found in Trash."
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:136
+msgid "Article Archives"
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:137
+msgid "Article Image"
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:138
+msgid "Set article image"
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:139
+msgid "Remove article image"
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:140
+msgid "Use as article image"
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:141
+msgid "Article published."
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:142
+msgid "Article updated."
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:200
+msgctxt "taxonomy general name"
+msgid "Categories"
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:201
+msgctxt "taxonomy singular name"
+msgid "Category"
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:203
+msgid "All Categories"
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:204
+msgid "Parent Category"
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:205
+msgid "Parent Category:"
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:206
+msgid "Edit Category"
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:207
+msgid "Update Category"
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:208
+msgid "Add New Category"
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:209
+msgid "New Category Name"
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:210
+msgid "Search Categories"
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:211
+msgid "No categories found."
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:247
+msgctxt "taxonomy general name"
+msgid "Tags"
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:248
+msgctxt "taxonomy singular name"
+msgid "Tag"
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:250
+msgid "All Tags"
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:251
+msgid "Edit Tag"
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:252
+msgid "Update Tag"
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:253
+msgid "Add New Tag"
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:254
+msgid "New Tag Name"
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:255
+msgid "Search Tags"
+msgstr ""
+
+#: includes/class-lisensio-kb-post-types.php:256
+msgid "No tags found."
+msgstr ""
+
+#: includes/class-lisensio-kb-rest-analytics-controller.php:84
+msgid "Range start date, as YYYY-MM-DD."
+msgstr ""
+
+#: includes/class-lisensio-kb-rest-analytics-controller.php:90
+msgid "Range end date, as YYYY-MM-DD."
+msgstr ""
+
+#: includes/class-lisensio-kb-rest-analytics-controller.php:96
+msgid "Length of the reporting window in days, counted back from today. Ignored when start and end are given."
+msgstr ""
+
+#: includes/class-lisensio-kb-rest-analytics-controller.php:104
+msgid "How many rows each ranked list returns."
+msgstr ""
+
+#. translators: %d: article ID.
+#: includes/class-lisensio-kb-rest-analytics-controller.php:337
+msgid "Article #%d"
+msgstr ""
+
+#: includes/class-lisensio-kb-rest-controller.php:94
+msgid "Your session has expired. Reload the page and try again."
+msgstr ""
+
+#: includes/class-lisensio-kb-rest-controller.php:179
+msgid "Too many requests. Please wait a moment and try again."
+msgstr ""
+
+#. translators: %s: REST route path
+#: includes/class-lisensio-kb-rest-controller.php:220
+msgid "The %s endpoint is registered but not yet implemented."
+msgstr ""
+
+#: includes/class-lisensio-kb-search-block.php:190
+msgid "Search the knowledge base…"
+msgstr ""
+
+#: includes/class-lisensio-kb-search-block.php:191
+#: templates/archive.php:27
+#: templates/archive.php:35
+#: templates/search-results.php:34
+#: templates/search-results.php:42
+msgid "Search the knowledge base"
+msgstr ""
+
+#: includes/class-lisensio-kb-search-block.php:192
+#: templates/archive.php:38
+#: templates/search-results.php:45
+#: blocks/search/index.js:41
+msgid "Search"
+msgstr ""
+
+#: includes/class-lisensio-kb-search-block.php:299
+msgid "No articles found. Press Enter to search the whole knowledge base."
+msgstr ""
+
+#: includes/class-lisensio-kb-search-block.php:300
+msgid "Search is unavailable right now. Press Enter to try the full results page."
+msgstr ""
+
+#. translators: %d: number of matching articles
+#: includes/class-lisensio-kb-search-block.php:302
+msgid "%d articles found. Use the up and down arrow keys to review them."
+msgstr ""
+
+#: includes/class-lisensio-kb-search-block.php:303
+msgid "1 article found. Use the up and down arrow keys to review it."
+msgstr ""
+
+#: includes/class-lisensio-kb-search-cli.php:91
+msgid "Search index emptied."
+msgstr ""
+
+#. translators: %d: number of articles processed so far
+#: includes/class-lisensio-kb-search-cli.php:101
+msgid "Processed %d articles…"
+msgstr ""
+
+#. translators: 1: number of articles processed, 2: number of indexed rows, 3: elapsed seconds
+#: includes/class-lisensio-kb-search-cli.php:111
+msgid "Reindexed %1$d articles into %2$d index rows in %3$s seconds."
+msgstr ""
+
+#: includes/class-lisensio-kb-templates.php:452
+msgid "Home"
+msgstr ""
+
+#. translators: %s: the search term.
+#: includes/class-lisensio-kb-templates.php:488
+#: templates/search-results.php:26
+msgid "Search results for “%s”"
+msgstr ""
+
+#: includes/class-lisensio-kb-term-meta.php:114
+msgid "Dashicon name used as the category icon."
+msgstr ""
+
+#: includes/class-lisensio-kb-term-meta.php:123
+msgid "Attachment ID of an uploaded category icon."
+msgstr ""
+
+#: includes/class-lisensio-kb-term-meta.php:132
+msgid "Attachment ID of the category image."
+msgstr ""
+
+#: includes/class-lisensio-kb-term-meta.php:141
+msgid "Manual sort order of the category."
+msgstr ""
+
+#: includes/class-lisensio-kb.php:302
+msgid "Lisensio Knowledge Base is missing its bundled database library, so its tables cannot be created. Reinstall the plugin, or run \"composer install\" in the plugin directory."
+msgstr ""
+
+#: includes/rest/class-lisensio-kb-feedback-rest-controller.php:152
+msgid "The article being voted on."
+msgstr ""
+
+#: includes/rest/class-lisensio-kb-feedback-rest-controller.php:158
+msgid "One for helpful, minus one for not helpful."
+msgstr ""
+
+#: includes/rest/class-lisensio-kb-feedback-rest-controller.php:163
+msgid "An optional comment offered with a negative vote."
+msgstr ""
+
+#: includes/rest/class-lisensio-kb-feedback-rest-controller.php:264
+msgid "Article feedback is turned off on this site."
+msgstr ""
+
+#: includes/rest/class-lisensio-kb-feedback-rest-controller.php:275
+msgid "A vote must be either helpful or not helpful."
+msgstr ""
+
+#: includes/rest/class-lisensio-kb-feedback-rest-controller.php:283
+msgid "That article could not be found."
+msgstr ""
+
+#: includes/rest/class-lisensio-kb-feedback-rest-controller.php:377
+msgid "That is not a feedback status."
+msgstr ""
+
+#: includes/rest/class-lisensio-kb-feedback-rest-controller.php:387
+msgid "That feedback entry could not be found."
+msgstr ""
+
+#: includes/rest/class-lisensio-kb-feedback-rest-controller.php:395
+msgid "That feedback entry could not be updated."
+msgstr ""
+
+#: includes/rest/class-lisensio-kb-rest-search-controller.php:126
+msgid "The text to search for."
+msgstr ""
+
+#: includes/rest/class-lisensio-kb-rest-search-controller.php:132
+msgid "Which page of results to return."
+msgstr ""
+
+#: includes/rest/class-lisensio-kb-rest-search-controller.php:138
+msgid "How many results to return per page."
+msgstr ""
+
+#: includes/rest/class-lisensio-kb-rest-search-controller.php:145
+msgid "Where the search was made from."
+msgstr ""
+
+#: includes/rest/class-lisensio-kb-rest-search-controller.php:171
+msgid "The article ID."
+msgstr ""
+
+#: includes/rest/class-lisensio-kb-rest-search-controller.php:176
+msgid "The article title."
+msgstr ""
+
+#: includes/rest/class-lisensio-kb-rest-search-controller.php:181
+msgid "A short plain-text summary of the article."
+msgstr ""
+
+#: includes/rest/class-lisensio-kb-rest-search-controller.php:186
+msgid "The article permalink."
+msgstr ""
+
+#: includes/rest/class-lisensio-kb-rest-search-controller.php:192
+msgid "The article primary category."
+msgstr ""
+
+#: includes/rest/class-lisensio-kb-rest-search-controller.php:197
+msgid "An extract around the match, with the matched words wrapped in mark tags."
+msgstr ""
+
+#: templates/archive.php:52
+msgid "Latest articles"
+msgstr ""
+
+#: templates/archive.php:71
+msgid "The knowledge base is empty"
+msgstr ""
+
+#: templates/archive.php:72
+msgid "No articles have been published yet."
+msgstr ""
+
+#: templates/article-list.php:32
+msgid "No articles found"
+msgstr ""
+
+#: templates/article-list.php:33
+#: templates/faq.php:31
+msgid "Nothing has been published here yet."
+msgstr ""
+
+#: templates/breadcrumbs.php:25
+msgid "Breadcrumb"
+msgstr ""
+
+#. translators: %s: number of articles.
+#: templates/category-card.php:72
+msgid "%s article"
+msgid_plural "%s articles"
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/category-grid.php:36
+msgid "No categories found"
+msgstr ""
+
+#: templates/category-grid.php:37
+msgid "Nothing has been filed here yet."
+msgstr ""
+
+#: templates/faq.php:30
+msgid "No questions found"
+msgstr ""
+
+#: templates/faq.php:60
+msgid "Read the full article"
+msgstr ""
+
+#: templates/feedback-form.php:40
+msgid "Was this article helpful?"
+msgstr ""
+
+#: templates/feedback-form.php:49
+msgid "Yes"
+msgstr ""
+
+#: templates/feedback-form.php:56
+msgid "No"
+msgstr ""
+
+#: templates/feedback-form.php:65
+msgid "What could we improve? (optional)"
+msgstr ""
+
+#: templates/feedback-form.php:75
+msgid "Send feedback"
+msgstr ""
+
+#. translators: 1: usefulness percentage, 2: total number of votes.
+#: templates/feedback-form.php:86
+msgid "%1$d%% of %2$d reader found this helpful."
+msgid_plural "%1$d%% of %2$d readers found this helpful."
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/no-results.php:21
+msgid "Nothing here yet"
+msgstr ""
+
+#: templates/search-results.php:66
+msgid "No articles matched that search"
+msgstr ""
+
+#: templates/search-results.php:67
+msgid "Try a different wording, or browse the categories."
+msgstr ""
+
+#. translators: %s: the date the article was last updated.
+#: templates/single.php:41
+msgid "Last updated on %s"
+msgstr ""
+
+#: templates/single.php:59
+msgid "Tagged:"
+msgstr ""
+
+#: templates/taxonomy-category.php:33
+msgid "Sub-categories"
+msgstr ""
+
+#: templates/taxonomy-category.php:53
+#: blocks/article-list/index.js:51
+#: blocks/article-list/index.js:119
+msgid "Articles"
+msgstr ""
+
+#: templates/taxonomy-category.php:72
+msgid "No articles in this category yet"
+msgstr ""
+
+#: templates/taxonomy-category.php:73
+msgid "Try another category, or search the knowledge base."
+msgstr ""
+
+#. translators: %s: the tag name.
+#: templates/taxonomy-tag.php:26
+msgid "Articles tagged %s"
+msgstr ""
+
+#: templates/taxonomy-tag.php:54
+msgid "No articles carry this tag yet"
+msgstr ""
+
+#: templates/taxonomy-tag.php:55
+msgid "Try another tag, or search the knowledge base."
+msgstr ""
+
+#: blocks/article-list/index.js:44
+#: blocks/faq/index.js:38
+msgid "All categories"
+msgstr ""
+
+#: blocks/article-list/index.js:55
+#: blocks/faq/index.js:49
+msgid "Category"
+msgstr ""
+
+#: blocks/article-list/index.js:64
+#: blocks/category-grid/index.js:59
+#: blocks/faq/index.js:58
+msgid "Order by"
+msgstr ""
+
+#: blocks/article-list/index.js:68
+#: blocks/faq/index.js:69
+msgid "Published date"
+msgstr ""
+
+#: blocks/article-list/index.js:75
+msgid "Last modified"
+msgstr ""
+
+#: blocks/article-list/index.js:82
+#: blocks/faq/index.js:76
+msgid "Title"
+msgstr ""
+
+#: blocks/article-list/index.js:86
+#: blocks/faq/index.js:62
+msgid "Manual order"
+msgstr ""
+
+#: blocks/article-list/index.js:101
+#: blocks/category-grid/index.js:89
+#: blocks/faq/index.js:95
+msgid "Descending"
+msgstr ""
+
+#: blocks/article-list/index.js:108
+#: blocks/category-grid/index.js:82
+#: blocks/faq/index.js:88
+msgid "Ascending"
+msgstr ""
+
+#: blocks/article-list/index.js:127
+#: blocks/category-grid/index.js:111
+msgid "Columns"
+msgstr ""
+
+#: blocks/article-list/index.js:135
+msgid "Show excerpts"
+msgstr ""
+
+#: blocks/breadcrumbs/index.js:38
+msgid "Breadcrumbs"
+msgstr ""
+
+#: blocks/breadcrumbs/index.js:42
+msgid "Show the home link"
+msgstr ""
+
+#: blocks/breadcrumbs/index.js:46
+msgid "Start the trail at the site home rather than at the knowledge base."
+msgstr ""
+
+#: blocks/category-grid/index.js:38
+msgid "Top level"
+msgstr ""
+
+#: blocks/category-grid/index.js:49
+msgid "Show children of"
+msgstr ""
+
+#: blocks/category-grid/index.js:63
+msgid "Name"
+msgstr ""
+
+#: blocks/category-grid/index.js:67
+msgid "Article count"
+msgstr ""
+
+#: blocks/category-grid/index.js:100
+msgid "Categories (0 for all)"
+msgstr ""
+
+#: blocks/category-grid/index.js:119
+msgid "Show article counts"
+msgstr ""
+
+#: blocks/category-grid/index.js:130
+msgid "Show icons"
+msgstr ""
+
+#: blocks/category-grid/index.js:138
+msgid "Show sub-categories"
+msgstr ""
+
+#: blocks/faq/index.js:45
+#: blocks/faq/index.js:106
+msgid "Questions"
+msgstr ""
+
+#: blocks/faq/index.js:114
+msgid "Show answers"
+msgstr ""
+
+#: blocks/faq/index.js:118
+msgid "Use the article excerpt as the answer."
+msgstr ""
+
+#: blocks/faq/index.js:129
+msgid "Open the first question"
+msgstr ""
+
+#: blocks/search/index.js:44
+msgid "Placeholder"
+msgstr ""
+
+#: blocks/search/index.js:52
+msgid "Accessible label"
+msgstr ""
+
+#: blocks/search/index.js:56
+msgid "Announced to screen readers. Not shown on screen."
+msgstr ""
+
+#: blocks/search/index.js:65
+msgid "Button text"
+msgstr ""
+
+#: blocks/article-list/block.json
+msgctxt "block title"
+msgid "Knowledge Base Articles"
+msgstr ""
+
+#: blocks/article-list/block.json
+msgctxt "block description"
+msgid "A list of knowledge base articles, optionally filtered to one category."
+msgstr ""
+
+#: blocks/article-list/block.json
+#: blocks/breadcrumbs/block.json
+#: blocks/category-grid/block.json
+#: blocks/faq/block.json
+#: blocks/search/block.json
+msgctxt "block keyword"
+msgid "knowledge base"
+msgstr ""
+
+#: blocks/article-list/block.json
+msgctxt "block keyword"
+msgid "articles"
+msgstr ""
+
+#: blocks/article-list/block.json
+#: blocks/category-grid/block.json
+#: blocks/search/block.json
+msgctxt "block keyword"
+msgid "documentation"
+msgstr ""
+
+#: blocks/article-list/block.json
+#: blocks/category-grid/block.json
+#: blocks/search/block.json
+msgctxt "block keyword"
+msgid "help"
+msgstr ""
+
+#: blocks/breadcrumbs/block.json
+msgctxt "block title"
+msgid "Knowledge Base Breadcrumbs"
+msgstr ""
+
+#: blocks/breadcrumbs/block.json
+msgctxt "block description"
+msgid "The trail from the site home down to the article or category being viewed."
+msgstr ""
+
+#: blocks/breadcrumbs/block.json
+msgctxt "block keyword"
+msgid "breadcrumbs"
+msgstr ""
+
+#: blocks/breadcrumbs/block.json
+msgctxt "block keyword"
+msgid "navigation"
+msgstr ""
+
+#: blocks/breadcrumbs/block.json
+msgctxt "block keyword"
+msgid "trail"
+msgstr ""
+
+#: blocks/category-grid/block.json
+msgctxt "block title"
+msgid "Knowledge Base Categories"
+msgstr ""
+
+#: blocks/category-grid/block.json
+msgctxt "block description"
+msgid "A grid of knowledge base categories with their article counts."
+msgstr ""
+
+#: blocks/category-grid/block.json
+msgctxt "block keyword"
+msgid "categories"
+msgstr ""
+
+#: blocks/faq/block.json
+msgctxt "block title"
+msgid "Knowledge Base FAQ"
+msgstr ""
+
+#: blocks/faq/block.json
+msgctxt "block description"
+msgid "Knowledge base articles as an expandable list of questions and answers."
+msgstr ""
+
+#: blocks/faq/block.json
+msgctxt "block keyword"
+msgid "faq"
+msgstr ""
+
+#: blocks/faq/block.json
+msgctxt "block keyword"
+msgid "questions"
+msgstr ""
+
+#: blocks/faq/block.json
+msgctxt "block keyword"
+msgid "accordion"
+msgstr ""
+
+#: blocks/search/block.json
+msgctxt "block title"
+msgid "Knowledge Base Search"
+msgstr ""
+
+#: blocks/search/block.json
+msgctxt "block description"
+msgid "An instant search box for the knowledge base, with keyboard-navigable suggestions."
+msgstr ""
+
+#: blocks/search/block.json
+msgctxt "block keyword"
+msgid "search"
+msgstr ""

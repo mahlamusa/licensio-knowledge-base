@@ -57,6 +57,43 @@ define( 'HMR_DEV', 'lisensio-kb' );
 
 `Lisensio_KB_Assets` only uses the dev server when that constant matches **and** the port answers, so a forgotten constant falls back to the built assets rather than blanking the screen.
 
+### Building a release
+
+```bash
+bin/build-release.sh --dry-run   # build, verify, print both manifests, discard
+bin/build-release.sh             # the same, but write the zips into releases/
+```
+
+One command produces both artifacts from a clean checkout:
+
+| Artifact | Contents |
+|---|---|
+| `lisensio-knowledge-base.zip` | the free plugin; no `pro/` path anywhere in it |
+| `lisensio-knowledge-base-pro.zip` | the same tree plus `pro/` |
+
+Both run the production Vite and `wp-scripts` builds first and ship compiled `dist/` output only. `libraries/` ships in both — it is the Strauss-prefixed StellarWP DB and the plugin cannot run without it.
+
+The staged tree is assembled from an **allowlist** (`SHIP_PATHS` in the script), not by pruning a copy of the repository. An exclude list ships whatever it has not heard of yet; an allowlist fails in the safe direction. Nothing under `tools/` or `tests/`, no sources, no `node_modules` and no dev config reaches either zip, and a second assertion re-checks that after staging.
+
+`bin/build-release.sh` requires `php`, `zip`, `unzip`, `npm` and WP-CLI. WP-CLI is used only to generate `languages/lisensio-knowledge-base.pot`; if it is not on `PATH` the script downloads `wp-cli.phar` into `.tmp/`, or you can point `WP_CLI_BIN` at your own.
+
+### Release gates
+
+The build refuses to package when any of these fails, and CI runs all of them in the `release` job.
+
+| Gate | What it asserts |
+|---|---|
+| `bin/check-versions.sh` | the version is identical in the plugin header, `LISENSIO_KB_VERSION`, `readme.txt`'s `Stable tag` and `package.json`, and that the readme's `Requires at least` and `Requires PHP` match the plugin header |
+| `bin/check-i18n.sh` | no PHP translation call is missing the `lisensio-knowledge-base` text domain or carries another one, and `.eslintrc.json` still pins the JS rule |
+| `bin/check-free-boundary.sh` | the free artifact contains no `pro/` path and no SLSWC or WooCommerce symbol |
+| `bin/check-gates-selftest.sh` | each of the three gates above still goes red on a violation, and still goes green on something that only looks like one |
+
+The boundary check is about **symbols**, not prose. Two shipped files name WooCommerce in a comment and must keep doing so, so PHP is run through `bin/php-code-only.php` — PHP's own tokeniser, not a regex — and the patterns are matched against the code that is left. Files under `dist/` are minified: a minifier mints identifiers like `wC(` and `WC_a`, so bundles are matched against the long tokens (`slswc`, `woocommerce`, `wcSettings`, `wc/v1`) only. The hole that would open there — a WooCommerce call written in `apps/` or `blocks/` and only ever shipped minified — is closed by scanning those source directories with the full pattern set even though they are not themselves shipped.
+
+There is no per-line exemption marker. `readme.txt` therefore answers *"Does this require any other plugin?"* rather than naming the plugin it does not require: a legitimate free-side mention has to be an argued change to the pattern list, reviewed like any other.
+
+The JavaScript half of the text-domain rule lives in `.eslintrc.json` and runs under `npm run lint:js`. `@wordpress/eslint-plugin` enables `@wordpress/i18n-text-domain` by default but leaves `allowedTextDomain` unset, and with no domains configured the rule reads a missing domain as WordPress core's and says nothing. Pinning it is what makes the rule do anything, which is why `bin/check-i18n.sh` asserts the pin is still there.
+
 ---
 
 ## Repository layout
@@ -64,8 +101,11 @@ define( 'HMR_DEV', 'lisensio-kb' );
 ```
 lisensio-knowledge-base.php  bootstrap, constants, lifecycle hooks
 uninstall.php                drops tables and options
+readme.txt                   the wordpress.org listing        (#11)
 includes/                    class-lisensio-kb-*.php and the function files
 libraries/                   Strauss-prefixed vendor code (committed)
+languages/                   lisensio-knowledge-base.pot, regenerated on release
+bin/                         Strauss wrapper, the release build and its gates (#11); never shipped
 templates/                   classic PHP templates          (#5)
 block-templates/             block theme templates          (#6)
 blocks/                      wp-scripts block sources       (#7)
