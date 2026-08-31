@@ -13,16 +13,16 @@
  */
 
 .lisensio-kb-search {
-	--lisensio-kb-search-radius: var( --lisensio-kb-radius, 0.5rem );
-	--lisensio-kb-search-border: var( --lisensio-kb-line, rgba( 15, 23, 42, 0.12 ) );
+	--lisensio-kb-search-radius: var( --lisensio-kb-radius, 18px );
+	--lisensio-kb-search-border: var( --lisensio-kb-line, #dcefe4 );
 	--lisensio-kb-search-surface: var( --lisensio-kb-surface, #fff );
-	--lisensio-kb-search-text: var( --lisensio-kb-text, #1f2937 );
-	--lisensio-kb-search-muted: var( --lisensio-kb-muted, #6b7280 );
-	--lisensio-kb-search-accent: var( --lisensio-kb-brand, #2563eb );
+	--lisensio-kb-search-text: var( --lisensio-kb-text, #10231b );
+	--lisensio-kb-search-muted: var( --lisensio-kb-muted, #8b86a0 );
+	--lisensio-kb-search-accent: var( --lisensio-kb-brand, #2ba377 );
 	--lisensio-kb-search-on-accent: var( --lisensio-kb-brand-contrast, #fff );
 	--lisensio-kb-search-tint: var(
 		--lisensio-kb-tint,
-		rgba( var( --lisensio-kb-brand-rgb, 37, 99, 235 ), 0.08 )
+		rgba( var( --lisensio-kb-brand-rgb, 43, 163, 119 ), 0.08 )
 	);
 	--lisensio-kb-search-highlight: #fff3cd;
 

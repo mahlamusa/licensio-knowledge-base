@@ -416,6 +416,211 @@ class Lisensio_KB_Templates_Test extends Lisensio_KB_Test_Case {
     }
 
     /**
+     * The archive hero paints the last word of its heading, and only that word.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_archive_hero_accents_the_last_word_of_the_title() {
+        $markup = $this->render_archive( 'Lisensio Documentation' );
+
+        $this->assertStringContainsString( '<header class="lisensio-kb__hero">', $markup );
+        $this->assertStringContainsString( 'Lisensio', $markup );
+        $this->assertStringContainsString(
+            '<span class="lisensio-kb__title-accent">Documentation</span>',
+            $markup
+        );
+    }
+
+    /**
+     * A one-word archive title is accented whole rather than dropped.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_one_word_archive_title_is_accented_whole() {
+        $markup = $this->render_archive( 'Documentation' );
+
+        $this->assertStringContainsString(
+            '<span class="lisensio-kb__title-accent">Documentation</span>',
+            $markup
+        );
+    }
+
+    /**
+     * The archive title reaches the page escaped, both halves of it.
+     *
+     * The heading is now built from two pieces, so the escaping has to be
+     * asserted on both: escaping only the accented word would leave the lead
+     * words as an injection point.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_archive_escapes_both_halves_of_the_title() {
+        $markup = $this->render_archive( '<script>alert(1)</script> <img onerror=x>' );
+
+        $this->assertStringNotContainsString( '<script>', $markup );
+        $this->assertStringNotContainsString( '<img', $markup );
+        $this->assertStringContainsString( '&lt;script&gt;', $markup );
+        $this->assertStringContainsString( '&lt;img', $markup );
+    }
+
+    /**
+     * The archive lays its categories out in three columns.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_archive_grid_asks_for_three_columns() {
+        $markup = $this->render_archive();
+
+        $this->assertStringContainsString(
+            '<div class="lisensio-kb__grid lisensio-kb__grid--cols-3">',
+            $markup
+        );
+    }
+
+    /**
+     * Each archive card carries its category's articles and its icon.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_archive_cards_list_their_articles_and_show_their_icons() {
+        $markup = $this->render_archive();
+
+        $this->assertStringContainsString( 'lisensio-kb-card__articles', $markup );
+        $this->assertStringContainsString(
+            '<a class="lisensio-kb-card__article-link" href="https://example.test/docs/article-7/">',
+            $markup
+        );
+        $this->assertStringContainsString( 'Quick start', $markup );
+        $this->assertStringContainsString( 'dashicons dashicons-sos', $markup );
+    }
+
+    /**
+     * Render templates/archive.php against one category holding one article.
+     *
+     * @since 1.0.0
+     *
+     * @param string $title The post type archive title.
+     *
+     * @return string The rendered markup.
+     */
+    private function render_archive( $title = 'Knowledge Base' ) {
+        $this->stub_conditionals( 'archive' );
+
+        $term = new WP_Term(
+            array(
+                'term_id'     => 5,
+                'name'        => 'Getting started',
+                'slug'        => 'getting-started',
+                'taxonomy'    => Lisensio_KB_Post_Types::TAXONOMY_CATEGORY,
+                'count'       => 1,
+                'description' => 'From purchase to first licensed sale.',
+            )
+        );
+
+        $article = new WP_Post(
+            array(
+                'ID'         => 7,
+                'post_title' => 'Quick start',
+                'post_type'  => Lisensio_KB_Post_Types::POST_TYPE,
+            )
+        );
+
+        Functions\when( 'get_terms' )->alias(
+            function ( $args = array() ) use ( $term ) {
+                return isset( $args['child_of'] ) || 0 !== (int) $args['parent'] ? array() : array( $term );
+            }
+        );
+
+        Functions\when( 'get_term' )->alias(
+            function ( $value ) use ( $term ) {
+                return $value instanceof WP_Term ? $value : $term;
+            }
+        );
+
+        Functions\when( 'get_term_link' )->justReturn( 'https://example.test/docs-category/getting-started/' );
+        Functions\when( 'get_term_meta' )->alias(
+            function ( $term_id, $key, $single = false ) {
+                unset( $term_id, $single );
+
+                return 'lisensio_icon' === $key ? 'dashicons-sos' : '';
+            }
+        );
+
+        Functions\when( 'get_posts' )->justReturn( array( $article ) );
+        Functions\when( 'get_permalink' )->alias(
+            function ( $post ) {
+                return $post instanceof WP_Post ? 'https://example.test/docs/article-' . $post->ID . '/' : '';
+            }
+        );
+        Functions\when( 'get_the_title' )->alias(
+            function ( $post ) {
+                return $post instanceof WP_Post ? $post->post_title : '';
+            }
+        );
+
+        Functions\when( 'post_type_archive_title' )->justReturn( $title );
+        Functions\when( 'get_search_query' )->justReturn( '' );
+        Functions\when( 'have_posts' )->justReturn( false );
+        Functions\when( 'get_header' )->justReturn( null );
+        Functions\when( 'get_footer' )->justReturn( null );
+
+        ob_start();
+
+        include $this->plugin_template( 'archive' );
+
+        return (string) ob_get_clean();
+    }
+
+    /**
+     * A title with no space is returned whole as the accented half.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_split_title_accents_a_single_word_whole() {
+        $this->assertSame( array( '', 'Documentation' ), Lisensio_KB_Templates::split_title( 'Documentation' ) );
+    }
+
+    /**
+     * A multi-word title is split at its last space.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_split_title_splits_at_the_last_space() {
+        $this->assertSame(
+            array( 'The Lisensio', 'Documentation' ),
+            Lisensio_KB_Templates::split_title( 'The Lisensio Documentation' )
+        );
+    }
+
+    /**
+     * Surrounding and doubled whitespace does not produce an empty accent.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_split_title_ignores_surrounding_whitespace() {
+        $this->assertSame(
+            array( 'Lisensio', 'Docs' ),
+            Lisensio_KB_Templates::split_title( '  Lisensio  Docs  ' )
+        );
+    }
+
+    /**
      * Render templates/single.php against a one-post loop.
      *
      * @since 1.0.0
@@ -877,13 +1082,89 @@ class Lisensio_KB_Templates_Test extends Lisensio_KB_Test_Case {
         $properties = $templates->custom_properties();
         $css        = $templates->inline_css();
 
-        $this->assertSame( '#2563eb', $properties['--lisensio-kb-brand'] );
+        $this->assertSame( '#2ba377', $properties['--lisensio-kb-brand'] );
         $this->assertSame( '72rem', $properties['--lisensio-kb-max-width'] );
-        $this->assertSame( '0 1px 2px rgba(15,23,42,0.06), 0 8px 24px rgba(15,23,42,0.06)', $properties['--lisensio-kb-card-shadow'] );
+        $this->assertSame( '0 4px 14px rgba(30,122,90,0.08)', $properties['--lisensio-kb-card-shadow'] );
 
         $this->assertStringNotContainsString( 'evil.test', $css );
         $this->assertStringNotContainsString( '}body{', $css );
         $this->assertStringNotContainsString( '</style>', $css );
+    }
+
+    /**
+     * The last-resort brand colour is the Lisensio green, not a stray blue.
+     *
+     * The registered default is what a real settings store hands back, so the
+     * literal in the template layer is only reached by a store that does not
+     * declare one at all. That makes it the one value nothing else can correct,
+     * and the one place a stale colour could sit unnoticed.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_last_resort_brand_colour_is_the_lisensio_green() {
+        $templates = new Lisensio_KB_Templates( new Lisensio_KB_Defaultless_Settings() );
+
+        $properties = $templates->custom_properties();
+
+        $this->assertSame( '#2ba377', $properties['--lisensio-kb-brand'] );
+        $this->assertSame( '43,163,119', $properties['--lisensio-kb-brand-rgb'] );
+    }
+
+    /**
+     * A colour that is not a colour still resolves to the Lisensio green.
+     *
+     * `custom_properties()` validates before it splits, so this fallback is only
+     * reached by a direct call — which is exactly why it is the sort of value
+     * that goes stale unnoticed.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_unusable_hex_falls_back_to_the_lisensio_green() {
+        $this->assertSame( array( 43, 163, 119 ), Lisensio_KB_Templates::hex_to_rgb( 'not-a-colour' ) );
+        $this->assertSame( array( 43, 163, 119 ), Lisensio_KB_Templates::hex_to_rgb( '' ) );
+        $this->assertSame( array( 43, 163, 119 ), Lisensio_KB_Templates::hex_to_rgb( '#2ba3' ) );
+    }
+}
+
+/**
+ * A settings store that declares no defaults at all.
+ *
+ * Every fallback in the template layer is written against a missing registered
+ * default, and a store that has one hides all of them.
+ *
+ * @since 1.0.0
+ */
+class Lisensio_KB_Defaultless_Settings extends Lisensio_KB_Settings {
+
+    /**
+     * No registered defaults.
+     *
+     * @since 1.0.0
+     *
+     * @return array<string, mixed> An empty set.
+     */
+    public function defaults() {
+        return array();
+    }
+
+    /**
+     * No stored values either.
+     *
+     * @since 1.0.0
+     *
+     * @param string $key      The setting name.
+     * @param mixed  $fallback Value returned for a setting this double does not fake.
+     *
+     * @return mixed An empty string, so every value falls through to a default.
+     */
+    public function get( $key, $fallback = null ) {
+        unset( $key, $fallback );
+
+        return '';
     }
 }
 
