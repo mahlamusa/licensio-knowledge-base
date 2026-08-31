@@ -383,4 +383,53 @@ class Lisensio_KB_Search_Index_Test extends Lisensio_KB_Test_Case {
 
         $this->assertArrayNotHasKey( Lisensio_KB_Search_Index::STATE_OPTION, $this->options );
     }
+    /**
+     * Encoded markup does not survive as markup.
+     *
+     * `plain_text()` used to strip tags and *then* decode entities, so text
+     * that merely looked like markup came back as markup - the strip had
+     * already run and had nothing left to remove. A method named for plain
+     * text handing back a live `script` element is wrong on its own terms,
+     * whether or not a caller happens to print it today.
+     *
+     * Asserted on the absence of the delimiters rather than of the word
+     * `script`: the payload text may legitimately survive as prose, and what
+     * must not survive is anything a parser would read as a tag.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_encoded_markup_is_not_resurrected_as_markup() {
+        $plain = Lisensio_KB_Search_Index::plain_text(
+            'Intro &lt;script&gt;alert(document.domain)&lt;/script&gt; and &lt;img src=x onerror=alert(1)&gt; end'
+        );
+
+        $this->assertStringNotContainsString( '<script', $plain );
+        $this->assertStringNotContainsString( '<img', $plain );
+        $this->assertStringNotContainsString( '</script', $plain );
+
+        // The surrounding prose is still indexed, so this is not passing by
+        // returning nothing at all.
+        $this->assertStringContainsString( 'Intro', $plain );
+        $this->assertStringContainsString( 'end', $plain );
+    }
+
+    /**
+     * A real entity in prose still decodes.
+     *
+     * The counterpart: an implementation that simply stopped decoding would
+     * also pass the test above, and would quietly index `Terms &amp;amp;
+     * conditions`.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_plain_entity_still_decodes() {
+        $this->assertSame(
+            'Terms & conditions',
+            Lisensio_KB_Search_Index::plain_text( 'Terms &amp; conditions' )
+        );
+    }
 }

@@ -12,6 +12,31 @@
  *
  * @package Lisensio_KB
  * @since   1.0.0
+ *
+ * ## Identifiers are not parameterised
+ *
+ * The vendored builder substitutes identifiers with `%1s`, which
+ * `wpdb::prepare()` inserts **unescaped and unquoted**. Verified against this
+ * install: `prepare( 'ORDER BY %1s %2s', 'id, (SELECT SLEEP(5))', 'ASC' )`
+ * returns that subquery verbatim. Values bound with `%s` are quoted and
+ * escaped as expected; identifiers are not.
+ *
+ * So `orderBy()`, `groupBy()`, `count()` and the **column** argument of
+ * `where()` are raw SQL positions behind an API that reads as parameterised,
+ * as are `selectRaw()` and `whereRaw()` when called without arguments.
+ *
+ * **Nothing derived from a request may reach any of them.** Every call site in
+ * this plugin passes a literal or a class constant, and the two that pass a
+ * variable - `Lisensio_KB_Analytics_Repository::rows()` and `row()` - are
+ * private, with the value supplied by their own callers and normalised there
+ * (`$args['order']` becomes `ASC` or `DESC` before it is used).
+ *
+ * This is stated rather than enforced. A static check precise enough to be
+ * useful would have to tell a request-derived variable from a hardcoded one,
+ * which is dataflow analysis, and the blunt version - flagging any variable in
+ * an identifier position - fires on the safe internal call sites above. A test
+ * that cries wolf on correct code gets deleted, so the rule lives here, next
+ * to the thing it governs.
  */
 
 defined( 'ABSPATH' ) || exit;
