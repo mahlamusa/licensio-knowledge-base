@@ -297,6 +297,21 @@
 	margin: var(--lisensio-kb-space) 0 0;
 }
 
+/*
+ * A section's top margin is separation from the section above it. The first
+ * section in a column has nothing above it, so that margin is dead space, and
+ * the container's own padding has already provided the gap.
+ *
+ * Invisible until the sidebar arrived: with one column it read as slightly
+ * generous top padding, but beside a sidebar that starts at the top of the row
+ * it became a visible empty block pushing the main column down on its own.
+ * Reported on a category archive whose term has no sub-categories, where the
+ * article list is the first thing in the column.
+ */
+.lisensio-kb__section:first-child {
+	margin-top: 0;
+}
+
 .lisensio-kb__section-title {
 	margin: 0 0 var(--lisensio-kb-gap);
 	font-size: 1.25rem;

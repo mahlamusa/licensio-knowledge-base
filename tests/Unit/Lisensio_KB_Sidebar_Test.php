@@ -154,8 +154,38 @@ class Lisensio_KB_Sidebar_Test extends Lisensio_KB_Test_Case {
             }
         );
 
-        Functions\when( 'is_post_type_archive' )->justReturn( false );
+        Functions\when( 'is_post_type_archive' )->alias(
+            function ( $type = '' ) use ( $view ) {
+                return 'archive' === $view && Lisensio_KB_Post_Types::POST_TYPE === $type;
+            }
+        );
+
         Functions\when( 'is_search' )->justReturn( false );
+    }
+
+    /**
+     * The main column of a rendered view.
+     *
+     * Everything between the column wrapper and the sidebar that follows it,
+     * so an assertion about what the article column holds cannot be satisfied
+     * by something the sidebar happens to render.
+     *
+     * @since 1.0.0
+     *
+     * @param string $markup The rendered view.
+     *
+     * @return string The main column markup, or the whole view when there is no column.
+     */
+    private function main_column( $markup ) {
+        $start = strpos( $markup, 'lisensio-kb__main' );
+
+        if ( false === $start ) {
+            return $markup;
+        }
+
+        $end = strpos( $markup, '<aside', $start );
+
+        return false === $end ? substr( $markup, $start ) : substr( $markup, $start, $end - $start );
     }
 
     /**
@@ -338,6 +368,33 @@ class Lisensio_KB_Sidebar_Test extends Lisensio_KB_Test_Case {
         ob_start();
 
         include $this->plugin_template( 'taxonomy-category' );
+
+        return (string) ob_get_clean();
+    }
+
+    /**
+     * Render templates/archive.php against one category and no stray articles.
+     *
+     * @since 1.0.0
+     *
+     * @return string The rendered markup.
+     */
+    private function render_archive() {
+        $this->stub_view( 'archive' );
+
+        Functions\when( 'get_header' )->justReturn( null );
+        Functions\when( 'get_footer' )->justReturn( null );
+        Functions\when( 'post_type_archive_title' )->justReturn( 'Knowledge Base' );
+        Functions\when( 'have_posts' )->justReturn( false );
+
+        // The category cards in the main column read their icon and colour from term meta.
+        Functions\when( 'get_term_meta' )->justReturn( '' );
+        Functions\when( 'home_url' )->justReturn( 'https://example.test/' );
+        Functions\when( 'get_post_type_archive_link' )->justReturn( 'https://example.test/docs/' );
+
+        ob_start();
+
+        include $this->plugin_template( 'archive' );
 
         return (string) ob_get_clean();
     }
@@ -1246,6 +1303,148 @@ class Lisensio_KB_Sidebar_Test extends Lisensio_KB_Test_Case {
 
         $this->assertSame( 1, substr_count( $aside, 'aria-current="page"' ) );
         $this->assertLessThan( strpos( $aside, 'Billing' ), strpos( $aside, 'is-current' ) );
+    }
+
+    /**
+     * The first section in a column carries no top margin.
+     *
+     * A category whose term has no sub-categories opens its main column with
+     * the article list, and `.lisensio-kb__section` has a top margin meant to
+     * separate it from the section above it. With one column that read as
+     * generous padding. Beside a sidebar that starts at the top of the row it
+     * became a visible empty block: the sidebar began at the top of the layout
+     * and the article list began 40px lower, for no reason a reader could see.
+     *
+     * Asserted against the stylesheet because that is the layer that carries
+     * it — the markup is already correct, and nothing else fails when the rule
+     * is dropped.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_first_section_in_a_column_has_no_top_margin() {
+        $css = (string) file_get_contents( LISENSIO_KB_ABSPATH . 'assets/css/lisensio-kb.css' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+
+        $this->assertMatchesRegularExpression(
+            '/\.lisensio-kb__section:first-child\s*\{[^}]*margin-top:\s*0;/',
+            $css,
+            'the first section in a column keeps a top margin it has nothing to separate from'
+        );
+    }
+
+    /**
+     * A category with no sub-categories opens its column with the article list.
+     *
+     * The other half of the empty-block report, and the half that was already
+     * correct: the sub-categories section is guarded, so a term with no
+     * children renders no wrapper at all rather than an empty one taking its
+     * margins. Pinned so it stays that way.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_category_with_no_children_renders_no_subcategory_section() {
+        $this->settings( array( 'category_sidebar_position' => 'right' ) );
+        $this->stub_taxonomies( array(), array( $this->term( 9, 'Avatar', Lisensio_KB_Post_Types::TAXONOMY_TAG ) ) );
+
+        $markup = $this->render_category();
+        $main   = $this->main_column( $markup );
+
+        $this->assertStringNotContainsString( 'Sub-categories', $main );
+        $this->assertSame( 0, substr_count( $main, 'lisensio-kb__grid' ) );
+    }
+
+    /**
+     * The archive gets a sidebar, driven by its own position setting.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_archive_renders_a_sidebar() {
+        $this->settings( array( 'archive_sidebar_position' => 'right' ) );
+        $this->stub_taxonomies(
+            array( $this->term( 5, 'Getting started' ) ),
+            array( $this->term( 9, 'Avatar', Lisensio_KB_Post_Types::TAXONOMY_TAG ) )
+        );
+
+        $markup = $this->render_archive();
+
+        $this->assertStringContainsString( 'lisensio-kb--sidebarright', $markup );
+        $this->assertStringContainsString( 'lisensio-kb__layout', $markup );
+        $this->assertStringContainsString( '<aside class="lisensio-kb__sidebar', $markup );
+        $this->assertStringContainsString( 'lisensio-kb-widget--tags', $markup );
+    }
+
+    /**
+     * The archive sidebar carries tags only.
+     *
+     * No table of contents, because there is no article. No category list,
+     * because the main column is the category list: the same links, repeated
+     * in a narrower column beside the cards that already name them.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_archive_sidebar_does_not_repeat_the_category_grid() {
+        $this->settings( array( 'archive_sidebar_position' => 'right' ) );
+        $this->stub_taxonomies(
+            array( $this->term( 5, 'Getting started' ) ),
+            array( $this->term( 9, 'Avatar', Lisensio_KB_Post_Types::TAXONOMY_TAG ) )
+        );
+
+        $markup = $this->render_archive();
+        $aside  = substr( $markup, (int) strpos( $markup, '<aside' ) );
+
+        $this->assertStringNotContainsString( 'lisensio-kb-widget--categories', $aside );
+        $this->assertStringNotContainsString( 'lisensio-kb-widget--toc', $aside );
+        $this->assertStringContainsString( 'lisensio-kb-widget--tags', $aside );
+    }
+
+    /**
+     * The archive honours its own setting, not the article one.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_archive_reads_the_archive_setting() {
+        $this->settings(
+            array(
+                'archive_sidebar_position' => 'none',
+                'article_sidebar_position' => 'right',
+            )
+        );
+        $this->stub_taxonomies(
+            array( $this->term( 5, 'Getting started' ) ),
+            array( $this->term( 9, 'Avatar', Lisensio_KB_Post_Types::TAXONOMY_TAG ) )
+        );
+
+        $markup = $this->render_archive();
+
+        $this->assertStringContainsString( '<div class="lisensio-kb lisensio-kb--archive">', $markup );
+        $this->assertStringNotContainsString( '<aside', $markup );
+        $this->assertStringNotContainsString( 'lisensio-kb__layout', $markup );
+    }
+
+    /**
+     * An archive with no tags to list leaves the grid full width.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_archive_with_no_tags_has_no_sidebar() {
+        $this->settings( array( 'archive_sidebar_position' => 'right' ) );
+        $this->stub_taxonomies( array( $this->term( 5, 'Getting started' ) ), array() );
+
+        $markup = $this->render_archive();
+
+        $this->assertStringContainsString( '<div class="lisensio-kb lisensio-kb--archive">', $markup );
+        $this->assertStringNotContainsString( 'lisensio-kb__layout', $markup );
     }
 
     /**

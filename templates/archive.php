@@ -16,8 +16,17 @@
  * get a list of their own below the grid, which renders nothing at all when
  * every article is filed — so a well-organised site never sees it.
  *
+ * The sidebar here carries tags only. It has no table of contents, because
+ * there is no article to collect headings from, and no category list, because
+ * the main column IS the category list: repeating those same eight links in a
+ * narrow column beside the cards that already name them is a navigation aid
+ * that navigates nowhere. That is the same reasoning that keeps an article's
+ * own categories out of its sidebar. Tags are the one thing this view surfaces
+ * nowhere else.
+ *
  * @package Lisensio_KB
  * @since   1.0.0 Rendered the hero through `templates/hero.php`, replaced the article loop with the uncategorised list and added `lisensio_kb_after_archive`.
+ * @since   1.0.0 Added the sidebar.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -26,6 +35,23 @@ get_header();
 
 $lisensio_kb_categories    = Lisensio_KB_Templates::top_level_categories();
 $lisensio_kb_uncategorised = Lisensio_KB_Templates::uncategorised_articles();
+
+$lisensio_kb_position = Lisensio_KB_Sidebar::position( Lisensio_KB_Sidebar::CONTEXT_ARCHIVE );
+$lisensio_kb_sidebar  = '';
+
+if ( Lisensio_KB_Sidebar::POSITION_NONE !== $lisensio_kb_position ) {
+    $lisensio_kb_sidebar = lisensio_kb_get_template(
+        'sidebar',
+        array(
+            'sticky' => Lisensio_KB_Sidebar::is_sticky(),
+            'tags'   => Lisensio_KB_Sidebar::tags(),
+        ),
+        false
+    );
+}
+
+$lisensio_kb_has_sidebar = '' !== trim( $lisensio_kb_sidebar );
+$lisensio_kb_modifier    = $lisensio_kb_has_sidebar ? Lisensio_KB_Sidebar::modifier_class( $lisensio_kb_position ) : '';
 ?>
 <div class="lisensio-kb lisensio-kb--bleed">
     <?php
@@ -39,8 +65,11 @@ $lisensio_kb_uncategorised = Lisensio_KB_Templates::uncategorised_articles();
     ?>
 </div>
 
-<div class="lisensio-kb lisensio-kb--archive">
-
+<div class="lisensio-kb lisensio-kb--archive<?php echo '' === $lisensio_kb_modifier ? '' : ' ' . esc_attr( $lisensio_kb_modifier ); ?>">
+    <?php if ( $lisensio_kb_has_sidebar ) : ?>
+        <div class="lisensio-kb__layout">
+        <div class="lisensio-kb__main">
+    <?php endif; ?>
 
     <?php if ( ! empty( $lisensio_kb_categories ) ) : ?>
         <div class="lisensio-kb__grid lisensio-kb__grid--cols-3">
@@ -81,6 +110,13 @@ $lisensio_kb_uncategorised = Lisensio_KB_Templates::uncategorised_articles();
             )
         );
         ?>
+    <?php endif; ?>
+
+    <?php if ( $lisensio_kb_has_sidebar ) : ?>
+        </div>
+
+        <?php echo $lisensio_kb_sidebar; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped inside templates/sidebar.php. ?>
+        </div>
     <?php endif; ?>
 
 </div>

@@ -538,7 +538,19 @@ class Lisensio_KB_Templates_Test extends Lisensio_KB_Test_Case {
 
         Functions\when( 'get_terms' )->alias(
             function ( $args = array() ) use ( $term ) {
-                return isset( $args['child_of'] ) || 0 !== (int) $args['parent'] ? array() : array( $term );
+                $taxonomy = isset( $args['taxonomy'] ) ? (string) $args['taxonomy'] : '';
+                $parent   = isset( $args['parent'] ) ? (int) $args['parent'] : 0;
+
+                /*
+                 * The sidebar asks the tag taxonomy as well, and asks it
+                 * without a `parent` because tags are flat. This file is about
+                 * the category cards, so a tag query answers with nothing.
+                 */
+                if ( Lisensio_KB_Post_Types::TAXONOMY_CATEGORY !== $taxonomy ) {
+                    return array();
+                }
+
+                return isset( $args['child_of'] ) || 0 !== $parent ? array() : array( $term );
             }
         );
 
