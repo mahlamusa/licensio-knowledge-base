@@ -27,13 +27,16 @@ get_header();
 $lisensio_kb_categories    = Lisensio_KB_Templates::top_level_categories();
 $lisensio_kb_uncategorised = Lisensio_KB_Templates::uncategorised_articles();
 ?>
-<div class="lisensio-kb lisensio-kb--archive">
+<div class="lisensio-kb lisensio-kb--bleed">
     <?php
     lisensio_kb_get_template(
         'hero',
         array( 'title' => post_type_archive_title( '', false ) )
     );
     ?>
+</div>
+
+<div class="lisensio-kb lisensio-kb--archive">
 
     <form role="search" method="get" class="lisensio-kb__search" action="<?php echo esc_url( home_url( '/' ) ); ?>">
         <label class="lisensio-kb__sr-only" for="lisensio-kb-search-field">
@@ -92,6 +95,9 @@ $lisensio_kb_uncategorised = Lisensio_KB_Templates::uncategorised_articles();
         ?>
     <?php endif; ?>
 
+</div>
+
+<div class="lisensio-kb lisensio-kb--bleed">
     <?php
     /**
      * Fires at the end of the knowledge base archive, inside its wrapper.

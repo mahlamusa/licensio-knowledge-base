@@ -616,17 +616,6 @@ class Lisensio_KB_Hero_Test extends Lisensio_KB_Test_Case {
     }
 
     /**
-     * Every view renders one hero, and exactly one.
-     *
-     * Zero means a view still collides with a theme's fixed header, which is
-     * the bug this template exists to close. Two means a view kept its own
-     * heading and stacked the hero on top of it.
-     *
-     * @since 1.0.0
-     *
-     * @return void
-     */
-    /**
      * The hero is rendered outside the contained wrapper, in a bleed wrapper.
      *
      * This is a layout contract, not a cosmetic one. A theme overrides
@@ -692,6 +681,17 @@ class Lisensio_KB_Hero_Test extends Lisensio_KB_Test_Case {
         );
     }
 
+    /**
+     * Every view renders one hero, and exactly one.
+     *
+     * Zero means a view still collides with a theme's fixed header, which is
+     * the bug this template exists to close. Two means a view kept its own
+     * heading and stacked the hero on top of it.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
     public function test_every_view_renders_exactly_one_hero() {
         foreach ( $this->render_every_view() as $view => $markup ) {
             $this->assertSame(

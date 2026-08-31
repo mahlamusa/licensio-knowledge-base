@@ -20,7 +20,7 @@ get_header();
 $lisensio_kb_category = get_queried_object();
 $lisensio_kb_children = $lisensio_kb_category instanceof WP_Term ? Lisensio_KB_Templates::child_categories( $lisensio_kb_category->term_id ) : array();
 ?>
-<div class="lisensio-kb lisensio-kb--category">
+<div class="lisensio-kb lisensio-kb--bleed">
     <?php
     lisensio_kb_get_template(
         'hero',
@@ -30,6 +30,9 @@ $lisensio_kb_children = $lisensio_kb_category instanceof WP_Term ? Lisensio_KB_T
         )
     );
     ?>
+</div>
+
+<div class="lisensio-kb lisensio-kb--category">
 
     <?php if ( ! empty( $lisensio_kb_children ) ) : ?>
         <section class="lisensio-kb__section">

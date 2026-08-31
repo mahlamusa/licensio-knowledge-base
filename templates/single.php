@@ -18,18 +18,30 @@
 defined( 'ABSPATH' ) || exit;
 
 get_header();
+
+/*
+ * The hero is resolved before the loop, because it renders outside the
+ * `.lisensio-kb` wrapper and the loop opens inside it. WordPress populates the
+ * global post for a singular query before the loop runs, so this is the same
+ * article the loop below is about to hand to `the_post()`.
+ */
+$lisensio_kb_hero_post = get_post();
 ?>
+<div class="lisensio-kb lisensio-kb--bleed">
+    <?php
+    lisensio_kb_get_template(
+        'hero',
+        array( 'title' => $lisensio_kb_hero_post instanceof WP_Post ? get_the_title( $lisensio_kb_hero_post ) : '' )
+    );
+    ?>
+</div>
+
 <div class="lisensio-kb lisensio-kb--single">
     <?php
     while ( have_posts() ) :
         the_post();
 
         $lisensio_kb_article = get_post();
-
-        lisensio_kb_get_template(
-            'hero',
-            array( 'title' => get_the_title( $lisensio_kb_article ) )
-        );
 
         $lisensio_kb_article_tags = get_the_term_list(
             $lisensio_kb_article->ID,

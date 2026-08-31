@@ -24,8 +24,11 @@ $lisensio_kb_heading = sprintf(
     $lisensio_kb_query
 );
 ?>
-<div class="lisensio-kb lisensio-kb--search">
+<div class="lisensio-kb lisensio-kb--bleed">
     <?php lisensio_kb_get_template( 'hero', array( 'title' => $lisensio_kb_heading ) ); ?>
+</div>
+
+<div class="lisensio-kb lisensio-kb--search">
 
     <form role="search" method="get" class="lisensio-kb__search" action="<?php echo esc_url( home_url( '/' ) ); ?>">
         <label class="lisensio-kb__sr-only" for="lisensio-kb-search-field">
