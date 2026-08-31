@@ -404,6 +404,27 @@ class Lisensio_KB_Hero_Test extends Lisensio_KB_Test_Case {
                  * without a `parent` because tags are flat. This file is about
                  * the category cards, so a tag query answers with nothing.
                  */
+
+                /*
+                 * One tag, so the archive sidebar has something to render.
+                 * Without it a switched-off sidebar and an empty one look the
+                 * same, and the tests below cannot tell them apart.
+                 */
+                if ( Lisensio_KB_Post_Types::TAXONOMY_TAG === $taxonomy ) {
+                    return array(
+                        new WP_Term(
+                            array(
+                                'term_id'  => 11,
+                                'name'     => 'licensing',
+                                'slug'     => 'licensing',
+                                'taxonomy' => Lisensio_KB_Post_Types::TAXONOMY_TAG,
+                                'count'    => 1,
+                                'parent'   => 0,
+                            )
+                        ),
+                    );
+                }
+
                 if ( Lisensio_KB_Post_Types::TAXONOMY_CATEGORY !== $taxonomy ) {
                     return array();
                 }
@@ -1166,5 +1187,79 @@ class Lisensio_KB_Hero_Test extends Lisensio_KB_Test_Case {
         }
 
         $this->assertSame( array( 'search-field.php' ), $carriers );
+    }
+    /**
+     * The archive sidebar carries tags and not a category list.
+     *
+     * The main column of the archive IS the category list, so repeating those
+     * links in a narrow column beside the cards that already name them is a
+     * navigation aid that navigates nowhere. Tags are the one thing this view
+     * surfaces nowhere else.
+     *
+     * Asserted rather than left to a comment, because adding the categories
+     * back is an obvious-looking change that nothing else would fail on.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_archive_sidebar_carries_tags_but_not_categories() {
+        $markup = $this->render_archive();
+
+        $at = strpos( $markup, 'lisensio-kb__sidebar' );
+
+        $this->assertNotFalse( $at, 'the archive renders no sidebar' );
+
+        $sidebar = substr( $markup, (int) $at );
+
+        $this->assertStringContainsString( 'lisensio-kb-widget--tags', $sidebar );
+        $this->assertStringNotContainsString( 'lisensio-kb-widget--categories', $sidebar );
+        $this->assertStringNotContainsString( 'lisensio-kb-widget--toc', $sidebar );
+    }
+
+    /**
+     * The archive reads its own position setting, not another view's.
+     *
+     * #29 registered one position key per context, so a view reading the wrong
+     * one behaves correctly on a site that has never changed the defaults -
+     * they are all `right` - and silently ignores the setting on a site that
+     * has. Nothing about the rendered page reveals it.
+     *
+     * Caught by switching off the archive's own key and requiring the sidebar
+     * to disappear. A view reading `article_sidebar_position` instead would
+     * still render one, because that key is untouched.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_archive_reads_its_own_position_setting() {
+        $this->assertStringContainsString(
+            'lisensio-kb__sidebar',
+            $this->render_archive(),
+            'the archive renders no sidebar with the default settings'
+        );
+
+        Functions\when( 'get_option' )->alias(
+            function ( $name, $default_value = false ) {
+                if ( Lisensio_KB_Settings::OPTION_NAME === $name ) {
+                    return array( 'archive_sidebar_position' => Lisensio_KB_Sidebar::POSITION_NONE );
+                }
+
+                return $default_value;
+            }
+        );
+
+        Lisensio_KB_Sidebar::reset();
+
+        $markup = $this->render_archive();
+
+        Lisensio_KB_Sidebar::reset();
+
+        $this->assertStringNotContainsString(
+            'lisensio-kb__sidebar',
+            $markup,
+            'the archive kept its sidebar after its own position setting was turned off'
+        );
     }
 }
