@@ -1128,6 +1128,34 @@ class Lisensio_KB_Templates_Test extends Lisensio_KB_Test_Case {
         $this->assertSame( array( 43, 163, 119 ), Lisensio_KB_Templates::hex_to_rgb( '' ) );
         $this->assertSame( array( 43, 163, 119 ), Lisensio_KB_Templates::hex_to_rgb( '#2ba3' ) );
     }
+
+    /**
+     * The stylesheet pins the Lisensio design tokens.
+     *
+     * Radius, card shadow and heading font are what make the knowledge base
+     * look like the rest of the site, and nothing else asserts them: the brand
+     * colour is covered by the settings tests and the list arrow by its own
+     * cross-layer contract test, but these three can be edited to any value
+     * and every other test still passes. A regression here is invisible in CI
+     * and obvious on the page, which is the worst combination, so this pins
+     * them the same way the arrow contract is pinned.
+     *
+     * Each is asserted as `var( --theme-token, <lisensio default> )` because
+     * both halves matter: the fallback keeps a standalone install on the
+     * Lisensio design, and the `var()` lets an active theme that defines the
+     * token win without the plugin knowing the theme exists.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_stylesheet_pins_the_lisensio_design_tokens() {
+        $css = (string) file_get_contents( LISENSIO_KB_ABSPATH . 'assets/css/lisensio-kb.css' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+
+        $this->assertStringContainsString( '--lisensio-kb-radius: var(--radius, 18px);', $css );
+        $this->assertStringContainsString( '--lisensio-kb-card-shadow: 0 4px 14px rgba(30, 122, 90, 0.08);', $css );
+        $this->assertStringContainsString( '--lisensio-kb-font-head: var(--font-head, "Plus Jakarta Sans"', $css );
+    }
 }
 
 /**
