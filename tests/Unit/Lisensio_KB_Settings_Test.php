@@ -289,7 +289,7 @@ class Lisensio_KB_Settings_Test extends Lisensio_KB_Test_Case {
         foreach ( array( 'red;}body{background:url(//evil/x)', '</style><script>alert(1)</script>', 'red', '#gggggg', '' ) as $payload ) {
             $settings->set( 'brand_color', $payload );
 
-            $this->assertSame( '#2563eb', $settings->get( 'brand_color' ), 'A non-colour must fall back to the default.' );
+            $this->assertSame( '#2ba377', $settings->get( 'brand_color' ), 'A non-colour must fall back to the default.' );
         }
     }
 
@@ -429,7 +429,7 @@ class Lisensio_KB_Settings_Test extends Lisensio_KB_Test_Case {
         $settings = new Lisensio_KB_Settings();
 
         $this->assertSame( 'evil', $settings->get( 'article_slug' ) );
-        $this->assertSame( '#2563eb', $settings->get( 'brand_color' ) );
+        $this->assertSame( '#2ba377', $settings->get( 'brand_color' ) );
         $this->assertSame( 90, $settings->get( 'analytics_retention_days' ) );
         $this->assertSame( 'contained', $settings->get( 'layout_width' ) );
     }

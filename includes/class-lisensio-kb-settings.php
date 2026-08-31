@@ -141,7 +141,7 @@ class Lisensio_KB_Settings {
             ),
             'brand_color'               => array(
                 'type'     => 'string',
-                'default'  => '#2563eb',
+                'default'  => '#2ba377',
                 'sanitize' => array( 'Lisensio_KB_Settings', 'sanitize_brand_color' ),
             ),
             'layout_width'              => array(

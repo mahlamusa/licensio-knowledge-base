@@ -2,16 +2,17 @@
 /**
  * Category card.
  *
- * One category in a grid, with its article count and a preview of its
- * sub-categories. Override from a theme by copying this file to
- * `lisensio-kb/category-card.php`.
+ * One category in a grid: its icon, its name, its description, the first few
+ * articles filed beneath it and a preview of its sub-categories, with the
+ * article count kept as secondary meta at the foot of the card. Override from a
+ * theme by copying this file to `lisensio-kb/category-card.php`.
  *
  * Three meta keys can supply the icon and only one of them is drawn. The order
  * is inline SVG, then the uploaded attachment, then the dashicon name — most
  * specific first, and set out in full on Lisensio_KB_Term_Meta.
  *
  * @package Lisensio_KB
- * @since   1.0.0 Added the inline SVG icon, ahead of the uploaded icon and the dashicon name.
+ * @since   1.0.0 Added the article list, so a card says what is in the category rather than only how much.
  *
  * @var array $args {
  *     Template arguments.
@@ -20,6 +21,8 @@
  *     @type bool    $show_children Whether to list the direct sub-categories. Default true.
  *     @type bool    $show_count    Whether to show the article count. Default true.
  *     @type bool    $show_icon     Whether to show the category icon. Default false.
+ *     @type bool    $show_articles Whether to list the articles in the category. Default true.
+ *     @type int     $article_limit How many articles the list is capped at. Default 3.
  * }
  */
 
@@ -36,7 +39,12 @@ $lisensio_kb_category_count = Lisensio_KB_Templates::category_article_count( $li
 $lisensio_kb_show_children  = ! isset( $args['show_children'] ) || (bool) $args['show_children'];
 $lisensio_kb_show_count     = ! isset( $args['show_count'] ) || (bool) $args['show_count'];
 $lisensio_kb_show_icon      = isset( $args['show_icon'] ) && (bool) $args['show_icon'];
+$lisensio_kb_show_articles  = ! isset( $args['show_articles'] ) || (bool) $args['show_articles'];
+$lisensio_kb_article_limit  = isset( $args['article_limit'] ) ? (int) $args['article_limit'] : 3;
 $lisensio_kb_children       = $lisensio_kb_show_children ? Lisensio_KB_Templates::child_categories( $lisensio_kb_category->term_id ) : array();
+$lisensio_kb_articles       = $lisensio_kb_show_articles
+    ? Lisensio_KB_Templates::category_articles( $lisensio_kb_category, $lisensio_kb_article_limit )
+    : array();
 $lisensio_kb_icon_svg       = $lisensio_kb_show_icon ? Lisensio_KB_Term_Meta::get_icon_svg( $lisensio_kb_category->term_id ) : '';
 $lisensio_kb_icon_id        = $lisensio_kb_show_icon && '' === $lisensio_kb_icon_svg
     ? Lisensio_KB_Term_Meta::get_icon_id( $lisensio_kb_category->term_id )
@@ -91,22 +99,20 @@ $lisensio_kb_icon           = $lisensio_kb_show_icon && '' === $lisensio_kb_icon
         </a>
     </h3>
 
-    <?php if ( $lisensio_kb_show_count ) : ?>
-        <p class="lisensio-kb-card__meta">
-            <?php
-            printf(
-                esc_html(
-                    /* translators: %s: number of articles. */
-                    _n( '%s article', '%s articles', $lisensio_kb_category_count, 'lisensio-knowledge-base' )
-                ),
-                esc_html( number_format_i18n( $lisensio_kb_category_count ) )
-            );
-            ?>
-        </p>
-    <?php endif; ?>
-
     <?php if ( '' !== $lisensio_kb_category->description ) : ?>
         <p class="lisensio-kb-card__excerpt"><?php echo esc_html( $lisensio_kb_category->description ); ?></p>
+    <?php endif; ?>
+
+    <?php if ( ! empty( $lisensio_kb_articles ) ) : ?>
+        <ul class="lisensio-kb-card__articles">
+            <?php foreach ( $lisensio_kb_articles as $lisensio_kb_article ) : ?>
+                <li class="lisensio-kb-card__article">
+                    <a class="lisensio-kb-card__article-link" href="<?php echo esc_url( (string) get_permalink( $lisensio_kb_article ) ); ?>">
+                        <?php echo esc_html( get_the_title( $lisensio_kb_article ) ); ?>
+                    </a>
+                </li>
+            <?php endforeach; ?>
+        </ul>
     <?php endif; ?>
 
     <?php if ( ! empty( $lisensio_kb_children ) ) : ?>
@@ -119,5 +125,19 @@ $lisensio_kb_icon           = $lisensio_kb_show_icon && '' === $lisensio_kb_icon
                 </li>
             <?php endforeach; ?>
         </ul>
+    <?php endif; ?>
+
+    <?php if ( $lisensio_kb_show_count ) : ?>
+        <p class="lisensio-kb-card__meta">
+            <?php
+            printf(
+                esc_html(
+                    /* translators: %s: number of articles. */
+                    _n( '%s article', '%s articles', $lisensio_kb_category_count, 'lisensio-knowledge-base' )
+                ),
+                esc_html( number_format_i18n( $lisensio_kb_category_count ) )
+            );
+            ?>
+        </p>
     <?php endif; ?>
 </article>

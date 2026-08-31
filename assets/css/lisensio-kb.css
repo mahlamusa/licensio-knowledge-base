@@ -6,25 +6,36 @@
  * declared on `.lisensio-kb` by Lisensio_KB_Templates::inline_css(); the
  * declarations below are only the fallbacks used before that runs, so changing
  * a setting never needs a rule-level override.
+ *
+ * The fixed tokens are declared as `var(--theme-token, lisensio-default)`, so a
+ * theme that already publishes a design system takes the knowledge base with it,
+ * and the plugin still stands alone on a theme that publishes nothing. The one
+ * exception is `--lisensio-kb-brand`, which the settings layer owns outright: it
+ * is written on this element by the inline block and must not defer to a theme.
  */
 
 .lisensio-kb {
 	/* Overridden by the settings-driven inline block. */
-	--lisensio-kb-brand: #2563eb;
-	--lisensio-kb-brand-rgb: 37, 99, 235;
+	--lisensio-kb-brand: #2ba377;
+	--lisensio-kb-brand-rgb: 43, 163, 119;
 	--lisensio-kb-brand-contrast: #ffffff;
 	--lisensio-kb-max-width: 72rem;
-	--lisensio-kb-card-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.06);
+	--lisensio-kb-card-shadow: 0 4px 14px rgba(30, 122, 90, 0.08);
 	--lisensio-kb-card-border: 1px solid transparent;
 	--lisensio-kb-card-bg: var(--lisensio-kb-surface);
 
 	/* Fixed design tokens. */
-	--lisensio-kb-text: #1f2937;
-	--lisensio-kb-muted: #6b7280;
+	--lisensio-kb-gradient: var(--gradient, linear-gradient(120deg, #1e7a5a 0%, #2ba377 45%, #40b58a 100%));
+	--lisensio-kb-text: var(--ink, #10231b);
+	--lisensio-kb-muted: var(--muted, #8b86a0);
 	--lisensio-kb-surface: #ffffff;
-	--lisensio-kb-line: rgba(15, 23, 42, 0.12);
+	--lisensio-kb-soft: var(--bg-soft, #f6fbf8);
+	--lisensio-kb-line: var(--border, #dcefe4);
 	--lisensio-kb-tint: rgba(var(--lisensio-kb-brand-rgb), 0.08);
-	--lisensio-kb-radius: 0.5rem;
+	--lisensio-kb-shadow-md: var(--shadow-md, 0 14px 40px rgba(30, 122, 90, 0.14));
+	--lisensio-kb-radius: var(--radius, 18px);
+	--lisensio-kb-font-head: var(--font-head, "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif);
+	--lisensio-kb-font-body: var(--font-body, "Inter", system-ui, -apple-system, "Segoe UI", sans-serif);
 	--lisensio-kb-gap: 1.5rem;
 	--lisensio-kb-space: 2.5rem;
 
@@ -34,7 +45,18 @@
 	padding: var(--lisensio-kb-space) 1rem;
 	width: 100%;
 	color: var(--lisensio-kb-text);
+	font-family: var(--lisensio-kb-font-body);
 	line-height: 1.6;
+}
+
+.lisensio-kb h1,
+.lisensio-kb h2,
+.lisensio-kb h3,
+.lisensio-kb h4 {
+	color: var(--lisensio-kb-text);
+	font-family: var(--lisensio-kb-font-head);
+	font-weight: 800;
+	line-height: 1.2;
 }
 
 .lisensio-kb *,
@@ -125,6 +147,40 @@
 	margin: 0 0 var(--lisensio-kb-space);
 }
 
+/*
+ * The hero is a contained band rather than a full-bleed one. The knowledge base
+ * renders inside whatever column the active theme gives it, and breaking out of
+ * an unknown container is not something a plugin can do reliably.
+ */
+
+.lisensio-kb__hero {
+	margin: 0 0 var(--lisensio-kb-space);
+	padding: var(--lisensio-kb-space) 1.5rem;
+	border-radius: var(--lisensio-kb-radius);
+	background:
+		radial-gradient(900px 420px at 80% -10%, var(--lisensio-kb-tint), transparent),
+		var(--lisensio-kb-soft);
+	text-align: center;
+}
+
+.lisensio-kb__hero .lisensio-kb__crumbs {
+	justify-content: center;
+}
+
+.lisensio-kb__hero .lisensio-kb__description,
+.lisensio-kb__hero .lisensio-kb__search {
+	max-width: 38rem;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.lisensio-kb__title-accent {
+	background: var(--lisensio-kb-gradient);
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+}
+
 .lisensio-kb__title {
 	margin: 0 0 0.5rem;
 	font-size: clamp(1.75rem, 1.25rem + 2vw, 2.5rem);
@@ -187,6 +243,40 @@
 	grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
 }
 
+/* Explicit column counts. The shared grid fills automatically; a caller says how
+   many columns it wants, and the grid steps down on a narrow screen. */
+
+.lisensio-kb .lisensio-kb__grid--cols-1 {
+	grid-template-columns: 1fr;
+}
+
+.lisensio-kb .lisensio-kb__grid--cols-2 {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.lisensio-kb .lisensio-kb__grid--cols-3 {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.lisensio-kb .lisensio-kb__grid--cols-4 {
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 56rem) {
+	.lisensio-kb .lisensio-kb__grid--cols-3,
+	.lisensio-kb .lisensio-kb__grid--cols-4 {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 40rem) {
+	.lisensio-kb .lisensio-kb__grid--cols-2,
+	.lisensio-kb .lisensio-kb__grid--cols-3,
+	.lisensio-kb .lisensio-kb__grid--cols-4 {
+		grid-template-columns: 1fr;
+	}
+}
+
 .lisensio-kb__list {
 	display: grid;
 	gap: 0.75rem;
@@ -197,15 +287,61 @@
 
 .lisensio-kb-card {
 	min-width: 0;
-	padding: 1.25rem;
+	padding: 1.75rem;
 	border: var(--lisensio-kb-card-border);
 	border-radius: var(--lisensio-kb-radius);
 	background: var(--lisensio-kb-card-bg);
 	box-shadow: var(--lisensio-kb-card-shadow);
+	transition: transform 0.35s, box-shadow 0.35s, border-color 0.35s;
+}
+
+.lisensio-kb-card:hover,
+.lisensio-kb-card:focus-within {
+	transform: translateY(-6px);
+	border-color: var(--lisensio-kb-brand);
+	box-shadow: var(--lisensio-kb-shadow-md);
 }
 
 .lisensio-kb-card--article {
 	padding: 1rem 1.25rem;
+}
+
+/* Category icons. */
+
+.lisensio-kb .lisensio-kb-card__icon {
+	display: block;
+	margin: 0 0 0.5rem;
+	color: var(--lisensio-kb-brand);
+	font-size: 1.5rem;
+	line-height: 1;
+}
+
+/*
+ * The wrapper carries the brand colour and the size; the SVG inside carries
+ * neither. Nothing here sets `fill` or `stroke` on the icon, because a CSS
+ * declaration always beats a presentation attribute, so a rule for the icons
+ * that need a colour would repaint the ones that already have one. An icon
+ * drawn with `currentColor` picks the brand colour up from here instead.
+ */
+
+.lisensio-kb .lisensio-kb-card__icon--svg {
+	width: 3rem;
+	height: 3rem;
+	margin: 0 0 0.75rem;
+	font-size: 0;
+}
+
+.lisensio-kb .lisensio-kb-card__icon--svg svg {
+	width: 100%;
+	height: 100%;
+}
+
+.lisensio-kb .lisensio-kb-card__icon-image {
+	display: block;
+	width: auto;
+	max-width: 3rem;
+	height: auto;
+	margin: 0 0 0.75rem;
 }
 
 .lisensio-kb-card__title {
@@ -215,8 +351,20 @@
 	overflow-wrap: anywhere;
 }
 
-.lisensio-kb-card__link {
+/*
+ * The card title takes the heading colour rather than the link colour. A card
+ * whose title, articles and sub-categories were all painted brand would have no
+ * hierarchy left; in the reference design the green is spent on the arrows.
+ */
+
+.lisensio-kb .lisensio-kb-card__link {
+	color: inherit;
 	text-decoration: none;
+}
+
+.lisensio-kb .lisensio-kb-card__link:hover,
+.lisensio-kb .lisensio-kb-card__link:focus {
+	color: var(--lisensio-kb-brand);
 }
 
 .lisensio-kb-card__link:hover,
@@ -248,6 +396,47 @@
 	padding: 0.25rem 0;
 	font-size: 0.9375rem;
 	overflow-wrap: anywhere;
+}
+
+/* The articles a category card lists. */
+
+.lisensio-kb-card__articles {
+	display: grid;
+	gap: 0.125rem;
+	margin: 0.875rem 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.lisensio-kb-card__article {
+	margin: 0;
+	min-width: 0;
+}
+
+.lisensio-kb .lisensio-kb-card__article-link {
+	display: flex;
+	gap: 0.625rem;
+	align-items: baseline;
+	padding: 0.625rem 0.875rem;
+	border-radius: 0.625rem;
+	color: var(--lisensio-kb-text);
+	font-size: 0.9375rem;
+	font-weight: 600;
+	text-decoration: none;
+	overflow-wrap: anywhere;
+	transition: background-color 0.2s, color 0.2s;
+}
+
+.lisensio-kb .lisensio-kb-card__article-link::before {
+	content: "\2192";
+	color: var(--lisensio-kb-brand);
+	font-weight: 800;
+}
+
+.lisensio-kb .lisensio-kb-card__article-link:hover,
+.lisensio-kb .lisensio-kb-card__article-link:focus {
+	background: var(--lisensio-kb-soft);
+	color: var(--lisensio-kb-brand);
 }
 
 /* Article. */
@@ -366,7 +555,24 @@
 		padding-right: 1rem;
 	}
 
+	.lisensio-kb__hero {
+		padding-left: 1rem;
+		padding-right: 1rem;
+	}
+
 	.lisensio-kb__button {
 		flex: 1 1 100%;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.lisensio-kb-card,
+	.lisensio-kb .lisensio-kb-card__article-link {
+		transition: none;
+	}
+
+	.lisensio-kb-card:hover,
+	.lisensio-kb-card:focus-within {
+		transform: none;
 	}
 }

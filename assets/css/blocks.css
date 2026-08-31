@@ -2,9 +2,9 @@
  * Lisensio Knowledge Base — block styles.
  *
  * Loaded by every knowledge base block, on the front end and in the editor.
- * Depends on `lisensio-kb.css`, which declares the custom properties used here,
- * so this file only adds what a block needs beyond the shared card and grid
- * rules: an explicit column count and the FAQ disclosure list.
+ * Depends on `lisensio-kb.css`, which declares the custom properties, the column
+ * counts and the card rules used here, so this file only adds what a block needs
+ * beyond them: the block wrapper and the FAQ disclosure list.
  *
  * Every rule is scoped to `.lisensio-kb`, so nothing here can reach the rest of
  * the theme.
@@ -13,71 +13,6 @@
 .lisensio-kb-block {
 	padding-top: 0;
 	padding-bottom: 0;
-}
-
-/* Explicit column counts. The shared grid fills automatically; a block says how
-   many columns it wants, and drops to one on a narrow screen. */
-
-.lisensio-kb .lisensio-kb__grid--cols-1 {
-	grid-template-columns: 1fr;
-}
-
-.lisensio-kb .lisensio-kb__grid--cols-2 {
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.lisensio-kb .lisensio-kb__grid--cols-3 {
-	grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.lisensio-kb .lisensio-kb__grid--cols-4 {
-	grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-@media (max-width: 48rem) {
-	.lisensio-kb .lisensio-kb__grid--cols-2,
-	.lisensio-kb .lisensio-kb__grid--cols-3,
-	.lisensio-kb .lisensio-kb__grid--cols-4 {
-		grid-template-columns: 1fr;
-	}
-}
-
-/* Category icons. */
-
-.lisensio-kb .lisensio-kb-card__icon {
-	display: block;
-	margin: 0 0 0.5rem;
-	color: var(--lisensio-kb-brand);
-	font-size: 1.5rem;
-	line-height: 1;
-}
-
-/*
- * The wrapper carries the brand colour and the size; the SVG inside carries
- * neither. Nothing here sets `fill` or `stroke` on the icon, because a CSS
- * declaration always beats a presentation attribute, so a rule for the icons
- * that need a colour would repaint the ones that already have one. An icon
- * drawn with `currentColor` picks the brand colour up from here instead.
- */
-
-.lisensio-kb .lisensio-kb-card__icon--svg {
-	width: 3rem;
-	height: 3rem;
-	margin: 0 0 0.75rem;
-	font-size: 0;
-}
-
-.lisensio-kb .lisensio-kb-card__icon--svg svg {
-	width: 100%;
-	height: 100%;
-}
-
-.lisensio-kb .lisensio-kb-card__icon-image {
-	display: block;
-	width: auto;
-	max-width: 3rem;
-	height: auto;
-	margin: 0 0 0.75rem;
 }
 
 /* FAQ disclosure list. */
