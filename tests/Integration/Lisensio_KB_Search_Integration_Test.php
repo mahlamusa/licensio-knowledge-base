@@ -51,7 +51,7 @@ class Lisensio_KB_Search_Integration_Test extends Lisensio_KB_Integration_Test_C
      * @since 1.0.0
      * @var int
      */
-    const PERF_BUDGET_MS = 0;
+    const PERF_BUDGET_MS = 300;
 
     /**
      * The table prefix used for the scratch schema.
