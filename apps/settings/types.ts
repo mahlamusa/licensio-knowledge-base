@@ -83,6 +83,8 @@ export interface SettingsResponse {
 export interface SettingsConfig {
 	restUrl: string;
 	nonce: string;
+	settingsUrl?: string;
+	archiveUrl?: string;
 }
 
 /**

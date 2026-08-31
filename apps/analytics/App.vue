@@ -15,6 +15,7 @@ import { translate, config } from './api';
 import { useAnalyticsStore } from './store';
 import ArticleTable from './components/ArticleTable.vue';
 import SearchTable from './components/SearchTable.vue';
+import AppHeader from '../components/AppHeader.vue';
 import TrendChart from './components/TrendChart.vue';
 import ZeroResultTable from './components/ZeroResultTable.vue';
 
@@ -92,7 +93,13 @@ onMounted( () => {
 
 <template>
 	<a-config-provider :theme="lkbTheme">
-	<div class="lisensio-kb-analytics">
+	<div class="lkb-page lisensio-kb-analytics">
+		<AppHeader :settings-url="settings.settingsUrl" />
+
+		<div id="lkb-main" class="lkb-page__body lkb-measure">
+			<div class="lkb-page__head">
+				<h1 class="lkb-page__title">{{ translate( 'Analytics' ) }}</h1>
+			</div>
 
 		<a-alert
 			v-if="store.error"
@@ -245,6 +252,7 @@ onMounted( () => {
 				</a-descriptions>
 			</a-card>
 		</a-spin>
+		</div>
 	</div>
 	</a-config-provider>
 </template>

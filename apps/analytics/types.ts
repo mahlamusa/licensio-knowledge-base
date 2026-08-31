@@ -94,4 +94,5 @@ export interface AnalyticsConfig {
 	maxDays: number;
 	defaultLimit: number;
 	retentionDays: number;
+	settingsUrl?: string;
 }

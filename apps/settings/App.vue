@@ -12,8 +12,9 @@ import { lkbTheme } from '../styles/theme';
  */
 
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import { translate } from './api';
+import { config, translate } from './api';
 import { useSettingsStore } from './store';
+import AppHeader from '../components/AppHeader.vue';
 import AppearancePreview from './components/AppearancePreview.vue';
 import SettingField from './components/SettingField.vue';
 import type { SettingValue } from './types';
@@ -29,20 +30,7 @@ const activeGroupObject = computed( () =>
 	groups.value.find( ( group ) => group.id === activeGroup.value ) ?? null
 );
 
-/**
- * The category label sitting above the page title.
- *
- * @since 1.0.0
- */
-const activeCategoryLabel = computed( () => {
-	const group = activeGroupObject.value;
-
-	if ( ! group ) {
-		return '';
-	}
-
-	return store.categories[ group.category ] ?? '';
-} );
+const chrome = config();
 
 /**
  * Move to a group, keeping unsaved edits.
@@ -203,44 +191,55 @@ onBeforeUnmount( () => {
 
 <template>
 	<a-config-provider :theme="lkbTheme">
-	<div class="lkb-settings">
+	<div class="lkb-page lkb-settings">
+		<AppHeader :settings-url="chrome.settingsUrl" />
+
+		<div id="lkb-main" class="lkb-page__body lkb-measure">
+			<div class="lkb-page__head">
+				<h1 class="lkb-page__title">
+					{{ translate( 'Settings' ) }}
+				</h1>
+
+				<a-button
+					v-if="chrome.archiveUrl"
+					size="small"
+					:href="chrome.archiveUrl"
+					target="_blank"
+					rel="noreferrer noopener"
+				>
+					{{ translate( 'View documentation' ) }}
+				</a-button>
+			</div>
+
 		<a-spin :spinning="store.loading || store.saving">
 			<div v-if="store.loaded" class="lkb-settings__layout">
 				<nav class="lkb-nav" :aria-label="translate( 'Settings sections' )">
-					<template v-for="block in blocks" :key="block.id">
-						<p class="lkb-nav__heading">{{ block.label }}</p>
-
-						<ul class="lkb-nav__list">
-							<li v-for="group in block.groups" :key="group.id">
-								<button
-									type="button"
-									class="lkb-nav__item"
-									:class="{
-										'is-active': group.id === activeGroup,
-										'is-dirty': changedIn( group.id ) > 0,
-									}"
-									:aria-current="group.id === activeGroup ? 'page' : undefined"
-									@click="selectGroup( group.id )"
-								>
+					<ul class="lkb-nav__list">
+						<li v-for="group in groups" :key="group.id">
+							<button
+								type="button"
+								class="lkb-nav__item"
+								:class="{
+									'is-active': group.id === activeGroup,
+									'is-dirty': changedIn( group.id ) > 0,
+								}"
+								:aria-current="group.id === activeGroup ? 'page' : undefined"
+								@click="selectGroup( group.id )"
+							>
+								<span class="lkb-nav__icon-wrap">
 									<span
 										class="lkb-nav__icon dashicons"
 										:class="'dashicons-' + group.icon"
 										aria-hidden="true"
 									/>
-									<span class="lkb-nav__label">{{ group.label }}</span>
-									<span class="lkb-nav__count">{{ group.count }}</span>
-								</button>
-							</li>
-						</ul>
-					</template>
+								</span>
+								<span class="lkb-nav__label">{{ group.label }}</span>
+							</button>
+						</li>
+					</ul>
 				</nav>
 
 				<div class="lkb-pane">
-					<header class="lkb-pane__header">
-						<p class="lkb-pane__eyebrow">{{ activeCategoryLabel }}</p>
-						<h2 class="lkb-pane__title">{{ activeGroupObject?.label }}</h2>
-					</header>
-
 					<a-alert
 						v-if="store.error"
 						type="error"
@@ -271,19 +270,22 @@ onBeforeUnmount( () => {
 							</p>
 						</div>
 
-						<SettingField
-							v-for="field in activeGroupObject.fields"
-							:key="field.key"
-							:field="field"
-							:value="store.draft[ field.key ] ?? null"
-							:error="store.fieldErrors[ field.key ] ?? ''"
-							:changed="store.changedKeys.includes( field.key )"
-							@update="update"
-						/>
+						<div class="lkb-card__body">
+							<SettingField
+								v-for="field in activeGroupObject.fields"
+								:key="field.key"
+								:field="field"
+								:value="store.draft[ field.key ] ?? null"
+								:error="store.fieldErrors[ field.key ] ?? ''"
+								:changed="store.changedKeys.includes( field.key )"
+								@update="update"
+							/>
+						</div>
 					</section>
 				</div>
 			</div>
 		</a-spin>
+		</div>
 
 		<footer class="lkb-bar" :class="{ 'is-dirty': store.dirty }">
 			<p class="lkb-bar__status">
@@ -359,35 +361,27 @@ onBeforeUnmount( () => {
 
 .lkb-settings__layout {
 	display: grid;
-	grid-template-columns: 260px minmax(0, 1fr);
-	gap: 24px;
+	grid-template-columns: 200px minmax(0, 1fr);
+	gap: var(--lkb-gap-lg);
 	align-items: start;
 }
 
-/* Sidebar */
+/* ── Sidebar ─────────────────────────────────────────────── */
+
 .lkb-nav {
-	background: #fff;
-	border: 1px solid var(--lkb-border);
-	border-radius: 8px;
-	padding: 16px 12px;
 	position: sticky;
-	top: 46px;
-}
-
-.lkb-nav__heading {
-	margin: 16px 8px 8px;
-	font-size: 11px;
-	font-weight: 600;
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
-	color: var(--lkb-ink-muted);
-}
-
-.lkb-nav__heading:first-child {
-	margin-top: 0;
+	top: 102px;
+	padding: 4px;
+	border: 1px solid var(--lkb-border-wp);
+	border-radius: var(--lkb-radius);
+	background: var(--lkb-surface);
+	box-shadow: var(--lkb-shadow-sm);
 }
 
 .lkb-nav__list {
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
 	margin: 0;
 	padding: 0;
 	list-style: none;
@@ -398,23 +392,31 @@ onBeforeUnmount( () => {
 	align-items: center;
 	gap: 10px;
 	width: 100%;
-	padding: 9px 10px;
+	padding: 9px 12px;
 	border: 0;
 	border-radius: 6px;
 	background: transparent;
-	color: var(--lkb-ink);
+	color: var(--lkb-ink-wp-secondary);
 	font-size: 13px;
-	line-height: 1.4;
+	line-height: 1;
 	text-align: left;
 	cursor: pointer;
+	transition: background 0.12s ease, color 0.12s ease;
 }
 
 .lkb-nav__item:hover {
-	background: #f6f7f7;
+	background: var(--lkb-hover);
+	color: var(--lkb-ink-wp);
 }
 
+/*
+ * The active entry is carried by a tinted ground and a filled icon badge
+ * rather than by weight alone, so the current section is findable in a glance
+ * down the rail rather than by reading it.
+ */
 .lkb-nav__item.is-active {
-	background: #e8eaed;
+	background: var(--lkb-brand-tint);
+	color: var(--lkb-accent);
 	font-weight: 600;
 }
 
@@ -423,16 +425,30 @@ onBeforeUnmount( () => {
 	outline-offset: -2px;
 }
 
-.lkb-nav__icon {
-	font-size: 17px;
-	width: 17px;
-	height: 17px;
-	color: var(--lkb-ink-muted);
+.lkb-nav__icon-wrap {
+	display: flex;
 	flex: 0 0 auto;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	border-radius: 5px;
+	transition: background 0.12s ease, color 0.12s ease;
 }
 
-.lkb-nav__item.is-active .lkb-nav__icon {
-	color: var(--lkb-accent);
+.lkb-nav__item.is-active .lkb-nav__icon-wrap {
+	background: var(--lkb-accent);
+	color: #fff;
+}
+
+.lkb-nav__icon {
+	width: 15px;
+	height: 15px;
+	font-size: 15px;
+}
+
+.lkb-nav__item:not( .is-active ) .lkb-nav__icon {
+	opacity: 0.55;
 }
 
 .lkb-nav__label {
@@ -440,15 +456,12 @@ onBeforeUnmount( () => {
 	min-width: 0;
 }
 
-.lkb-nav__count {
-	flex: 0 0 auto;
-	font-size: 12px;
-	color: var(--lkb-ink-muted);
-	font-variant-numeric: tabular-nums;
-}
-
-/* A section with unsaved edits is marked, so switching away does not hide them. */
-.lkb-nav__item.is-dirty .lkb-nav__count::after {
+/*
+ * A section holding unsaved edits is marked, so switching away does not hide
+ * them. The dot is the only thing on the row besides the label, so it reads
+ * as "something here" rather than as a count.
+ */
+.lkb-nav__item.is-dirty .lkb-nav__label::after {
 	content: '';
 	display: inline-block;
 	width: 6px;
@@ -459,77 +472,85 @@ onBeforeUnmount( () => {
 	vertical-align: middle;
 }
 
-/* Content pane */
-.lkb-pane__header {
-	margin: 0 0 20px;
-}
+/* ── Content pane ────────────────────────────────────────── */
 
-.lkb-pane__eyebrow {
-	margin: 0 0 2px;
-	font-size: 11px;
-	font-weight: 600;
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
-	color: var(--lkb-ink-muted);
+.lkb-pane__notice {
+	margin-bottom: var(--lkb-gap);
 }
 
 /*
- * The section heading, one level under the screen heading printed by the
- * shared shell. It was set in Georgia italic, which matched neither the
- * Lisensio brand face (Plus Jakarta Sans) nor the admin stack License Server
- * uses, and
- * WordPress' own `.wrap h1` rule was overriding its size anyway.
+ * Section cards.
+ *
+ * The head is a tinted strip carrying the section name in small caps and one
+ * line saying what the section governs. The name is set small and spaced
+ * rather than large: it labels a group of rows, and a 20px heading over a
+ * 13px row reads as a page title over a page.
  */
-.lkb-pane__title {
-	margin: 0;
-	color: var(--lkb-ink);
-	font-size: 16px;
-	font-weight: 600;
-	line-height: 1.3;
-}
-
-.lkb-pane__notice {
-	margin-bottom: 16px;
-}
-
-/* Cards */
 .lkb-card {
-	background: #fff;
-	border: 1px solid var(--lkb-border);
-	border-radius: 8px;
-	padding: 20px 24px 8px;
+	overflow: hidden;
+	border: 1px solid var(--lkb-border-wp);
+	border-radius: var(--lkb-radius);
+	background: var(--lkb-surface);
+	box-shadow: var(--lkb-shadow-sm);
+}
+
+.lkb-card + .lkb-card {
+	margin-top: var(--lkb-gap);
 }
 
 .lkb-card__head {
-	padding-bottom: 16px;
-	border-bottom: 1px solid var(--lkb-border);
+	padding: var(--lkb-gap) var(--lkb-gap-lg);
+	border-bottom: 1px solid var(--lkb-border-light);
+	background: var(--lkb-sunken);
 }
 
 .lkb-card__title {
-	margin: 0 0 4px;
-	font-size: 15px;
-	font-weight: 600;
+	margin: 0;
+	color: var(--lkb-ink-wp);
+	font-size: 13px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	line-height: 1.3;
+	text-transform: uppercase;
 }
 
 .lkb-card__description {
-	margin: 0;
-	color: var(--lkb-ink-muted);
-	font-size: 13px;
+	margin: 4px 0 0;
+	color: var(--lkb-ink-wp-muted);
+	font-size: 12.5px;
+	font-weight: 400;
+	letter-spacing: 0;
 	line-height: 1.5;
+	text-transform: none;
 }
 
-/* Sticky action bar */
+.lkb-card__body {
+	padding: 4px var(--lkb-gap-lg) 12px;
+}
+
+/*
+ * Sticky action bar.
+ *
+ * It spans the ground rather than the content gutters, so the save controls
+ * are always in the same place regardless of how far the pane scrolls. The
+ * bar is a child of `.lkb-page`, which already carries the -20px that cancels
+ * `#wpcontent`'s padding; repeating it here pulled the bar a second 20px left
+ * and cut the first characters of its status line off the screen.
+ */
 .lkb-bar {
 	position: sticky;
 	bottom: 0;
+	z-index: 20;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	gap: 16px;
-	margin: 16px 0 0 -20px;
-	padding: 12px 24px;
-	background: #fff;
-	border-top: 1px solid var(--lkb-border);
+	gap: var(--lkb-gap);
+	max-width: 1280px;
+	margin: 0 auto;
+	padding: 12px var(--lkb-gap-lg);
+	background: var(--lkb-surface);
+	border-top: 1px solid var(--lkb-border-wp);
+	box-shadow: 0 -2px 8px rgba( 0, 0, 0, 0.06 );
 }
 
 .lkb-bar__status {

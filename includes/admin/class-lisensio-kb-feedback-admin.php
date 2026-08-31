@@ -88,7 +88,7 @@ class Lisensio_KB_Feedback_Admin {
     public function register_page() {
         $hook = add_submenu_page(
             'edit.php?post_type=' . Lisensio_KB_Post_Types::POST_TYPE,
-            __( 'Knowledge Base Feedback', 'lisensio-knowledge-base' ),
+            __( 'Feedback', 'lisensio-knowledge-base' ),
             __( 'Feedback', 'lisensio-knowledge-base' ),
             Lisensio_KB_Capabilities::CAPABILITY,
             self::PAGE_SLUG,
@@ -145,10 +145,11 @@ class Lisensio_KB_Feedback_Admin {
      */
     public function app_data() {
         return array(
-            'root'     => Lisensio_KB_REST_API::url( 'feedback' ),
-            'nonce'    => wp_create_nonce( 'wp_rest' ),
-            'perPage'  => Lisensio_KB_Feedback::DEFAULT_PER_PAGE,
-            'statuses' => Lisensio_KB_Feedback::statuses(),
+            'root'        => Lisensio_KB_REST_API::url( 'feedback' ),
+            'nonce'       => wp_create_nonce( 'wp_rest' ),
+            'perPage'     => Lisensio_KB_Feedback::DEFAULT_PER_PAGE,
+            'statuses'    => Lisensio_KB_Feedback::statuses(),
+            'settingsUrl' => Lisensio_KB_Admin_Page::settings_url(),
         );
     }
 
