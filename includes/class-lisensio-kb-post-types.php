@@ -49,6 +49,24 @@ class Lisensio_KB_Post_Types {
     const TAXONOMY_TAG = 'lisensio_tag';
 
     /**
+     * Where the knowledge base sits in the admin menu.
+     *
+     * Directly below License Server, which registers itself at 50. Adjacency
+     * is the point: the two are one product, and a reader scanning the rail
+     * should find them together rather than with 24 positions of unrelated
+     * menus between them.
+     *
+     * The icon is deliberately *not* License Server's. Two adjacent entries
+     * sharing a silhouette are unnavigable once the rail is collapsed, where
+     * WordPress hides the label and the icon is the only thing left to read.
+     * Same weight, same brand green, different shape.
+     *
+     * @since 1.0.0
+     * @var int
+     */
+    const MENU_POSITION = 51;
+
+    /**
      * Settings store used to resolve the rewrite slugs.
      *
      * @since 1.0.0
@@ -85,6 +103,80 @@ class Lisensio_KB_Post_Types {
         add_action( 'init', array( $this, 'register_taxonomies' ), 5 );
         add_action( 'init', array( $this, 'register_post_type' ), 6 );
         add_action( 'init', array( $this, 'maybe_flush_rewrite_rules' ), 99 );
+
+        add_filter( 'post_type_archive_title', array( $this, 'filter_archive_title' ), 10, 2 );
+        add_filter( 'statute_seo_breadcrumbs_items', array( $this, 'filter_breadcrumb_items' ) );
+    }
+
+    /**
+     * The heading the public archive is announced with.
+     *
+     * WordPress titles a post type archive with the type's plural label, which
+     * here is "Articles" - a word that appears nowhere else the reader has
+     * been. The menu says Docs, the address says /docs/, and the design calls
+     * the section Documentation. "Articles" matched none of them.
+     *
+     * One word per thing, rather than one word everywhere: an *article* is the
+     * item, the *knowledge base* is the thing being administered, and
+     * *Documentation* is the published section a reader arrives at. Three
+     * nouns for three different objects is register, not inconsistency - the
+     * archive borrowing the item noun for the whole section was the error.
+     *
+     * @since 1.0.0
+     *
+     * @param string $title     The archive title WordPress derived.
+     * @param string $post_type The post type being archived.
+     *
+     * @return string The title, replaced only for this plugin's archive.
+     */
+    public function filter_archive_title( $title, $post_type = '' ) {
+        if ( self::POST_TYPE !== $post_type ) {
+            return $title;
+        }
+
+        return __( 'Documentation', 'lisensio-knowledge-base' );
+    }
+
+    /**
+     * Rename the archive crumb in the site's breadcrumb trail.
+     *
+     * `filter_archive_title()` only reaches what WordPress derives from the
+     * archive title. Breadcrumbs read the post type's plural label straight
+     * off the object, so the trail still said "Articles" under a heading that
+     * said "Documentation" - on the archive and on every single article, which
+     * carries the archive as an ancestor.
+     *
+     * The crumb is matched on its URL rather than its position or its text.
+     * Position moves with the trail's shape (an archive trail is two items,
+     * a single article's is four), and matching the text would rename any
+     * crumb that happened to read "Articles", including another plugin's.
+     * The archive link is the one thing that identifies this crumb and only
+     * this crumb.
+     *
+     * @since 1.0.0
+     *
+     * @param array $items Breadcrumb items, each with `name` and `url` keys.
+     *
+     * @return array The items, with this plugin's archive crumb renamed.
+     */
+    public function filter_breadcrumb_items( $items ) {
+        if ( ! is_array( $items ) ) {
+            return $items;
+        }
+
+        $archive = get_post_type_archive_link( self::POST_TYPE );
+
+        if ( ! is_string( $archive ) || '' === $archive ) {
+            return $items;
+        }
+
+        foreach ( $items as $index => $item ) {
+            if ( isset( $item['url'] ) && $archive === $item['url'] ) {
+                $items[ $index ]['name'] = __( 'Documentation', 'lisensio-knowledge-base' );
+            }
+        }
+
+        return $items;
     }
 
     /**
@@ -153,8 +245,8 @@ class Lisensio_KB_Post_Types {
             'rest_base'          => 'lisensio_articles',
             'has_archive'        => $this->article_slug(),
             'hierarchical'       => false,
-            'menu_position'      => 26,
-            'menu_icon'          => 'dashicons-book-alt',
+            'menu_position'      => self::MENU_POSITION,
+            'menu_icon'          => LISENSIO_KB_ASSETS_URL . 'images/logo/knowledge_base_icon.svg',
             'supports'           => array(
                 'title',
                 'editor',

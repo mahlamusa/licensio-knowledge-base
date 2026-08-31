@@ -159,7 +159,7 @@ function update( value: SettingValue ): void {
 	display: block;
 	margin-top: 2px;
 	font-size: 12px;
-	color: var(--lkb-muted, #6b7280);
+	color: var(--lkb-ink-muted);
 	font-variant-numeric: tabular-nums;
 }
 
@@ -185,11 +185,11 @@ function update( value: SettingValue ): void {
 }
 
 .lkb-field__help {
-	color: var(--lkb-muted, #6b7280);
+	color: var(--lkb-ink-muted);
 }
 
 .lkb-field__error {
-	color: #d63638;
+	color: var(--lkb-error);
 }
 
 /* An edited row is marked, so a change stays visible after scrolling past it. */
@@ -200,12 +200,12 @@ function update( value: SettingValue ): void {
 	height: 6px;
 	margin-left: 6px;
 	border-radius: 50%;
-	background: #3858e9;
+	background: var(--lkb-accent);
 	vertical-align: middle;
 }
 
 .lkb-field.is-invalid .lkb-field__label label {
-	color: #d63638;
+	color: var(--lkb-error);
 }
 
 @media (max-width: 782px) {

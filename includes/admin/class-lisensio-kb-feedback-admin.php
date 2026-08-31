@@ -155,8 +155,8 @@ class Lisensio_KB_Feedback_Admin {
     /**
      * Render the mount point.
      *
-     * The application draws the whole screen; the heading is printed here so
-     * the page is not blank before the bundle has parsed.
+     * The application draws the whole screen; the shared shell prints the
+     * heading so the page is named before the bundle has parsed.
      *
      * @since 1.0.0
      *
@@ -167,11 +167,10 @@ class Lisensio_KB_Feedback_Admin {
             wp_die( esc_html__( 'You are not allowed to manage the knowledge base.', 'lisensio-knowledge-base' ) );
         }
 
-        printf(
-            '<div class="wrap"><h1>%1$s</h1><div id="%2$s"><p>%3$s</p></div></div>',
-            esc_html__( 'Knowledge Base Feedback', 'lisensio-knowledge-base' ),
-            esc_attr( self::MOUNT_ID ),
-            esc_html__( 'Loading feedback…', 'lisensio-knowledge-base' )
+        Lisensio_KB_Admin_Page::shell(
+            __( 'Knowledge Base Feedback', 'lisensio-knowledge-base' ),
+            self::MOUNT_ID,
+            __( 'Loading feedback…', 'lisensio-knowledge-base' )
         );
     }
 

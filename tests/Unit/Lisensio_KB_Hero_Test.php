@@ -1316,4 +1316,146 @@ class Lisensio_KB_Hero_Test extends Lisensio_KB_Test_Case {
 
         $this->assertStringContainsString( 'lisensio-kb__grid--cols-4', $this->render_archive() );
     }
+
+    /**
+     * The public archive is titled Documentation, not Articles.
+     *
+     * WordPress derives an archive title from the post type's plural label.
+     * That put "Articles" on a page whose menu item says Docs and whose
+     * address is /docs/ - a fourth word for something already called three
+     * things. The filter is asserted rather than the rendered heading alone,
+     * because a template hardcoding the string would satisfy the page while
+     * leaving breadcrumbs, feeds and SEO output still saying Articles.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_archive_is_titled_documentation() {
+        $types = new Lisensio_KB_Post_Types( new Lisensio_KB_Settings() );
+
+        $this->assertSame(
+            'Documentation',
+            $types->filter_archive_title( 'Articles', Lisensio_KB_Post_Types::POST_TYPE )
+        );
+    }
+
+    /**
+     * Another post type's archive title is left alone.
+     *
+     * The counterpart: a filter that returned Documentation unconditionally
+     * would pass the test above and rename every archive on the site.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_another_archive_title_is_untouched() {
+        $types = new Lisensio_KB_Post_Types( new Lisensio_KB_Settings() );
+
+        $this->assertSame( 'Products', $types->filter_archive_title( 'Products', 'product' ) );
+    }
+
+    /**
+     * The archive crumb in the breadcrumb trail says Documentation.
+     *
+     * The heading and the trail are produced by two different filters reading
+     * two different sources, so renaming the heading left the trail underneath
+     * it still saying Articles.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_breadcrumb_archive_crumb_is_renamed() {
+        Functions\when( 'get_post_type_archive_link' )->justReturn( 'https://example.test/docs/' );
+
+        $types = new Lisensio_KB_Post_Types( new Lisensio_KB_Settings() );
+
+        $items = $types->filter_breadcrumb_items(
+            array(
+                array(
+                    'name' => 'Home',
+                    'url'  => 'https://example.test/',
+                ),
+                array(
+                    'name' => 'Articles',
+                    'url'  => 'https://example.test/docs/',
+                ),
+            )
+        );
+
+        $this->assertSame( 'Home', $items[0]['name'] );
+        $this->assertSame( 'Documentation', $items[1]['name'] );
+    }
+
+    /**
+     * The crumb is found wherever the trail puts it.
+     *
+     * A single article's trail is Home > archive > category > article, so the
+     * archive is no longer the last item. An implementation that renamed a
+     * fixed position would pass the archive test above and rename the wrong
+     * crumb here.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_crumb_is_renamed_part_way_along_the_trail() {
+        Functions\when( 'get_post_type_archive_link' )->justReturn( 'https://example.test/docs/' );
+
+        $types = new Lisensio_KB_Post_Types( new Lisensio_KB_Settings() );
+
+        $items = $types->filter_breadcrumb_items(
+            array(
+                array(
+                    'name' => 'Home',
+                    'url'  => 'https://example.test/',
+                ),
+                array(
+                    'name' => 'Articles',
+                    'url'  => 'https://example.test/docs/',
+                ),
+                array(
+                    'name' => 'Account Management',
+                    'url'  => 'https://example.test/docs-category/account/',
+                ),
+                array(
+                    'name' => 'How do I Change my Password?',
+                    'url'  => 'https://example.test/docs/password/',
+                ),
+            )
+        );
+
+        $this->assertSame( 'Documentation', $items[1]['name'] );
+        $this->assertSame( 'Account Management', $items[2]['name'] );
+        $this->assertSame( 'How do I Change my Password?', $items[3]['name'] );
+    }
+
+    /**
+     * Another plugin's crumb reading "Articles" is left alone.
+     *
+     * The counterpart to matching on the URL: renaming by text would reach
+     * into a trail this plugin has nothing to do with.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_another_trail_saying_articles_is_untouched() {
+        Functions\when( 'get_post_type_archive_link' )->justReturn( 'https://example.test/docs/' );
+
+        $types = new Lisensio_KB_Post_Types( new Lisensio_KB_Settings() );
+
+        $items = $types->filter_breadcrumb_items(
+            array(
+                array(
+                    'name' => 'Articles',
+                    'url'  => 'https://example.test/blog/articles/',
+                ),
+            )
+        );
+
+        $this->assertSame( 'Articles', $items[0]['name'] );
+    }
 }

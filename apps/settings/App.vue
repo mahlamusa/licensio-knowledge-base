@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { lkbTheme } from '../styles/theme';
 /**
  * The settings screen.
  *
@@ -201,6 +202,7 @@ onBeforeUnmount( () => {
 </script>
 
 <template>
+	<a-config-provider :theme="lkbTheme">
 	<div class="lkb-settings">
 		<a-spin :spinning="store.loading || store.saving">
 			<div v-if="store.loaded" class="lkb-settings__layout">
@@ -236,7 +238,7 @@ onBeforeUnmount( () => {
 				<div class="lkb-pane">
 					<header class="lkb-pane__header">
 						<p class="lkb-pane__eyebrow">{{ activeCategoryLabel }}</p>
-						<h1 class="lkb-pane__title">{{ activeGroupObject?.label }}</h1>
+						<h2 class="lkb-pane__title">{{ activeGroupObject?.label }}</h2>
 					</header>
 
 					<a-alert
@@ -334,6 +336,7 @@ onBeforeUnmount( () => {
 			</p>
 		</a-modal>
 	</div>
+	</a-config-provider>
 </template>
 
 <style>
@@ -342,17 +345,16 @@ onBeforeUnmount( () => {
  * reads as a single flat sheet without it. Everything is scoped under
  * .lkb-settings so nothing leaks into the rest of wp-admin.
  */
+/*
+ * The five custom properties that were declared here are gone. They shadowed
+ * the shared tokens with WordPress admin values - `--lkb-accent` was
+ * `#3858e9`, WordPress blue - so this screen quietly ignored the plugin's own
+ * palette. Everything now comes from `apps/styles/tokens.css`.
+ */
 .lkb-settings {
-	--lkb-ink: #1d2327;
-	--lkb-muted: #6b7280;
-	--lkb-line: #e5e7eb;
-	--lkb-ground: #f0f0f1;
-	--lkb-accent: #3858e9;
-	margin: 0 0 0 -20px;
-	padding: 24px 24px 96px;
-	background: var(--lkb-ground);
-	min-height: calc(100vh - 32px);
-	color: var(--lkb-ink);
+	/* Shell (ground, measure, centring) comes from `.lkb-page` in
+	   apps/styles/admin.css; only settings-specific rules live here. */
+	font-size: 13px;
 }
 
 .lkb-settings__layout {
@@ -360,13 +362,12 @@ onBeforeUnmount( () => {
 	grid-template-columns: 260px minmax(0, 1fr);
 	gap: 24px;
 	align-items: start;
-	max-width: 1240px;
 }
 
 /* Sidebar */
 .lkb-nav {
 	background: #fff;
-	border: 1px solid var(--lkb-line);
+	border: 1px solid var(--lkb-border);
 	border-radius: 8px;
 	padding: 16px 12px;
 	position: sticky;
@@ -379,7 +380,7 @@ onBeforeUnmount( () => {
 	font-weight: 600;
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
-	color: var(--lkb-muted);
+	color: var(--lkb-ink-muted);
 }
 
 .lkb-nav__heading:first-child {
@@ -426,7 +427,7 @@ onBeforeUnmount( () => {
 	font-size: 17px;
 	width: 17px;
 	height: 17px;
-	color: var(--lkb-muted);
+	color: var(--lkb-ink-muted);
 	flex: 0 0 auto;
 }
 
@@ -442,7 +443,7 @@ onBeforeUnmount( () => {
 .lkb-nav__count {
 	flex: 0 0 auto;
 	font-size: 12px;
-	color: var(--lkb-muted);
+	color: var(--lkb-ink-muted);
 	font-variant-numeric: tabular-nums;
 }
 
@@ -454,7 +455,7 @@ onBeforeUnmount( () => {
 	height: 6px;
 	margin-left: 6px;
 	border-radius: 50%;
-	background: #d63638;
+	background: var(--lkb-error);
 	vertical-align: middle;
 }
 
@@ -469,16 +470,22 @@ onBeforeUnmount( () => {
 	font-weight: 600;
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
-	color: var(--lkb-muted);
+	color: var(--lkb-ink-muted);
 }
 
+/*
+ * The section heading, one level under the screen heading printed by the
+ * shared shell. It was set in Georgia italic, which matched neither the
+ * Lisensio brand face (Plus Jakarta Sans) nor the admin stack License Server
+ * uses, and
+ * WordPress' own `.wrap h1` rule was overriding its size anyway.
+ */
 .lkb-pane__title {
 	margin: 0;
-	font-family: Georgia, 'Times New Roman', serif;
-	font-size: 30px;
-	font-weight: 400;
-	font-style: italic;
-	line-height: 1.2;
+	color: var(--lkb-ink);
+	font-size: 16px;
+	font-weight: 600;
+	line-height: 1.3;
 }
 
 .lkb-pane__notice {
@@ -488,14 +495,14 @@ onBeforeUnmount( () => {
 /* Cards */
 .lkb-card {
 	background: #fff;
-	border: 1px solid var(--lkb-line);
+	border: 1px solid var(--lkb-border);
 	border-radius: 8px;
 	padding: 20px 24px 8px;
 }
 
 .lkb-card__head {
 	padding-bottom: 16px;
-	border-bottom: 1px solid var(--lkb-line);
+	border-bottom: 1px solid var(--lkb-border);
 }
 
 .lkb-card__title {
@@ -506,7 +513,7 @@ onBeforeUnmount( () => {
 
 .lkb-card__description {
 	margin: 0;
-	color: var(--lkb-muted);
+	color: var(--lkb-ink-muted);
 	font-size: 13px;
 	line-height: 1.5;
 }
@@ -522,13 +529,13 @@ onBeforeUnmount( () => {
 	margin: 16px 0 0 -20px;
 	padding: 12px 24px;
 	background: #fff;
-	border-top: 1px solid var(--lkb-line);
+	border-top: 1px solid var(--lkb-border);
 }
 
 .lkb-bar__status {
 	margin: 0;
 	font-size: 13px;
-	color: var(--lkb-muted);
+	color: var(--lkb-ink-muted);
 }
 
 .lkb-bar.is-dirty .lkb-bar__status {
@@ -542,7 +549,7 @@ onBeforeUnmount( () => {
 	margin-left: 6px;
 	padding: 1px 6px;
 	border-radius: 10px;
-	background: #d63638;
+	background: var(--lkb-error);
 	color: #fff;
 	font-size: 11px;
 	text-align: center;

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { lkbTheme } from '../styles/theme';
 /**
  * Feedback inbox.
  *
@@ -60,7 +61,7 @@ onMounted( () => {
 </script>
 
 <template>
-	<a-config-provider>
+	<a-config-provider :theme="lkbTheme">
 		<div class="lisensio-kb-inbox">
 			<a-alert
 				v-if="store.error"

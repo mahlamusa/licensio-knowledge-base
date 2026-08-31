@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { lkbTheme } from '../styles/theme';
 /**
  * The analytics dashboard.
  *
@@ -27,7 +28,7 @@ const presets = [ 7, 30, 90 ];
 const trend = computed( () => [
 	{
 		label: translate( 'Searches' ),
-		color: '#2563eb',
+		color: '#247a5c',
 		points: store.overview?.search_trend ?? [],
 	},
 	{
@@ -90,8 +91,8 @@ onMounted( () => {
 </script>
 
 <template>
+	<a-config-provider :theme="lkbTheme">
 	<div class="lisensio-kb-analytics">
-		<h1>{{ translate( 'Knowledge Base Analytics' ) }}</h1>
 
 		<a-alert
 			v-if="store.error"
@@ -245,6 +246,7 @@ onMounted( () => {
 			</a-card>
 		</a-spin>
 	</div>
+	</a-config-provider>
 </template>
 
 <style scoped>
