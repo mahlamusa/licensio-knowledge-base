@@ -294,6 +294,9 @@ final class Lisensio_KB {
 
             $maintenance_admin = new Lisensio_KB_Maintenance_Admin( $this->analytics_retention() );
             $maintenance_admin->init_hooks();
+
+            $duplicates_admin = new Lisensio_KB_Duplicates_Admin();
+            $duplicates_admin->init_hooks();
         }
 
         add_action( 'init', array( $this, 'load_textdomain' ) );

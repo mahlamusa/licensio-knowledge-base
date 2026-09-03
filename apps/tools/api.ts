@@ -11,6 +11,9 @@
  */
 
 import type {
+	DuplicateFixReport,
+	DuplicateGroup,
+	DuplicateTermGroup,
 	ImportProgress,
 	ImportSummary,
 	IndexStatus,
@@ -281,6 +284,45 @@ export async function recountScores(): Promise< {
 		requireEndpoint( config().maintenance ),
 		'lisensio_tools_recount_scores'
 	) as Promise< { articles: number; status: MaintenanceStatus } >;
+}
+
+/**
+ * Scan for duplicate articles and terms. Writes nothing.
+ *
+ * @since 1.0.0
+ *
+ * @return {Promise<{posts: DuplicateGroup[]; terms: DuplicateTermGroup[]}>} The duplicate groups, fixable and flagged.
+ */
+export async function scanDuplicates(): Promise< {
+	posts: DuplicateGroup[];
+	terms: DuplicateTermGroup[];
+} > {
+	const data = ( await postAction(
+		requireEndpoint( config().duplicates ),
+		'lisensio_tools_duplicates_scan'
+	) ) as {
+		posts?: DuplicateGroup[];
+		terms?: DuplicateTermGroup[];
+	};
+
+	return {
+		posts: data.posts ?? [],
+		terms: data.terms ?? [],
+	};
+}
+
+/**
+ * Fix every fixable duplicate group.
+ *
+ * @since 1.0.0
+ *
+ * @return {Promise<DuplicateFixReport>} What the fix did.
+ */
+export async function fixDuplicates(): Promise< DuplicateFixReport > {
+	return postAction(
+		requireEndpoint( config().duplicates ),
+		'lisensio_tools_duplicates_fix'
+	) as Promise< DuplicateFixReport >;
 }
 
 /**
