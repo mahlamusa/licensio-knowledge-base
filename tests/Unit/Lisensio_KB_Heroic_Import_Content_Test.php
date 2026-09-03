@@ -81,6 +81,14 @@ class Lisensio_KB_Heroic_Import_Content_WPDB {
     public $articles = array();
 
     /**
+     * Slug to the target article ID a slug lookup should report.
+     *
+     * @since 1.0.0
+     * @var array<string, int>
+     */
+    public $slugs = array();
+
+    /**
      * Taxonomy and Heroic term ID to the target term ID the lookup should report.
      *
      * @since 1.0.0
@@ -123,6 +131,13 @@ class Lisensio_KB_Heroic_Import_Content_WPDB {
      */
     public function get_var( $query ) {
         $this->queries[] = $query;
+
+        if ( false !== strpos( $query, 'post_name =' ) ) {
+            preg_match( "/post_name = '([^']*)'/", $query, $matches );
+            $slug = isset( $matches[1] ) ? $matches[1] : '';
+
+            return isset( $this->slugs[ $slug ] ) ? $this->slugs[ $slug ] : 0;
+        }
 
         if ( false !== strpos( $query, Lisensio_KB_Heroic_Import_Content::META_SOURCE_POST ) ) {
             return isset( $this->articles[ $this->id_in( $query ) ] ) ? $this->articles[ $this->id_in( $query ) ] : 0;
@@ -321,6 +336,14 @@ class Lisensio_KB_Heroic_Import_Content_Test extends Lisensio_KB_Test_Case {
     private $stored_term_slug = null;
 
     /**
+     * Provenance meta an existing post already carries, by post ID.
+     *
+     * @since 1.0.0
+     * @var array<int, string>
+     */
+    private $existing_provenance = array();
+
+    /**
      * The run report.
      *
      * @since 1.0.0
@@ -338,17 +361,18 @@ class Lisensio_KB_Heroic_Import_Content_Test extends Lisensio_KB_Test_Case {
     protected function setUp(): void {
         parent::setUp();
 
-        $this->wpdb             = new Lisensio_KB_Heroic_Import_Content_WPDB();
-        $GLOBALS['wpdb']        = $this->wpdb; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
-        $this->inserted_posts   = array();
-        $this->inserted_terms   = array();
-        $this->assigned_terms   = array();
-        $this->post_meta        = array();
-        $this->term_meta        = array();
-        $this->updated_posts    = array();
-        $this->stored_post_slug = null;
-        $this->stored_term_slug = null;
-        $this->report           = new Lisensio_KB_Heroic_Import_Report();
+        $this->wpdb                = new Lisensio_KB_Heroic_Import_Content_WPDB();
+        $GLOBALS['wpdb']           = $this->wpdb; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+        $this->inserted_posts      = array();
+        $this->inserted_terms      = array();
+        $this->assigned_terms      = array();
+        $this->post_meta           = array();
+        $this->term_meta           = array();
+        $this->updated_posts       = array();
+        $this->stored_post_slug    = null;
+        $this->stored_term_slug    = null;
+        $this->existing_provenance = array();
+        $this->report              = new Lisensio_KB_Heroic_Import_Report();
 
         Brain\Monkey\Functions\when( 'is_wp_error' )->alias(
             function ( $thing ) {
@@ -406,7 +430,19 @@ class Lisensio_KB_Heroic_Import_Content_Test extends Lisensio_KB_Test_Case {
             }
         );
 
-        Brain\Monkey\Functions\when( 'get_post_meta' )->justReturn( 0 );
+        Brain\Monkey\Functions\when( 'get_post_meta' )->alias(
+            function ( $post_id, $key, $single = false ) {
+                unset( $single );
+
+                if ( Lisensio_KB_Heroic_Import_Content::META_SOURCE_POST === $key ) {
+                    return isset( $this->existing_provenance[ (int) $post_id ] )
+                        ? $this->existing_provenance[ (int) $post_id ]
+                        : '';
+                }
+
+                return 0;
+            }
+        );
 
         Brain\Monkey\Functions\when( 'wp_update_post' )->alias(
             function ( $post ) {
@@ -565,6 +601,116 @@ class Lisensio_KB_Heroic_Import_Content_Test extends Lisensio_KB_Test_Case {
         $this->assertSame( '2024-05-01 09:00:00', $post['post_date_gmt'] );
         $this->assertSame( '2024-06-01 09:00:00', $post['post_modified_gmt'] );
         $this->assertSame( 'open', $post['comment_status'] );
+    }
+
+    /**
+     * An article already living under the Heroic slug is adopted and updated in place.
+     *
+     * Recreated-by-hand content is the common case on a site prepared for
+     * migration: the article exists, carries no provenance, and would
+     * otherwise be duplicated as `slug-2`. It is claimed instead — same field
+     * array a create would write, plus the provenance meta, the terms, the
+     * thumbnail and the attachments.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_existing_article_under_the_heroic_slug_is_adopted_and_updated() {
+        $this->wpdb->slugs['email-logs'] = 950;
+
+        $source = $this->source(
+            array(
+                'articles' => array(
+                    array(
+                        'ID'           => 12,
+                        'post_title'   => 'Email logs',
+                        'post_content' => '<p>The real body.</p>',
+                        'post_status'  => 'publish',
+                        'post_name'    => 'email-logs',
+                    ),
+                ),
+            )
+        );
+
+        $this->migrator( $source )->migrate_articles_batch( 10 );
+
+        $this->assertSame( array(), $this->inserted_posts, 'An adoptable article must not be duplicated.' );
+
+        $this->assertCount( 1, $this->updated_posts );
+        $this->assertSame( 950, $this->updated_posts[0]['ID'] );
+        $this->assertSame( 'Email logs', $this->updated_posts[0]['post_title'] );
+        $this->assertSame( '<p>The real body.</p>', $this->updated_posts[0]['post_content'] );
+        $this->assertSame( 'email-logs', $this->updated_posts[0]['post_name'] );
+
+        $this->assertSame( 12, $this->post_meta[950][ Lisensio_KB_Heroic_Import_Content::META_SOURCE_POST ], 'An adopted article must gain the provenance meta.' );
+        $this->assertSame( 1, $this->report->get( 'articles_adopted' ) );
+        $this->assertSame( 0, $this->report->get( 'articles_created' ) );
+    }
+
+    /**
+     * A slug held by an article migrated from a different Heroic ID is a collision, not an adoption.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_slug_claimed_by_another_migrated_article_is_not_adopted() {
+        $this->wpdb->slugs['email-logs'] = 950;
+        $this->existing_provenance[950]  = '42';
+        $this->stored_post_slug          = 'email-logs-2';
+
+        $source = $this->source(
+            array(
+                'articles' => array(
+                    array(
+                        'ID'           => 12,
+                        'post_title'   => 'Email logs',
+                        'post_content' => 'Body.',
+                        'post_status'  => 'publish',
+                        'post_name'    => 'email-logs',
+                    ),
+                ),
+            )
+        );
+
+        $this->migrator( $source )->migrate_articles_batch( 10 );
+
+        $this->assertCount( 1, $this->inserted_posts, 'Two distinct Heroic articles must never merge into one target.' );
+        $this->assertSame( array(), $this->updated_posts );
+        $this->assertSame( 1, $this->report->get( 'articles_created' ) );
+        $this->assertSame( 1, $this->report->get( 'slug_collisions' ), 'The uniquified slug must still be reported.' );
+    }
+
+    /**
+     * A dry run counts an adoption as an adoption.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_dry_run_counts_an_adoption_as_an_adoption() {
+        $this->wpdb->slugs['email-logs'] = 950;
+
+        $source = $this->source(
+            array(
+                'articles' => array(
+                    array(
+                        'ID'          => 12,
+                        'post_title'  => 'Email logs',
+                        'post_status' => 'publish',
+                        'post_name'   => 'email-logs',
+                    ),
+                ),
+            )
+        );
+
+        $this->migrator( $source, true )->migrate_articles_batch( 10 );
+
+        $this->assertSame( 1, $this->report->get( 'articles_adopted' ) );
+        $this->assertSame( 0, $this->report->get( 'articles_created' ) );
+        $this->assertSame( array(), $this->inserted_posts );
+        $this->assertSame( array(), $this->updated_posts );
     }
 
     /**
