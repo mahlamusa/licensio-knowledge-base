@@ -45,6 +45,8 @@ class Lisensio_KB_Uninstaller {
         'lisensio_db_version',
         'lisensio_fulltext_supported',
         'lisensio_flush_rewrite_rules',
+        'lisensio_import_state_heroic',
+        'lisensio_import_report_heroic',
     );
 
     /**
