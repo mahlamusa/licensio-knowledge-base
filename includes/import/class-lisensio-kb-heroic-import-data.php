@@ -355,6 +355,12 @@ class Lisensio_KB_Heroic_Import_Data {
     /**
      * Translate a Heroic article ID into a target article ID.
      *
+     * In a dry run no target article exists yet, so a vote or view whose Heroic
+     * article exists would be migrated and is counted that way: the row's own
+     * ID stands in for the target, and the dry run never writes the row it
+     * names. Only a source row pointing at an article that does not exist
+     * anywhere is orphaned — the same definition a real run uses.
+     *
      * @since 1.0.0
      *
      * @param int $heroic_id The Heroic post ID.
@@ -370,6 +376,10 @@ class Lisensio_KB_Heroic_Import_Data {
 
         if ( ! array_key_exists( $heroic_id, $this->resolved ) ) {
             $this->resolved[ $heroic_id ] = $this->content->find_article( $heroic_id );
+
+            if ( $this->dry_run && $this->resolved[ $heroic_id ] <= 0 && $this->source->article_exists( $heroic_id ) ) {
+                $this->resolved[ $heroic_id ] = $heroic_id;
+            }
         }
 
         return (int) $this->resolved[ $heroic_id ];

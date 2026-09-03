@@ -232,6 +232,32 @@ class Lisensio_KB_Heroic_Import_Source {
     }
 
     /**
+     * Whether a Heroic article with this ID exists.
+     *
+     * The dry run's answer to "would this vote have an article to attach to?" —
+     * the article does not exist as a target yet, so the question has to be
+     * asked of the source.
+     *
+     * @since 1.0.0
+     *
+     * @param int $post_id The Heroic post ID.
+     *
+     * @return bool True when the source holds the article.
+     */
+    public function article_exists( $post_id ) {
+        global $wpdb;
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        return (bool) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT ID FROM {$wpdb->posts} WHERE ID = %d AND post_type = %s",
+                (int) $post_id,
+                Lisensio_KB_Heroic_Import_Schema::POST_TYPE
+            )
+        );
+    }
+
+    /**
      * The attachment IDs whose parent is one Heroic article.
      *
      * @since 1.0.0
@@ -253,6 +279,31 @@ class Lisensio_KB_Heroic_Import_Source {
         );
 
         return array_map( 'intval', is_array( $ids ) ? $ids : array() );
+    }
+
+    /**
+     * How many rows one of Heroic's tables holds.
+     *
+     * A missing table counts as zero: Heroic creates each table lazily, and a
+     * site that never enabled a module simply has none.
+     *
+     * @since 1.0.0
+     *
+     * @param string $table One of the Lisensio_KB_Heroic_Import_Schema TABLE_* constants.
+     *
+     * @return int The row count.
+     */
+    public function count_table( $table ) {
+        global $wpdb;
+
+        if ( ! Lisensio_KB_Heroic_Import_Schema::table_exists( $table ) ) {
+            return 0;
+        }
+
+        $name = Lisensio_KB_Heroic_Import_Schema::table( $table );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- The identifier is a class constant; see rows().
+        return (int) $wpdb->get_var( "SELECT COUNT(*) FROM `{$name}`" );
     }
 
     /**

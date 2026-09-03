@@ -174,18 +174,46 @@ class Lisensio_KB_Heroic_Import_Driver extends Lisensio_KB_Import_Driver {
 
         $this->report->save();
 
-        if ( ! $dry_run && $this->state->is_complete() ) {
-            // Closes the run and destroys the salt; the cursors stay so a re-run imports nothing.
-            $this->state->finish();
+        if ( $this->state->is_complete() ) {
+            /*
+             * Exits are outbound-click analytics: the target model has no home
+             * for them, so they are counted and reported rather than silently
+             * left behind — the schema documents this table as reported, and
+             * the report is where that promise is kept.
+             */
+            $exits = $this->source->count_table( Lisensio_KB_Heroic_Import_Schema::TABLE_EXITS );
 
-            $this->report->note(
-                'redirects',
-                sprintf(
-                    /* translators: %s: absolute path to the generated redirect drop-in. */
-                    __( 'Redirect drop-in written to %s — move it to wp-content/mu-plugins/ to serve the 301s.', 'lisensio-knowledge-base' ),
-                    $this->redirects->redirect_path()
-                )
-            );
+            if ( $exits > 0 ) {
+                $this->report->count( 'exits_not_migrated', $exits );
+                $this->report->note(
+                    'exits',
+                    sprintf(
+                        /* translators: %d: number of rows. */
+                        _n(
+                            '%d outbound-click row in the Heroic exits table has no equivalent here and was not migrated.',
+                            '%d outbound-click rows in the Heroic exits table have no equivalent here and were not migrated.',
+                            $exits,
+                            'lisensio-knowledge-base'
+                        ),
+                        $exits
+                    )
+                );
+            }
+
+            if ( ! $dry_run ) {
+                // Closes the run and destroys the salt; the cursors stay so a re-run imports nothing.
+                $this->state->finish();
+
+                $this->report->note(
+                    'redirects',
+                    sprintf(
+                        /* translators: %s: absolute path to the generated redirect drop-in. */
+                        __( 'Redirect drop-in written to %s — move it to wp-content/mu-plugins/ to serve the 301s.', 'lisensio-knowledge-base' ),
+                        $this->redirects->redirect_path()
+                    )
+                );
+            }
+
             $this->report->save();
         }
 
