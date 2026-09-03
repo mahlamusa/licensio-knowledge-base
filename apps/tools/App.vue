@@ -4,7 +4,8 @@ import { lkbTheme } from '../styles/theme';
  * The Tools screen.
  *
  * A tab per tool, on the shared admin shell: the Migration wizard, the search
- * index rebuild, and the data maintenance jobs. A later tool joins by adding
+ * index rebuild, the data maintenance jobs, and the duplicate cleanup. A later
+ * tool joins by adding
  * a tab pane here and its keys to the server-side
  * `lisensio_kb_tools_app_data` filter.
  *
@@ -14,6 +15,7 @@ import { lkbTheme } from '../styles/theme';
 import { config } from './api';
 import AppHeader from '../components/AppHeader.vue';
 import DataMaintenance from './components/DataMaintenance.vue';
+import Duplicates from './components/Duplicates.vue';
 import MigrationWizard from './components/MigrationWizard.vue';
 import SearchIndex from './components/SearchIndex.vue';
 
@@ -39,6 +41,9 @@ const chrome = config();
 					</a-tab-pane>
 					<a-tab-pane key="data-maintenance" :tab="'Data Maintenance'">
 						<DataMaintenance />
+					</a-tab-pane>
+					<a-tab-pane key="duplicates" :tab="'Duplicates'">
+						<Duplicates />
 					</a-tab-pane>
 				</a-tabs>
 			</div>

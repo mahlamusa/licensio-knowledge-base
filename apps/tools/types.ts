@@ -19,6 +19,7 @@ export interface ToolsConfig {
 	wizard?: ToolEndpointConfig;
 	searchIndex?: ToolEndpointConfig;
 	maintenance?: ToolEndpointConfig;
+	duplicates?: ToolEndpointConfig;
 }
 
 /**
@@ -106,6 +107,87 @@ export interface MaintenanceStatus {
 	searchRows: number;
 	retentionDays: number;
 	cutoff: string;
+}
+
+/**
+ * One member of a duplicate group.
+ *
+ * @since 1.0.0
+ */
+export interface DuplicateMember {
+	id: number;
+	type: string;
+	slug: string;
+	status: string;
+	metaCount: number;
+}
+
+/**
+ * A duplicate group the scanner found.
+ *
+ * @since 1.0.0
+ */
+export interface DuplicateGroup {
+	title: string;
+	baseSlug: string;
+	date: string;
+	members: DuplicateMember[];
+	canonical: number;
+	winner: number;
+	/** 'merge' — duplicate articles; 'source' — a migration source post beside its replacement; 'flagged' — left to a human. */
+	kind: 'merge' | 'source' | 'flagged';
+	fixable: boolean;
+}
+
+/**
+ * One member of a duplicate term group.
+ *
+ * @since 1.0.0
+ */
+export interface DuplicateTermMember {
+	id: number;
+	name: string;
+	slug: string;
+	count: number;
+	metaCount: number;
+	termTaxonomyId: number;
+}
+
+/**
+ * A duplicate category or tag group.
+ *
+ * @since 1.0.0
+ */
+export interface DuplicateTermGroup {
+	name: string;
+	baseSlug: string;
+	taxonomy: string;
+	members: DuplicateTermMember[];
+	canonical: number;
+	winner: number;
+	fixable: boolean;
+}
+
+/**
+ * The fix report.
+ *
+ * @since 1.0.0
+ */
+export interface DuplicateFixReport {
+	groups_merged: number;
+	posts_trashed: number;
+	meta_copied: number;
+	terms_assigned: number;
+	votes_moved: number;
+	views_moved: number;
+	term_groups_merged: number;
+	terms_deleted: number;
+	term_meta_copied: number;
+	articles_reassigned: number;
+	source_groups_cleaned: number;
+	sources_trashed: number;
+	notes: string[];
+	flagged: { posts: DuplicateGroup[]; terms: DuplicateTermGroup[] };
 }
 
 /**
