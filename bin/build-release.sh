@@ -16,7 +16,10 @@
 # into `dist/` and neither the sources nor the build tooling is shipped.
 #
 # Nothing here publishes anywhere. `--dry-run` exists to build and report the
-# artifact contents without writing them into releases/.
+# artifact contents without writing them into releases/. A real build deletes
+# any zip already sitting in the output directory under this build's names
+# before it starts, so a stale same-version artifact cannot outlive the build
+# that replaces it — or be picked up from releases/ while that build runs.
 #
 # Usage:
 #   bin/build-release.sh [--dry-run] [--skip-build] [--output DIR]
@@ -202,6 +205,28 @@ VERSION="$(
     grep -m1 -E "define\([[:space:]]*'LISENSIO_KB_VERSION'" "${ROOT}/lisensio-knowledge-base.php" \
         | sed -E "s/.*'LISENSIO_KB_VERSION'[[:space:]]*,[[:space:]]*'([^']*)'.*/\1/"
 )"
+
+# A zip left over from an earlier build of the same version is a stale
+# artifact wearing the current name: everything about it says this version,
+# and nothing about it says it predates the latest commit. It goes the moment
+# a real build of the same version starts, not when the new zip is copied
+# over it — between those two points sits the whole build, which is exactly
+# when somebody reaches into releases/ and grabs the old one. Failing with no
+# zip at all is the honest outcome; a stale one is a leak.
+#
+# A dry run deletes nothing: it is an inspection, and it discards its own
+# artifacts rather than touching the output directory.
+step 'Removing same-version artifacts'
+if [ "$DRY_RUN" -eq 1 ]; then
+    printf 'Dry run: nothing in %s is touched.\n' "$OUTPUT_DIR"
+else
+    for zip_file in "${OUTPUT_DIR}/${SLUG}.zip" "${OUTPUT_DIR}/${SLUG}-pro.zip"; do
+        if [ -e "$zip_file" ]; then
+            rm -f "$zip_file"
+            printf '  deleted %s\n' "$zip_file"
+        fi
+    done
+fi
 
 step 'Text domains'
 bash "${SCRIPT_DIR}/check-i18n.sh"
