@@ -11,6 +11,13 @@
  * speed optimisation for content; for the analytics tables it is the whole
  * mechanism, which is why the two are documented separately.
  *
+ * Content the site already owns is adopted, not duplicated: a term that exists
+ * under the Heroic name is taken over by `wp_insert_term()`'s own error path,
+ * and an article already living under the Heroic slug — with no provenance of
+ * its own — is updated in place and gains the provenance meta, exactly as terms
+ * do. A slug held by an article migrated from a different Heroic ID is a
+ * collision, not an adoption, and is uniquified and reported.
+ *
  * Nothing here writes to a `lisensio_*` table. Articles and terms are core
  * objects, so they go through `wp_insert_post()` and `wp_insert_term()` and get
  * core's sanitisation, slug uniqueness and cache invalidation rather than a
@@ -302,6 +309,15 @@ class Lisensio_KB_Heroic_Import_Content {
     /**
      * Migrate one Heroic article.
      *
+     * An article that already exists on the target under the Heroic slug —
+     * recreated by hand before the migration, or left by an earlier import
+     * whose provenance did not survive — is claimed and updated in place
+     * rather than duplicated as `slug-2`. Adoption is only for an unclaimed
+     * article: one carrying provenance for a different Heroic article is a
+     * genuine slug collision, and core uniquifies and the migrator reports it
+     * as before, so two distinct Heroic articles can never merge into one
+     * target.
+     *
      * @since 1.0.0
      *
      * @param array<string, mixed> $row The Heroic post row.
@@ -340,41 +356,34 @@ class Lisensio_KB_Heroic_Import_Content {
             );
         }
 
+        $slug  = isset( $row['post_name'] ) ? (string) $row['post_name'] : '';
+        $adopt = '' !== $slug ? $this->find_unclaimed_article_by_slug( $slug ) : 0;
+
         if ( $this->dry_run ) {
-            $this->report->count( 'articles_created' );
+            $this->report->count( $adopt > 0 ? 'articles_adopted' : 'articles_created' );
 
             return 0;
         }
 
-        $slug = isset( $row['post_name'] ) ? (string) $row['post_name'] : '';
+        $fields   = $this->article_fields( $row, (int) $order['order'], $slug );
+        $updating = $adopt > 0;
 
-        $article_id = wp_insert_post(
-            array(
-                'post_type'         => Lisensio_KB_Post_Types::POST_TYPE,
-                'post_title'        => isset( $row['post_title'] ) ? (string) $row['post_title'] : '',
-                'post_content'      => isset( $row['post_content'] ) ? (string) $row['post_content'] : '',
-                'post_excerpt'      => isset( $row['post_excerpt'] ) ? (string) $row['post_excerpt'] : '',
-                'post_status'       => isset( $row['post_status'] ) ? (string) $row['post_status'] : 'publish',
-                'post_author'       => isset( $row['post_author'] ) ? (int) $row['post_author'] : 0,
-                'post_name'         => $slug,
-                'post_date'         => isset( $row['post_date'] ) ? (string) $row['post_date'] : '',
-                'post_date_gmt'     => isset( $row['post_date_gmt'] ) ? (string) $row['post_date_gmt'] : '',
-                'post_modified'     => isset( $row['post_modified'] ) ? (string) $row['post_modified'] : '',
-                'post_modified_gmt' => isset( $row['post_modified_gmt'] ) ? (string) $row['post_modified_gmt'] : '',
-                'comment_status'    => isset( $row['comment_status'] ) ? (string) $row['comment_status'] : 'closed',
-                'ping_status'       => isset( $row['ping_status'] ) ? (string) $row['ping_status'] : 'closed',
-                'menu_order'        => (int) $order['order'],
-            ),
-            true
-        );
+        if ( $updating ) {
+            $fields['ID'] = $adopt;
+
+            $article_id = wp_update_post( $fields, true );
+        } else {
+            $article_id = wp_insert_post( $fields, true );
+        }
 
         if ( is_wp_error( $article_id ) || (int) $article_id <= 0 ) {
             $this->report->count( 'articles_failed' );
             $this->report->note(
                 'articles',
                 sprintf(
-                    'Heroic article %1$d could not be created: %2$s',
+                    'Heroic article %1$d could not be %2$s: %3$s',
                     $source_id,
+                    $updating ? 'updated' : 'created',
                     is_wp_error( $article_id ) ? $article_id->get_error_message() : 'unknown error'
                 )
             );
@@ -390,13 +399,83 @@ class Lisensio_KB_Heroic_Import_Content {
         $this->migrate_thumbnail( $source_id, $article_id );
         $this->reparent_attachments( $source_id, $article_id );
 
-        $this->report->count( 'articles_created' );
+        $this->report->count( $updating ? 'articles_adopted' : 'articles_created' );
 
         $this->report_slug_change( 'article', $source_id, $slug, (string) get_post_field( 'post_name', $article_id ) );
 
         $this->redirects->add_article( $row, $article_id );
 
         return $article_id;
+    }
+
+    /**
+     * The post array both the create and the update path hand to core.
+     *
+     * @since 1.0.0
+     *
+     * @param array<string, mixed> $row        The Heroic post row.
+     * @param int                  $menu_order The collapsed per-category position.
+     * @param string               $slug       The Heroic slug.
+     *
+     * @return array<string, mixed> The post fields.
+     */
+    private function article_fields( array $row, $menu_order, $slug ) {
+        return array(
+            'post_type'         => Lisensio_KB_Post_Types::POST_TYPE,
+            'post_title'        => isset( $row['post_title'] ) ? (string) $row['post_title'] : '',
+            'post_content'      => isset( $row['post_content'] ) ? (string) $row['post_content'] : '',
+            'post_excerpt'      => isset( $row['post_excerpt'] ) ? (string) $row['post_excerpt'] : '',
+            'post_status'       => isset( $row['post_status'] ) ? (string) $row['post_status'] : 'publish',
+            'post_author'       => isset( $row['post_author'] ) ? (int) $row['post_author'] : 0,
+            'post_name'         => $slug,
+            'post_date'         => isset( $row['post_date'] ) ? (string) $row['post_date'] : '',
+            'post_date_gmt'     => isset( $row['post_date_gmt'] ) ? (string) $row['post_date_gmt'] : '',
+            'post_modified'     => isset( $row['post_modified'] ) ? (string) $row['post_modified'] : '',
+            'post_modified_gmt' => isset( $row['post_modified_gmt'] ) ? (string) $row['post_modified_gmt'] : '',
+            'comment_status'    => isset( $row['comment_status'] ) ? (string) $row['comment_status'] : 'closed',
+            'ping_status'       => isset( $row['ping_status'] ) ? (string) $row['ping_status'] : 'closed',
+            'menu_order'        => $menu_order,
+        );
+    }
+
+    /**
+     * The target article already living under a Heroic slug, if it may be claimed.
+     *
+     * @since 1.0.0
+     *
+     * @param string $slug The Heroic slug.
+     *
+     * @return int The adoptable article ID, or 0 when the slug is free or taken.
+     */
+    private function find_unclaimed_article_by_slug( $slug ) {
+        global $wpdb;
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $candidate = (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT ID FROM {$wpdb->posts}
+                 WHERE post_name = %s AND post_type = %s
+                 ORDER BY ID ASC
+                 LIMIT 1",
+                (string) $slug,
+                Lisensio_KB_Post_Types::POST_TYPE
+            )
+        );
+
+        if ( $candidate <= 0 ) {
+            return 0;
+        }
+
+        /*
+         * A candidate carrying provenance belongs to a different Heroic
+         * article — this one is a genuine collision, not an adoption, and the
+         * create path will uniquify and report it. A candidate claiming this
+         * very source ID cannot reach here: the provenance lookup at the top
+         * of migrate_article() already handled it.
+         */
+        $claimed = get_post_meta( $candidate, self::META_SOURCE_POST, true );
+
+        return '' === (string) $claimed ? $candidate : 0;
     }
 
     /**
