@@ -166,6 +166,14 @@ final class Lisensio_KB {
     private $toc = null;
 
     /**
+     * Data importer.
+     *
+     * @since 1.0.0
+     * @var Lisensio_KB_Importer|null
+     */
+    private $importer = null;
+
+    /**
      * Return the single instance of the plugin.
      *
      * @since 1.0.0
@@ -274,6 +282,18 @@ final class Lisensio_KB {
 
             $settings_admin = new Lisensio_KB_Settings_Admin( $this->assets );
             $settings_admin->init_hooks();
+
+            $tools_admin = new Lisensio_KB_Tools_Admin( $this->assets );
+            $tools_admin->init_hooks();
+
+            $import_admin = new Lisensio_KB_Import_Admin( $this->importer() );
+            $import_admin->init_hooks();
+
+            $search_index_admin = new Lisensio_KB_Search_Index_Admin();
+            $search_index_admin->init_hooks();
+
+            $maintenance_admin = new Lisensio_KB_Maintenance_Admin( $this->analytics_retention() );
+            $maintenance_admin->init_hooks();
         }
 
         add_action( 'init', array( $this, 'load_textdomain' ) );
@@ -583,5 +603,20 @@ final class Lisensio_KB {
         }
 
         return $this->toc;
+    }
+
+    /**
+     * Get the data importer.
+     *
+     * @since 1.0.0
+     *
+     * @return Lisensio_KB_Importer
+     */
+    public function importer() {
+        if ( ! $this->importer instanceof Lisensio_KB_Importer ) {
+            $this->importer = new Lisensio_KB_Importer();
+        }
+
+        return $this->importer;
     }
 }

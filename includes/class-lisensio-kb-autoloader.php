@@ -32,7 +32,7 @@ class Lisensio_KB_Autoloader {
      * @since 1.0.0
      * @var string[]
      */
-    private static $paths = array( '', 'abstracts/', 'admin/', 'rest/' );
+    private static $paths = array( '', 'abstracts/', 'admin/', 'rest/', 'import/' );
 
     /**
      * Register the autoloader with SPL.
