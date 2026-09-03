@@ -411,10 +411,31 @@ mkdir -p "$OUTPUT_DIR"
 cp -a "${ZIP_DIR}/${SLUG}.zip" "${OUTPUT_DIR}/${SLUG}.zip"
 cp -a "${ZIP_DIR}/${SLUG}-pro.zip" "${OUTPUT_DIR}/${SLUG}-pro.zip"
 
-mkdir -p "${ROOT}/languages"
-cp -a "$POT_FILE" "${ROOT}/languages/${SLUG}.pot"
+# The repository copy of the template is refreshed only when its strings
+# actually changed. The extractor stamps every run with a generation time -
+# and with its own version - so an unconditional copy leaves the working tree
+# dirty after every build, one header line away from a commit nobody meant to
+# make. Builds are frequent; string changes are not.
+#
+# $1 - The pot to measure.
+#
+# @since 1.0.0
+pot_signature() {
+    grep -v -E '"(POT-Creation-Date|X-Generator):' "$1"
+}
 
-printf 'Version %s built.\n' "$VERSION"
-printf '  %s/%s.zip\n' "$OUTPUT_DIR" "$SLUG"
-printf '  %s/%s-pro.zip\n' "$OUTPUT_DIR" "$SLUG"
-printf '  %s/languages/%s.pot refreshed\n' "$ROOT" "$SLUG"
+REPO_POT="${ROOT}/languages/${SLUG}.pot"
+
+if [ ! -f "$REPO_POT" ] || ! diff -q <( pot_signature "$REPO_POT" ) <( pot_signature "$POT_FILE" ) > /dev/null; then
+    mkdir -p "${ROOT}/languages"
+    cp -a "$POT_FILE" "$REPO_POT"
+    printf 'Version %s built.\n' "$VERSION"
+    printf '  %s/%s.zip\n' "$OUTPUT_DIR" "$SLUG"
+    printf '  %s/%s-pro.zip\n' "$OUTPUT_DIR" "$SLUG"
+    printf '  %s refreshed - commit it with the strings that caused it.\n' "languages/${SLUG}.pot"
+else
+    printf 'Version %s built.\n' "$VERSION"
+    printf '  %s/%s.zip\n' "$OUTPUT_DIR" "$SLUG"
+    printf '  %s/%s-pro.zip\n' "$OUTPUT_DIR" "$SLUG"
+    printf '  languages/%s.pot unchanged; the committed template already matches the sources.\n' "$SLUG"
+fi
