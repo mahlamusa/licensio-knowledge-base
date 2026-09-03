@@ -381,13 +381,17 @@ onMounted( detect );
 			</template>
 
 			<div class="lisensio-kb-migration__actions">
-				<a-button
+				<a-popconfirm
 					v-if="summary && runIsDry"
-					type="primary"
-					@click="start( false )"
+					:title="translate( 'Run the real import now? Content already migrated is skipped; analytics rows from any earlier real run are imported again.' )"
+					:ok-text="translate( 'Run import' )"
+					:cancel-text="translate( 'Cancel' )"
+					@confirm="start( false )"
 				>
-					{{ translate( 'Looks good, run the full import' ) }}
-				</a-button>
+					<a-button type="primary">
+						{{ translate( 'Looks good, run the full import' ) }}
+					</a-button>
+				</a-popconfirm>
 				<a-button
 					v-if="summary && ! runIsDry && chrome.articlesUrl"
 					:href="chrome.articlesUrl"

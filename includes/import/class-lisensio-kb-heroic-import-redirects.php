@@ -439,9 +439,10 @@ class Lisensio_KB_Heroic_Import_Redirects {
     /**
      * Write a file, appending when asked.
      *
-     * Goes through WP_Filesystem when it can be initialised, and falls back to
-     * a direct write when it cannot — the audit file must survive an
-     * environment the filesystem API refuses to work in.
+     * A direct append: the artefacts live in the uploads directory, which the
+     * web server owns, and the audit file grows one row at a time — re-reading
+     * and rewriting it per row, which is what a WP_Filesystem round-trip would
+     * do for an append, is quadratic over a migration.
      *
      * @since 1.0.0
      *
@@ -452,25 +453,8 @@ class Lisensio_KB_Heroic_Import_Redirects {
      * @return int|bool Bytes written, or false on failure.
      */
     private function put( $path, $contents, $append = false ) {
-        global $wp_filesystem;
-
-        if ( empty( $wp_filesystem ) ) {
-            require_once ABSPATH . '/wp-admin/includes/file.php';
-            WP_Filesystem();
-        }
-
-        if ( ! $wp_filesystem ) {
-            // Fallback when WP_Filesystem cannot initialise, e.g. it needs credentials.
-            // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
-            return file_put_contents( $path, $contents, $append ? FILE_APPEND : 0 );
-        }
-
-        if ( $append && $wp_filesystem->exists( $path ) ) {
-            $existing = $wp_filesystem->get_contents( $path );
-            $contents = $existing . $contents;
-        }
-
-        return $wp_filesystem->put_contents( $path, $contents, FS_CHMOD_FILE );
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+        return file_put_contents( $path, $contents, $append ? FILE_APPEND : 0 );
     }
 
     /**
