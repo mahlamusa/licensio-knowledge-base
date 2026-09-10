@@ -20,6 +20,7 @@ import MigrationWizard from './components/MigrationWizard.vue';
 import SearchIndex from './components/SearchIndex.vue';
 
 const chrome = config();
+const hasImportSources = chrome.wizard?.available === true;
 </script>
 
 <template>
@@ -33,7 +34,7 @@ const chrome = config();
 				</div>
 
 				<a-tabs class="lisensio-kb-tools__tabs">
-					<a-tab-pane key="migration" :tab="'Migration'">
+					<a-tab-pane v-if="hasImportSources" key="migration" :tab="'Migration'">
 						<MigrationWizard />
 					</a-tab-pane>
 					<a-tab-pane key="search-index" :tab="'Search Index'">
