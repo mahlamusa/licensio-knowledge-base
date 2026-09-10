@@ -13,10 +13,20 @@
  *
  * @since 1.0.0
  */
+/**
+ * The Migration tab endpoint plus its availability.
+ *
+ * @since 1.0.0
+ */
+export interface WizardConfig extends ToolEndpointConfig {
+	/** Whether any import source is detected; false hides the tab. */
+	available?: boolean;
+}
+
 export interface ToolsConfig {
 	settingsUrl?: string;
 	articlesUrl?: string;
-	wizard?: ToolEndpointConfig;
+	wizard?: WizardConfig;
 	searchIndex?: ToolEndpointConfig;
 	maintenance?: ToolEndpointConfig;
 	duplicates?: ToolEndpointConfig;

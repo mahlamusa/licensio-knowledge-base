@@ -67,6 +67,10 @@ class Lisensio_KB_Import_Admin {
     /**
      * The bootstrap data the Migration tab reads.
      *
+     * `available` says whether any import source is detected on the site, so
+     * the Tools screen can hide the tab entirely when there is nothing to
+     * migrate. Detection is the same call the wizard itself makes.
+     *
      * @since 1.0.0
      *
      * @param array<string, mixed> $data The Tools app configuration.
@@ -75,8 +79,9 @@ class Lisensio_KB_Import_Admin {
      */
     public function app_data( $data ) {
         $data['wizard'] = array(
-            'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-            'nonce'   => wp_create_nonce( self::NONCE_ACTION ),
+            'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
+            'nonce'     => wp_create_nonce( self::NONCE_ACTION ),
+            'available' => count( $this->importer->get_detected_drivers() ) > 0,
         );
 
         return $data;
