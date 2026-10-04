@@ -18,18 +18,19 @@
 class Lisensio_KB_DB_Installer_Test extends Lisensio_KB_Test_Case {
 
     /**
-     * All four specified tables are defined.
+     * All five specified tables are defined.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_all_four_tables_are_defined() {
+    public function test_all_five_tables_are_defined() {
         $expected = array(
             'lisensio_search_index',
             'lisensio_search_log',
             'lisensio_article_views',
             'lisensio_feedback',
+            'lisensio_import_log',
         );
 
         $this->assertSame( $expected, Lisensio_KB_DB_Installer::get_table_names() );

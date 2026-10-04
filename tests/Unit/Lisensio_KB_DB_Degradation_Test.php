@@ -148,7 +148,7 @@ class Lisensio_KB_DB_Degradation_Test extends Lisensio_KB_Test_Case {
         $this->assertTrue( Lisensio_KB_DB::is_available() );
         $this->assertSame( LISENSIO_KB_VERSION, $this->options['lisensio_version'] );
         $this->assertSame( LISENSIO_KB_DB_VERSION, $this->options['lisensio_db_version'] );
-        $this->assertCount( 4, $GLOBALS['lisensio_kb_delta_calls'], 'All four tables must be created on the repair pass.' );
+        $this->assertCount( 5, $GLOBALS['lisensio_kb_delta_calls'], 'All five tables must be created on the repair pass.' );
     }
 
     /**

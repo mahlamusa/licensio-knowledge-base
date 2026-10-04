@@ -80,6 +80,54 @@ if ( ! class_exists( 'WP_Post' ) ) {
         public $post_content = '';
 
         /**
+         * The post author's user ID, as core stores it: a numeric string.
+         *
+         * @since 1.0.0
+         * @var string
+         */
+        public $post_author = '0';
+
+        /**
+         * The local publish date.
+         *
+         * @since 1.0.0
+         * @var string
+         */
+        public $post_date = '0000-00-00 00:00:00';
+
+        /**
+         * The UTC publish date.
+         *
+         * @since 1.0.0
+         * @var string
+         */
+        public $post_date_gmt = '0000-00-00 00:00:00';
+
+        /**
+         * Whether comments are open.
+         *
+         * @since 1.0.0
+         * @var string
+         */
+        public $comment_status = 'closed';
+
+        /**
+         * Whether pings are open.
+         *
+         * @since 1.0.0
+         * @var string
+         */
+        public $ping_status = 'closed';
+
+        /**
+         * The menu order.
+         *
+         * @since 1.0.0
+         * @var int
+         */
+        public $menu_order = 0;
+
+        /**
          * Constructor.
          *
          * @since 1.0.0

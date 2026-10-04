@@ -1,6 +1,6 @@
 <?php
 /**
- * The resume point of the disposable Heroic migrator.
+ * The resume point and run report of the import framework.
  *
  * @package Lisensio_KB
  * @since   1.0.0
@@ -15,6 +15,28 @@
 class Lisensio_KB_Heroic_Import_State_Test extends Lisensio_KB_Test_Case {
 
     /**
+     * The phases of the Heroic import, in run order.
+     *
+     * @since 1.0.0
+     * @var string[]
+     */
+    const PHASES = array( 'terms', 'articles', 'feedback', 'views', 'searches' );
+
+    /**
+     * Build a Heroic import state.
+     *
+     * @since 1.0.0
+     *
+     * @param bool $persist Whether the state writes to the option.
+     * @param bool $dry_run Whether it is a dry run's state.
+     *
+     * @return Lisensio_KB_Import_State The state.
+     */
+    private function new_state( $persist = true, $dry_run = false ) {
+        return new Lisensio_KB_Import_State( 'heroic', self::PHASES, $persist, $dry_run );
+    }
+
+    /**
      * A phase nobody has run reports nothing.
      *
      * @since 1.0.0
@@ -22,9 +44,9 @@ class Lisensio_KB_Heroic_Import_State_Test extends Lisensio_KB_Test_Case {
      * @return void
      */
     public function test_a_fresh_state_has_no_cursor_and_no_completed_phase() {
-        $state = new Lisensio_KB_Heroic_Import_State();
+        $state = $this->new_state();
 
-        foreach ( Lisensio_KB_Heroic_Import_State::PHASES as $phase ) {
+        foreach ( self::PHASES as $phase ) {
             $this->assertSame( 0, $state->cursor( $phase ) );
             $this->assertFalse( $state->is_complete( $phase ) );
         }
@@ -40,10 +62,10 @@ class Lisensio_KB_Heroic_Import_State_Test extends Lisensio_KB_Test_Case {
      * @return void
      */
     public function test_a_cursor_survives_into_a_second_run() {
-        $first = new Lisensio_KB_Heroic_Import_State();
+        $first = $this->new_state();
         $first->set_cursor( 'searches', 4200 );
 
-        $second = new Lisensio_KB_Heroic_Import_State();
+        $second = $this->new_state();
 
         $this->assertSame( 4200, $second->cursor( 'searches' ), 'A resumed run must start where the last one stopped.' );
         $this->assertTrue( $second->is_in_progress() );
@@ -61,7 +83,7 @@ class Lisensio_KB_Heroic_Import_State_Test extends Lisensio_KB_Test_Case {
      * @return void
      */
     public function test_a_cursor_refuses_to_move_backwards() {
-        $state = new Lisensio_KB_Heroic_Import_State();
+        $state = $this->new_state();
 
         $state->set_cursor( 'views', 900 );
         $state->set_cursor( 'views', 12 );
@@ -78,7 +100,7 @@ class Lisensio_KB_Heroic_Import_State_Test extends Lisensio_KB_Test_Case {
      * @return void
      */
     public function test_phases_do_not_share_a_cursor() {
-        $state = new Lisensio_KB_Heroic_Import_State();
+        $state = $this->new_state();
 
         $state->set_cursor( 'feedback', 10 );
         $state->set_cursor( 'views', 20 );
@@ -99,13 +121,13 @@ class Lisensio_KB_Heroic_Import_State_Test extends Lisensio_KB_Test_Case {
      * @return void
      */
     public function test_the_salt_is_stable_within_and_across_runs() {
-        $first = new Lisensio_KB_Heroic_Import_State();
+        $first = $this->new_state();
         $salt  = $first->salt();
 
         $this->assertNotSame( '', $salt );
         $this->assertSame( $salt, $first->salt() );
 
-        $second = new Lisensio_KB_Heroic_Import_State();
+        $second = $this->new_state();
 
         $this->assertSame( $salt, $second->salt(), 'A resumed run must reuse the salt, or the same visitor gets two identities.' );
     }
@@ -122,17 +144,17 @@ class Lisensio_KB_Heroic_Import_State_Test extends Lisensio_KB_Test_Case {
      * @return void
      */
     public function test_finishing_destroys_the_salt_and_keeps_the_cursors() {
-        $state = new Lisensio_KB_Heroic_Import_State();
+        $state = $this->new_state();
         $salt  = $state->salt();
 
         $state->set_cursor( 'searches', 77 );
         $state->finish();
 
-        $stored = $this->options[ Lisensio_KB_Heroic_Import_State::OPTION_NAME ];
+        $stored = $this->options[ Lisensio_KB_Import_State::option_for( 'heroic' ) ];
 
         $this->assertArrayNotHasKey( 'salt', $stored, 'The migration salt outlived the migration.' );
-        $this->assertSame( 77, ( new Lisensio_KB_Heroic_Import_State() )->cursor( 'searches' ) );
-        $this->assertNotSame( $salt, ( new Lisensio_KB_Heroic_Import_State() )->salt(), 'A destroyed salt must not be recoverable.' );
+        $this->assertSame( 77, ( $this->new_state() )->cursor( 'searches' ) );
+        $this->assertNotSame( $salt, ( $this->new_state() )->salt(), 'A destroyed salt must not be recoverable.' );
     }
 
     /**
@@ -143,7 +165,7 @@ class Lisensio_KB_Heroic_Import_State_Test extends Lisensio_KB_Test_Case {
      * @return void
      */
     public function test_a_finished_migration_is_not_in_progress() {
-        $state = new Lisensio_KB_Heroic_Import_State();
+        $state = $this->new_state();
 
         $state->set_cursor( 'articles', 5 );
 
@@ -151,7 +173,7 @@ class Lisensio_KB_Heroic_Import_State_Test extends Lisensio_KB_Test_Case {
 
         $state->finish();
 
-        $this->assertFalse( ( new Lisensio_KB_Heroic_Import_State() )->is_in_progress() );
+        $this->assertFalse( ( $this->new_state() )->is_in_progress() );
     }
 
     /**
@@ -162,7 +184,7 @@ class Lisensio_KB_Heroic_Import_State_Test extends Lisensio_KB_Test_Case {
      * @return void
      */
     public function test_reset_clears_every_phase() {
-        $state = new Lisensio_KB_Heroic_Import_State();
+        $state = $this->new_state();
 
         $state->set_cursor( 'articles', 5 );
         $state->complete( 'terms' );
@@ -170,7 +192,7 @@ class Lisensio_KB_Heroic_Import_State_Test extends Lisensio_KB_Test_Case {
 
         $this->assertSame( 0, $state->cursor( 'articles' ) );
         $this->assertFalse( $state->is_complete( 'terms' ) );
-        $this->assertArrayNotHasKey( Lisensio_KB_Heroic_Import_State::OPTION_NAME, $this->options );
+        $this->assertArrayNotHasKey( Lisensio_KB_Import_State::option_for( 'heroic' ), $this->options );
     }
 
     /**
@@ -185,7 +207,7 @@ class Lisensio_KB_Heroic_Import_State_Test extends Lisensio_KB_Test_Case {
      * @return void
      */
     public function test_a_dry_run_state_moves_in_memory_and_persists_nothing() {
-        $state = new Lisensio_KB_Heroic_Import_State( false );
+        $state = $this->new_state( false );
 
         $state->set_cursor( 'searches', 500 );
         $state->complete( 'terms' );
@@ -195,7 +217,7 @@ class Lisensio_KB_Heroic_Import_State_Test extends Lisensio_KB_Test_Case {
         $this->assertSame( 500, $state->cursor( 'searches' ), 'A dry run still has to know where it got to.' );
         $this->assertTrue( $state->is_complete( 'terms' ) );
         $this->assertSame( array(), $this->writes, 'A dry run wrote to the options table.' );
-        $this->assertArrayNotHasKey( Lisensio_KB_Heroic_Import_State::OPTION_NAME, $this->options );
+        $this->assertArrayNotHasKey( Lisensio_KB_Import_State::option_for( 'heroic' ), $this->options );
     }
 
     /**
@@ -206,7 +228,7 @@ class Lisensio_KB_Heroic_Import_State_Test extends Lisensio_KB_Test_Case {
      * @return void
      */
     public function test_the_phase_order_puts_dependencies_first() {
-        $order = array_flip( Lisensio_KB_Heroic_Import_State::PHASES );
+        $order = array_flip( self::PHASES );
 
         $this->assertLessThan( $order['articles'], $order['terms'], 'An article is filed under terms that must already exist.' );
 
@@ -223,7 +245,7 @@ class Lisensio_KB_Heroic_Import_State_Test extends Lisensio_KB_Test_Case {
      * @return void
      */
     public function test_the_report_accumulates_counts_and_notes() {
-        $report = new Lisensio_KB_Heroic_Import_Report();
+        $report = new Lisensio_KB_Import_Report( 'heroic' );
 
         $this->assertSame( 0, $report->get( 'never_touched' ) );
 
@@ -254,7 +276,7 @@ class Lisensio_KB_Heroic_Import_State_Test extends Lisensio_KB_Test_Case {
      * @return void
      */
     public function test_the_current_phase_is_the_first_unfinished_one() {
-        $state = new Lisensio_KB_Heroic_Import_State();
+        $state = $this->new_state();
 
         $this->assertSame( 'terms', $state->current_phase() );
 
@@ -276,9 +298,9 @@ class Lisensio_KB_Heroic_Import_State_Test extends Lisensio_KB_Test_Case {
      * @return void
      */
     public function test_a_finished_state_has_no_current_phase() {
-        $state = new Lisensio_KB_Heroic_Import_State();
+        $state = $this->new_state();
 
-        foreach ( Lisensio_KB_Heroic_Import_State::PHASES as $phase ) {
+        foreach ( self::PHASES as $phase ) {
             $state->complete( $phase );
         }
 
@@ -293,11 +315,11 @@ class Lisensio_KB_Heroic_Import_State_Test extends Lisensio_KB_Test_Case {
      * @return void
      */
     public function test_the_run_is_complete_only_when_every_phase_is() {
-        $state = new Lisensio_KB_Heroic_Import_State();
+        $state = $this->new_state();
 
         $this->assertFalse( $state->is_complete() );
 
-        foreach ( Lisensio_KB_Heroic_Import_State::PHASES as $phase ) {
+        foreach ( self::PHASES as $phase ) {
             $state->complete( $phase );
         }
 
@@ -315,12 +337,12 @@ class Lisensio_KB_Heroic_Import_State_Test extends Lisensio_KB_Test_Case {
      * @return void
      */
     public function test_the_report_accumulates_across_instances() {
-        $first = new Lisensio_KB_Heroic_Import_Report();
+        $first = new Lisensio_KB_Import_Report( 'heroic' );
         $first->count( 'articles_created', 30 );
         $first->note( 'article_order', 'article 6 collapsed.' );
         $first->save();
 
-        $second = new Lisensio_KB_Heroic_Import_Report();
+        $second = new Lisensio_KB_Import_Report( 'heroic' );
         $second->count( 'articles_created', 20 );
 
         $this->assertSame( 50, $second->get( 'articles_created' ), 'A second request must add to the run total, not restart it.' );
@@ -340,13 +362,139 @@ class Lisensio_KB_Heroic_Import_State_Test extends Lisensio_KB_Test_Case {
      * @return void
      */
     public function test_resetting_the_report_removes_the_stored_run() {
-        $report = new Lisensio_KB_Heroic_Import_Report();
+        $report = new Lisensio_KB_Import_Report( 'heroic' );
         $report->count( 'articles_created', 30 );
         $report->save();
 
         $report->reset();
 
-        $this->assertArrayNotHasKey( Lisensio_KB_Heroic_Import_Report::OPTION_NAME, $this->options );
-        $this->assertSame( 0, ( new Lisensio_KB_Heroic_Import_Report() )->get( 'articles_created' ) );
+        $this->assertArrayNotHasKey( Lisensio_KB_Import_Report::option_for( 'heroic' ), $this->options );
+        $this->assertSame( 0, ( new Lisensio_KB_Import_Report( 'heroic' ) )->get( 'articles_created' ) );
+    }
+
+    /**
+     * The state and report options are named after the source.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_options_are_named_after_the_source() {
+        $this->assertSame( 'lisensio_import_state_heroic', Lisensio_KB_Import_State::option_for( 'heroic' ) );
+        $this->assertSame( 'lisensio_import_report_heroic', Lisensio_KB_Import_Report::option_for( 'heroic' ) );
+        $this->assertNotSame(
+            Lisensio_KB_Import_State::option_for( 'heroic' ),
+            Lisensio_KB_Import_State::option_for( 'heroic', true ),
+            'A dry run must keep its own state.'
+        );
+    }
+
+    /**
+     * A dry run state is kept apart from the real one.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_dry_run_state_never_touches_the_real_option() {
+        $this->new_state( true, true )->set_cursor( 'searches', 9 );
+
+        $this->assertArrayNotHasKey( Lisensio_KB_Import_State::option_for( 'heroic' ), $this->options );
+        $this->assertSame( 0, $this->new_state()->cursor( 'searches' ) );
+        $this->assertSame( 9, $this->new_state( true, true )->cursor( 'searches' ) );
+    }
+
+    /**
+     * The run id is issued once and survives into the next request.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_run_id_is_stable_across_requests() {
+        $first = $this->new_state();
+
+        $this->assertFalse( $first->has_run() );
+
+        $run_id = $first->run_id();
+
+        $this->assertStringStartsWith( 'heroic-', $run_id );
+        $this->assertTrue( $first->has_run() );
+        $this->assertSame( $run_id, $this->new_state()->run_id() );
+    }
+
+    /**
+     * The category mapping keeps only positive pairs.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_category_map_drops_create_entries() {
+        $state = $this->new_state();
+
+        $state->set_category_map(
+            array(
+                '5' => '12',
+                '6' => 0,
+                '0' => 3,
+            )
+        );
+
+        $this->assertSame( array( 5 => 12 ), $state->category_map() );
+        $this->assertSame( array( 5 => 12 ), $this->new_state()->category_map() );
+    }
+
+    /**
+     * Finishing marks the run finished and out of progress.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_finishing_records_when_the_run_finished() {
+        $state = $this->new_state();
+
+        $this->assertFalse( $state->is_finished() );
+        $this->assertSame( 0, $state->finished_at() );
+
+        $state->run_id();
+        $state->finish();
+
+        $this->assertTrue( $state->is_finished() );
+        $this->assertGreaterThan( 0, $state->finished_at() );
+        $this->assertFalse( $state->is_in_progress() );
+    }
+
+    /**
+     * A restart rewinds only the named phases and opens a fresh run.
+     *
+     * Analytics rows carry no provenance, so their cursors must survive or the
+     * next run would import them twice.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_restart_rewinds_content_phases_and_keeps_analytics_cursors() {
+        $state = $this->new_state();
+
+        $state->run_id();
+        $state->set_category_map( array( 5 => 12 ) );
+        $state->set_cursor( 'articles', 40 );
+        $state->set_cursor( 'searches', 900 );
+        $state->complete( 'articles' );
+        $state->complete( 'searches' );
+        $state->finish();
+
+        $state->restart( array( 'terms', 'articles' ) );
+
+        $this->assertSame( 0, $state->cursor( 'articles' ) );
+        $this->assertSame( 900, $state->cursor( 'searches' ), 'An analytics cursor must survive a restart.' );
+        $this->assertFalse( $state->is_complete( 'articles' ) );
+        $this->assertFalse( $state->is_complete( 'searches' ) );
+        $this->assertFalse( $state->is_finished() );
+        $this->assertFalse( $state->has_run() );
+        $this->assertSame( array(), $state->category_map() );
     }
 }

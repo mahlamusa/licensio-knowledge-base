@@ -91,10 +91,23 @@ class Lisensio_KB_Duplicates {
      * not a duplicate to merge: the article is the replacement, and the fix
      * is soft-deleting the source post.
      *
+     * Read from every registered importer, so a new source is covered without
+     * a change here.
+     *
      * @since 1.0.0
-     * @var string[]
+     *
+     * @return string[] Post types.
      */
-    const SOURCE_POST_TYPES = array( 'ht_kb' );
+    private static function source_post_types() {
+        static $types = null;
+
+        if ( null === $types ) {
+            $importer = new Lisensio_KB_Importer();
+            $types    = $importer->source_post_types();
+        }
+
+        return $types;
+    }
 
     /**
      * Every duplicate group on the site, fixable and flagged.
@@ -663,7 +676,7 @@ class Lisensio_KB_Duplicates {
                 if ( (string) $member['post_name'] === $base ) {
                     $canonical = $id;
                 }
-            } elseif ( in_array( $member['post_type'], self::SOURCE_POST_TYPES, true ) ) {
+            } elseif ( in_array( $member['post_type'], self::source_post_types(), true ) ) {
                 $source_ids[] = $id;
             } else {
                 $foreign[] = $id;

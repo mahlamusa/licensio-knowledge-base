@@ -1,9 +1,9 @@
 <?php
 /**
- * The content phase of the disposable Heroic migrator.
+ * The generic content phase, driven by a Heroic source double.
  *
  * The provenance lookups this class makes are driven against a real MySQL
- * server by `Lisensio_KB_Heroic_Migration_Integration_Test`. What is exercised
+ * server by `Lisensio_KB_Heroic_Import_Integration_Test`. What is exercised
  * here is the orchestration around them: what gets skipped, what gets reported,
  * and what shape the object handed to `wp_insert_post()` has.
  *
@@ -23,6 +23,22 @@
  * @since 1.0.0
  */
 class Lisensio_KB_Heroic_Import_Content_WPDB {
+
+    /**
+     * The meta key an imported article carries its Heroic ID in.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    const META_SOURCE_POST = '_lisensio_heroic_post_id';
+
+    /**
+     * The meta key an imported term carries its Heroic ID in.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    const META_SOURCE_TERM = '_lisensio_heroic_term_id';
 
     /**
      * The posts table name.
@@ -139,11 +155,11 @@ class Lisensio_KB_Heroic_Import_Content_WPDB {
             return isset( $this->slugs[ $slug ] ) ? $this->slugs[ $slug ] : 0;
         }
 
-        if ( false !== strpos( $query, Lisensio_KB_Heroic_Import_Content::META_SOURCE_POST ) ) {
+        if ( false !== strpos( $query, self::META_SOURCE_POST ) ) {
             return isset( $this->articles[ $this->id_in( $query ) ] ) ? $this->articles[ $this->id_in( $query ) ] : 0;
         }
 
-        if ( false !== strpos( $query, Lisensio_KB_Heroic_Import_Content::META_SOURCE_TERM ) ) {
+        if ( false !== strpos( $query, self::META_SOURCE_TERM ) ) {
             $key = $this->taxonomy_in( $query ) . ':' . $this->id_in( $query );
 
             return isset( $this->target_terms[ $key ] ) ? $this->target_terms[ $key ] : 0;
@@ -347,9 +363,33 @@ class Lisensio_KB_Heroic_Import_Content_Test extends Lisensio_KB_Test_Case {
      * The run report.
      *
      * @since 1.0.0
-     * @var Lisensio_KB_Heroic_Import_Report
+     * @var Lisensio_KB_Import_Report
      */
     private $report;
+
+    /**
+     * The resume point the last migrator was built with.
+     *
+     * @since 1.0.0
+     * @var Lisensio_KB_Import_State|null
+     */
+    private $state = null;
+
+    /**
+     * Every term meta write made through add_term_meta().
+     *
+     * @since 1.0.0
+     * @var array<int, array<string, mixed>>
+     */
+    private $added_term_meta = array();
+
+    /**
+     * The terms get_term() should find, by term ID.
+     *
+     * @since 1.0.0
+     * @var array<int, WP_Term>
+     */
+    private $existing_terms = array();
 
     /**
      * Stub the WordPress content API and record everything it is asked to do.
@@ -372,7 +412,10 @@ class Lisensio_KB_Heroic_Import_Content_Test extends Lisensio_KB_Test_Case {
         $this->stored_post_slug    = null;
         $this->stored_term_slug    = null;
         $this->existing_provenance = array();
-        $this->report              = new Lisensio_KB_Heroic_Import_Report();
+        $this->added_term_meta     = array();
+        $this->existing_terms      = array();
+        $this->state               = null;
+        $this->report              = new Lisensio_KB_Import_Report( 'heroic' );
 
         Brain\Monkey\Functions\when( 'is_wp_error' )->alias(
             function ( $thing ) {
@@ -430,11 +473,38 @@ class Lisensio_KB_Heroic_Import_Content_Test extends Lisensio_KB_Test_Case {
             }
         );
 
+        Brain\Monkey\Functions\when( 'add_term_meta' )->alias(
+            function ( $term_id, $key, $value ) {
+                $this->added_term_meta[] = array(
+                    'term_id' => (int) $term_id,
+                    'key'     => (string) $key,
+                );
+
+                $this->term_meta[ (int) $term_id ][ (string) $key ] = $value;
+
+                return true;
+            }
+        );
+
+        Brain\Monkey\Functions\when( 'get_term_meta' )->alias(
+            function ( $term_id, $key ) {
+                return isset( $this->term_meta[ (int) $term_id ][ (string) $key ] )
+                    ? array( $this->term_meta[ (int) $term_id ][ (string) $key ] )
+                    : array();
+            }
+        );
+
+        Brain\Monkey\Functions\when( 'get_term' )->alias(
+            function ( $term_id ) {
+                return isset( $this->existing_terms[ (int) $term_id ] ) ? $this->existing_terms[ (int) $term_id ] : null;
+            }
+        );
+
         Brain\Monkey\Functions\when( 'get_post_meta' )->alias(
             function ( $post_id, $key, $single = false ) {
                 unset( $single );
 
-                if ( Lisensio_KB_Heroic_Import_Content::META_SOURCE_POST === $key ) {
+                if ( Lisensio_KB_Heroic_Import_Content_WPDB::META_SOURCE_POST === $key ) {
                     return isset( $this->existing_provenance[ (int) $post_id ] )
                         ? $this->existing_provenance[ (int) $post_id ]
                         : '';
@@ -527,18 +597,23 @@ class Lisensio_KB_Heroic_Import_Content_Test extends Lisensio_KB_Test_Case {
      *
      * @since 1.0.0
      *
-     * @param Lisensio_KB_Heroic_Import_Source $source  The batched reader.
-     * @param bool                             $dry_run Whether the migrator may write.
+     * @param Lisensio_KB_Heroic_Import_Source $source     The batched reader.
+     * @param bool                             $dry_run    Whether the migrator may write.
+     * @param string[]                         $claim_keys Every source's provenance key; the source's own when empty.
      *
-     * @return Lisensio_KB_Heroic_Import_Content The migrator under test.
+     * @return Lisensio_KB_Import_Content The migrator under test.
      */
-    private function migrator( $source, $dry_run = false ) {
-        return new Lisensio_KB_Heroic_Import_Content(
+    private function migrator( $source, $dry_run = false, array $claim_keys = array() ) {
+        $this->state = new Lisensio_KB_Import_State( 'heroic', array( 'terms', 'articles', 'feedback', 'views', 'searches' ), false );
+
+        return new Lisensio_KB_Import_Content(
             $source,
-            new Lisensio_KB_Heroic_Import_State( false ),
-            new Lisensio_KB_Heroic_Import_Redirects( sys_get_temp_dir() . '/lisensio-kb-unused', true ),
+            $this->state,
+            new Lisensio_KB_Import_Redirects( 'heroic', sys_get_temp_dir() . '/lisensio-kb-unused', true ),
             $this->report,
-            $dry_run
+            $dry_run,
+            null,
+            $claim_keys
         );
     }
 
@@ -643,7 +718,7 @@ class Lisensio_KB_Heroic_Import_Content_Test extends Lisensio_KB_Test_Case {
         $this->assertSame( '<p>The real body.</p>', $this->updated_posts[0]['post_content'] );
         $this->assertSame( 'email-logs', $this->updated_posts[0]['post_name'] );
 
-        $this->assertSame( 12, $this->post_meta[950][ Lisensio_KB_Heroic_Import_Content::META_SOURCE_POST ], 'An adopted article must gain the provenance meta.' );
+        $this->assertSame( 12, $this->post_meta[950][ Lisensio_KB_Heroic_Import_Content_WPDB::META_SOURCE_POST ], 'An adopted article must gain the provenance meta.' );
         $this->assertSame( 1, $this->report->get( 'articles_adopted' ) );
         $this->assertSame( 0, $this->report->get( 'articles_created' ) );
     }
@@ -954,13 +1029,16 @@ class Lisensio_KB_Heroic_Import_Content_Test extends Lisensio_KB_Test_Case {
     }
 
     /**
-     * The featured image and the uploaded attachments follow the article.
+     * The featured image follows the article and the source attachments stay put.
+     *
+     * The source is read-only, so an attachment is never re-parented to the
+     * imported article; nothing is written to the source's posts.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_the_thumbnail_is_copied_and_the_attachments_are_reparented() {
+    public function test_the_thumbnail_is_copied_and_the_source_attachments_are_not_reparented() {
         Brain\Monkey\Functions\when( 'get_post_meta' )->justReturn( 63 );
 
         $source = $this->source(
@@ -980,15 +1058,9 @@ class Lisensio_KB_Heroic_Import_Content_Test extends Lisensio_KB_Test_Case {
         $this->assertSame( 63, $this->post_meta[901]['_thumbnail_id'] );
         $this->assertSame( 1, $this->report->get( 'thumbnails_migrated' ) );
 
-        $this->assertCount( 2, $this->updated_posts );
-        $this->assertSame(
-            array(
-                'ID'          => 71,
-                'post_parent' => 901,
-            ),
-            $this->updated_posts[0]
-        );
-        $this->assertSame( 2, $this->report->get( 'attachments_reparented' ) );
+        $this->assertSame( array(), $this->updated_posts, 'The source attachments must keep their parent.' );
+        $this->assertArrayNotHasKey( 71, $this->post_meta );
+        $this->assertSame( 0, $this->report->get( 'attachments_reparented' ) );
     }
 
     /**
@@ -1012,7 +1084,7 @@ class Lisensio_KB_Heroic_Import_Content_Test extends Lisensio_KB_Test_Case {
 
         $this->migrator( $source )->migrate_articles_batch( 10 );
 
-        $this->assertSame( 11, $this->post_meta[901][ Lisensio_KB_Heroic_Import_Content::META_SOURCE_POST ] );
+        $this->assertSame( 11, $this->post_meta[901][ Lisensio_KB_Heroic_Import_Content_WPDB::META_SOURCE_POST ] );
     }
 
     /**
@@ -1141,7 +1213,7 @@ class Lisensio_KB_Heroic_Import_Content_Test extends Lisensio_KB_Test_Case {
         $this->assertSame( 3, $this->term_meta[501][ Lisensio_KB_Term_Meta::META_ORDER ] );
         $this->assertSame( 77, $this->term_meta[501][ Lisensio_KB_Term_Meta::META_IMAGE_ID ] );
         $this->assertArrayNotHasKey( Lisensio_KB_Term_Meta::META_ICON, $this->term_meta[501] );
-        $this->assertSame( 8, $this->term_meta[501][ Lisensio_KB_Heroic_Import_Content::META_SOURCE_TERM ] );
+        $this->assertSame( 8, $this->term_meta[501][ Lisensio_KB_Heroic_Import_Content_WPDB::META_SOURCE_TERM ] );
 
         // The icon crosses through the sanitizer; only the colour has no field.
         $this->assertArrayHasKey( Lisensio_KB_Term_Meta::META_ICON_SVG, $this->term_meta[501], 'A safe SVG icon should cross into the icon field.' );
@@ -1212,7 +1284,7 @@ class Lisensio_KB_Heroic_Import_Content_Test extends Lisensio_KB_Test_Case {
 
         $this->assertSame( 1, $this->report->get( 'terms_adopted' ) );
         $this->assertSame( 0, $this->report->get( 'terms_failed' ) );
-        $this->assertSame( 8, $this->term_meta[640][ Lisensio_KB_Heroic_Import_Content::META_SOURCE_TERM ] );
+        $this->assertSame( 8, $this->term_meta[640][ Lisensio_KB_Heroic_Import_Content_WPDB::META_SOURCE_TERM ] );
     }
 
     /**
@@ -1287,6 +1359,270 @@ class Lisensio_KB_Heroic_Import_Content_Test extends Lisensio_KB_Test_Case {
         $this->assertSame(
             array( Lisensio_KB_Post_Types::TAXONOMY_CATEGORY, Lisensio_KB_Post_Types::TAXONOMY_TAG ),
             array_column( $this->inserted_terms, 'taxonomy' )
+        );
+    }
+
+    /**
+     * A source category mapped onto an existing category is merged into it.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_mapped_category_is_merged_into_the_existing_one() {
+        $this->existing_terms[77] = new WP_Term(
+            array(
+                'term_id' => 77,
+                'name'    => 'Licensing',
+            )
+        );
+
+        $source = $this->source(
+            array(
+                'terms' => array(
+                    Lisensio_KB_Heroic_Import_Schema::TAXONOMY_CATEGORY => array(
+                        array(
+                            'term_id' => 8,
+                            'name'    => 'Renewals',
+                            'slug'    => 'renewals',
+                            'parent'  => 0,
+                        ),
+                    ),
+                ),
+            )
+        );
+
+        $migrator = $this->migrator( $source );
+        $this->state->set_category_map( array( 8 => 77 ) );
+        $migrator->migrate_terms();
+
+        $this->assertSame( array(), $this->inserted_terms, 'A merged category must not be created again.' );
+        $this->assertSame( 1, $this->report->get( 'terms_merged' ) );
+        $this->assertSame( 0, $this->report->get( 'terms_created' ) );
+        $this->assertSame( 8, $this->term_meta[77][ Lisensio_KB_Heroic_Import_Content_WPDB::META_SOURCE_TERM ], 'The target must gain the source ID so its articles are filed under it.' );
+    }
+
+    /**
+     * A mapping onto a category that no longer exists fails that term only.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_mapping_onto_a_missing_category_is_a_failure() {
+        $source = $this->source(
+            array(
+                'terms' => array(
+                    Lisensio_KB_Heroic_Import_Schema::TAXONOMY_CATEGORY => array(
+                        array(
+                            'term_id' => 8,
+                            'name'    => 'Renewals',
+                            'slug'    => 'renewals',
+                            'parent'  => 0,
+                        ),
+                    ),
+                ),
+            )
+        );
+
+        $migrator = $this->migrator( $source );
+        $this->state->set_category_map( array( 8 => 77 ) );
+        $migrator->migrate_terms();
+
+        $this->assertSame( 1, $this->report->get( 'terms_failed' ) );
+        $this->assertSame( 0, $this->report->get( 'terms_merged' ) );
+        $this->assertSame( array(), $this->inserted_terms );
+    }
+
+    /**
+     * A dry run counts a merge but writes no provenance.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_dry_run_counts_a_merge_without_writing() {
+        $this->existing_terms[77] = new WP_Term(
+            array(
+                'term_id' => 77,
+                'name'    => 'Licensing',
+            )
+        );
+
+        $source = $this->source(
+            array(
+                'terms' => array(
+                    Lisensio_KB_Heroic_Import_Schema::TAXONOMY_CATEGORY => array(
+                        array(
+                            'term_id' => 8,
+                            'name'    => 'Renewals',
+                            'slug'    => 'renewals',
+                            'parent'  => 0,
+                        ),
+                    ),
+                ),
+            )
+        );
+
+        $migrator = $this->migrator( $source, true );
+        $this->state->set_category_map( array( 8 => 77 ) );
+        $migrator->migrate_terms();
+
+        $this->assertSame( 1, $this->report->get( 'terms_merged' ) );
+        $this->assertSame( array(), $this->term_meta );
+        $this->assertSame( array(), $this->added_term_meta );
+    }
+
+    /**
+     * Term provenance is added once, never duplicated.
+     *
+     * Several source categories can be merged into one target, so the meta is
+     * added rather than updated; but the same source ID must not be added twice.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_term_provenance_is_not_added_twice() {
+        $this->existing_terms[77] = new WP_Term(
+            array(
+                'term_id' => 77,
+                'name'    => 'Licensing',
+            )
+        );
+        $this->term_meta[77][ Lisensio_KB_Heroic_Import_Content_WPDB::META_SOURCE_TERM ] = 8;
+
+        $source = $this->source(
+            array(
+                'terms' => array(
+                    Lisensio_KB_Heroic_Import_Schema::TAXONOMY_CATEGORY => array(
+                        array(
+                            'term_id' => 8,
+                            'name'    => 'Renewals',
+                            'slug'    => 'renewals',
+                            'parent'  => 0,
+                        ),
+                    ),
+                ),
+            )
+        );
+
+        $migrator = $this->migrator( $source );
+        $this->state->set_category_map( array( 8 => 77 ) );
+        $migrator->migrate_terms();
+
+        $this->assertSame( array(), $this->added_term_meta );
+    }
+
+    /**
+     * An article carrying another importer's provenance is not adopted.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_article_claimed_by_another_source_is_not_adopted() {
+        $this->wpdb->slugs['email-logs'] = 950;
+        $this->stored_post_slug          = 'email-logs-2';
+
+        Brain\Monkey\Functions\when( 'get_post_meta' )->alias(
+            function ( $post_id, $key ) {
+                unset( $post_id );
+
+                return '_lisensio_betterdocs_post_id' === $key ? '31' : '';
+            }
+        );
+
+        $source = $this->source(
+            array(
+                'articles' => array(
+                    array(
+                        'ID'          => 12,
+                        'post_title'  => 'Email logs',
+                        'post_status' => 'publish',
+                        'post_name'   => 'email-logs',
+                    ),
+                ),
+            )
+        );
+
+        $this->migrator( $source, false, array( '_lisensio_heroic_post_id', '_lisensio_betterdocs_post_id' ) )->migrate_articles_batch( 10 );
+
+        $this->assertCount( 1, $this->inserted_posts, 'Another importer\'s article must not be taken over.' );
+        $this->assertSame( array(), $this->updated_posts );
+        $this->assertSame( 0, $this->report->get( 'articles_adopted' ) );
+    }
+
+    /**
+     * Without claim keys the same article is adopted.
+     *
+     * The control for the test above: only the claim keys differ.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_same_article_is_adopted_when_no_other_source_claims_it() {
+        $this->wpdb->slugs['email-logs'] = 950;
+
+        Brain\Monkey\Functions\when( 'get_post_meta' )->alias(
+            function ( $post_id, $key ) {
+                unset( $post_id );
+
+                return '_lisensio_betterdocs_post_id' === $key ? '31' : '';
+            }
+        );
+
+        $source = $this->source(
+            array(
+                'articles' => array(
+                    array(
+                        'ID'          => 12,
+                        'post_title'  => 'Email logs',
+                        'post_status' => 'publish',
+                        'post_name'   => 'email-logs',
+                    ),
+                ),
+            )
+        );
+
+        $this->migrator( $source )->migrate_articles_batch( 10 );
+
+        $this->assertSame( 1, $this->report->get( 'articles_adopted' ) );
+    }
+
+    /**
+     * A failed article insert is counted and noted under the source label.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_failed_article_is_reported_under_the_source_label() {
+        Brain\Monkey\Functions\when( 'wp_insert_post' )->alias(
+            function () {
+                return new WP_Error( 'db_insert_error', 'Could not insert' );
+            }
+        );
+
+        $source = $this->source(
+            array(
+                'articles' => array(
+                    array(
+                        'ID'        => 5,
+                        'post_name' => 'install',
+                    ),
+                ),
+            )
+        );
+
+        $this->migrator( $source )->migrate_articles_batch( 10 );
+
+        $this->assertSame( 1, $this->report->get( 'articles_failed' ) );
+        $this->assertSame( 0, $this->report->get( 'articles_created' ) );
+        $this->assertSame(
+            'Heroic Knowledge Base article 5 could not be created: Could not insert',
+            $this->report->notes( 'articles' )[0]
         );
     }
 }
@@ -1399,6 +1735,42 @@ class Lisensio_KB_Heroic_Import_Source_Double extends Lisensio_KB_Heroic_Import_
      */
     public function article_orders( $post_id ) {
         return isset( $this->data['orders'][ (int) $post_id ] ) ? $this->data['orders'][ (int) $post_id ] : array();
+    }
+
+    /**
+     * The seeded post meta.
+     *
+     * @since 1.0.0
+     *
+     * @param int $post_id The Heroic post ID.
+     *
+     * @return array<string, mixed> The meta.
+     */
+    public function post_meta( $post_id ) {
+        return isset( $this->data['post_meta'][ (int) $post_id ] ) ? $this->data['post_meta'][ (int) $post_id ] : array();
+    }
+
+    /**
+     * The seeded term names, from the seeded terms.
+     *
+     * @since 1.0.0
+     *
+     * @param int[] $term_ids The Heroic term IDs.
+     *
+     * @return array<int, string> Term ID to name.
+     */
+    public function term_names( array $term_ids ) {
+        $names = array();
+
+        foreach ( isset( $this->data['terms'] ) ? $this->data['terms'] : array() as $rows ) {
+            foreach ( $rows as $row ) {
+                if ( in_array( (int) $row['term_id'], array_map( 'intval', $term_ids ), true ) ) {
+                    $names[ (int) $row['term_id'] ] = (string) $row['name'];
+                }
+            }
+        }
+
+        return $names;
     }
 
     /**

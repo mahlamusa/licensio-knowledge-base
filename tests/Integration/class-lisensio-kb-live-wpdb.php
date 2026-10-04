@@ -270,15 +270,13 @@ class Lisensio_KB_Live_WPDB {
      * @since 1.0.0
      *
      * @param string $query  The SQL statement.
-     * @param mixed  $output Ignored; the row is always an object.
+     * @param mixed  $output OBJECT (the default) or ARRAY_A, as wpdb honours them.
      *
-     * @return object|null The first row, or null when there is none.
+     * @return object|array<string, mixed>|null The first row, or null when there is none.
      * @throws RuntimeException When the statement fails and errors are not suppressed.
      */
     public function get_row( $query = '', $output = null ) {
-        unset( $output );
-
-        $rows = $this->get_results( $query );
+        $rows = $this->get_results( $query, null === $output ? OBJECT : $output );
 
         return empty( $rows ) ? null : $rows[0];
     }

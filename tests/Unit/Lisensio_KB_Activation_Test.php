@@ -3,7 +3,7 @@
  * Activation smoke tests.
  *
  * Runs the real activation routine against WordPress function doubles and
- * asserts it completes: the content model is registered, all four tables are
+ * asserts it completes: the content model is registered, all five tables are
  * created, the FULLTEXT probe result is stored, the visitor salt is seeded
  * and the rotation cron is scheduled. Neither SLSWC nor WooCommerce is
  * loaded in this process, which is exactly the environment the plugin has to
@@ -212,18 +212,18 @@ class Lisensio_KB_Activation_Test extends Lisensio_KB_Test_Case {
     }
 
     /**
-     * Activation creates all four tables and records the schema version.
+     * Activation creates all five tables and records the schema version.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_activation_creates_all_four_tables() {
+    public function test_activation_creates_all_five_tables() {
         Lisensio_KB_Lifecycle::activate();
 
         $statements = $GLOBALS['lisensio_kb_delta_calls'];
 
-        $this->assertCount( 4, $statements );
+        $this->assertCount( 5, $statements );
 
         foreach ( Lisensio_KB_DB_Installer::get_table_names() as $table ) {
             $this->assertNotEmpty(

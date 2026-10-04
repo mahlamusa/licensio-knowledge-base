@@ -18,9 +18,13 @@ import type {
 	ImportSummary,
 	IndexStatus,
 	IndexChunkResponse,
+	LogEntry,
+	LogRun,
 	MaintenanceStatus,
 	PruneResponse,
+	SourceCategory,
 	SourceDriver,
+	TargetCategory,
 	ToolsConfig,
 } from './types';
 
@@ -165,20 +169,45 @@ export async function detectSources(): Promise< SourceDriver[] > {
 }
 
 /**
- * Run one migration batch.
+ * A source's categories, and the existing categories they can be merged into.
  *
  * @since 1.0.0
  *
- * @param {string}  source    The driver ID.
- * @param {boolean} dryRun    Whether this batch may write.
- * @param {number}  batchSize How many rows the batch may read.
+ * @param {string} source The driver ID.
+ *
+ * @return {Promise<{source: SourceCategory[]; targets: TargetCategory[]}>} Both lists.
+ */
+export async function fetchCategories(
+	source: string
+): Promise< { source: SourceCategory[]; targets: TargetCategory[] } > {
+	const data = ( await postAction(
+		requireEndpoint( config().wizard ),
+		'lisensio_import_categories',
+		{ source }
+	) ) as { source?: SourceCategory[]; targets?: TargetCategory[] };
+
+	return { source: data.source ?? [], targets: data.targets ?? [] };
+}
+
+/**
+ * Run one import batch.
+ *
+ * @since 1.0.0
+ *
+ * @param {string}                source         The driver ID.
+ * @param {boolean}               dryRun         Whether this batch may write.
+ * @param {number}                batchSize      How many rows the batch may read.
+ * @param {Record<number,number>} categoryMap    Source category ID to existing category ID; read on a run's first batch only.
+ * @param {boolean}               importSettings Whether to copy the source's matching settings; read on a run's first batch only.
  *
  * @return {Promise<{progress: ImportProgress; summary?: ImportSummary}>} Batch progress, and the summary once finished.
  */
 export async function runBatch(
 	source: string,
 	dryRun: boolean,
-	batchSize: number
+	batchSize: number,
+	categoryMap: Record< number, number > = {},
+	importSettings = false
 ): Promise< { progress: ImportProgress; summary?: ImportSummary } > {
 	return postAction(
 		requireEndpoint( config().wizard ),
@@ -187,6 +216,8 @@ export async function runBatch(
 			source,
 			dry_run: dryRun ? 'true' : 'false',
 			batch_size: String( batchSize ),
+			category_map: JSON.stringify( categoryMap ),
+			import_settings: importSettings ? 'true' : 'false',
 		}
 	) as Promise< {
 		progress: ImportProgress;
@@ -195,21 +226,84 @@ export async function runBatch(
 }
 
 /**
- * Reset the migration state.
+ * Forget a run's state, so the next batch starts a fresh run.
  *
  * @since 1.0.0
  *
- * @param {string} source The driver ID.
+ * @param {string}  source The driver ID.
+ * @param {boolean} dryRun Whether to forget the dry run's state rather than the import's.
  *
  * @return {Promise<void>}
  */
-export async function resetMigration( source: string ): Promise< void > {
+export async function resetMigration(
+	source: string,
+	dryRun: boolean
+): Promise< void > {
 	await postAction(
 		requireEndpoint( config().wizard ),
 		'lisensio_import_reset',
 		{
 			source,
+			dry_run: dryRun ? 'true' : 'false',
 		}
+	);
+}
+
+/**
+ * Every run in the import log, newest first.
+ *
+ * @since 1.0.0
+ *
+ * @return {Promise<LogRun[]>} The runs.
+ */
+export async function fetchLogRuns(): Promise< LogRun[] > {
+	const data = ( await postAction(
+		requireEndpoint( config().wizard ),
+		'lisensio_import_log_runs'
+	) ) as { runs?: LogRun[] };
+
+	return data.runs ?? [];
+}
+
+/**
+ * One page of a run's log entries.
+ *
+ * @since 1.0.0
+ *
+ * @param {string} runId  The run.
+ * @param {string} status Only this status, or '' for all.
+ * @param {number} page   1-based page.
+ *
+ * @return {Promise<{items: LogEntry[]; total: number}>} The entries and how many match.
+ */
+export async function fetchLogEntries(
+	runId: string,
+	status: string,
+	page: number
+): Promise< { items: LogEntry[]; total: number } > {
+	const data = ( await postAction(
+		requireEndpoint( config().wizard ),
+		'lisensio_import_log_entries',
+		{ run_id: runId, status, page: String( page ) }
+	) ) as { items?: LogEntry[]; total?: number };
+
+	return { items: data.items ?? [], total: data.total ?? 0 };
+}
+
+/**
+ * Clear the import log, or one run of it.
+ *
+ * @since 1.0.0
+ *
+ * @param {string} runId The run to clear, or '' for the whole log.
+ *
+ * @return {Promise<void>}
+ */
+export async function clearLog( runId: string ): Promise< void > {
+	await postAction(
+		requireEndpoint( config().wizard ),
+		'lisensio_import_log_clear',
+		{ run_id: runId }
 	);
 }
 

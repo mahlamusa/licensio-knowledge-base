@@ -16,7 +16,7 @@ require_once $lisensio_kb_root . '/vendor/autoload.php';
 
 define( 'ABSPATH', $lisensio_kb_root . '/tests/fixtures/wordpress/' );
 define( 'LISENSIO_KB_VERSION', '1.0.0' );
-define( 'LISENSIO_KB_DB_VERSION', '1.0.0' );
+define( 'LISENSIO_KB_DB_VERSION', '1.0.1' );
 define( 'LISENSIO_KB_MIN_PHP', '7.4' );
 define( 'LISENSIO_KB_MIN_WP', '6.4' );
 define( 'LISENSIO_KB_PLUGIN_BASENAME', 'lisensio-knowledge-base/lisensio-knowledge-base.php' );

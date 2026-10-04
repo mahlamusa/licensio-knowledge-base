@@ -54,6 +54,7 @@ class Lisensio_KB_DB_Installer {
             'lisensio_search_log',
             'lisensio_article_views',
             'lisensio_feedback',
+            'lisensio_import_log',
         );
     }
 
@@ -128,6 +129,25 @@ class Lisensio_KB_DB_Installer {
             KEY status (status),
             KEY created_at (created_at),
             KEY article_visitor (article_id, visitor_hash)
+        ) {$charset_collate};";
+
+        $schemas['lisensio_import_log'] = "CREATE TABLE {$prefix}lisensio_import_log (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            run_id varchar(64) NOT NULL DEFAULT '',
+            source varchar(32) NOT NULL DEFAULT '',
+            dry_run tinyint(1) NOT NULL DEFAULT 0,
+            phase varchar(20) NOT NULL DEFAULT '',
+            item_type varchar(20) NOT NULL DEFAULT '',
+            source_id bigint(20) unsigned NOT NULL DEFAULT 0,
+            target_id bigint(20) unsigned NOT NULL DEFAULT 0,
+            title varchar(255) NOT NULL DEFAULT '',
+            status varchar(20) NOT NULL DEFAULT '',
+            message text NOT NULL,
+            details longtext NOT NULL,
+            created_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+            PRIMARY KEY  (id),
+            KEY run_status (run_id, status),
+            KEY created_at (created_at)
         ) {$charset_collate};";
 
         return $schemas;

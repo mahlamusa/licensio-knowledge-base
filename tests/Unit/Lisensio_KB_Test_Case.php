@@ -130,6 +130,12 @@ abstract class Lisensio_KB_Test_Case extends TestCase {
             }
         );
 
+        Functions\when( 'sanitize_key' )->alias(
+            function ( $value ) {
+                return preg_replace( '/[^a-z0-9_\-]/', '', strtolower( (string) $value ) );
+            }
+        );
+
         Functions\when( 'sanitize_title' )->alias(
             function ( $value ) {
                 $value = strtolower( wp_strip_all_tags( (string) $value ) );

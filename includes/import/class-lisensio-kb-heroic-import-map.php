@@ -391,6 +391,72 @@ class Lisensio_KB_Heroic_Import_Map {
     }
 
     /**
+     * Map Heroic's settings onto this plugin's.
+     *
+     * Read from the `ht_knowledge_base_settings` option; every key and default
+     * here was read from Heroic 3.10.4 (php/ht-knowledge-base-settings.php).
+     * URL slugs are deliberately not carried: changing this plugin's slugs
+     * would move every URL the import has just redirected to. Everything else
+     * with no equivalent is reported by key; no value of an unmapped setting is
+     * returned, because the option also holds Heroic's licence key.
+     *
+     * @since 1.0.0
+     *
+     * @param array<string, mixed> $settings The stored Heroic settings.
+     *
+     * @return array{settings: array<string, mixed>, excluded: array<string, string>, unmapped: string[]} Target
+     *         setting to value, excluded source key to reason, and the unmapped source keys.
+     */
+    public static function settings( array $settings ) {
+        $direct   = array(
+            'num-articles'                     => 'articles_per_page',
+            'archive-columns'                  => 'archive_columns',
+            'kb-archive-page-header-text'      => 'archive_header_text',
+            'search-placeholder-text'          => 'search_placeholder',
+            'kb-headerstyle-img-attachment-id' => 'header_image_id',
+            'kb-linkcolor'                     => 'brand_color',
+        );
+        $toggles  = array(
+            'display-sub-cats'        => 'show_subcategories',
+            'display-article-count'   => 'show_article_counts',
+            'article-sticky-sidebar'  => 'sticky_sidebar',
+            'enable-article-feedback' => 'enable_feedback',
+        );
+        $sidebars = array(
+            'archive-sidebar-position'  => 'archive_sidebar_position',
+            'category-sidebar-position' => 'category_sidebar_position',
+            'article-sidebar-position'  => 'article_sidebar_position',
+        );
+        $slugs    = array( Lisensio_KB_Heroic_Import_Schema::SETTING_ARTICLE_SLUG, Lisensio_KB_Heroic_Import_Schema::SETTING_CATEGORY_SLUG, Lisensio_KB_Heroic_Import_Schema::SETTING_TAG_SLUG );
+
+        $out = array(
+            'settings' => array(),
+            'excluded' => array(),
+            'unmapped' => array(),
+        );
+
+        foreach ( $settings as $key => $value ) {
+            $key = (string) $key;
+
+            if ( isset( $direct[ $key ] ) && is_scalar( $value ) && '' !== (string) $value ) {
+                $out['settings'][ $direct[ $key ] ] = $value;
+            } elseif ( isset( $toggles[ $key ] ) ) {
+                $out['settings'][ $toggles[ $key ] ] = ! empty( $value ) && 'false' !== $value;
+            } elseif ( isset( $sidebars[ $key ] ) && in_array( $value, array( 'left', 'right', 'off' ), true ) ) {
+                $out['settings'][ $sidebars[ $key ] ] = 'off' === $value ? 'none' : $value;
+            } elseif ( 'kb-headerstyle' === $key && in_array( $value, array( 'solid', 'gradient', 'image' ), true ) ) {
+                $out['settings']['header_style'] = $value;
+            } elseif ( in_array( $key, $slugs, true ) ) {
+                $out['excluded'][ $key ] = 'URL slug; kept as it is so the imported redirects stay valid';
+            } else {
+                $out['unmapped'][] = $key;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
      * Cut a string to a character length without splitting a multibyte character.
      *
      * @since 1.0.0

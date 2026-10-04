@@ -10,7 +10,7 @@
  *
  * So this builds both halves for real on a scratch database: Heroic's four
  * tables using Heroic's own CREATE TABLE statements, verbatim from the installed
- * 3.10.4 source, and the plugin's four tables from the plugin's own installer.
+ * 3.10.4 source, and the plugin's five tables from the plugin's own installer.
  * It also creates real `posts` and `postmeta` tables, so the migrator's article
  * lookup is the production lookup rather than a stub.
  *
@@ -42,6 +42,14 @@ abstract class Lisensio_KB_Heroic_Import_DB_Test_Case extends Lisensio_KB_Integr
      * @var string
      */
     const PREFIX = 'lkbmig_';
+
+    /**
+     * The phases of a Heroic import, in run order.
+     *
+     * @since 1.0.0
+     * @var string[]
+     */
+    const PHASES = array( 'terms', 'articles', 'feedback', 'views', 'searches' );
 
     /**
      * The mysqli-backed $wpdb adapter.
@@ -174,7 +182,7 @@ abstract class Lisensio_KB_Heroic_Import_DB_Test_Case extends Lisensio_KB_Integr
      * The two core tables the migrator's article lookup reads.
      *
      * Only the columns that lookup touches, but real tables: the point is that
-     * `Lisensio_KB_Heroic_Import_Content::find_article()` runs its production
+     * `Lisensio_KB_Import_Content::find_article()` runs its production
      * SQL rather than being replaced by a stub that cannot get it wrong.
      *
      * @since 1.0.0
@@ -242,6 +250,12 @@ abstract class Lisensio_KB_Heroic_Import_DB_Test_Case extends Lisensio_KB_Integr
                 unset( $this->options[ (string) $name ] );
 
                 return true;
+            }
+        );
+
+        Brain\Monkey\Functions\when( 'sanitize_key' )->alias(
+            function ( $value ) {
+                return preg_replace( '/[^a-z0-9_\-]/', '', strtolower( (string) $value ) );
             }
         );
 
@@ -345,7 +359,7 @@ abstract class Lisensio_KB_Heroic_Import_DB_Test_Case extends Lisensio_KB_Integr
             array(
                 array(
                     'post_id'    => (int) $article_id,
-                    'meta_key'   => Lisensio_KB_Heroic_Import_Content::META_SOURCE_POST, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+                    'meta_key'   => '_lisensio_heroic_post_id', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
                     'meta_value' => (string) (int) $heroic_id, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
                 ),
             )
@@ -422,23 +436,47 @@ abstract class Lisensio_KB_Heroic_Import_DB_Test_Case extends Lisensio_KB_Integr
     }
 
     /**
+     * A Heroic import state.
+     *
+     * @since 1.0.0
+     *
+     * @param bool $persist Whether the state is written to the option.
+     *
+     * @return Lisensio_KB_Import_State The state.
+     */
+    protected function new_state( $persist = true ) {
+        return new Lisensio_KB_Import_State( 'heroic', self::PHASES, $persist );
+    }
+
+    /**
+     * A Heroic import report.
+     *
+     * @since 1.0.0
+     *
+     * @return Lisensio_KB_Import_Report The report.
+     */
+    protected function new_report() {
+        return new Lisensio_KB_Import_Report( 'heroic' );
+    }
+
+    /**
      * Build a migrator wired to this scratch database.
      *
      * @since 1.0.0
      *
-     * @param Lisensio_KB_Heroic_Import_State  $state   The resume point.
-     * @param Lisensio_KB_Heroic_Import_Report $report  The run report.
-     * @param bool                             $dry_run Whether the migrator may write.
-     * @param int                              $offset  Seconds to subtract to reach UTC.
+     * @param Lisensio_KB_Import_State  $state   The resume point.
+     * @param Lisensio_KB_Import_Report $report  The run report.
+     * @param bool                      $dry_run Whether the migrator may write.
+     * @param int                       $offset  Seconds to subtract to reach UTC.
      *
      * @return Lisensio_KB_Heroic_Import_Data The migrator under test.
      */
     protected function data_migrator( $state, $report, $dry_run = false, $offset = 0 ) {
         $source  = new Lisensio_KB_Heroic_Import_Source();
-        $content = new Lisensio_KB_Heroic_Import_Content(
+        $content = new Lisensio_KB_Import_Content(
             $source,
             $state,
-            new Lisensio_KB_Heroic_Import_Redirects( sys_get_temp_dir() . '/lisensio-kb-migration-unused', true ),
+            new Lisensio_KB_Import_Redirects( 'heroic', sys_get_temp_dir() . '/lisensio-kb-migration-unused', true ),
             $report,
             $dry_run
         );

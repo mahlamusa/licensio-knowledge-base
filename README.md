@@ -437,6 +437,22 @@ stored, escaped again wherever PHP prints them, and rendered by the inbox with
 Vue text interpolation. Nothing in this flow uses `v-html`, and nothing in it
 reads or writes an IP address.
 
+### Import sources
+
+The Migration tab of **Knowledge Base > Tools** imports from Heroic Knowledge Base and BetterDocs. Another source needs two subclasses and one filter, with no framework change:
+
+```php
+add_filter( 'lisensio_import_drivers', function ( $drivers ) {
+    $drivers['echo_kb'] = 'My_Echo_KB_Import_Driver'; // A Lisensio_KB_Import_Driver subclass.
+    return $drivers;
+} );
+```
+
+- **`Lisensio_KB_Import_Source`** reads the source. Posts and terms come straight from the tables (the source plugin may be deactivated); implement the post type, taxonomies, category meta mapping, article order, post/term meta classification for the log, and the old URLs.
+- **`Lisensio_KB_Import_Driver`** runs the import. Implement `source()`, `data_phases()`, `run_data_batch()`, `data_counts()` and `count_labels()`; the base class runs `terms` and `articles`, keeps dry runs apart, resumes interrupted runs and writes the log.
+- Provenance is `_lisensio_{id}_post_id` / `_lisensio_{id}_term_id`; every registered source's post key blocks slug adoption by the others.
+- Every run writes to `lisensio_import_log` through `Lisensio_KB_Import_Log::entry()`. Analytics rows must be built column by column from the source row, never copied; no source IP address may reach a `lisensio_*` table.
+
 ## Privacy
 
 No IP address is written to any table. Visitor identity is a rotating salted hash, the salt is not exposed to the frontend, and analytics retention defaults to 90 days. See `SPEC.md` for the full privacy layer.
