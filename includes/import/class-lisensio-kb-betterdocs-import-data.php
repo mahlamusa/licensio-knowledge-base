@@ -385,7 +385,8 @@ class Lisensio_KB_BetterDocs_Import_Data {
     }
 
     /**
-     * Insert expanded rows in multi-row statements, unless this is a dry run.
+     * Insert one day's expanded rows in multi-row statements, all or nothing,
+     * unless this is a dry run.
      *
      * @since 1.0.0
      *
@@ -411,6 +412,15 @@ class Lisensio_KB_BetterDocs_Import_Data {
 
         $tuple = '(' . implode( ', ', $formats ) . ')';
 
+        /*
+         * One day is written all or nothing. Without the transaction a chunk
+         * failing after earlier chunks committed would leave part of the day
+         * in the table while the log says none of it was written, and a
+         * request that ran out of time mid-day would leave rows behind that a
+         * resumed run, starting before that day, would write again.
+         */
+        $wpdb->query( 'START TRANSACTION' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
         foreach ( array_chunk( $rows, self::INSERT_CHUNK ) as $chunk ) {
             $values = array();
 
@@ -426,9 +436,18 @@ class Lisensio_KB_BetterDocs_Import_Data {
             $result = $wpdb->query( $wpdb->prepare( $sql, $values ) );
 
             if ( false === $result ) {
+                $error = (string) $wpdb->last_error;
+
+                $wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+                // Keep the failing statement's error for the log, not the rollback's.
+                $wpdb->last_error = $error;
+
                 return false;
             }
         }
+
+        $wpdb->query( 'COMMIT' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
         return true;
     }

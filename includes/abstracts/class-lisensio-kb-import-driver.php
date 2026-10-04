@@ -465,7 +465,15 @@ abstract class Lisensio_KB_Import_Driver {
             $settings->update( $mapped['settings'] );
         }
 
-        $after = $dry_run ? array_merge( $before, $mapped['settings'] ) : ( new Lisensio_KB_Settings() )->all();
+        if ( $dry_run ) {
+            $after = $before;
+
+            foreach ( $mapped['settings'] as $key => $value ) {
+                $after[ $key ] = $settings->sanitize_value( $key, $value );
+            }
+        } else {
+            $after = ( new Lisensio_KB_Settings() )->all();
+        }
 
         foreach ( array_keys( $mapped['settings'] ) as $key ) {
             $from    = array_key_exists( $key, $before ) ? $before[ $key ] : null;

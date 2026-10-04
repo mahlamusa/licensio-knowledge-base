@@ -701,6 +701,30 @@ class Lisensio_KB_Settings {
     }
 
     /**
+     * The value a setting would be stored as, without storing it.
+     *
+     * Runs the same sanitisation `update()` does, so a caller can preview a
+     * change exactly — the importer's dry run uses it to report which settings
+     * would really change.
+     *
+     * @since 1.0.0
+     *
+     * @param string $key   The setting key.
+     * @param mixed  $value The raw value.
+     *
+     * @return mixed The sanitized value, or null for an unknown setting.
+     */
+    public function sanitize_value( $key, $value ) {
+        $registry = $this->registry();
+
+        if ( ! array_key_exists( $key, $registry ) ) {
+            return null;
+        }
+
+        return $this->sanitize_setting( $value, $registry[ $key ] );
+    }
+
+    /**
      * Sanitize, cast and bound a raw value against its registry definition.
      *
      * The single transformation every value passes through, on read and on

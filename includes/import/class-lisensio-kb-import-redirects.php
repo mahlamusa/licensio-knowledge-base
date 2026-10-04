@@ -293,7 +293,8 @@ class Lisensio_KB_Import_Redirects {
     }
 
     /**
-     * The path a redirect is keyed by: no trailing slash, no query.
+     * The path a redirect is keyed by: no trailing slash, no query, and
+     * percent-escapes in lowercase.
      *
      * @since 1.0.0
      *
@@ -304,7 +305,24 @@ class Lisensio_KB_Import_Redirects {
     public static function normalize_path( $url ) {
         $path = wp_parse_url( (string) $url, PHP_URL_PATH );
 
-        return is_string( $path ) && '' !== $path ? untrailingslashit( $path ) : '';
+        if ( ! is_string( $path ) || '' === $path ) {
+            return '';
+        }
+
+        /*
+         * WordPress stores a non-ASCII slug percent-encoded in lowercase hex,
+         * while browsers send uppercase. Lowercasing every escape makes the
+         * two spellings of the same path one key.
+         */
+        $path = (string) preg_replace_callback(
+            '/%[0-9A-Fa-f]{2}/',
+            static function ( $escape ) {
+                return strtolower( $escape[0] );
+            },
+            $path
+        );
+
+        return untrailingslashit( $path );
     }
 
     /**

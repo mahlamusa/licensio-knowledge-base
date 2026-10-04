@@ -115,4 +115,17 @@ class Lisensio_KB_Import_Redirect_Server_Test extends Lisensio_KB_Test_Case {
         $this->assertSame( '', Lisensio_KB_Import_Redirect_Server::target_for( '', $map ) );
         $this->assertSame( '', Lisensio_KB_Import_Redirect_Server::target_for( '/knowledge-base/install', array() ) );
     }
+
+    /**
+     * A browser's uppercase percent-escapes match a slug WordPress stored in lowercase.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_percent_escapes_match_in_any_case() {
+        $map = array( Lisensio_KB_Import_Redirects::normalize_path( 'http://example.test/knowledge-base/%d0%b0%d0%b1/' ) => 'http://example.test/docs/ab/' );
+
+        $this->assertSame( 'http://example.test/docs/ab/', Lisensio_KB_Import_Redirect_Server::target_for( '/knowledge-base/%D0%B0%D0%B1/', $map ) );
+    }
 }

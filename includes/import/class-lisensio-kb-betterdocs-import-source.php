@@ -387,6 +387,9 @@ class Lisensio_KB_BetterDocs_Import_Source extends Lisensio_KB_Import_Source {
     /**
      * An article's first category, by name, as BetterDocs picks it for URLs.
      *
+     * Compared case-insensitively, like the database collation that orders
+     * `wp_get_object_terms()`.
+     *
      * @since 1.0.0
      *
      * @param int $post_id The BetterDocs post ID.
@@ -411,7 +414,7 @@ class Lisensio_KB_BetterDocs_Import_Source extends Lisensio_KB_Import_Source {
         usort(
             $rows,
             static function ( $a, $b ) {
-                return strcmp( (string) $a['name'], (string) $b['name'] );
+                return strcasecmp( (string) $a['name'], (string) $b['name'] );
             }
         );
 
