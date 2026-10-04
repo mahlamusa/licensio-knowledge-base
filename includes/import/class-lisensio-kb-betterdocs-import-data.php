@@ -418,6 +418,11 @@ class Lisensio_KB_BetterDocs_Import_Data {
          * in the table while the log says none of it was written, and a
          * request that ran out of time mid-day would leave rows behind that a
          * resumed run, starting before that day, would write again.
+         *
+         * One gap remains: if the connection drops mid-day, wpdb reconnects
+         * and retries in autocommit mode, so the chunks before the drop are
+         * lost while the rest commit. That needs a server failure during an
+         * import and is not detected here.
          */
         $wpdb->query( 'START TRANSACTION' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 

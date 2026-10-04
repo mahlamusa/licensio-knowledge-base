@@ -116,6 +116,18 @@ class Lisensio_KB_BetterDocs_Import_Source_Test extends Lisensio_KB_Test_Case {
             }
         );
 
+        Brain\Monkey\Functions\when( 'remove_accents' )->alias(
+            function ( $value ) {
+                return strtr(
+                    (string) $value,
+                    array(
+                        'É' => 'E',
+                        'é' => 'e',
+                    )
+                );
+            }
+        );
+
         Brain\Monkey\Functions\when( 'maybe_unserialize' )->alias(
             function ( $value ) {
                 if ( ! is_string( $value ) ) {
@@ -684,6 +696,50 @@ class Lisensio_KB_BetterDocs_Import_Source_Test extends Lisensio_KB_Test_Case {
 
         $this->assertSame(
             'https://example.test/docs/alpha/my-article/',
+            $source->old_article_url(
+                array(
+                    'ID'        => 30,
+                    'post_name' => 'my-article',
+                )
+            )
+        );
+    }
+
+    /**
+     * Case and accents do not change which category comes first, as in a `_ci` collation.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_old_article_url_orders_categories_ignoring_case_and_accents() {
+        $this->settings( array( 'permalink_structure' => 'docs/%doc_category%' ) );
+
+        $source = new Lisensio_KB_BetterDocs_Import_Source_Double();
+
+        $source->term_rows     = array(
+            'doc_category' => array(
+                $this->term( 4, 'zones', array( 'name' => 'Zones' ) ),
+                $this->term( 9, 'etiquettes', array( 'name' => 'Étiquettes' ) ),
+                $this->term( 7, 'billing', array( 'name' => 'billing' ) ),
+            ),
+        );
+        $source->post_term_ids = array( 30 => array( 'doc_category' => array( 4, 9 ) ) );
+
+        $this->assertSame(
+            'https://example.test/docs/etiquettes/my-article/',
+            $source->old_article_url(
+                array(
+                    'ID'        => 30,
+                    'post_name' => 'my-article',
+                )
+            )
+        );
+
+        $source->post_term_ids = array( 30 => array( 'doc_category' => array( 4, 7 ) ) );
+
+        $this->assertSame(
+            'https://example.test/docs/billing/my-article/',
             $source->old_article_url(
                 array(
                     'ID'        => 30,
