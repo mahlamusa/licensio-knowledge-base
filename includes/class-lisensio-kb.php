@@ -261,6 +261,11 @@ final class Lisensio_KB {
         $this->settings_api->init_hooks();
         $this->toc->init_hooks();
 
+        if ( ! is_admin() ) {
+            $import_redirects = new Lisensio_KB_Import_Redirect_Server();
+            $import_redirects->init_hooks();
+        }
+
         if ( is_admin() ) {
             $term_fields = new Lisensio_KB_Term_Fields();
             $term_fields->init_hooks();

@@ -1,16 +1,11 @@
 <?php
 /**
- * Chunked reads out of the Heroic Knowledge Base data.
+ * Read-only access to the Heroic Knowledge Base data.
  *
- * Every read is keyed and bounded: rows come back ordered by primary key,
- * starting after a caller-supplied high-water mark, at most a batch at a time.
- * That is what makes the migration resumable and what keeps a knowledge base
- * with a million analytics rows inside a sane memory budget — an offset-based
- * pager would also have re-read the same rows every batch.
- *
- * The reads deliberately do not go through Heroic's own code. A migration is
- * normally run with Heroic already deactivated, so its functions and constants
- * do not exist; everything here talks to the tables and options directly.
+ * Heroic keeps articles as `ht_kb` posts, so the post and term reads are the
+ * shared ones in `Lisensio_KB_Import_Source`. What is Heroic's own lives here:
+ * its per-category article order, its category meta mapping, which post meta
+ * it writes, and the slugs its URLs were built from.
  *
  * @package Lisensio_KB
  * @since   1.0.0
@@ -23,173 +18,218 @@ defined( 'ABSPATH' ) || exit;
  *
  * @since 1.0.0
  */
-class Lisensio_KB_Heroic_Import_Source {
+class Lisensio_KB_Heroic_Import_Source extends Lisensio_KB_Import_Source {
 
     /**
-     * How many rows a batch holds when the caller does not say.
-     *
-     * @since 1.0.0
-     * @var int
-     */
-    const DEFAULT_BATCH = 200;
-
-    /**
-     * How many `ht_kb` posts exist, in any status but auto-draft.
+     * The source driver id.
      *
      * @since 1.0.0
      *
-     * @return int The article count.
+     * @return string The id.
      */
-    public function count_articles() {
-        global $wpdb;
-
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        return (int) $wpdb->get_var(
-            $wpdb->prepare(
-                "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = %s AND post_status != %s",
-                Lisensio_KB_Heroic_Import_Schema::POST_TYPE,
-                'auto-draft'
-            )
-        );
+    public function id() {
+        return 'heroic';
     }
 
     /**
-     * A batch of `ht_kb` posts, ordered by ID.
-     *
-     * Revisions and auto-drafts are excluded. A revision is not content the
-     * target needs — `wp_insert_post()` on the new article starts its own
-     * revision history — and an auto-draft is an editor artefact that was never
-     * an article.
+     * The source's name as the operator knows it.
      *
      * @since 1.0.0
      *
-     * @param int $after The ID to start after.
-     * @param int $limit How many rows to return.
-     *
-     * @return array<int, array<string, mixed>> The post rows, oldest ID first.
+     * @return string The label.
      */
-    public function articles( $after = 0, $limit = self::DEFAULT_BATCH ) {
-        global $wpdb;
-
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $rows = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT * FROM {$wpdb->posts}
-                 WHERE post_type = %s AND post_status != %s AND ID > %d
-                 ORDER BY ID ASC
-                 LIMIT %d",
-                Lisensio_KB_Heroic_Import_Schema::POST_TYPE,
-                'auto-draft',
-                (int) $after,
-                max( 1, (int) $limit )
-            ),
-            ARRAY_A
-        );
-
-        return is_array( $rows ) ? $rows : array();
+    public function label() {
+        return __( 'Heroic Knowledge Base', 'lisensio-knowledge-base' );
     }
 
     /**
-     * Every term in one of Heroic's taxonomies, parents before children.
-     *
-     * Terms are few even on a large knowledge base, and a child cannot be
-     * created before its parent, so they are read in one go and topologically
-     * ordered rather than paged. A term whose parent is missing — which a
-     * half-deleted taxonomy can produce — is treated as a root so it is
-     * migrated rather than silently dropped.
+     * The post type Heroic keeps its articles in.
      *
      * @since 1.0.0
      *
-     * @param string $taxonomy The Heroic taxonomy name.
-     *
-     * @return array<int, array<string, mixed>> Term rows: term_id, name, slug, description, parent, count.
+     * @return string The post type.
      */
-    public function terms( $taxonomy ) {
-        global $wpdb;
-
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $rows = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT t.term_id, t.name, t.slug, tt.description, tt.parent, tt.count
-                 FROM {$wpdb->terms} AS t
-                 INNER JOIN {$wpdb->term_taxonomy} AS tt ON tt.term_id = t.term_id
-                 WHERE tt.taxonomy = %s
-                 ORDER BY t.term_id ASC",
-                (string) $taxonomy
-            ),
-            ARRAY_A
-        );
-
-        return $this->sort_parents_first( is_array( $rows ) ? $rows : array() );
+    public function post_type() {
+        return Lisensio_KB_Heroic_Import_Schema::POST_TYPE;
     }
 
     /**
-     * The Heroic term IDs attached to one Heroic post, in one taxonomy.
+     * Heroic's category taxonomy.
      *
      * @since 1.0.0
      *
-     * @param int    $post_id  The Heroic post ID.
-     * @param string $taxonomy The Heroic taxonomy name.
-     *
-     * @return int[] The term IDs, ascending.
+     * @return string The taxonomy.
      */
-    public function post_terms( $post_id, $taxonomy ) {
-        global $wpdb;
-
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $ids = $wpdb->get_col(
-            $wpdb->prepare(
-                "SELECT tt.term_id
-                 FROM {$wpdb->term_relationships} AS tr
-                 INNER JOIN {$wpdb->term_taxonomy} AS tt ON tt.term_taxonomy_id = tr.term_taxonomy_id
-                 WHERE tr.object_id = %d AND tt.taxonomy = %s
-                 ORDER BY tt.term_id ASC",
-                (int) $post_id,
-                (string) $taxonomy
-            )
-        );
-
-        return array_map( 'intval', is_array( $ids ) ? $ids : array() );
+    public function category_taxonomy() {
+        return Lisensio_KB_Heroic_Import_Schema::TAXONOMY_CATEGORY;
     }
 
     /**
-     * Every term meta value on one Heroic term.
-     *
-     * Read wholesale rather than key by key: Heroic's keys are unprefixed
-     * (`term_order`, `meta_image`, `meta_svg`), so a caller that wants to report
-     * what it could not map has to see everything that is there.
+     * Heroic's tag taxonomy.
      *
      * @since 1.0.0
      *
-     * @param int $term_id The Heroic term ID.
-     *
-     * @return array<string, string> Meta key to its first value.
+     * @return string The taxonomy.
      */
-    public function term_meta( $term_id ) {
-        global $wpdb;
+    public function tag_taxonomy() {
+        return Lisensio_KB_Heroic_Import_Schema::TAXONOMY_TAG;
+    }
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $rows = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT meta_key, meta_value FROM {$wpdb->termmeta} WHERE term_id = %d ORDER BY meta_id ASC",
-                (int) $term_id
-            ),
-            ARRAY_A
-        );
+    /**
+     * Map a Heroic category's meta onto this plugin's term meta.
+     *
+     * @since 1.0.0
+     *
+     * @param array<string, mixed> $meta The Heroic term meta.
+     *
+     * @return array{meta: array<string, mixed>, unmapped: string[]} The target meta and the unmapped keys.
+     */
+    public function map_category_meta( array $meta ) {
+        return Lisensio_KB_Heroic_Import_Map::category_meta( $meta );
+    }
 
-        $meta = array();
+    /**
+     * Map the stored source settings onto this plugin's.
+     *
+     * @since 1.0.0
+     *
+     * @return array{settings: array<string, mixed>, excluded: array<string, string>, unmapped: string[]} The mapping.
+     */
+    public function map_settings() {
+        return Lisensio_KB_Heroic_Import_Map::settings( Lisensio_KB_Heroic_Import_Schema::settings() );
+    }
 
-        foreach ( (array) $rows as $row ) {
-            $key = isset( $row['meta_key'] ) ? (string) $row['meta_key'] : '';
+    /**
+     * The menu order a Heroic article should get.
+     *
+     * @since 1.0.0
+     *
+     * @param int $post_id The Heroic post ID.
+     *
+     * @return array{order: int, ambiguous: bool, source_term_id: int} The kept position.
+     */
+    public function article_order( $post_id ) {
+        return Lisensio_KB_Heroic_Import_Map::article_order( $this->article_orders( $post_id ) );
+    }
 
-            if ( '' === $key || array_key_exists( $key, $meta ) ) {
-                continue;
-            }
+    /**
+     * What becomes of one Heroic post meta key, for the log.
+     *
+     * @since 1.0.0
+     *
+     * @param string $key The meta key.
+     *
+     * @return array{action: string, target: string} The action and where it went or why not.
+     */
+    public function classify_post_meta( $key ) {
+        $key = (string) $key;
 
-            $meta[ $key ] = isset( $row['meta_value'] ) ? (string) $row['meta_value'] : '';
+        if ( '_thumbnail_id' === $key ) {
+            return array(
+                'action' => 'migrated',
+                'target' => '_thumbnail_id (the same attachment)',
+            );
         }
 
-        return $meta;
+        if ( 0 === strpos( $key, Lisensio_KB_Heroic_Import_Schema::META_ARTICLE_ORDER_PREFIX ) ) {
+            return array(
+                'action' => 'migrated',
+                'target' => 'menu_order',
+            );
+        }
+
+        if ( Lisensio_KB_Heroic_Import_Schema::META_VIEW_COUNT === $key ) {
+            return array(
+                'action' => 'derived',
+                'target' => 'recounted from the imported views',
+            );
+        }
+
+        if ( Lisensio_KB_Heroic_Import_Schema::META_USEFULNESS === $key ) {
+            return array(
+                'action' => 'derived',
+                'target' => 'recomputed from the imported votes',
+            );
+        }
+
+        if ( in_array( $key, self::CORE_POST_META, true ) ) {
+            return array(
+                'action' => 'skipped',
+                'target' => 'WordPress bookkeeping',
+            );
+        }
+
+        return array(
+            'action' => 'not_migrated',
+            'target' => 'no equivalent field; not copied',
+        );
+    }
+
+    /**
+     * What becomes of one Heroic category meta key, for the log.
+     *
+     * @since 1.0.0
+     *
+     * @param string $key The term meta key.
+     *
+     * @return array{action: string, target: string} The action and where it went or why not.
+     */
+    public function classify_term_meta( $key ) {
+        $targets = array(
+            Lisensio_KB_Heroic_Import_Schema::META_TERM_ORDER => Lisensio_KB_Term_Meta::META_ORDER,
+            Lisensio_KB_Heroic_Import_Schema::META_TERM_IMAGE => Lisensio_KB_Term_Meta::META_IMAGE_ID,
+            Lisensio_KB_Heroic_Import_Schema::META_TERM_SVG   => Lisensio_KB_Term_Meta::META_ICON_SVG . ' (sanitised)',
+        );
+
+        if ( isset( $targets[ (string) $key ] ) ) {
+            return array(
+                'action' => 'migrated',
+                'target' => $targets[ (string) $key ],
+            );
+        }
+
+        return array(
+            'action' => 'not_migrated',
+            'target' => 'no equivalent field; not copied',
+        );
+    }
+
+    /**
+     * Where a Heroic article lived.
+     *
+     * @since 1.0.0
+     *
+     * @param array<string, mixed> $row The Heroic post row.
+     *
+     * @return string The absolute URL, or ''.
+     */
+    public function old_article_url( array $row ) {
+        $slug = isset( $row['post_name'] ) ? (string) $row['post_name'] : '';
+
+        return '' === $slug ? '' : self::url( Lisensio_KB_Heroic_Import_Schema::article_slug(), $slug );
+    }
+
+    /**
+     * Where a Heroic category or tag archive lived.
+     *
+     * @since 1.0.0
+     *
+     * @param array<string, mixed> $row The Heroic term row.
+     *
+     * @return string The absolute URL, or ''.
+     */
+    public function old_term_url( array $row ) {
+        $slug = isset( $row['slug'] ) ? (string) $row['slug'] : '';
+
+        if ( '' === $slug ) {
+            return '';
+        }
+
+        $base = isset( $row['taxonomy'] ) && Lisensio_KB_Heroic_Import_Schema::TAXONOMY_TAG === $row['taxonomy']
+            ? Lisensio_KB_Heroic_Import_Schema::tag_slug()
+            : Lisensio_KB_Heroic_Import_Schema::category_slug();
+
+        return self::url( $base, $slug );
     }
 
     /**
@@ -231,185 +271,18 @@ class Lisensio_KB_Heroic_Import_Source {
         return $orders;
     }
 
+
     /**
-     * Whether a Heroic article with this ID exists.
-     *
-     * The dry run's answer to "would this vote have an article to attach to?" —
-     * the article does not exist as a target yet, so the question has to be
-     * asked of the source.
+     * An absolute URL under a base slug.
      *
      * @since 1.0.0
      *
-     * @param int $post_id The Heroic post ID.
+     * @param string $base The base slug.
+     * @param string $slug The item slug.
      *
-     * @return bool True when the source holds the article.
+     * @return string The URL, with a trailing slash.
      */
-    public function article_exists( $post_id ) {
-        global $wpdb;
-
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        return (bool) $wpdb->get_var(
-            $wpdb->prepare(
-                "SELECT ID FROM {$wpdb->posts} WHERE ID = %d AND post_type = %s",
-                (int) $post_id,
-                Lisensio_KB_Heroic_Import_Schema::POST_TYPE
-            )
-        );
-    }
-
-    /**
-     * The attachment IDs whose parent is one Heroic article.
-     *
-     * @since 1.0.0
-     *
-     * @param int $post_id The Heroic post ID.
-     *
-     * @return int[] The attachment IDs.
-     */
-    public function attachments( $post_id ) {
-        global $wpdb;
-
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $ids = $wpdb->get_col(
-            $wpdb->prepare(
-                "SELECT ID FROM {$wpdb->posts} WHERE post_parent = %d AND post_type = %s ORDER BY ID ASC",
-                (int) $post_id,
-                'attachment'
-            )
-        );
-
-        return array_map( 'intval', is_array( $ids ) ? $ids : array() );
-    }
-
-    /**
-     * How many rows one of Heroic's tables holds.
-     *
-     * A missing table counts as zero: Heroic creates each table lazily, and a
-     * site that never enabled a module simply has none.
-     *
-     * @since 1.0.0
-     *
-     * @param string $table One of the Lisensio_KB_Heroic_Import_Schema TABLE_* constants.
-     *
-     * @return int The row count.
-     */
-    public function count_table( $table ) {
-        global $wpdb;
-
-        if ( ! Lisensio_KB_Heroic_Import_Schema::table_exists( $table ) ) {
-            return 0;
-        }
-
-        $name = Lisensio_KB_Heroic_Import_Schema::table( $table );
-
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- The identifier is a class constant; see rows().
-        return (int) $wpdb->get_var( "SELECT COUNT(*) FROM `{$name}`" );
-    }
-
-    /**
-     * A batch of rows from one of Heroic's tables.
-     *
-     * @since 1.0.0
-     *
-     * @param string $table One of the Lisensio_KB_Heroic_Import_Schema TABLE_* constants.
-     * @param string $key   The table's primary key column.
-     * @param int    $after The key value to start after.
-     * @param int    $limit How many rows to return.
-     *
-     * @return array<int, array<string, mixed>> The rows, lowest key first.
-     */
-    public function rows( $table, $key, $after = 0, $limit = self::DEFAULT_BATCH ) {
-        global $wpdb;
-
-        if ( ! Lisensio_KB_Heroic_Import_Schema::table_exists( $table ) ) {
-            return array();
-        }
-
-        /*
-         * The table and key are not user input: both come from
-         * Lisensio_KB_Heroic_Import_Schema constants, and the key is additionally
-         * reduced to word characters. They are interpolated because an
-         * identifier cannot be a bound parameter. The two values that ARE
-         * caller-supplied, the cursor and the limit, are bound.
-         */
-        $name   = Lisensio_KB_Heroic_Import_Schema::table( $table );
-        $column = preg_replace( '/[^A-Za-z0-9_]/', '', (string) $key );
-
-        $sql = $wpdb->prepare(
-            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Identifiers cannot be bound; both are class constants, see above.
-            "SELECT * FROM `{$name}` WHERE `{$column}` > %d ORDER BY `{$column}` ASC LIMIT %d",
-            (int) $after,
-            max( 1, (int) $limit )
-        );
-
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $rows = $wpdb->get_results( $sql, ARRAY_A );
-
-        return is_array( $rows ) ? $rows : array();
-    }
-
-    /**
-     * Order term rows so a parent always precedes its children.
-     *
-     * @since 1.0.0
-     *
-     * @param array<int, array<string, mixed>> $rows The term rows, in any order.
-     *
-     * @return array<int, array<string, mixed>> The same rows, parents first.
-     */
-    private function sort_parents_first( array $rows ) {
-        $by_parent = array();
-        $known     = array();
-
-        foreach ( $rows as $row ) {
-            $known[ isset( $row['term_id'] ) ? (int) $row['term_id'] : 0 ] = true;
-        }
-
-        foreach ( $rows as $row ) {
-            $parent = isset( $row['parent'] ) ? (int) $row['parent'] : 0;
-
-            /*
-             * A term whose parent is not in this taxonomy — the residue of a
-             * half-deleted tree — is treated as a root. Filing it under a parent
-             * that will never appear would leave it stranded in the queue and
-             * silently unmigrated.
-             */
-            if ( $parent > 0 && empty( $known[ $parent ] ) ) {
-                $parent = 0;
-            }
-
-            $by_parent[ $parent ][] = $row;
-        }
-
-        return $this->flatten_tree( $by_parent, 0 );
-    }
-
-    /**
-     * Walk a parent-indexed tree into a flat parents-first list.
-     *
-     * @since 1.0.0
-     *
-     * @param array<int, array<int, array<string, mixed>>> $by_parent Rows grouped by parent term ID.
-     * @param int                                          $parent_id The parent to walk from.
-     *
-     * @return array<int, array<string, mixed>> The flattened rows.
-     */
-    private function flatten_tree( array $by_parent, $parent_id ) {
-        $out = array();
-
-        if ( empty( $by_parent[ $parent_id ] ) ) {
-            return $out;
-        }
-
-        foreach ( $by_parent[ $parent_id ] as $row ) {
-            $out[] = $row;
-            $id    = isset( $row['term_id'] ) ? (int) $row['term_id'] : 0;
-
-            if ( $id > 0 && $id !== (int) $parent_id ) {
-                $out = array_merge( $out, $this->flatten_tree( $by_parent, $id ) );
-            }
-        }
-
-        return $out;
+    private static function url( $base, $slug ) {
+        return home_url( '/' . trim( (string) $base, '/' ) . '/' . trim( (string) $slug, '/' ) . '/' );
     }
 }

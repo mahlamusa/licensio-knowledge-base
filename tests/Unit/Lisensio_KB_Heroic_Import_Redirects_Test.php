@@ -1,6 +1,6 @@
 <?php
 /**
- * The URL map and the generated redirect drop-in.
+ * The URL map and the served redirect map an import leaves behind.
  *
  * @package Lisensio_KB
  * @since   1.0.0
@@ -8,7 +8,7 @@
 
 
 /**
- * What the migrator writes so the old links keep working.
+ * What an import records so the old links keep working.
  *
  * @since 1.0.0
  */
@@ -107,18 +107,54 @@ class Lisensio_KB_Heroic_Import_Redirects_Test extends Lisensio_KB_Test_Case {
     }
 
     /**
-     * A migrator with Heroic's default slugs and a scratch output directory.
+     * A redirects recorder for Heroic with a scratch output directory.
      *
      * @since 1.0.0
      *
      * @param bool $dry_run Whether the instance may write.
      *
-     * @return Lisensio_KB_Heroic_Import_Redirects The instance under test.
+     * @return Lisensio_KB_Import_Redirects The instance under test.
      */
     private function redirects( $dry_run = false ) {
-        $this->options[ Lisensio_KB_Heroic_Import_Schema::OPTION_SETTINGS ] = array();
+        return new Lisensio_KB_Import_Redirects( 'heroic', $this->directory, $dry_run );
+    }
 
-        return new Lisensio_KB_Heroic_Import_Redirects( $this->directory, $dry_run );
+    /**
+     * A source reading Heroic's default slugs.
+     *
+     * @since 1.0.0
+     *
+     * @param array<string, string> $settings Heroic's stored settings.
+     *
+     * @return Lisensio_KB_Heroic_Import_Source The source.
+     */
+    private function source( array $settings = array() ) {
+        $this->options[ Lisensio_KB_Heroic_Import_Schema::OPTION_SETTINGS ] = $settings;
+
+        return new Lisensio_KB_Heroic_Import_Source();
+    }
+
+    /**
+     * Record an article the way the importer does.
+     *
+     * @since 1.0.0
+     *
+     * @param Lisensio_KB_Import_Redirects $redirects The recorder.
+     * @param int                          $source_id The source post ID.
+     * @param int                          $target_id The target article ID.
+     * @param string                       $slug      The source slug.
+     *
+     * @return array{old: string, new: string} The old and new URL.
+     */
+    private function add_article( $redirects, $source_id, $target_id, $slug ) {
+        $source = $this->source();
+
+        return $redirects->add_article(
+            $source_id,
+            $target_id,
+            $source->old_article_url( array( 'post_name' => $slug ) ),
+            $slug
+        );
     }
 
     /**
@@ -132,18 +168,14 @@ class Lisensio_KB_Heroic_Import_Redirects_Test extends Lisensio_KB_Test_Case {
         $this->permalinks[900] = 'https://example.test/docs/install-a-licence/';
 
         $redirects = $this->redirects();
-        $redirects->add_article(
-            array(
-                'ID'        => 12,
-                'post_name' => 'install-a-licence',
-            ),
-            900
-        );
+        $urls      = $this->add_article( $redirects, 12, 900, 'install-a-licence' );
 
         $this->assertSame(
-            array( '/knowledge-base/install-a-licence/' => 'https://example.test/docs/install-a-licence/' ),
+            array( '/knowledge-base/install-a-licence' => 'https://example.test/docs/install-a-licence/' ),
             $redirects->map()
         );
+        $this->assertSame( 'https://example.test/knowledge-base/install-a-licence/', $urls['old'] );
+        $this->assertSame( 'https://example.test/docs/install-a-licence/', $urls['new'] );
     }
 
     /**
@@ -163,17 +195,21 @@ class Lisensio_KB_Heroic_Import_Redirects_Test extends Lisensio_KB_Test_Case {
 
         $redirects = $this->redirects();
         $redirects->add_term(
-            Lisensio_KB_Heroic_Import_Schema::TAXONOMY_CATEGORY,
-            array(
-                'term_id' => 8,
-                'slug'    => 'renewals',
-            ),
+            'category',
+            8,
+            55,
             Lisensio_KB_Post_Types::TAXONOMY_CATEGORY,
-            55
+            $this->source()->old_term_url(
+                array(
+                    'slug'     => 'renewals',
+                    'taxonomy' => Lisensio_KB_Heroic_Import_Schema::TAXONOMY_CATEGORY,
+                )
+            ),
+            'renewals'
         );
 
         $this->assertSame(
-            array( '/article-categories/renewals/' => 'https://example.test/docs-category/licences/renewals/' ),
+            array( '/article-categories/renewals' => 'https://example.test/docs-category/licences/renewals/' ),
             $redirects->map()
         );
     }
@@ -190,16 +226,20 @@ class Lisensio_KB_Heroic_Import_Redirects_Test extends Lisensio_KB_Test_Case {
 
         $redirects = $this->redirects();
         $redirects->add_term(
-            Lisensio_KB_Heroic_Import_Schema::TAXONOMY_TAG,
-            array(
-                'term_id' => 9,
-                'slug'    => 'billing',
-            ),
+            'tag',
+            9,
+            60,
             Lisensio_KB_Post_Types::TAXONOMY_TAG,
-            60
+            $this->source()->old_term_url(
+                array(
+                    'slug'     => 'billing',
+                    'taxonomy' => Lisensio_KB_Heroic_Import_Schema::TAXONOMY_TAG,
+                )
+            ),
+            'billing'
         );
 
-        $this->assertArrayHasKey( '/article-tags/billing/', $redirects->map() );
+        $this->assertArrayHasKey( '/article-tags/billing', $redirects->map() );
     }
 
     /**
@@ -210,22 +250,28 @@ class Lisensio_KB_Heroic_Import_Redirects_Test extends Lisensio_KB_Test_Case {
      * @return void
      */
     public function test_the_old_url_uses_heroics_configured_slug() {
-        $this->options[ Lisensio_KB_Heroic_Import_Schema::OPTION_SETTINGS ] = array(
-            Lisensio_KB_Heroic_Import_Schema::SETTING_ARTICLE_SLUG => 'help',
+        $source = $this->source(
+            array( Lisensio_KB_Heroic_Import_Schema::SETTING_ARTICLE_SLUG => 'help' )
         );
 
-        $this->permalinks[900] = 'https://example.test/docs/install/';
-
-        $redirects = new Lisensio_KB_Heroic_Import_Redirects( $this->directory );
-        $redirects->add_article(
-            array(
-                'ID'        => 12,
-                'post_name' => 'install',
-            ),
-            900
+        $this->assertSame(
+            'https://example.test/help/install/',
+            $source->old_article_url( array( 'post_name' => 'install' ) )
         );
+    }
 
-        $this->assertArrayHasKey( '/help/install/', $redirects->map() );
+    /**
+     * A row with no slug has no old URL.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_row_without_a_slug_has_no_old_url() {
+        $source = $this->source();
+
+        $this->assertSame( '', $source->old_article_url( array( 'post_name' => '' ) ) );
+        $this->assertSame( '', $source->old_term_url( array( 'slug' => '' ) ) );
     }
 
     /**
@@ -239,13 +285,7 @@ class Lisensio_KB_Heroic_Import_Redirects_Test extends Lisensio_KB_Test_Case {
         $this->permalinks[900] = 'https://example.test/knowledge-base/install/';
 
         $redirects = $this->redirects();
-        $redirects->add_article(
-            array(
-                'ID'        => 12,
-                'post_name' => 'install',
-            ),
-            900
-        );
+        $this->add_article( $redirects, 12, 900, 'install' );
 
         $this->assertSame( array(), $redirects->map(), 'A redirect to the same URL is a redirect loop.' );
     }
@@ -260,13 +300,12 @@ class Lisensio_KB_Heroic_Import_Redirects_Test extends Lisensio_KB_Test_Case {
     public function test_an_unresolvable_new_url_is_recorded_in_the_map_file_only() {
         $redirects = $this->redirects();
         $redirects->add_term(
-            Lisensio_KB_Heroic_Import_Schema::TAXONOMY_CATEGORY,
-            array(
-                'term_id' => 8,
-                'slug'    => 'gone',
-            ),
+            'category',
+            8,
+            999,
             Lisensio_KB_Post_Types::TAXONOMY_CATEGORY,
-            999
+            'https://example.test/article-categories/gone/',
+            'gone'
         );
 
         $this->assertSame( array(), $redirects->map() );
@@ -288,20 +327,8 @@ class Lisensio_KB_Heroic_Import_Redirects_Test extends Lisensio_KB_Test_Case {
         $this->permalinks[901] = 'https://example.test/docs/renew/';
 
         $redirects = $this->redirects();
-        $redirects->add_article(
-            array(
-                'ID'        => 12,
-                'post_name' => 'install',
-            ),
-            900
-        );
-        $redirects->add_article(
-            array(
-                'ID'        => 13,
-                'post_name' => 'renew',
-            ),
-            901
-        );
+        $this->add_article( $redirects, 12, 900, 'install' );
+        $this->add_article( $redirects, 13, 901, 'renew' );
 
         $lines = array_values( array_filter( explode( "\n", $this->read( $redirects->map_path() ) ) ) );
 
@@ -309,6 +336,20 @@ class Lisensio_KB_Heroic_Import_Redirects_Test extends Lisensio_KB_Test_Case {
         $this->assertSame( '"type","source_id","target_id","old_url","new_url","note"', $lines[0] );
         $this->assertStringContainsString( '"article","12","900","https://example.test/knowledge-base/install/"', $lines[1] );
         $this->assertStringContainsString( '"article","13","901"', $lines[2] );
+    }
+
+    /**
+     * The audit file is named after the source.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_audit_file_is_named_after_the_source() {
+        $redirects = $this->redirects();
+
+        $this->assertSame( $this->directory . '/heroic-url-map.csv', $redirects->map_path() );
+        $this->assertSame( $redirects->map_path(), Lisensio_KB_Import_Redirects::map_path_for( 'heroic', $this->directory ) );
     }
 
     /**
@@ -322,84 +363,76 @@ class Lisensio_KB_Heroic_Import_Redirects_Test extends Lisensio_KB_Test_Case {
         $this->permalinks[900] = 'https://example.test/docs/install-12/';
 
         $redirects = $this->redirects();
-        $redirects->add_article(
-            array(
-                'ID'        => 12,
-                'post_name' => 'install',
-            ),
-            900
-        );
+        $this->add_article( $redirects, 12, 900, 'install' );
 
         $this->assertStringContainsString( 'slug changed', $this->read( $redirects->map_path() ) );
     }
 
     /**
-     * The generated drop-in is valid PHP that redirects the mapped paths.
-     *
-     * Asserting the file parses is the point: it is generated source that will
-     * be loaded as an mu-plugin on every front-end request, and a syntax error
-     * in it takes the whole site down.
+     * Starting a real run deletes the previous run's audit file.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_the_generated_drop_in_is_valid_php_and_carries_the_map() {
+    public function test_start_deletes_the_previous_audit_file() {
+        Brain\Monkey\Functions\when( 'wp_delete_file' )->alias(
+            function ( $file ) {
+                unlink( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Scratch file this test created.
+            }
+        );
+
         $this->permalinks[900] = 'https://example.test/docs/install/';
 
         $redirects = $this->redirects();
-        $redirects->add_article(
-            array(
-                'ID'        => 12,
-                'post_name' => 'install',
-            ),
-            900
-        );
+        $this->add_article( $redirects, 12, 900, 'install' );
 
-        $this->assertTrue( $redirects->write_redirect_plugin() );
+        $this->assertFileExists( $redirects->map_path() );
 
-        $path = $redirects->redirect_path();
+        $this->redirects()->start();
 
-        $this->assertFileExists( $path );
-
-        $source = $this->read( $path );
-
-        $this->assertStringContainsString( "'/knowledge-base/install' => 'https://example.test/docs/install/'", $source );
-        $this->assertStringContainsString( 'wp_safe_redirect( $target, 301 )', $source );
-        $this->assertStringContainsString( "add_action( 'template_redirect'", $source );
-
-        $this->assertParses( $path, 'The generated redirect drop-in does not parse' );
+        $this->assertFileDoesNotExist( $redirects->map_path() );
     }
 
     /**
-     * A quote in a slug cannot break out of the generated literal.
-     *
-     * The drop-in is PHP source generated from database values. A slug carrying
-     * a single quote would close the string literal and everything after it
-     * would be executed on every request.
+     * Starting a dry run leaves the previous audit file alone.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_a_quote_in_a_url_cannot_inject_php_into_the_drop_in() {
-        $this->permalinks[900] = "https://example.test/docs/o'brien/";
+    public function test_a_dry_run_start_keeps_the_previous_audit_file() {
+        $this->permalinks[900] = 'https://example.test/docs/install/';
 
         $redirects = $this->redirects();
-        $redirects->add_article(
-            array(
-                'ID'        => 12,
-                'post_name' => "quote'; system('id'); //",
-            ),
-            900
+        $this->add_article( $redirects, 12, 900, 'install' );
+
+        $this->redirects( true )->start();
+
+        $this->assertFileExists( $redirects->map_path() );
+    }
+
+    /**
+     * A quote in a slug cannot corrupt the audit file.
+     *
+     * The audit file is read back to build the served map, so a field that
+     * broke out of its quotes would shift every column after it.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_quote_in_a_url_survives_the_round_trip() {
+        $this->permalinks[900] = 'https://example.test/docs/o-brien/';
+
+        $redirects = $this->redirects();
+        $redirects->add_article( 12, 900, 'https://example.test/knowledge-base/"quoted"/', 'quoted' );
+        $redirects->flush();
+
+        $this->assertSame(
+            array( '/knowledge-base/"quoted"' => 'https://example.test/docs/o-brien/' ),
+            Lisensio_KB_Import_Redirects::served_map()
         );
-
-        $this->assertTrue( $redirects->write_redirect_plugin() );
-
-        $path = $redirects->redirect_path();
-
-        $this->assertParses( $path, 'A quoted slug produced unparseable PHP' );
-        $this->assertStringNotContainsString( "system('id')", str_replace( "\\'", '', $this->read( $path ) ) );
     }
 
     /**
@@ -417,80 +450,44 @@ class Lisensio_KB_Heroic_Import_Redirects_Test extends Lisensio_KB_Test_Case {
     }
 
     /**
-     * Assert that a generated PHP file is syntactically valid.
-     *
-     * `token_get_all()` with TOKEN_PARSE raises `ParseError` on invalid source,
-     * which is the same parser the file would meet at runtime — and unlike
-     * shelling out to `php -l` it works on hosts where process execution is
-     * disabled.
-     *
-     * @since 1.0.0
-     *
-     * @param string $path    The file to parse.
-     * @param string $message The failure message.
-     *
-     * @return void
-     */
-    private function assertParses( $path, $message ) {
-        try {
-            token_get_all( $this->read( $path ), TOKEN_PARSE );
-        } catch ( ParseError $e ) {
-            $this->fail( $message . ': ' . $e->getMessage() );
-        }
-
-        $this->addToAssertionCount( 1 );
-    }
-
-    /**
-     * A dry run writes no file at all.
+     * A dry run writes no file and no option.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_a_dry_run_writes_neither_artefact() {
+    public function test_a_dry_run_writes_neither_the_file_nor_the_option() {
         $this->permalinks[900] = 'https://example.test/docs/install/';
 
         $redirects = $this->redirects( true );
-        $redirects->add_article(
-            array(
-                'ID'        => 12,
-                'post_name' => 'install',
-            ),
-            900
-        );
+        $this->add_article( $redirects, 12, 900, 'install' );
 
-        $this->assertFalse( $redirects->write_redirect_plugin() );
+        $this->assertSame( 0, $redirects->flush() );
         $this->assertFileDoesNotExist( $redirects->map_path() );
-        $this->assertFileDoesNotExist( $redirects->redirect_path() );
         $this->assertDirectoryDoesNotExist( $this->directory );
+        $this->assertArrayNotHasKey( Lisensio_KB_Import_Redirects::OPTION, $this->options );
+        $this->assertSame( array(), $this->writes );
     }
 
     /**
-     * An object with no slug contributes nothing.
+     * An object with no old URL contributes nothing.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_an_object_without_a_slug_is_not_mapped() {
+    public function test_an_object_without_an_old_url_is_not_mapped() {
         $redirects = $this->redirects();
-        $redirects->add_article(
-            array(
-                'ID'        => 12,
-                'post_name' => '',
-            ),
-            900
-        );
+        $redirects->add_article( 12, 900, '', '' );
 
         $this->assertSame( 0, $redirects->count() );
         $this->assertFileDoesNotExist( $redirects->map_path() );
     }
 
     /**
-     * A redirects writer with no directory writes into uploads after its own.
+     * A redirects recorder with no directory writes into uploads after its own.
      *
-     * The wizard constructs the writer without a directory, so the default has
+     * The wizard constructs the recorder without a directory, so the default has
      * to land the artefacts in the one place the download action looks.
      *
      * @since 1.0.0
@@ -505,17 +502,17 @@ class Lisensio_KB_Heroic_Import_Redirects_Test extends Lisensio_KB_Test_Case {
             )
         );
 
-        $redirects = new Lisensio_KB_Heroic_Import_Redirects();
+        $redirects = new Lisensio_KB_Import_Redirects( 'heroic' );
 
         $this->assertSame(
-            Lisensio_KB_Heroic_Import_Redirects::upload_directory(),
-            $redirects->map_path() ? dirname( $redirects->map_path() ) : '',
+            Lisensio_KB_Import_Redirects::upload_directory(),
+            dirname( $redirects->map_path() ),
             'A default construction must use upload_directory().'
         );
     }
 
     /**
-     * Flushing rebuilds the drop-in from the audit file, not from memory.
+     * Flushing merges the audit file into the served map, not this request's memory.
      *
      * The wizard spans many requests and each starts with an empty in-memory
      * map; the audit file is the only record of the whole run.
@@ -524,29 +521,81 @@ class Lisensio_KB_Heroic_Import_Redirects_Test extends Lisensio_KB_Test_Case {
      *
      * @return void
      */
-    public function test_flush_rebuilds_the_drop_in_from_the_audit_file() {
-        Brain\Monkey\Functions\when( 'get_permalink' )->justReturn( 'https://example.test/docs/moved/' );
-        Brain\Monkey\Functions\when( 'home_url' )->justReturn( 'https://example.test/knowledge-base/moved/' );
+    public function test_flush_merges_the_audit_file_into_the_served_map() {
+        $this->permalinks[900] = 'https://example.test/docs/moved/';
 
         $first = $this->redirects();
-        $first->add_article(
-            array(
-                'ID'        => 12,
-                'post_name' => 'moved',
-            ),
-            900
-        );
+        $this->add_article( $first, 12, 900, 'moved' );
 
         // A second instance, as the next wizard request would construct it.
-        $second = new Lisensio_KB_Heroic_Import_Redirects( $this->directory );
+        $second = $this->redirects();
 
         $this->assertSame( 0, $second->count(), 'A fresh instance must start empty.' );
-
-        $this->assertTrue( $second->flush() );
-        $this->assertStringContainsString(
-            'https://example.test/docs/moved/',
-            $this->read( $second->redirect_path() ),
-            'The drop-in must carry every row the run recorded, including this fresh instance never saw.'
+        $this->assertSame( 1, $second->flush() );
+        $this->assertSame(
+            array( '/knowledge-base/moved' => 'https://example.test/docs/moved/' ),
+            Lisensio_KB_Import_Redirects::served_map(),
+            'The served map must carry every row the run recorded, including those this fresh instance never saw.'
         );
+    }
+
+    /**
+     * Flushing keeps the redirects another source already published.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_flush_keeps_redirects_from_other_sources() {
+        $this->options[ Lisensio_KB_Import_Redirects::OPTION ] = array( '/docs/old' => 'https://example.test/new/' );
+
+        $this->permalinks[900] = 'https://example.test/docs/moved/';
+
+        $redirects = $this->redirects();
+        $this->add_article( $redirects, 12, 900, 'moved' );
+
+        $this->assertSame( 2, $redirects->flush() );
+        $this->assertArrayHasKey( '/docs/old', Lisensio_KB_Import_Redirects::served_map() );
+    }
+
+    /**
+     * Rows that were not redirects are left out of the served map.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_flush_skips_unchanged_and_unresolved_rows() {
+        $this->permalinks[900] = 'https://example.test/knowledge-base/same/';
+
+        $redirects = $this->redirects();
+        $this->add_article( $redirects, 12, 900, 'same' );
+        $redirects->add_term( 'category', 8, 999, Lisensio_KB_Post_Types::TAXONOMY_CATEGORY, 'https://example.test/article-categories/gone/', 'gone' );
+
+        $this->assertSame( 0, $this->redirects()->flush() );
+    }
+
+    /**
+     * Paths are keyed without a trailing slash or query string.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_normalize_path_drops_the_trailing_slash_and_query() {
+        $this->assertSame( '/a/b', Lisensio_KB_Import_Redirects::normalize_path( 'https://example.test/a/b/?x=1' ) );
+        $this->assertSame( '/a/b', Lisensio_KB_Import_Redirects::normalize_path( '/a/b' ) );
+        $this->assertSame( '', Lisensio_KB_Import_Redirects::normalize_path( '' ) );
+    }
+
+    /**
+     * The served map is empty before any import has published.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_served_map_defaults_to_empty() {
+        $this->assertSame( array(), Lisensio_KB_Import_Redirects::served_map() );
     }
 }

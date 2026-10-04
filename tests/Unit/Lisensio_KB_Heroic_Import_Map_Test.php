@@ -594,4 +594,64 @@ class Lisensio_KB_Heroic_Import_Map_Test extends Lisensio_KB_Test_Case {
         $this->assertSame( 6, $result['order'], 'An empty stored position must not win by having the lowest term ID.' );
         $this->assertSame( 31, $result['source_term_id'] );
     }
+
+    /**
+     * Heroic settings with an equivalent are mapped, slugs are excluded, and
+     * the rest are named without their values.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_settings_map_equivalents_and_exclude_slugs() {
+        $mapped = Lisensio_KB_Heroic_Import_Map::settings(
+            array(
+                'num-articles'             => 8,
+                'archive-columns'          => '3',
+                'article-sidebar-position' => 'off',
+                'archive-sidebar-position' => 'left',
+                'display-sub-cats'         => '1',
+                'enable-article-feedback'  => '',
+                'kb-headerstyle'           => 'gradient',
+                'kb-article-slug'          => 'knowledge-base',
+                'kb-license-key'           => 'SECRET',
+                'sort-by'                  => 'date',
+            )
+        );
+
+        $this->assertSame(
+            array(
+                'articles_per_page'        => 8,
+                'archive_columns'          => '3',
+                'article_sidebar_position' => 'none',
+                'archive_sidebar_position' => 'left',
+                'show_subcategories'       => true,
+                'enable_feedback'          => false,
+                'header_style'             => 'gradient',
+            ),
+            $mapped['settings']
+        );
+        $this->assertArrayHasKey( 'kb-article-slug', $mapped['excluded'] );
+        $this->assertSame( array( 'kb-license-key', 'sort-by' ), $mapped['unmapped'] );
+        $this->assertStringNotContainsString( 'SECRET', wp_json_encode( $mapped ) );
+    }
+
+    /**
+     * An unknown sidebar position or header style is not carried.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_settings_reject_unknown_choices() {
+        $mapped = Lisensio_KB_Heroic_Import_Map::settings(
+            array(
+                'article-sidebar-position' => 'middle',
+                'kb-headerstyle'           => 'video',
+            )
+        );
+
+        $this->assertSame( array(), $mapped['settings'] );
+        $this->assertSame( array( 'article-sidebar-position', 'kb-headerstyle' ), $mapped['unmapped'] );
+    }
 }

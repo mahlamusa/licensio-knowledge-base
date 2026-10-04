@@ -142,11 +142,14 @@ class Lisensio_KB_Uninstaller_Test extends Lisensio_KB_Test_Case {
      */
     private function seed_site( $delete_data = false ) {
         $this->options = array(
-            'lisensio_settings'      => array( 'delete_data_on_uninstall' => $delete_data ),
-            'lisensio_visitor_salt'  => array( 'current' => 'a-salt' ),
-            'lisensio_version'       => '1.0.0',
-            'lisensio_db_version'    => '1.0.0',
-            'lisensio_unrelated_key' => 'left alone',
+            'lisensio_settings'                  => array( 'delete_data_on_uninstall' => $delete_data ),
+            'lisensio_visitor_salt'              => array( 'current' => 'a-salt' ),
+            'lisensio_version'                   => '1.0.0',
+            'lisensio_db_version'                => '1.0.0',
+            'lisensio_unrelated_key'             => 'left alone',
+            Lisensio_KB_Import_State::option_for( 'heroic' ) => array( 'phase' => 'articles' ),
+            Lisensio_KB_Import_Report::option_for( 'heroic' ) => array( 'counts' => array() ),
+            Lisensio_KB_Import_Redirects::OPTION => array( '/old' => '/new' ),
         );
     }
 
@@ -224,12 +227,38 @@ class Lisensio_KB_Uninstaller_Test extends Lisensio_KB_Test_Case {
 
         Lisensio_KB_Uninstaller::uninstall_site();
 
-        foreach ( Lisensio_KB_Uninstaller::OPTIONS as $option ) {
+        foreach ( array_merge( Lisensio_KB_Uninstaller::OPTIONS, Lisensio_KB_Uninstaller::import_options() ) as $option ) {
             $this->assertArrayNotHasKey( $option, $this->options, $option . ' must not survive uninstall.' );
         }
 
         $this->assertNotEmpty( $this->cron_cleared, 'The salt rotation event must be cleared.' );
         $this->assertArrayHasKey( 'lisensio_unrelated_key', $this->options, 'Other plugins options must be left alone.' );
+    }
+
+    /**
+     * The import state, report and redirect map are removed with the plugin.
+     *
+     * The options come from the import registry rather than a hard-coded list,
+     * so a source added through the drivers filter is cleaned up as well.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_import_options_are_removed() {
+        $this->seed_site( false );
+
+        $options = Lisensio_KB_Uninstaller::import_options();
+
+        $this->assertContains( Lisensio_KB_Import_State::option_for( 'heroic' ), $options );
+        $this->assertContains( Lisensio_KB_Import_Report::option_for( 'heroic' ), $options );
+        $this->assertContains( Lisensio_KB_Import_Redirects::OPTION, $options );
+
+        Lisensio_KB_Uninstaller::uninstall_site();
+
+        foreach ( $options as $option ) {
+            $this->assertArrayNotHasKey( $option, $this->options, $option . ' must not survive uninstall.' );
+        }
     }
 
     /**
@@ -334,7 +363,7 @@ class Lisensio_KB_Uninstaller_Test extends Lisensio_KB_Test_Case {
 
         Lisensio_KB_Uninstaller::uninstall_site();
 
-        foreach ( Lisensio_KB_Uninstaller::OPTIONS as $option ) {
+        foreach ( array_merge( Lisensio_KB_Uninstaller::OPTIONS, Lisensio_KB_Uninstaller::import_options() ) as $option ) {
             $this->assertArrayNotHasKey( $option, $this->options, $option . ' must not survive uninstall.' );
         }
 

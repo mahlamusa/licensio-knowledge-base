@@ -43,17 +43,129 @@ export interface ToolEndpointConfig {
 }
 
 /**
- * One import source the wizard detected, with its preview counts.
+ * One import source the wizard detected, with its preview counts and where
+ * its runs stand.
  *
  * @since 1.0.0
  */
 export interface SourceDriver {
 	id: string;
-	counts: {
-		articles: number;
-		categories: number;
-		tags: number;
+	label: string;
+	counts: SourceCount[];
+	phases: string[];
+	status: SourceStatus;
+}
+
+/**
+ * One preview count of a source.
+ *
+ * @since 1.0.0
+ */
+export interface SourceCount {
+	key: string;
+	label: string;
+	count: number;
+}
+
+/**
+ * Where a source's real and dry runs stand.
+ *
+ * @since 1.0.0
+ */
+export interface SourceStatus {
+	in_progress: boolean;
+	dry_in_progress: boolean;
+	phase: string;
+	finished_at: number;
+}
+
+/**
+ * One source category, for the mapping step.
+ *
+ * @since 1.0.0
+ */
+export interface SourceCategory {
+	id: number;
+	name: string;
+	parent: number;
+	count: number;
+	type: 'category' | 'knowledge_base' | string;
+}
+
+/**
+ * One existing category a source category can be merged into.
+ *
+ * @since 1.0.0
+ */
+export interface TargetCategory {
+	id: number;
+	name: string;
+	parent: number;
+}
+
+/**
+ * One run in the import log.
+ *
+ * @since 1.0.0
+ */
+export interface LogRun {
+	run_id: string;
+	source: string;
+	dry_run: boolean;
+	started_at: string;
+	entries: number;
+	failed: number;
+	download_url: string;
+}
+
+/**
+ * One source meta key and what became of it.
+ *
+ * @since 1.0.0
+ */
+export interface LogMeta {
+	key: string;
+	value: string;
+	action: string;
+	target: string;
+}
+
+/**
+ * One category or tag an article was filed under.
+ *
+ * @since 1.0.0
+ */
+export interface LogTerm {
+	source_id: number;
+	name: string;
+	target_id: number;
+	status: string;
+}
+
+/**
+ * One import log entry.
+ *
+ * @since 1.0.0
+ */
+export interface LogEntry {
+	id: number;
+	run_id: string;
+	source: string;
+	dry_run: boolean;
+	phase: string;
+	item_type: string;
+	source_id: number;
+	target_id: number;
+	title: string;
+	status: string;
+	message: string;
+	details: {
+		categories?: LogTerm[];
+		tags?: LogTerm[];
+		meta?: LogMeta[];
+		[ key: string ]: unknown;
 	};
+	created_at: string;
 }
 
 /**
@@ -62,6 +174,7 @@ export interface SourceDriver {
  * @since 1.0.0
  */
 export interface ImportProgress {
+	run_id?: string;
 	phase: string;
 	done: number;
 	total: number;
@@ -79,7 +192,8 @@ export interface ImportProgress {
 export interface ImportSummary {
 	counts?: Record< string, number >;
 	notes?: Record< string, string[] >;
-	redirects_url?: string;
+	run_id?: string;
+	dry_run?: boolean;
 	url_map_url?: string;
 }
 

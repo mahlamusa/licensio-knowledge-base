@@ -40,6 +40,14 @@ Articles are a first-class post type with their own categories and tags, their o
 * Visitors are counted through a rotating, salted hash. No IP address is ever written to the database.
 * A retention cron prunes raw events on a schedule you choose, and the privacy layer answers WordPress's personal-data export and erase requests.
 
+= Switching from another knowledge base =
+
+* An import wizard under **Knowledge Base > Tools** brings articles, categories, tags, votes, views and searches across from Heroic Knowledge Base and BetterDocs, even with the old plugin deactivated.
+* Map each old category onto a new one or onto one you already have, verify everything with a dry run, then import. An interrupted import resumes where it stopped, and running it again never duplicates anything.
+* Old article, category and tag URLs redirect (301) to their new addresses automatically, and the full old-to-new URL map downloads as a CSV.
+* A migration log records every item: what it was, where it went, its categories, each meta field and whether it was carried over, and a plain-language reason for anything that failed.
+* The old plugin's data is only ever read, never changed, and no IP address from its analytics tables is imported.
+
 = Themes =
 
 * Classic PHP templates for archives, single articles, categories and tags, all overridable from your theme.

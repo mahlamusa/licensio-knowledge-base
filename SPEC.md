@@ -28,7 +28,7 @@ It replaces Heroic Knowledge Base on the Lisensio site and competes with it comm
 
 ## Non-Goals
 
-- **No in-plugin migration wizard.** Migrating the existing Lisensio site off Heroic KB is handled by a single disposable one-time tool in `tools/`, excluded from both builds. The shipped plugin contains no importer for Heroic, BetterDocs or Echo KB.
+- **No importers beyond Heroic KB and BetterDocs.** The shipped import wizard (see *Import wizard*) covers those two; Echo Knowledge Base and weDocs are left to the driver filter. The disposable one-time Heroic tool in `tools/` still exists, excluded from both builds.
 - **No theme work in this epic.** The plugin ships complete theme-agnostic default templates. Updating `themes/lisensio` (repo `slswc/theme`, 18 `hkb-templates/` overrides + `inc/knowledge-base.php`) is tracked separately.
 - No dedicated KB theme (Heroic sells one; out of scope).
 - No Chrome extension.
@@ -229,6 +229,19 @@ Menu: top-level **Knowledge Base** → Articles · Categories · Tags · Feedbac
 
 `tools/migrate-heroic/` — a WP-CLI command run once against the Lisensio site, excluded from both build artifacts and from the wordpress.org submission. Migrates `ht_kb` posts, `ht_kb_category`/`ht_kb_tag` terms and term meta, article and category ordering, historical votes from `hkb_voting`, and search/visit/exit analytics from Heroic's three tables into the new schema (dropping IPs during the import). Generates 301 redirects from every old Heroic URL to the new permalink and writes a mapping file. Idempotent, resumable, with a `--dry-run` mode.
 
+### Import wizard
+
+Decided 2026-10-04 (issue #13), shipped in the free build in 1.0.0. **Knowledge Base > Tools > Migration** imports from Heroic Knowledge Base and BetterDocs through one framework:
+
+- `Lisensio_KB_Import_Driver` runs every import (phases `terms`, `articles`, then the source's analytics phases, one AJAX batch at a time); `Lisensio_KB_Import_Source` reads a source's posts and terms straight from the tables, so the source plugin may be deactivated. A third source is a pair of subclasses registered through the `lisensio_import_drivers` filter.
+- Flow: pick a detected source → map each source category to *create new* or *merge into an existing category* → dry run → import → summary and log.
+- Dry runs write nothing but the log; their scratch state is deleted when they finish, and their analytics phases start from the real import's cursors so they preview only what is new.
+- Content is idempotent through provenance meta (`_lisensio_{source}_post_id` / `_term_id`); a re-run skips what was imported and leaves it unchanged. Analytics are idempotent through per-phase cursors, which a new run keeps, so a re-run imports only rows recorded since. An interrupted run resumes; the wizard never resets a real run.
+- The source is read-only: attachments are not re-parented, the imported article points at the same attachment.
+- Redirects: old paths → new URLs are stored in the `lisensio_import_redirects` option and served with a 301 on requests that would otherwise 404. A per-source CSV URL map is downloadable.
+- BetterDocs specifics: each `knowledge_base` term becomes a top-level category over its categories; daily analytics totals are expanded into per-event rows (happy/normal → helpful, sad → not helpful; found and not-found searches separately); today's still-changing totals wait for the next run.
+- Migration log: table `lisensio_import_log` (DB schema 1.0.1) with one row per category, tag and article — title, ids, categories, each source meta key with its truncated value and outcome, status and a plain-language error — plus one row per analytics batch and per failed or orphaned record. Dry runs are logged and flagged. Kept until cleared; CSV export; dropped on uninstall.
+
 ---
 
 ## Admin design system
@@ -312,7 +325,7 @@ Phase 1 is the scaffold PR; phases 2–11 are independent sub-issues that each b
 
 ## Open questions and risks
 
-1. **No in-plugin migrator is an adoption cost.** Competitors' switchers are the most likely converts for a free wordpress.org KB plugin, and Heroic ships a BetterDocs/Echo KB wizard. Deliberately excluded per instruction; worth revisiting for v2 as a separate free companion importer.
+1. ~~**No in-plugin migrator is an adoption cost.**~~ Resolved 2026-10-04: the free build ships the Heroic and BetterDocs import wizard (see *Import wizard*).
 2. **Theme cutover risk.** `themes/lisensio` breaks when Heroic KB is deactivated. Mitigated by theme-agnostic defaults, but the Lisensio site temporarily loses its bespoke KB design until `slswc/theme` is updated. Must be sequenced with whoever owns that repo.
 3. **Ant Design in a wordpress.org plugin.** Bundle size and committed build artifacts will draw reviewer attention, and the admin will not look native. Accepted deliberately for consistency with SLSWC.
 4. **Lisensio-hosted AI is a service commitment**, not a plugin feature — token cost, uptime, abuse protection. Scoped to v2; needs its own infrastructure spec before that epic.

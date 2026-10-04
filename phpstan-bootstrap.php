@@ -10,7 +10,7 @@
  */
 
 define( 'LISENSIO_KB_VERSION', '1.0.0' );
-define( 'LISENSIO_KB_DB_VERSION', '1.0.0' );
+define( 'LISENSIO_KB_DB_VERSION', '1.0.1' );
 define( 'LISENSIO_KB_MIN_PHP', '7.4' );
 define( 'LISENSIO_KB_MIN_WP', '6.4' );
 define( 'LISENSIO_KB_PLUGIN_BASENAME', '' );

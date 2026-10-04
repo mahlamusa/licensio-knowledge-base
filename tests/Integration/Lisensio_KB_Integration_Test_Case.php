@@ -83,6 +83,13 @@ abstract class Lisensio_KB_Integration_Test_Case extends PHPUnit\Framework\TestC
             $this->markTestSkipped( 'Database unreachable: ' . $db->connect_error );
         }
 
+        /*
+         * WordPress always talks to the server in utf8mb4. Without this the
+         * connection uses the server default — latin1 on MySQL 5.7 — and every
+         * multibyte character is stored and counted as several.
+         */
+        $db->set_charset( 'utf8mb4' );
+
         $this->db       = $db;
         $this->database = 'lisensio_kb_it_' . substr( md5( uniqid( '', true ) ), 0, 12 );
 

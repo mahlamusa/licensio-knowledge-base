@@ -112,6 +112,31 @@ class Lisensio_KB_Settings_Test extends Lisensio_KB_Test_Case {
     }
 
     /**
+     * A preview resolves values exactly as update() would store them, and saves nothing.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_preview_sanitizes_without_saving() {
+        $settings = new Lisensio_KB_Settings();
+        $settings->set( 'articles_per_page', 20 );
+
+        $preview = $settings->preview(
+            array(
+                'articles_per_page' => '20',
+                'brand_color'       => '#FF0000',
+                'not_a_setting'     => 'x',
+            )
+        );
+
+        $this->assertSame( 20, $preview['articles_per_page'], 'A numeric string resolves to the same int, so it is not a change.' );
+        $this->assertSame( $settings->sanitize_brand_color( '#FF0000' ), $preview['brand_color'] );
+        $this->assertArrayNotHasKey( 'not_a_setting', $preview );
+        $this->assertSame( array( 'articles_per_page' => 20 ), $this->options[ Lisensio_KB_Settings::OPTION_NAME ] );
+    }
+
+    /**
      * An unregistered key is neither stored nor readable.
      *
      * @since 1.0.0

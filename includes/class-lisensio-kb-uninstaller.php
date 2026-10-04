@@ -45,8 +45,6 @@ class Lisensio_KB_Uninstaller {
         'lisensio_db_version',
         'lisensio_fulltext_supported',
         'lisensio_flush_rewrite_rules',
-        'lisensio_import_state_heroic',
-        'lisensio_import_report_heroic',
     );
 
     /**
@@ -109,7 +107,7 @@ class Lisensio_KB_Uninstaller {
             }
         }
 
-        foreach ( self::OPTIONS as $option ) {
+        foreach ( array_merge( self::OPTIONS, self::import_options() ) as $option ) {
             delete_option( $option );
         }
 
@@ -127,6 +125,19 @@ class Lisensio_KB_Uninstaller {
          * @param bool $deleted_data Whether the data tables were dropped.
          */
         do_action( 'lisensio_uninstalled', $delete_data );
+    }
+
+    /**
+     * The state, report and redirect options every registered importer keeps.
+     *
+     * @since 1.0.0
+     *
+     * @return string[] Option names.
+     */
+    public static function import_options() {
+        $importer = new Lisensio_KB_Importer();
+
+        return $importer->option_names();
     }
 
     /**

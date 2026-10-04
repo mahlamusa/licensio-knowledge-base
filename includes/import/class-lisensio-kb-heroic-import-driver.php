@@ -9,16 +9,23 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Orchestrates the import from Heroic Knowledge Base.
+ * Imports from Heroic Knowledge Base.
  *
- * The wizard calls `run_batch()` once per AJAX request; the state option carries
- * the run from one request to the next, and each phase knows how to advance
- * itself. The driver only dispatches to the right phase, triggers the work that
- * belongs at a phase boundary, and closes the run when the last phase is done.
+ * The run itself is `Lisensio_KB_Import_Driver`'s. This names Heroic's reader,
+ * its three analytics phases and how to run a batch of each, and adds the one
+ * thing Heroic has that nothing here can hold: its outbound-click table.
  *
  * @since 1.0.0
  */
 class Lisensio_KB_Heroic_Import_Driver extends Lisensio_KB_Import_Driver {
+
+    /**
+     * The analytics phases, in order.
+     *
+     * @since 1.0.0
+     * @var string[]
+     */
+    const DATA_PHASES = array( 'feedback', 'views', 'searches' );
 
     /**
      * The batched reader over the Heroic data.
@@ -29,251 +36,144 @@ class Lisensio_KB_Heroic_Import_Driver extends Lisensio_KB_Import_Driver {
     private $source;
 
     /**
-     * The resume point carried between requests.
-     *
-     * @since 1.0.0
-     * @var Lisensio_KB_Heroic_Import_State
-     */
-    private $state;
-
-    /**
-     * The URL map writer.
-     *
-     * @since 1.0.0
-     * @var Lisensio_KB_Heroic_Import_Redirects
-     */
-    private $redirects;
-
-    /**
-     * The run report.
-     *
-     * @since 1.0.0
-     * @var Lisensio_KB_Heroic_Import_Report
-     */
-    private $report;
-
-    /**
      * Constructor.
      *
      * @since 1.0.0
+     *
+     * @param Lisensio_KB_Heroic_Import_Source|null $source The reader; a live one when null.
      */
-    public function __construct() {
-        $this->source    = new Lisensio_KB_Heroic_Import_Source();
-        $this->state     = new Lisensio_KB_Heroic_Import_State();
-        $this->redirects = new Lisensio_KB_Heroic_Import_Redirects();
-        $this->report    = new Lisensio_KB_Heroic_Import_Report();
+    public function __construct( $source = null ) {
+        $this->source = $source instanceof Lisensio_KB_Heroic_Import_Source ? $source : new Lisensio_KB_Heroic_Import_Source();
     }
 
     /**
-     * Whether Heroic KB data is present.
+     * The Heroic reader.
      *
      * @since 1.0.0
      *
-     * @return bool
+     * @return Lisensio_KB_Heroic_Import_Source The reader.
      */
-    public function detect() {
-        $articles = $this->source->count_articles();
-        $cats     = count( $this->source->terms( Lisensio_KB_Heroic_Import_Schema::TAXONOMY_CATEGORY ) );
-        $tags     = count( $this->source->terms( Lisensio_KB_Heroic_Import_Schema::TAXONOMY_TAG ) );
-
-        return ( $articles > 0 || $cats > 0 || $tags > 0 );
+    public function source() {
+        return $this->source;
     }
 
     /**
-     * Total items to migrate for preview.
+     * Heroic's analytics phases.
      *
      * @since 1.0.0
      *
-     * @return array<string, int>
+     * @return string[] The phase names.
      */
-    public function counts() {
+    public function data_phases() {
+        return self::DATA_PHASES;
+    }
+
+    /**
+     * The labels of the preview counts.
+     *
+     * @since 1.0.0
+     *
+     * @return array<string, string> Count key to label.
+     */
+    public function count_labels() {
         return array(
-            'articles'   => $this->source->count_articles(),
-            'categories' => count( $this->source->terms( Lisensio_KB_Heroic_Import_Schema::TAXONOMY_CATEGORY ) ),
-            'tags'       => count( $this->source->terms( Lisensio_KB_Heroic_Import_Schema::TAXONOMY_TAG ) ),
+            'articles'   => __( 'Articles', 'lisensio-knowledge-base' ),
+            'categories' => __( 'Categories', 'lisensio-knowledge-base' ),
+            'tags'       => __( 'Tags', 'lisensio-knowledge-base' ),
+            'votes'      => __( 'Votes', 'lisensio-knowledge-base' ),
+            'views'      => __( 'Views', 'lisensio-knowledge-base' ),
+            'searches'   => __( 'Searches', 'lisensio-knowledge-base' ),
         );
     }
 
     /**
-     * Run a batch of the migration.
+     * How many rows each Heroic analytics table holds.
      *
      * @since 1.0.0
      *
-     * @param array<string, mixed> $options Options from the wizard: `dry_run` and `batch_size`.
-     *
-     * @return array{phase: string, done: int, total: int, finished: bool}
+     * @return array<string, int> Count key to count.
      */
-    public function run_batch( array $options ) {
-        $dry_run = ! empty( $options['dry_run'] );
-        $batch   = isset( $options['batch_size'] ) ? max( 1, (int) $options['batch_size'] ) : 50;
+    protected function data_counts() {
+        return array(
+            'votes'    => $this->source->count_table( Lisensio_KB_Heroic_Import_Schema::TABLE_VOTING ),
+            'views'    => $this->source->count_table( Lisensio_KB_Heroic_Import_Schema::TABLE_VISITS ),
+            'searches' => $this->source->count_table( Lisensio_KB_Heroic_Import_Schema::TABLE_SEARCHES ),
+        );
+    }
 
-        if ( $this->state->is_complete() ) {
-            return array(
-                'phase'    => 'complete',
-                'done'     => 0,
-                'total'    => 0,
-                'finished' => true,
-            );
-        }
-
-        /*
-         * A state with no marks on it is the start of a run, so the previous
-         * run's report must not bleed into this one. The wizard resets before
-         * starting a run too; this is the backstop for direct API callers.
-         */
-        if ( ! $this->state->is_in_progress() ) {
-            $this->report->reset();
-        }
-
-        /*
-         * The redirects writer checks its own dry-run flag, so it has to carry
-         * this batch's flag — otherwise a dry run would append real rows to the
-         * audit file.
-         */
-        $redirects = new Lisensio_KB_Heroic_Import_Redirects( '', $dry_run );
-
-        $content = new Lisensio_KB_Heroic_Import_Content( $this->source, $this->state, $redirects, $this->report, $dry_run );
-        $data    = new Lisensio_KB_Heroic_Import_Data( $this->source, $this->state, $content, $this->report, $dry_run, 0 );
-
-        $processed = 0;
-        $phase     = $this->state->current_phase();
+    /**
+     * Run one batch of one Heroic analytics phase.
+     *
+     * The usefulness scores are recomputed once, when the feedback phase runs
+     * dry, from every imported vote rather than per batch.
+     *
+     * @since 1.0.0
+     *
+     * @param string                     $phase   One of DATA_PHASES.
+     * @param int                        $batch   How many source rows to read.
+     * @param Lisensio_KB_Import_Content $content The content importer.
+     * @param Lisensio_KB_Import_State   $state   The resume point.
+     * @param Lisensio_KB_Import_Report  $report  The run report.
+     * @param Lisensio_KB_Import_Log     $log     The import log.
+     * @param bool                       $dry_run Whether to suppress every write.
+     *
+     * @return int How many source rows the batch read.
+     */
+    protected function run_data_batch( $phase, $batch, Lisensio_KB_Import_Content $content, Lisensio_KB_Import_State $state, Lisensio_KB_Import_Report $report, Lisensio_KB_Import_Log $log, $dry_run ) {
+        $data = new Lisensio_KB_Heroic_Import_Data( $this->source, $state, $content, $report, $dry_run, 0, $log );
 
         switch ( $phase ) {
-            case 'terms':
-                // Both Heroic taxonomies are migrated in one request; terms are few.
-                $content->migrate_terms();
-                $processed = 1;
-                break;
-
-            case 'articles':
-                $processed = $content->migrate_articles_batch( $batch );
-
-                if ( 0 === $processed ) {
-                    // Every article now exists, so the URL map is complete: write the drop-in.
-                    $redirects->flush();
-                }
-                break;
-
             case 'feedback':
                 $processed = $data->migrate_feedback_batch( $batch );
 
                 if ( 0 === $processed ) {
-                    // The score is a COUNT over the whole table, so recompute once at the end.
                     $data->recompute_all_scores();
                 }
-                break;
+
+                return $processed;
 
             case 'views':
-                $processed = $data->migrate_views_batch( $batch );
-                break;
+                return $data->migrate_views_batch( $batch );
 
             case 'searches':
-                $processed = $data->migrate_searches_batch( $batch );
-                break;
+                return $data->migrate_searches_batch( $batch );
         }
 
-        $this->report->save();
-
-        if ( $this->state->is_complete() ) {
-            /*
-             * Exits are outbound-click analytics: the target model has no home
-             * for them, so they are counted and reported rather than silently
-             * left behind — the schema documents this table as reported, and
-             * the report is where that promise is kept.
-             */
-            $exits = $this->source->count_table( Lisensio_KB_Heroic_Import_Schema::TABLE_EXITS );
-
-            if ( $exits > 0 ) {
-                $this->report->count( 'exits_not_migrated', $exits );
-                $this->report->note(
-                    'exits',
-                    sprintf(
-                        /* translators: %d: number of rows. */
-                        _n(
-                            '%d outbound-click row in the Heroic exits table has no equivalent here and was not migrated.',
-                            '%d outbound-click rows in the Heroic exits table have no equivalent here and were not migrated.',
-                            $exits,
-                            'lisensio-knowledge-base'
-                        ),
-                        $exits
-                    )
-                );
-            }
-
-            if ( ! $dry_run ) {
-                // Closes the run and destroys the salt; the cursors stay so a re-run imports nothing.
-                $this->state->finish();
-
-                $this->report->note(
-                    'redirects',
-                    sprintf(
-                        /* translators: %s: absolute path to the generated redirect drop-in. */
-                        __( 'Redirect drop-in written to %s — move it to wp-content/mu-plugins/ to serve the 301s.', 'lisensio-knowledge-base' ),
-                        $this->redirects->redirect_path()
-                    )
-                );
-            }
-
-            $this->report->save();
-        }
-
-        // Totals are per batch: a full count would need an expensive query per
-        // request, and the UI signals progress by phase, not by percentage.
-        $current = $this->state->current_phase();
-
-        return array(
-            'phase'    => null === $current ? 'complete' : $current,
-            'done'     => $processed,
-            'total'    => $batch,
-            'finished' => $this->state->is_complete(),
-        );
+        return 0;
     }
 
     /**
-     * Whether migration is done.
+     * Report the Heroic data that has no home here.
      *
      * @since 1.0.0
      *
-     * @return bool
-     */
-    public function is_complete() {
-        return $this->state->is_complete();
-    }
-
-    /**
-     * Reset the migration.
-     *
-     * Clears the resume cursors and the report. Content already migrated is
-     * left alone — it carries provenance meta and a fresh run skips it.
-     *
-     * @since 1.0.0
+     * @param Lisensio_KB_Import_Report $report The run report.
+     * @param Lisensio_KB_Import_Log    $log    The import log.
      *
      * @return void
      */
-    public function reset() {
-        $this->state->reset();
-        $this->report->reset();
-    }
+    protected function finish_notes( Lisensio_KB_Import_Report $report, Lisensio_KB_Import_Log $log ) {
+        $exits = $this->source->count_table( Lisensio_KB_Heroic_Import_Schema::TABLE_EXITS );
 
-    /**
-     * Final summary of the migration.
-     *
-     * @since 1.0.0
-     *
-     * @return array<string, mixed>
-     */
-    public function summary() {
-        $summary = $this->report->get_all();
-
-        // A dry run writes no artefacts, so the download links only appear once the files exist.
-        if ( file_exists( $this->redirects->redirect_path() ) ) {
-            $summary['redirects_url'] = $this->redirects->download_url( 'plugin' );
+        if ( $exits <= 0 ) {
+            return;
         }
 
-        if ( file_exists( $this->redirects->map_path() ) ) {
-            $summary['url_map_url'] = $this->redirects->download_url( 'map' );
-        }
+        $report->count( 'exits_not_migrated', $exits );
 
-        return $summary;
+        $note = sprintf(
+            /* translators: %d: number of outbound-click rows. */
+            _n(
+                '%d outbound-click row in the Heroic exits table has no equivalent here and was not migrated.',
+                '%d outbound-click rows in the Heroic exits table have no equivalent here and were not migrated.',
+                $exits,
+                'lisensio-knowledge-base'
+            ),
+            $exits
+        );
+
+        $report->note( 'exits', $note );
+
+        $log->entry( 'run', 'run', 0, 0, $this->label(), Lisensio_KB_Import_Log::STATUS_WARNING, $note );
     }
 }

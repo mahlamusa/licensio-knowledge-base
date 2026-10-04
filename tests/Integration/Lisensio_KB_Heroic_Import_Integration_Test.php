@@ -198,13 +198,13 @@ class Lisensio_KB_Heroic_Import_Integration_Test extends Lisensio_KB_Heroic_Impo
      *
      * @since 1.0.0
      *
-     * @param Lisensio_KB_Heroic_Import_State|null $state The resume point to use.
+     * @param Lisensio_KB_Import_State|null $state The resume point to use.
      *
-     * @return Lisensio_KB_Heroic_Import_Report The run report.
+     * @return Lisensio_KB_Import_Report The run report.
      */
     private function migrate( $state = null ) {
-        $report   = new Lisensio_KB_Heroic_Import_Report();
-        $state    = $state instanceof Lisensio_KB_Heroic_Import_State ? $state : new Lisensio_KB_Heroic_Import_State();
+        $report   = $this->new_report();
+        $state    = $state instanceof Lisensio_KB_Import_State ? $state : $this->new_state();
         $migrator = $this->data_migrator( $state, $report );
 
         $this->run_all_data_phases( $migrator );
@@ -522,9 +522,9 @@ class Lisensio_KB_Heroic_Import_Integration_Test extends Lisensio_KB_Heroic_Impo
     public function test_an_interrupted_run_resumes_where_it_stopped() {
         $this->seed_heroic_site();
 
-        $first = new Lisensio_KB_Heroic_Import_State();
+        $first = $this->new_state();
 
-        $this->data_migrator( $first, new Lisensio_KB_Heroic_Import_Report() )->migrate_searches_batch( 1 );
+        $this->data_migrator( $first, $this->new_report() )->migrate_searches_batch( 1 );
 
         $this->assertSame( 1, $this->count_rows( Lisensio_KB_Search_Log::TABLE ) );
         $this->assertSame( 1, $first->cursor( 'searches' ) );
@@ -533,8 +533,8 @@ class Lisensio_KB_Heroic_Import_Integration_Test extends Lisensio_KB_Heroic_Impo
          * A brand new state object, reading the option the killed process left
          * behind. This is what the second `wp` invocation actually does.
          */
-        $second   = new Lisensio_KB_Heroic_Import_State();
-        $migrator = $this->data_migrator( $second, new Lisensio_KB_Heroic_Import_Report() );
+        $second   = $this->new_state();
+        $migrator = $this->data_migrator( $second, $this->new_report() );
 
         do {
             $read = $migrator->migrate_searches_batch( 1 );
@@ -559,9 +559,9 @@ class Lisensio_KB_Heroic_Import_Integration_Test extends Lisensio_KB_Heroic_Impo
     public function test_a_resumed_run_keeps_one_identity_per_visitor() {
         $this->seed_heroic_site();
 
-        $this->data_migrator( new Lisensio_KB_Heroic_Import_State(), new Lisensio_KB_Heroic_Import_Report() )->migrate_searches_batch( 1 );
+        $this->data_migrator( $this->new_state(), $this->new_report() )->migrate_searches_batch( 1 );
 
-        $migrator = $this->data_migrator( new Lisensio_KB_Heroic_Import_State(), new Lisensio_KB_Heroic_Import_Report() );
+        $migrator = $this->data_migrator( $this->new_state(), $this->new_report() );
 
         do {
             $read = $migrator->migrate_feedback_batch( 10 );
@@ -587,8 +587,8 @@ class Lisensio_KB_Heroic_Import_Integration_Test extends Lisensio_KB_Heroic_Impo
     public function test_a_dry_run_writes_nothing() {
         $this->seed_heroic_site();
 
-        $report   = new Lisensio_KB_Heroic_Import_Report();
-        $state    = new Lisensio_KB_Heroic_Import_State( false );
+        $report   = $this->new_report();
+        $state    = $this->new_state( false );
         $migrator = $this->data_migrator( $state, $report, true );
 
         $this->run_all_data_phases( $migrator );
@@ -596,7 +596,7 @@ class Lisensio_KB_Heroic_Import_Integration_Test extends Lisensio_KB_Heroic_Impo
         $this->assertSame( 0, $this->count_rows( Lisensio_KB_Feedback::TABLE ) );
         $this->assertSame( 0, $this->count_rows( Lisensio_KB_Analytics::TABLE_ARTICLE_VIEWS ) );
         $this->assertSame( 0, $this->count_rows( Lisensio_KB_Search_Log::TABLE ) );
-        $this->assertArrayNotHasKey( Lisensio_KB_Heroic_Import_State::OPTION_NAME, $this->options );
+        $this->assertArrayNotHasKey( Lisensio_KB_Import_State::option_for( 'heroic' ), $this->options );
     }
 
     /**
@@ -612,9 +612,9 @@ class Lisensio_KB_Heroic_Import_Integration_Test extends Lisensio_KB_Heroic_Impo
     public function test_a_dry_run_reports_the_counts_a_real_run_would_produce() {
         $this->seed_heroic_site();
 
-        $dry = new Lisensio_KB_Heroic_Import_Report();
+        $dry = $this->new_report();
 
-        $this->run_all_data_phases( $this->data_migrator( new Lisensio_KB_Heroic_Import_State( false ), $dry, true ) );
+        $this->run_all_data_phases( $this->data_migrator( $this->new_state( false ), $dry, true ) );
 
         $wet = $this->migrate();
 
@@ -671,9 +671,9 @@ class Lisensio_KB_Heroic_Import_Integration_Test extends Lisensio_KB_Heroic_Impo
             )
         );
 
-        $dry = new Lisensio_KB_Heroic_Import_Report();
+        $dry = $this->new_report();
 
-        $this->run_all_data_phases( $this->data_migrator( new Lisensio_KB_Heroic_Import_State( false ), $dry, true ) );
+        $this->run_all_data_phases( $this->data_migrator( $this->new_state( false ), $dry, true ) );
 
         $this->assertSame( 3, $dry->get( 'feedback_migrated' ), 'Votes naming existing Heroic articles will migrate.' );
         $this->assertSame( 1, $dry->get( 'feedback_orphaned' ), 'Only the vote naming a missing article is orphaned.' );
@@ -696,7 +696,7 @@ class Lisensio_KB_Heroic_Import_Integration_Test extends Lisensio_KB_Heroic_Impo
     public function test_a_source_timezone_offset_is_applied_to_migrated_rows() {
         $this->seed_heroic_site();
 
-        $migrator = $this->data_migrator( new Lisensio_KB_Heroic_Import_State(), new Lisensio_KB_Heroic_Import_Report(), false, 3600 );
+        $migrator = $this->data_migrator( $this->new_state(), $this->new_report(), false, 3600 );
 
         do {
             $read = $migrator->migrate_searches_batch( 10 );
@@ -717,8 +717,8 @@ class Lisensio_KB_Heroic_Import_Integration_Test extends Lisensio_KB_Heroic_Impo
     public function test_usefulness_recomputed_after_import_matches_the_migrated_votes() {
         $this->seed_heroic_site();
 
-        $report   = new Lisensio_KB_Heroic_Import_Report();
-        $migrator = $this->data_migrator( new Lisensio_KB_Heroic_Import_State(), $report );
+        $report   = $this->new_report();
+        $migrator = $this->data_migrator( $this->new_state(), $report );
 
         do {
             $read = $migrator->migrate_feedback_batch( 10 );
@@ -808,7 +808,7 @@ class Lisensio_KB_Heroic_Import_Integration_Test extends Lisensio_KB_Heroic_Impo
             array(
                 array(
                     'post_id'    => 10,
-                    'meta_key'   => Lisensio_KB_Heroic_Import_Content::META_SOURCE_POST, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+                    'meta_key'   => '_lisensio_heroic_post_id', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
                     'meta_value' => '11', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
                 ),
             )

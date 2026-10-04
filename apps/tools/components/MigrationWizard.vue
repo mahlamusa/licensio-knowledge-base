@@ -3,9 +3,13 @@
  * The Migration tab.
  *
  * Moves a knowledge base from another plugin into this one, one batch per
- * request: pick a detected source, verify it with a dry run, then commit the
- * real import and read the report. Every write decision stays on the server —
- * the tab only paces the batches and renders what comes back.
+ * request: pick a detected source, decide where its categories go, verify it
+ * with a dry run, then run the real import and read the report and the log.
+ * Every write decision stays on the server — the tab only paces the batches
+ * and renders what comes back.
+ *
+ * An interrupted import is resumed, never restarted: the server keeps its
+ * cursors, and starting again from zero would import the analytics twice.
  *
  * @since 1.0.0
  */
@@ -14,19 +18,18 @@ import { computed, onMounted, ref } from 'vue';
 import {
 	config,
 	detectSources,
+	fetchCategories,
 	resetMigration,
 	runBatch,
 	translate,
 } from '../api';
-import type { ImportSummary, SourceDriver } from '../types';
-
-/**
- * The phases a run walks, in order. Mirrors
- * `Lisensio_KB_Heroic_Import_State::PHASES`; the bar advances by phase rather
- * than by row count because a true row total would need a COUNT query on
- * every batch.
- */
-const PHASES = [ 'terms', 'articles', 'feedback', 'views', 'searches', 'complete' ];
+import type {
+	ImportSummary,
+	SourceCategory,
+	SourceDriver,
+	TargetCategory,
+} from '../types';
+import MigrationLog from './MigrationLog.vue';
 
 /** How many rows one batch may read. */
 const BATCH_SIZE = 50;
@@ -34,13 +37,22 @@ const BATCH_SIZE = 50;
 /** Pause between batches, so the operator can read the phase as it moves. */
 const BATCH_PAUSE_MS = 300;
 
+/** The wizard's steps. */
+type Step = 'source' | 'categories' | 'run';
+
 const chrome = config();
 
 const booting = ref( true );
 const drivers = ref< SourceDriver[] >( [] );
 const detectError = ref( '' );
 const selected = ref( '' );
-const dryRun = ref( true );
+const step = ref< Step >( 'source' );
+
+const loadingCategories = ref( false );
+const sourceCategories = ref< SourceCategory[] >( [] );
+const targetCategories = ref< TargetCategory[] >( [] );
+const categoryMap = ref< Record< number, number > >( {} );
+const importSettings = ref( false );
 
 const running = ref( false );
 const runIsDry = ref( true );
@@ -48,6 +60,12 @@ const phase = ref( '' );
 const lastBatch = ref( 0 );
 const runError = ref( '' );
 const summary = ref< ImportSummary | null >( null );
+
+const driver = computed( () =>
+	drivers.value.find( ( item ) => item.id === selected.value )
+);
+
+const phases = computed( () => [ ...( driver.value?.phases ?? [] ), 'complete' ] );
 
 const summaryEntries = computed( () =>
 	Object.entries( summary.value?.counts ?? {} )
@@ -60,10 +78,72 @@ const noteSections = computed( () =>
 );
 
 /**
- * A snake_case report key as tab-readable words.
+ * The source categories with their depth, for an indented list.
  *
- * The server counts what it counts; the names are its vocabulary, so they are
- * only capitalised here rather than renamed.
+ * The server returns them parents first, so one pass is enough.
+ *
+ * @since 1.0.0
+ *
+ * @return {Array<SourceCategory & {depth: number}>} The categories.
+ */
+const categoryRows = computed( () => {
+	const depth: Record< number, number > = {};
+
+	return sourceCategories.value.map( ( category ) => {
+		depth[ category.id ] = category.parent > 0 ? ( depth[ category.parent ] ?? 0 ) + 1 : 0;
+
+		return { ...category, depth: depth[ category.id ] };
+	} );
+} );
+
+/**
+ * The existing categories as select options, indented by depth.
+ *
+ * @since 1.0.0
+ *
+ * @return {Array<{value: number; label: string}>} The options, "create new" first.
+ */
+const targetOptions = computed( () => {
+	const byParent: Record< number, TargetCategory[] > = {};
+
+	for ( const target of targetCategories.value ) {
+		( byParent[ target.parent ] ??= [] ).push( target );
+	}
+
+	const options: Array< { value: number; label: string } > = [
+		{ value: 0, label: translate( 'Create a new category' ) },
+	];
+	const seen = new Set< number >();
+
+	const walk = ( parent: number, depth: number ): void => {
+		for ( const target of byParent[ parent ] ?? [] ) {
+			if ( seen.has( target.id ) ) {
+				continue;
+			}
+
+			seen.add( target.id );
+			options.push( {
+				value: target.id,
+				label: translate( 'Merge into' ) + ': ' + '— '.repeat( depth ) + target.name,
+			} );
+			walk( target.id, depth + 1 );
+		}
+	};
+
+	walk( 0, 0 );
+
+	// Orphans whose parent is not in the list still need to be offered.
+	for ( const target of targetCategories.value ) {
+		if ( ! seen.has( target.id ) ) {
+			options.push( { value: target.id, label: translate( 'Merge into' ) + ': ' + target.name } );
+		}
+	}
+
+	return options;
+} );
+
+/**
+ * A snake_case report key as tab-readable words.
  *
  * @since 1.0.0
  *
@@ -79,6 +159,19 @@ function humanize( key: string ): string {
 }
 
 /**
+ * A Unix timestamp as a local date and time.
+ *
+ * @since 1.0.0
+ *
+ * @param {number} timestamp Seconds since the epoch.
+ *
+ * @return {string} The formatted date.
+ */
+function formatTime( timestamp: number ): string {
+	return new Date( timestamp * 1000 ).toLocaleString();
+}
+
+/**
  * How far through the run the active phase is.
  *
  * @since 1.0.0
@@ -90,9 +183,9 @@ const percent = computed( () => {
 		return 100;
 	}
 
-	const index = Math.max( 0, PHASES.indexOf( phase.value ) );
+	const index = Math.max( 0, phases.value.indexOf( phase.value ) );
 
-	return Math.min( 100, Math.round( ( ( index + 1 ) / PHASES.length ) * 100 ) );
+	return Math.min( 100, Math.round( ( ( index + 1 ) / phases.value.length ) * 100 ) );
 } );
 
 /**
@@ -131,10 +224,15 @@ async function detect(): Promise< void > {
 	drivers.value = [];
 	summary.value = null;
 	running.value = false;
+	runError.value = '';
+	step.value = 'source';
 
 	try {
 		drivers.value = await detectSources();
-		selected.value = drivers.value[ 0 ]?.id ?? '';
+
+		if ( ! drivers.value.some( ( item ) => item.id === selected.value ) ) {
+			selected.value = drivers.value[ 0 ]?.id ?? '';
+		}
 	} catch ( error ) {
 		detectError.value =
 			error instanceof Error ? error.message : translate( 'Failed to detect sources.' );
@@ -144,11 +242,43 @@ async function detect(): Promise< void > {
 }
 
 /**
- * Start a run: reset the previous run's state, then drive batches.
+ * Move to the category step, loading the selected source's categories.
  *
- * The reset is unconditional because a previous run's cursors must never
- * bleed into this one — an abandoned dry run half-way through the articles
- * would otherwise make the real run skip everything the dry run walked past.
+ * @since 1.0.0
+ *
+ * @return {Promise<void>}
+ */
+async function toCategories(): Promise< void > {
+	if ( ! selected.value ) {
+		return;
+	}
+
+	step.value = 'categories';
+	loadingCategories.value = true;
+	runError.value = '';
+
+	try {
+		const lists = await fetchCategories( selected.value );
+
+		sourceCategories.value = lists.source;
+		targetCategories.value = lists.targets;
+		categoryMap.value = Object.fromEntries(
+			lists.source.map( ( category ) => [ category.id, categoryMap.value[ category.id ] ?? 0 ] )
+		);
+	} catch ( error ) {
+		runError.value =
+			error instanceof Error ? error.message : translate( 'The categories could not be loaded.' );
+	} finally {
+		loadingCategories.value = false;
+	}
+}
+
+/**
+ * Start a run and drive its batches.
+ *
+ * A dry run always starts clean — its state is scratch. A real run never
+ * resets: the server resumes an interrupted run or opens a new one after a
+ * finished one, keeping the analytics cursors either way.
  *
  * @since 1.0.0
  *
@@ -161,6 +291,7 @@ async function start( isDryRun: boolean ): Promise< void > {
 		return;
 	}
 
+	step.value = 'run';
 	running.value = true;
 	runIsDry.value = isDryRun;
 	runError.value = '';
@@ -169,7 +300,10 @@ async function start( isDryRun: boolean ): Promise< void > {
 	lastBatch.value = 0;
 
 	try {
-		await resetMigration( selected.value );
+		if ( isDryRun ) {
+			await resetMigration( selected.value, true );
+		}
+
 		await loop( isDryRun );
 	} catch ( error ) {
 		runError.value =
@@ -188,11 +322,15 @@ async function start( isDryRun: boolean ): Promise< void > {
  * @return {Promise<void>}
  */
 async function loop( isDryRun: boolean ): Promise< void > {
+	const map = Object.fromEntries(
+		Object.entries( categoryMap.value ).filter( ( [ , target ] ) => target > 0 )
+	);
+
 	// The driver's own loop guard: a site of any sane size finishes well
 	// inside this many batches, and a run that does not has a server-side
 	// problem a client cannot fix.
 	for ( let batch = 0; batch < 100000; batch++ ) {
-		const response = await runBatch( selected.value, isDryRun, BATCH_SIZE );
+		const response = await runBatch( selected.value, isDryRun, BATCH_SIZE, map, importSettings.value );
 
 		phase.value = response.progress.phase;
 		lastBatch.value = response.progress.done;
@@ -207,21 +345,6 @@ async function loop( isDryRun: boolean ): Promise< void > {
 			setTimeout( resolve, BATCH_PAUSE_MS )
 		);
 	}
-}
-
-/**
- * Reset the migration state and return to source selection.
- *
- * @since 1.0.0
- *
- * @return {Promise<void>}
- */
-async function resetState(): Promise< void > {
-	if ( selected.value ) {
-		await resetMigration( selected.value );
-	}
-
-	await detect();
 }
 
 onMounted( detect );
@@ -240,178 +363,264 @@ onMounted( detect );
 			:message="detectError"
 		/>
 
-		<a-alert
-			v-else-if="0 === drivers.length"
-			type="warning"
-			show-icon
-			:message="translate( 'No import sources detected on this installation.' )"
-		/>
-
-		<template v-else-if="! running && ! summary && ! runError">
-			<p class="lisensio-kb-migration__lede">
-				{{
-					translate(
-						'The following knowledge base plugins have data available for import:'
-					)
-				}}
-			</p>
-
-			<a-radio-group
-				v-model:value="selected"
-				class="lisensio-kb-migration__sources"
-			>
-				<a-card
-					v-for="driver in drivers"
-					:key="driver.id"
-					class="lisensio-kb-migration__source"
-				>
-					<a-radio :value="driver.id">
-						<strong>{{ driver.id.toUpperCase() }}</strong>
-					</a-radio>
-
-					<dl class="lisensio-kb-migration__counts">
-						<div>
-							<dt>{{ translate( 'Articles' ) }}</dt>
-							<dd>{{ driver.counts.articles }}</dd>
-						</div>
-						<div>
-							<dt>{{ translate( 'Categories' ) }}</dt>
-							<dd>{{ driver.counts.categories }}</dd>
-						</div>
-						<div>
-							<dt>{{ translate( 'Tags' ) }}</dt>
-							<dd>{{ driver.counts.tags }}</dd>
-						</div>
-					</dl>
-				</a-card>
-			</a-radio-group>
-
-			<div class="lisensio-kb-migration__options">
-				<a-checkbox v-model:checked="dryRun">
-					{{ translate( 'Dry run (verify before importing)' ) }}
-				</a-checkbox>
-			</div>
-
-			<a-button
-				type="primary"
-				:disabled="! selected"
-				@click="start( dryRun )"
-			>
-				{{ translate( 'Start migration' ) }}
-			</a-button>
-		</template>
-
-		<div v-else class="lisensio-kb-migration__run">
-			<h2 class="lisensio-kb-migration__run-title">
-				{{
-					runIsDry
-						? translate( 'Verifying import (dry run)' )
-						: translate( 'Importing data' )
-				}}
-			</h2>
+		<template v-else>
+			<a-steps
+				:current="[ 'source', 'categories', 'run' ].indexOf( step )"
+				size="small"
+				class="lisensio-kb-migration__steps"
+				:items="[
+					{ title: translate( 'Source' ) },
+					{ title: translate( 'Categories' ) },
+					{ title: translate( 'Import' ) },
+				]"
+			/>
 
 			<a-alert
-				v-if="runError"
-				type="error"
+				v-if="0 === drivers.length && 'run' !== step"
+				type="info"
 				show-icon
-				:message="runError"
-				class="lisensio-kb-migration__error"
+				:message="translate( 'No import sources detected on this installation. Earlier imports are in the log below.' )"
 			/>
 
-			<a-progress
-				:percent="percent"
-				:status="runError ? 'exception' : summary ? 'success' : 'active'"
-			/>
+			<template v-else-if="'source' === step">
+				<p class="lisensio-kb-migration__lede">
+					{{ translate( 'These knowledge base plugins have data available for import:' ) }}
+				</p>
 
-			<p class="lisensio-kb-migration__phase">{{ phaseLabel }}</p>
-			<p
-				v-if="running"
-				class="lisensio-kb-migration__batch"
-			>
-				{{
-					translate( 'Processed' ) +
-						' ' +
-						lastBatch +
-						' ' +
-						translate( 'items in the latest batch.' )
-				}}
-			</p>
-
-			<template v-if="summary">
-				<a-descriptions
-					:column="2"
-					bordered
-					size="small"
-					class="lisensio-kb-migration__counts-table"
-				>
-					<a-descriptions-item
-						v-for="[ key, value ] in summaryEntries"
-						:key="key"
-						:label="humanize( key )"
+				<a-radio-group v-model:value="selected" class="lisensio-kb-migration__sources">
+					<a-card
+						v-for="item in drivers"
+						:key="item.id"
+						class="lisensio-kb-migration__source"
 					>
-						{{ value }}
-					</a-descriptions-item>
-				</a-descriptions>
+						<a-radio :value="item.id">
+							<strong>{{ item.label }}</strong>
+						</a-radio>
 
-				<section
-					v-for="[ category, lines ] in noteSections"
-					:key="category"
-					class="lisensio-kb-migration__notes"
-				>
-					<h3>{{ humanize( category ) }}</h3>
-					<ul>
-						<li v-for="line in lines" :key="line">{{ line }}</li>
-					</ul>
-				</section>
+						<dl class="lisensio-kb-migration__counts">
+							<div v-for="count in item.counts" :key="count.key">
+								<dt>{{ count.label }}</dt>
+								<dd>{{ count.count }}</dd>
+							</div>
+						</dl>
+						<p class="lisensio-kb-migration__hint">
+							{{ translate( 'Totals as stored by the source. Records for deleted articles, and analytics from today, are not imported; the dry run shows the exact numbers.' ) }}
+						</p>
 
-				<div
-					v-if="summary.redirects_url || summary.url_map_url"
-					class="lisensio-kb-migration__downloads"
-				>
+						<a-alert
+							v-if="item.status.in_progress"
+							type="warning"
+							show-icon
+							class="lisensio-kb-migration__status"
+							:message="translate( 'An import from this source was interrupted. Resume it to carry on from where it stopped; nothing is imported twice.' )"
+						/>
+						<a-alert
+							v-else-if="item.status.finished_at"
+							type="info"
+							show-icon
+							class="lisensio-kb-migration__status"
+							:message="translate( 'Last imported' ) + ' ' + formatTime( item.status.finished_at ) + '. ' + translate( 'Importing again adds new content and the analytics recorded since; content already imported is left as it is.' )"
+						/>
+					</a-card>
+				</a-radio-group>
+
+				<div class="lisensio-kb-migration__actions">
 					<a-button
-						v-if="summary.redirects_url"
-						:href="summary.redirects_url"
+						v-if="driver?.status.in_progress"
+						type="primary"
+						@click="start( false )"
 					>
-						{{ translate( 'Download redirect drop-in' ) }}
+						{{ translate( 'Resume import' ) }}
 					</a-button>
-					<a-button v-if="summary.url_map_url" :href="summary.url_map_url">
-						{{ translate( 'Download URL map (CSV)' ) }}
+					<a-button
+						v-else
+						type="primary"
+						:disabled="! selected"
+						@click="toCategories"
+					>
+						{{ translate( 'Next: categories' ) }}
 					</a-button>
 				</div>
 			</template>
 
-			<div class="lisensio-kb-migration__actions">
-				<a-popconfirm
-					v-if="summary && runIsDry"
-					:title="translate( 'Run the real import now? Content already migrated is skipped; analytics rows from any earlier real run are imported again.' )"
-					:ok-text="translate( 'Run import' )"
-					:cancel-text="translate( 'Cancel' )"
-					@confirm="start( false )"
-				>
-					<a-button type="primary">
-						{{ translate( 'Looks good, run the full import' ) }}
+			<template v-else-if="'categories' === step">
+				<p class="lisensio-kb-migration__lede">
+					{{ translate( 'Choose where each category goes. A new category is created by default; merging files its articles under an existing category and redirects its old address there.' ) }}
+				</p>
+
+				<a-alert v-if="runError" type="error" show-icon :message="runError" class="lisensio-kb-migration__error" />
+
+				<a-spin :spinning="loadingCategories">
+					<a-empty
+						v-if="! loadingCategories && ! categoryRows.length"
+						:description="translate( 'This source has no categories.' )"
+					/>
+
+					<table v-else class="lisensio-kb-migration__map">
+						<thead>
+							<tr>
+								<th>{{ translate( 'Source category' ) }}</th>
+								<th>{{ translate( 'Articles' ) }}</th>
+								<th>{{ translate( 'Import as' ) }}</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr v-for="category in categoryRows" :key="category.id">
+								<td :style="{ paddingLeft: 8 + category.depth * 20 + 'px' }">
+									{{ category.name }}
+									<a-tag v-if="'knowledge_base' === category.type" color="blue">
+										{{ translate( 'Knowledge base' ) }}
+									</a-tag>
+								</td>
+								<td>{{ category.count }}</td>
+								<td>
+									<a-select
+										v-model:value="categoryMap[ category.id ]"
+										:options="targetOptions"
+										show-search
+										option-filter-prop="label"
+										class="lisensio-kb-migration__target"
+										:aria-label="translate( 'Import as' ) + ' ' + category.name"
+									/>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</a-spin>
+
+				<div class="lisensio-kb-migration__options">
+					<a-checkbox v-model:checked="importSettings">
+						{{ translate( 'Also copy the matching settings (layout, columns, sidebars, search placeholder, feedback). URL slugs are never changed, and every change is in the log.' ) }}
+					</a-checkbox>
+				</div>
+
+				<div class="lisensio-kb-migration__actions">
+					<a-button @click="step = 'source'">{{ translate( 'Back' ) }}</a-button>
+					<a-button type="primary" :disabled="loadingCategories" @click="start( true )">
+						{{ translate( 'Start dry run' ) }}
 					</a-button>
-				</a-popconfirm>
-				<a-button
-					v-if="summary && ! runIsDry && chrome.articlesUrl"
-					:href="chrome.articlesUrl"
-				>
-					{{ translate( 'View knowledge base' ) }}
-				</a-button>
-				<a-button
-					:disabled="running"
-					@click="resetState"
-				>
-					{{ translate( 'Reset state' ) }}
-				</a-button>
+					<a-popconfirm
+						:title="translate( 'Run the import now, without a dry run first?' )"
+						:ok-text="translate( 'Run import' )"
+						:cancel-text="translate( 'Cancel' )"
+						@confirm="start( false )"
+					>
+						<a-button :disabled="loadingCategories">{{ translate( 'Skip the dry run and import' ) }}</a-button>
+					</a-popconfirm>
+				</div>
+			</template>
+
+			<div v-else class="lisensio-kb-migration__run">
+				<h2 class="lisensio-kb-migration__run-title">
+					{{
+						runIsDry
+							? translate( 'Verifying import (dry run)' )
+							: translate( 'Importing data' )
+					}}
+				</h2>
+
+				<a-alert
+					v-if="runError"
+					type="error"
+					show-icon
+					:message="runError"
+					class="lisensio-kb-migration__error"
+				/>
+
+				<a-progress
+					:percent="percent"
+					:status="runError ? 'exception' : summary ? 'success' : 'active'"
+				/>
+
+				<p class="lisensio-kb-migration__phase">{{ phaseLabel }}</p>
+				<p v-if="running" class="lisensio-kb-migration__batch">
+					{{ translate( 'Processed' ) + ' ' + lastBatch + ' ' + translate( 'items in the latest batch.' ) }}
+				</p>
+
+				<template v-if="summary">
+					<a-alert
+						v-if="runIsDry"
+						type="info"
+						show-icon
+						class="lisensio-kb-migration__status"
+						:message="translate( 'Dry run complete. Nothing was imported; the counts below are what the import would do, and the log shows every item.' )"
+					/>
+
+					<a-descriptions
+						:column="2"
+						bordered
+						size="small"
+						class="lisensio-kb-migration__counts-table"
+					>
+						<a-descriptions-item
+							v-for="[ key, value ] in summaryEntries"
+							:key="key"
+							:label="humanize( key )"
+						>
+							{{ value }}
+						</a-descriptions-item>
+					</a-descriptions>
+
+					<section
+						v-for="[ category, lines ] in noteSections"
+						:key="category"
+						class="lisensio-kb-migration__notes"
+					>
+						<h3>{{ humanize( category ) }}</h3>
+						<ul>
+							<li v-for="line in lines" :key="line">{{ line }}</li>
+						</ul>
+					</section>
+
+					<div v-if="summary.url_map_url" class="lisensio-kb-migration__downloads">
+						<a-button :href="summary.url_map_url">
+							{{ translate( 'Download URL map (CSV)' ) }}
+						</a-button>
+					</div>
+				</template>
+
+				<div class="lisensio-kb-migration__actions">
+					<a-button
+						v-if="summary && runIsDry"
+						type="primary"
+						@click="start( false )"
+					>
+						{{ translate( 'Looks good, run the import' ) }}
+					</a-button>
+					<a-button
+						v-if="runError"
+						type="primary"
+						@click="start( runIsDry )"
+					>
+						{{ translate( 'Resume' ) }}
+					</a-button>
+					<a-button
+						v-if="summary && ! runIsDry && chrome.articlesUrl"
+						:href="chrome.articlesUrl"
+					>
+						{{ translate( 'View knowledge base' ) }}
+					</a-button>
+					<a-button :disabled="running" @click="detect">
+						{{ translate( 'Back to sources' ) }}
+					</a-button>
+				</div>
 			</div>
-		</div>
+
+			<section class="lisensio-kb-migration__log">
+				<h2 class="lisensio-kb-migration__run-title">{{ translate( 'Migration log' ) }}</h2>
+				<MigrationLog :key="summary?.run_id ?? 'log'" :run-id="summary?.run_id" />
+			</section>
+		</template>
 	</div>
 </template>
 
 <style scoped>
 .lisensio-kb-migration__spin-body {
 	min-height: 120px;
+}
+
+.lisensio-kb-migration__steps {
+	margin-bottom: 20px;
 }
 
 .lisensio-kb-migration__lede {
@@ -429,7 +638,8 @@ onMounted( detect );
 
 .lisensio-kb-migration__counts {
 	display: flex;
-	gap: 32px;
+	flex-wrap: wrap;
+	gap: 16px 32px;
 	margin: 12px 0 0 26px;
 }
 
@@ -445,7 +655,34 @@ onMounted( detect );
 }
 
 .lisensio-kb-migration__options {
-	margin: 16px 0;
+	margin-top: 16px;
+}
+
+.lisensio-kb-migration__hint {
+	margin: 8px 0 0 26px;
+	color: var( --lkb-ink-wp-muted, #646970 );
+	font-size: 12px;
+}
+
+.lisensio-kb-migration__status {
+	margin-top: 12px;
+}
+
+.lisensio-kb-migration__map {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.lisensio-kb-migration__map th,
+.lisensio-kb-migration__map td {
+	padding: 6px 8px;
+	border-bottom: 1px solid var( --lkb-border-wp, #dcdcde );
+	text-align: left;
+}
+
+.lisensio-kb-migration__target {
+	width: 100%;
+	min-width: 220px;
 }
 
 .lisensio-kb-migration__run-title {
@@ -488,5 +725,11 @@ onMounted( detect );
 	flex-wrap: wrap;
 	gap: 8px;
 	margin-top: 20px;
+}
+
+.lisensio-kb-migration__log {
+	margin-top: 32px;
+	padding-top: 20px;
+	border-top: 1px solid var( --lkb-border-wp, #dcdcde );
 }
 </style>
