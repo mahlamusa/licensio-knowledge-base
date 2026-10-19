@@ -314,7 +314,7 @@ class Lisensio_KB_Settings_Test extends Lisensio_KB_Test_Case {
         foreach ( array( 'red;}body{background:url(//evil/x)', '</style><script>alert(1)</script>', 'red', '#gggggg', '' ) as $payload ) {
             $settings->set( 'brand_color', $payload );
 
-            $this->assertSame( '#2ba377', $settings->get( 'brand_color' ), 'A non-colour must fall back to the default.' );
+            $this->assertSame( '#3c569f', $settings->get( 'brand_color' ), 'A non-colour must fall back to the default.' );
         }
     }
 
@@ -454,7 +454,7 @@ class Lisensio_KB_Settings_Test extends Lisensio_KB_Test_Case {
         $settings = new Lisensio_KB_Settings();
 
         $this->assertSame( 'evil', $settings->get( 'article_slug' ) );
-        $this->assertSame( '#2ba377', $settings->get( 'brand_color' ) );
+        $this->assertSame( '#3c569f', $settings->get( 'brand_color' ) );
         $this->assertSame( 90, $settings->get( 'analytics_retention_days' ) );
         $this->assertSame( 'contained', $settings->get( 'layout_width' ) );
     }
@@ -610,9 +610,10 @@ class Lisensio_KB_Settings_Test extends Lisensio_KB_Test_Case {
 
         $this->assertSame( 'solid', $defaults['header_style'] );
         $this->assertSame( 0, $defaults['header_image_id'] );
-        $this->assertSame( 'How can we help?', $defaults['archive_header_text'] );
+        $this->assertSame( 'Help Topics', $defaults['archive_header_text'] );
         $this->assertSame( 'Search the Knowledge Base...', $defaults['search_placeholder'] );
-        $this->assertSame( 3, $defaults['archive_columns'] );
+        $this->assertSame( 0, $defaults['archive_columns'] );
+        $this->assertSame( '', $defaults['support_url'] );
         $this->assertFalse( $defaults['show_subcategories'] );
         $this->assertTrue( $defaults['show_article_counts'] );
         $this->assertTrue( $defaults['sticky_sidebar'] );
@@ -707,7 +708,11 @@ class Lisensio_KB_Settings_Test extends Lisensio_KB_Test_Case {
     }
 
     /**
-     * The archive column count is held between one and four.
+     * The archive column count is held between zero and four.
+     *
+     * Zero is not a column count but the automatic pair: two columns beside a
+     * sidebar, three without one. It is stored rather than resolved so the
+     * sidebar can change without the setting silently moving.
      *
      * @since 1.0.0
      *
@@ -720,10 +725,10 @@ class Lisensio_KB_Settings_Test extends Lisensio_KB_Test_Case {
         $this->assertSame( 4, $settings->get( 'archive_columns' ) );
 
         $settings->set( 'archive_columns', 0 );
-        $this->assertSame( 1, $settings->get( 'archive_columns' ) );
+        $this->assertSame( 0, $settings->get( 'archive_columns' ) );
 
         $settings->set( 'archive_columns', -7 );
-        $this->assertSame( 1, $settings->get( 'archive_columns' ) );
+        $this->assertSame( 0, $settings->get( 'archive_columns' ) );
 
         $settings->set( 'archive_columns', '2' );
         $this->assertSame( 2, $settings->get( 'archive_columns' ) );
@@ -741,7 +746,7 @@ class Lisensio_KB_Settings_Test extends Lisensio_KB_Test_Case {
 
         foreach ( array( 'three', 'col-md-4', '' ) as $payload ) {
             $settings->set( 'archive_columns', $payload );
-            $this->assertSame( 3, $settings->get( 'archive_columns' ) );
+            $this->assertSame( 0, $settings->get( 'archive_columns' ) );
         }
     }
 
@@ -782,7 +787,7 @@ class Lisensio_KB_Settings_Test extends Lisensio_KB_Test_Case {
         $settings = new Lisensio_KB_Settings();
 
         foreach ( array( 'archive_header_text', 'search_placeholder' ) as $key ) {
-            $settings->set( $key, '<script>alert(1)</script>How can we help?' );
+            $settings->set( $key, '<script>alert(1)</script>Help Topics' );
 
             $stored = $this->options[ Lisensio_KB_Settings::OPTION_NAME ][ $key ];
 
@@ -821,13 +826,13 @@ class Lisensio_KB_Settings_Test extends Lisensio_KB_Test_Case {
      */
     public function test_display_text_that_is_not_text_falls_back_to_the_default() {
         $this->options[ Lisensio_KB_Settings::OPTION_NAME ] = array(
-            'archive_header_text' => array( 'How can we help?' ),
+            'archive_header_text' => array( 'Help Topics' ),
             'search_placeholder'  => null,
         );
 
         $settings = new Lisensio_KB_Settings();
 
-        $this->assertSame( 'How can we help?', $settings->get( 'archive_header_text' ) );
+        $this->assertSame( 'Help Topics', $settings->get( 'archive_header_text' ) );
         $this->assertSame( 'Search the Knowledge Base...', $settings->get( 'search_placeholder' ) );
     }
 

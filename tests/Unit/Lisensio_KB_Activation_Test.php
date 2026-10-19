@@ -75,6 +75,7 @@ class Lisensio_KB_Activation_Test extends Lisensio_KB_Test_Case {
         $_SERVER['REMOTE_ADDR'] = '203.0.113.9';
 
         Functions\when( 'get_bloginfo' )->justReturn( '6.4' );
+        Functions\when( 'add_shortcode' )->justReturn( null );
         Functions\when( 'flush_rewrite_rules' )->alias(
             function () {
                 $this->flushed = true;

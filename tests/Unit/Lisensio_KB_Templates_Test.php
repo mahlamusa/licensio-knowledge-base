@@ -417,77 +417,93 @@ class Lisensio_KB_Templates_Test extends Lisensio_KB_Test_Case {
     }
 
     /**
-     * The archive hero paints the last word of its heading, and only that word.
+     * The article card swaps a theme's excerpt "more" link for an ellipsis.
+     *
+     * The excerpt is printed escaped, so a link a theme adds through
+     * `excerpt_more` would show up on the card as raw HTML.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_the_archive_hero_accents_the_last_word_of_the_title() {
+    public function test_the_article_card_replaces_the_theme_excerpt_more_link() {
+        $this->stub_article( 12, 'Creating an account' );
+
+        // Stands in for core: the theme's link, unless something outranks it.
+        Functions\when( 'get_the_excerpt' )->alias(
+            function () {
+                return 'A short summary' . ( has_filter( 'excerpt_more' ) ? "\u{2026}" : '<a class="more-link" href="#">Continue reading</a>' );
+            }
+        );
+
+        $markup = lisensio_kb_get_template( 'article-card', array( 'post' => 12 ), false );
+
+        $this->assertStringContainsString( "A short summary\u{2026}", $markup );
+        $this->assertStringNotContainsString( 'more-link', $markup );
+        $this->assertFalse( has_filter( 'excerpt_more' ), 'The override must not outlive the card.' );
+    }
+
+    /**
+     * The archive heading reaches the page header plain and whole.
+     *
+     * The redesigned archive carries no gradient hero: the heading is the
+     * setting's text, printed as one escaped run inside the page header, with
+     * the hairline rule the header carries below it.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_archive_heading_reaches_the_page_header_whole() {
         $markup = $this->render_archive( 'Lisensio Documentation' );
 
-        $this->assertStringContainsString( '<header class="lisensio-kb__hero">', $markup );
-        $this->assertStringContainsString( 'Lisensio', $markup );
-        $this->assertStringContainsString(
-            '<span class="lisensio-kb__title-accent">Documentation</span>',
-            $markup
-        );
+        $this->assertStringContainsString( '<header class="lisensio-kb__pagehead">', $markup );
+        $this->assertStringContainsString( '<h1 class="lisensio-kb__pagehead-title">Lisensio Documentation</h1>', $markup );
+        $this->assertStringNotContainsString( 'lisensio-kb__title-accent', $markup );
     }
 
     /**
-     * A one-word archive title is accented whole rather than dropped.
+     * The archive heading reaches the page escaped.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_a_one_word_archive_title_is_accented_whole() {
-        $markup = $this->render_archive( 'Documentation' );
-
-        $this->assertStringContainsString(
-            '<span class="lisensio-kb__title-accent">Documentation</span>',
-            $markup
-        );
-    }
-
-    /**
-     * The archive title reaches the page escaped, both halves of it.
-     *
-     * The heading is now built from two pieces, so the escaping has to be
-     * asserted on both: escaping only the accented word would leave the lead
-     * words as an injection point.
-     *
-     * @since 1.0.0
-     *
-     * @return void
-     */
-    public function test_the_archive_escapes_both_halves_of_the_title() {
+    public function test_the_archive_escapes_the_title() {
         $markup = $this->render_archive( '<script>alert(1)</script> <img onerror=x>' );
 
+        /*
+         * The value is sanitised on its way into the store and escaped on its
+         * way out, so what reaches the page is neither markup nor an entity:
+         * the tags are gone by the time the heading is printed.
+         */
         $this->assertStringNotContainsString( '<script>', $markup );
         $this->assertStringNotContainsString( '<img', $markup );
-        $this->assertStringContainsString( '&lt;script&gt;', $markup );
-        $this->assertStringContainsString( '&lt;img', $markup );
+        $this->assertStringContainsString( 'alert(1)', $markup );
     }
 
     /**
-     * The archive lays its categories out in three columns.
+     * The archive grid follows the sidebar: two divided columns beside one.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_the_archive_grid_asks_for_three_columns() {
+    public function test_the_archive_grid_asks_for_two_divided_columns_beside_a_sidebar() {
         $markup = $this->render_archive();
 
         $this->assertStringContainsString(
-            '<div class="lisensio-kb__grid lisensio-kb__grid--cols-3">',
+            'lisensio-kb__grid lisensio-kb__grid--divided lisensio-kb__grid--cols-2',
             $markup
         );
     }
 
     /**
-     * Each archive card carries its category's articles and its icon.
+     * Each archive card carries its articles, its count and a View all link.
+     *
+     * The redesigned card fronts every article with the document icon, keeps
+     * the article count beside the title, and closes with the View all link.
+     * The category icon is not shown on the archive grid.
      *
      * @since 1.0.0
      *
@@ -502,7 +518,10 @@ class Lisensio_KB_Templates_Test extends Lisensio_KB_Test_Case {
             $markup
         );
         $this->assertStringContainsString( 'Quick start', $markup );
-        $this->assertStringContainsString( 'dashicons dashicons-sos', $markup );
+        $this->assertStringContainsString( 'lisensio-kb-card__article-icon', $markup );
+        $this->assertStringContainsString( 'lisensio-kb-card__count', $markup );
+        $this->assertStringContainsString( 'lisensio-kb-card__view-all', $markup );
+        $this->assertStringNotContainsString( 'dashicons dashicons-sos', $markup );
     }
 
     /**
@@ -516,6 +535,22 @@ class Lisensio_KB_Templates_Test extends Lisensio_KB_Test_Case {
      */
     private function render_archive( $title = 'Knowledge Base' ) {
         $this->stub_conditionals( 'archive' );
+
+        /*
+         * The redesigned archive reads its heading from the
+         * archive_header_text setting, so the title a test asks for is routed
+         * through the stored option rather than through the stubbed
+         * post_type_archive_title() the old hero used to read.
+         */
+        Functions\when( 'get_option' )->alias(
+            function ( $name, $default_value = false ) use ( $title ) {
+                if ( Lisensio_KB_Settings::OPTION_NAME === $name ) {
+                    return array( 'archive_header_text' => $title );
+                }
+
+                return $default_value;
+            }
+        );
 
         $term = new WP_Term(
             array(
@@ -1082,6 +1117,8 @@ class Lisensio_KB_Templates_Test extends Lisensio_KB_Test_Case {
      * @return void
      */
     public function test_the_loader_registers_itself() {
+        Functions\when( 'add_shortcode' )->justReturn( null );
+
         $this->templates->init_hooks();
 
         $this->assertSame( 20, has_filter( 'template_include', array( $this->templates, 'template_include' ) ) );
@@ -1126,9 +1163,9 @@ class Lisensio_KB_Templates_Test extends Lisensio_KB_Test_Case {
         $properties = $templates->custom_properties();
         $css        = $templates->inline_css();
 
-        $this->assertSame( '#2ba377', $properties['--lisensio-kb-brand'] );
+        $this->assertSame( '#3c569f', $properties['--lisensio-kb-brand'] );
         $this->assertSame( '72rem', $properties['--lisensio-kb-max-width'] );
-        $this->assertSame( '0 4px 14px rgba(30,122,90,0.08)', $properties['--lisensio-kb-card-shadow'] );
+        $this->assertSame( '0 4px 14px rgba(16,24,40,0.06)', $properties['--lisensio-kb-card-shadow'] );
 
         $this->assertStringNotContainsString( 'evil.test', $css );
         $this->assertStringNotContainsString( '}body{', $css );
@@ -1147,13 +1184,13 @@ class Lisensio_KB_Templates_Test extends Lisensio_KB_Test_Case {
      *
      * @return void
      */
-    public function test_the_last_resort_brand_colour_is_the_lisensio_green() {
+    public function test_the_last_resort_brand_colour_is_the_lisensio_indigo() {
         $templates = new Lisensio_KB_Templates( new Lisensio_KB_Defaultless_Settings() );
 
         $properties = $templates->custom_properties();
 
-        $this->assertSame( '#2ba377', $properties['--lisensio-kb-brand'] );
-        $this->assertSame( '43,163,119', $properties['--lisensio-kb-brand-rgb'] );
+        $this->assertSame( '#3c569f', $properties['--lisensio-kb-brand'] );
+        $this->assertSame( '60,86,159', $properties['--lisensio-kb-brand-rgb'] );
     }
 
     /**
@@ -1167,27 +1204,27 @@ class Lisensio_KB_Templates_Test extends Lisensio_KB_Test_Case {
      *
      * @return void
      */
-    public function test_an_unusable_hex_falls_back_to_the_lisensio_green() {
-        $this->assertSame( array( 43, 163, 119 ), Lisensio_KB_Templates::hex_to_rgb( 'not-a-colour' ) );
-        $this->assertSame( array( 43, 163, 119 ), Lisensio_KB_Templates::hex_to_rgb( '' ) );
-        $this->assertSame( array( 43, 163, 119 ), Lisensio_KB_Templates::hex_to_rgb( '#2ba3' ) );
+    public function test_an_unusable_hex_falls_back_to_the_lisensio_indigo() {
+        $this->assertSame( array( 60, 86, 159 ), Lisensio_KB_Templates::hex_to_rgb( 'not-a-colour' ) );
+        $this->assertSame( array( 60, 86, 159 ), Lisensio_KB_Templates::hex_to_rgb( '' ) );
+        $this->assertSame( array( 60, 86, 159 ), Lisensio_KB_Templates::hex_to_rgb( '#2ba3' ) );
     }
 
     /**
-     * The stylesheet pins the Lisensio design tokens.
+     * The stylesheet pins the knowledge base design tokens.
      *
      * Radius, card shadow and heading font are what make the knowledge base
-     * look like the rest of the site, and nothing else asserts them: the brand
-     * colour is covered by the settings tests and the list arrow by its own
-     * cross-layer contract test, but these three can be edited to any value
-     * and every other test still passes. A regression here is invisible in CI
-     * and obvious on the page, which is the worst combination, so this pins
-     * them the same way the arrow contract is pinned.
+     * render the same page on every theme, and nothing else asserts them: the
+     * brand colour is covered by the settings tests and the card icons by
+     * their own cross-layer contract test, but these three can be edited to
+     * any value and every other test still passes. A regression here is
+     * invisible in CI and obvious on the page, which is the worst
+     * combination, so this pins them the same way the arrow contract is
+     * pinned.
      *
-     * Each is asserted as `var( --theme-token, <lisensio default> )` because
-     * both halves matter: the fallback keeps a standalone install on the
-     * Lisensio design, and the `var()` lets an active theme that defines the
-     * token win without the plugin knowing the theme exists.
+     * Each is asserted as a plain literal because the tokens are owned
+     * outright: the knowledge base is meant to look the same whatever theme
+     * is active, so a deferral to a theme token would be the bug.
      *
      * @since 1.0.0
      *
@@ -1196,9 +1233,9 @@ class Lisensio_KB_Templates_Test extends Lisensio_KB_Test_Case {
     public function test_the_stylesheet_pins_the_lisensio_design_tokens() {
         $css = (string) file_get_contents( LISENSIO_KB_ABSPATH . 'assets/css/lisensio-kb.css' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 
-        $this->assertStringContainsString( '--lisensio-kb-radius: var(--radius, 18px);', $css );
-        $this->assertStringContainsString( '--lisensio-kb-card-shadow: 0 4px 14px rgba(30, 122, 90, 0.08);', $css );
-        $this->assertStringContainsString( '--lisensio-kb-font-head: var(--font-head, "Plus Jakarta Sans"', $css );
+        $this->assertStringContainsString( '--lisensio-kb-radius: 10px;', $css );
+        $this->assertStringContainsString( '--lisensio-kb-card-shadow: 0 4px 14px rgba(16, 24, 40, 0.06);', $css );
+        $this->assertStringContainsString( '--lisensio-kb-font-head: "Plus Jakarta Sans"', $css );
     }
     /**
      * An article card exposes exactly one link.

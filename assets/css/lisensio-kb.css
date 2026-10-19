@@ -7,35 +7,38 @@
  * declarations below are only the fallbacks used before that runs, so changing
  * a setting never needs a rule-level override.
  *
- * The fixed tokens are declared as `var(--theme-token, lisensio-default)`, so a
- * theme that already publishes a design system takes the knowledge base with it,
- * and the plugin still stands alone on a theme that publishes nothing. The one
- * exception is `--lisensio-kb-brand`, which the settings layer owns outright: it
- * is written on this element by the inline block and must not defer to a theme.
+ * The design tokens are owned outright rather than deferred to theme tokens:
+ * the knowledge base is meant to render the same page on every theme, and a
+ * token that borrowed `--ink` or `--border` from whichever theme was active
+ * would drift with it. A theme that wants to restyle the knowledge base
+ * overrides the `--lisensio-kb-*` properties themselves — the one exception is
+ * `--lisensio-kb-brand`, which the settings layer owns and writes through the
+ * inline block.
  */
 
 .lisensio-kb {
 	/* Overridden by the settings-driven inline block. */
-	--lisensio-kb-brand: #2ba377;
-	--lisensio-kb-brand-rgb: 43, 163, 119;
+	--lisensio-kb-brand: #3c569f;
+	--lisensio-kb-brand-rgb: 60, 86, 159;
 	--lisensio-kb-brand-contrast: #ffffff;
 	--lisensio-kb-max-width: 72rem;
-	--lisensio-kb-card-shadow: 0 4px 14px rgba(30, 122, 90, 0.08);
+	--lisensio-kb-card-shadow: 0 4px 14px rgba(16, 24, 40, 0.06);
 	--lisensio-kb-card-border: 1px solid transparent;
 	--lisensio-kb-card-bg: var(--lisensio-kb-surface);
 
 	/* Fixed design tokens. */
-	--lisensio-kb-gradient: var(--gradient, linear-gradient(120deg, #1e7a5a 0%, #2ba377 45%, #40b58a 100%));
-	--lisensio-kb-text: var(--ink, #10231b);
-	--lisensio-kb-muted: var(--muted, #8b86a0);
+	--lisensio-kb-gradient: linear-gradient(120deg, #2f457f 0%, #3c569f 45%, #5273c2 100%);
+	--lisensio-kb-text: #101828;
+	--lisensio-kb-body: #384050;
+	--lisensio-kb-muted: #686868;
 	--lisensio-kb-surface: #ffffff;
-	--lisensio-kb-soft: var(--bg-soft, #f6fbf8);
-	--lisensio-kb-line: var(--border, #dcefe4);
+	--lisensio-kb-soft: #f4f5f5;
+	--lisensio-kb-line: #e8e8e8;
 	--lisensio-kb-tint: rgba(var(--lisensio-kb-brand-rgb), 0.08);
-	--lisensio-kb-shadow-md: var(--shadow-md, 0 14px 40px rgba(30, 122, 90, 0.14));
-	--lisensio-kb-radius: var(--radius, 18px);
-	--lisensio-kb-font-head: var(--font-head, "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif);
-	--lisensio-kb-font-body: var(--font-body, "Inter", system-ui, -apple-system, "Segoe UI", sans-serif);
+	--lisensio-kb-shadow-md: 0 14px 40px rgba(16, 24, 40, 0.14);
+	--lisensio-kb-radius: 10px;
+	--lisensio-kb-font-head: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+	--lisensio-kb-font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
 	--lisensio-kb-gap: 1.5rem;
 	--lisensio-kb-space: 2.5rem;
 
@@ -110,6 +113,33 @@
 	border: 0;
 }
 
+/* Page header. */
+
+/*
+ * The one heading band the redesigned archive views open with: a heading and
+ * the hairline rule beneath it. Nothing else — the rule is what separates the
+ * page header from the grid, and anything more (a band, a gradient, a search
+ * box) is a different design than this one.
+ */
+.lisensio-kb__pagehead {
+	margin: 0 0 2rem;
+	padding-bottom: 0.9rem;
+	border-bottom: 1px solid var(--lisensio-kb-line);
+}
+
+.lisensio-kb__pagehead-title {
+	margin: 0;
+	font-size: 1.3125rem;
+	letter-spacing: -0.01em;
+	overflow-wrap: anywhere;
+}
+
+.lisensio-kb__pagehead-subtitle {
+	margin: 0.375rem 0 0;
+	color: var(--lisensio-kb-muted);
+	font-size: 0.9375rem;
+}
+
 /* Breadcrumbs. */
 
 .lisensio-kb__breadcrumbs {
@@ -141,7 +171,7 @@
 	color: var(--lisensio-kb-line);
 }
 
-/* Page header and search. */
+/* Page header and search (hero views: single article, tag, search results). */
 
 .lisensio-kb__header {
 	margin: 0 0 var(--lisensio-kb-space);
@@ -301,12 +331,6 @@
  * A section's top margin is separation from the section above it. The first
  * section in a column has nothing above it, so that margin is dead space, and
  * the container's own padding has already provided the gap.
- *
- * Invisible until the sidebar arrived: with one column it read as slightly
- * generous top padding, but beside a sidebar that starts at the top of the row
- * it became a visible empty block pushing the main column down on its own.
- * Reported on a category archive whose term has no sub-categories, where the
- * article list is the first thing in the column.
  */
 .lisensio-kb__section:first-child {
 	margin-top: 0;
@@ -357,10 +381,80 @@
 	}
 }
 
+/*
+ * The divided grid: the redesign's category layout, where the cards carry no
+ * box of their own and hairline rules between the rows do the separating.
+ *
+ * Column spacing is a gap and row spacing is padding plus a rule, so a rule
+ * hugs the row it closes rather than sitting in dead space. Which cells are in
+ * the last row — and so must lose their rule — depends on how many columns are
+ * showing, which the breakpoints below step through in step with the column
+ * counts above.
+ */
+.lisensio-kb .lisensio-kb__grid--divided {
+	row-gap: 0;
+	column-gap: 3rem;
+}
+
+.lisensio-kb .lisensio-kb__grid--divided > .lisensio-kb-card {
+	padding: 0 0 1.375rem;
+	border: none;
+	border-radius: 0;
+	background: transparent;
+	box-shadow: none;
+}
+
+.lisensio-kb .lisensio-kb__grid--divided > .lisensio-kb-card:hover,
+.lisensio-kb .lisensio-kb__grid--divided > .lisensio-kb-card:focus-within {
+	transform: none;
+	border-color: transparent;
+	box-shadow: none;
+}
+
+.lisensio-kb .lisensio-kb__grid--divided > .lisensio-kb-card {
+	border-bottom: 1px solid var(--lisensio-kb-line);
+}
+
+.lisensio-kb .lisensio-kb__grid--divided > :last-child {
+	border-bottom: none;
+}
+
+@media (min-width: 40rem) {
+	.lisensio-kb .lisensio-kb__grid--cols-2.lisensio-kb__grid--divided > :nth-last-child(-n+2),
+	.lisensio-kb .lisensio-kb__grid--cols-3.lisensio-kb__grid--divided > :nth-last-child(-n+2),
+	.lisensio-kb .lisensio-kb__grid--cols-4.lisensio-kb__grid--divided > :nth-last-child(-n+2) {
+		border-bottom: none;
+	}
+}
+
+@media (min-width: 56rem) {
+	.lisensio-kb .lisensio-kb__grid--cols-3.lisensio-kb__grid--divided > :nth-last-child(-n+3),
+	.lisensio-kb .lisensio-kb__grid--cols-4.lisensio-kb__grid--divided > :nth-last-child(-n+3) {
+		border-bottom: none;
+	}
+}
+
 .lisensio-kb__list {
 	display: grid;
 	gap: 0.75rem;
 	grid-template-columns: 1fr;
+}
+
+/*
+ * The article list a category archive widens into when its sidebar is off:
+ * three columns, stepping down on a narrow screen the way the category grid
+ * does, so the two never disagree about where the breakpoints sit.
+ */
+@media (min-width: 56rem) {
+	.lisensio-kb .lisensio-kb__list--cols-3 {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 56rem) and (min-width: 40rem) {
+	.lisensio-kb .lisensio-kb__list--cols-3 {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
 }
 
 /* Cards. */
@@ -432,8 +526,9 @@
  */
 .lisensio-kb-card__heading {
 	display: flex;
-	align-items: center;
-	gap: 0.75rem;
+	align-items: baseline;
+	gap: 0.5rem;
+	flex-wrap: wrap;
 }
 
 /* The icon has margins for the stacked layout it no longer uses. */
@@ -446,6 +541,7 @@
 .lisensio-kb-card__title {
 	margin: 0;
 	font-size: 1.0625rem;
+	font-weight: 700;
 	line-height: 1.35;
 	overflow-wrap: anywhere;
 }
@@ -453,7 +549,8 @@
 /*
  * The card title takes the heading colour rather than the link colour. A card
  * whose title, articles and sub-categories were all painted brand would have no
- * hierarchy left; in the reference design the green is spent on the arrows.
+ * hierarchy left; in the reference design the brand colour is spent on the
+ * article icons and the View all link.
  */
 
 .lisensio-kb .lisensio-kb-card__link {
@@ -471,10 +568,15 @@
 	text-decoration: underline;
 }
 
-.lisensio-kb-card__meta {
-	margin: 0.375rem 0 0;
+/*
+ * The article count sits beside the title rather than under the card. It is
+ * metadata about the list below it, and in the reference design it reads as
+ * part of the heading line: "Getting Started (3 Articles)".
+ */
+.lisensio-kb-card__count {
 	color: var(--lisensio-kb-muted);
 	font-size: 0.8125rem;
+	font-weight: 400;
 }
 
 /*
@@ -533,7 +635,7 @@
 .lisensio-kb-card__articles {
 	display: grid;
 	gap: 0.125rem;
-	margin: 0.875rem 0 0;
+	margin: 0.75rem 0 0;
 	padding: 0;
 	list-style: none;
 }
@@ -543,30 +645,59 @@
 	min-width: 0;
 }
 
+/*
+ * Each row is a document icon and a title. The icon is an inline SVG carrying
+ * `stroke="currentColor"`, so the brand colour arrives from the rule below
+ * without the template needing to know it.
+ */
 .lisensio-kb .lisensio-kb-card__article-link {
 	display: flex;
-	gap: 0.625rem;
+	gap: 0.5rem;
 	align-items: baseline;
-	padding: 0.625rem 0.875rem;
-	border-radius: 0.625rem;
-	color: var(--lisensio-kb-text);
+	padding: 0.375rem 0;
+	color: var(--lisensio-kb-body);
 	font-size: 0.9375rem;
-	font-weight: 600;
+	font-weight: 400;
 	text-decoration: none;
 	overflow-wrap: anywhere;
-	transition: background-color 0.2s, color 0.2s;
+	transition: color 0.2s;
 }
 
-.lisensio-kb .lisensio-kb-card__article-link::before {
-	content: "\2192";
+.lisensio-kb .lisensio-kb-card__article-icon {
+	flex: 0 0 auto;
+	align-self: center;
 	color: var(--lisensio-kb-brand);
-	font-weight: 800;
+}
+
+.lisensio-kb .lisensio-kb-card__article-title {
+	min-width: 0;
 }
 
 .lisensio-kb .lisensio-kb-card__article-link:hover,
 .lisensio-kb .lisensio-kb-card__article-link:focus {
-	background: var(--lisensio-kb-soft);
 	color: var(--lisensio-kb-brand);
+}
+
+/* The View all link that closes a category card. */
+
+.lisensio-kb .lisensio-kb-card__view-all {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	margin-top: 0.625rem;
+	color: var(--lisensio-kb-brand);
+	font-size: 0.875rem;
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.lisensio-kb .lisensio-kb-card__view-all:hover,
+.lisensio-kb .lisensio-kb-card__view-all:focus {
+	text-decoration: underline;
+}
+
+.lisensio-kb .lisensio-kb-card__view-all-icon {
+	flex: 0 0 auto;
 }
 
 /* Article. */
@@ -701,14 +832,20 @@
 	}
 }
 
-/* Sidebar widgets. */
+/* Sidebar widgets.
+ *
+ * The redesign's widget is a soft panel — the light grey the reference design
+ * fills its Popular Articles and Need Support cards with — with no border and
+ * no shadow. Every widget gets it, so a stack of them reads as one column of
+ * the same component rather than two styles of box.
+ */
 
 .lisensio-kb-widget {
-	padding: 1.5rem 1.375rem;
-	border: 1px solid var(--lisensio-kb-line);
+	padding: 1.375rem 1.25rem;
+	border: none;
 	border-radius: var(--lisensio-kb-radius);
-	background: var(--lisensio-kb-card-bg);
-	box-shadow: var(--lisensio-kb-card-shadow);
+	background: var(--lisensio-kb-soft);
+	box-shadow: none;
 	font-size: 0.9375rem;
 }
 
@@ -716,18 +853,10 @@
 	margin-top: var(--lisensio-kb-gap);
 }
 
-/*
- * The title is set apart by a hairline rather than by size alone. Three
- * stacked panels of similar text need a visible boundary between "what this
- * list is" and "the list", and at 1rem the heading is not big enough to do
- * that on its own.
- */
 .lisensio-kb-widget__title {
 	margin: 0 0 0.875rem;
-	padding-bottom: 0.75rem;
-	border-bottom: 1px solid var(--lisensio-kb-line);
 	font-family: var(--lisensio-kb-font-head);
-	font-size: 0.9375rem;
+	font-size: 1rem;
 	font-weight: 700;
 	letter-spacing: 0.01em;
 }
@@ -757,7 +886,7 @@
 
 .lisensio-kb-widget__link:hover,
 .lisensio-kb-widget__link:focus {
-	background: var(--lisensio-kb-soft);
+	background: var(--lisensio-kb-surface);
 	color: var(--lisensio-kb-brand);
 }
 
@@ -784,6 +913,66 @@
 	width: 3px;
 	border-radius: 999px;
 	background: var(--lisensio-kb-brand);
+}
+
+/*
+ * An article row in a widget: the same document icon and title pairing the
+ * category cards use, so the icon means "article" in both columns of the page.
+ */
+.lisensio-kb .lisensio-kb-widget__link--article {
+	display: flex;
+	gap: 0.5rem;
+	align-items: baseline;
+	padding: 0.375rem 0;
+	color: var(--lisensio-kb-body);
+}
+
+.lisensio-kb .lisensio-kb-widget__article-icon {
+	flex: 0 0 auto;
+	align-self: center;
+	color: var(--lisensio-kb-brand);
+}
+
+.lisensio-kb .lisensio-kb-widget__article-title {
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+/* The Need Support card. */
+
+.lisensio-kb-widget--support {
+	text-align: left;
+}
+
+.lisensio-kb-widget__support-text {
+	margin: 0 0 1rem;
+	color: var(--lisensio-kb-muted);
+	font-size: 0.875rem;
+}
+
+/*
+ * Scoped under the widget so it outranks `.lisensio-kb a`, which would
+ * otherwise paint the label in the brand colour over the brand background.
+ */
+.lisensio-kb-widget .lisensio-kb-widget__button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0.5625rem 1.125rem;
+	border: 1px solid var(--lisensio-kb-brand);
+	border-radius: 0.5rem;
+	background: var(--lisensio-kb-brand);
+	color: var(--lisensio-kb-brand-contrast);
+	font-size: 0.875rem;
+	font-weight: 600;
+	text-decoration: none;
+	transition: filter 0.15s;
+}
+
+.lisensio-kb-widget .lisensio-kb-widget__button:hover,
+.lisensio-kb-widget .lisensio-kb-widget__button:focus {
+	color: var(--lisensio-kb-brand-contrast);
+	filter: brightness(1.1);
 }
 
 /* Table of contents. */

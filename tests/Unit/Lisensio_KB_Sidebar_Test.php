@@ -1159,7 +1159,11 @@ class Lisensio_KB_Sidebar_Test extends Lisensio_KB_Test_Case {
     }
 
     /**
-     * The category view gets a sidebar, with no table of contents in it.
+     * The category view gets a sidebar: categories, with no table of contents.
+     *
+     * The redesigned composition adds the Popular Articles and Need Support
+     * widgets; with no article views and no support URL configured neither
+     * renders here, so what is left is the category list the view is about.
      *
      * @since 1.0.0
      *
@@ -1177,7 +1181,6 @@ class Lisensio_KB_Sidebar_Test extends Lisensio_KB_Test_Case {
         $this->assertStringContainsString( 'lisensio-kb--sidebarright', $markup );
         $this->assertStringContainsString( '<aside class="lisensio-kb__sidebar', $markup );
         $this->assertStringContainsString( 'lisensio-kb-widget--categories', $markup );
-        $this->assertStringContainsString( 'lisensio-kb-widget--tags', $markup );
         $this->assertStringNotContainsString( 'lisensio-kb-widget--toc', $markup );
     }
 
@@ -1364,7 +1367,12 @@ class Lisensio_KB_Sidebar_Test extends Lisensio_KB_Test_Case {
      * @return void
      */
     public function test_the_archive_renders_a_sidebar() {
-        $this->settings( array( 'archive_sidebar_position' => 'right' ) );
+        $this->settings(
+            array(
+                'archive_sidebar_position' => 'right',
+                'support_url'              => 'https://example.test/contact/',
+            )
+        );
         $this->stub_taxonomies(
             array( $this->term( 5, 'Getting started' ) ),
             array( $this->term( 9, 'Avatar', Lisensio_KB_Post_Types::TAXONOMY_TAG ) )
@@ -1375,22 +1383,30 @@ class Lisensio_KB_Sidebar_Test extends Lisensio_KB_Test_Case {
         $this->assertStringContainsString( 'lisensio-kb--sidebarright', $markup );
         $this->assertStringContainsString( 'lisensio-kb__layout', $markup );
         $this->assertStringContainsString( '<aside class="lisensio-kb__sidebar', $markup );
-        $this->assertStringContainsString( 'lisensio-kb-widget--tags', $markup );
+        $this->assertStringContainsString( 'lisensio-kb-widget--support', $markup );
+        $this->assertStringContainsString( 'href="https://example.test/contact/"', $markup );
     }
 
     /**
-     * The archive sidebar carries tags only.
+     * The archive sidebar carries the redesign widgets only.
      *
      * No table of contents, because there is no article. No category list,
      * because the main column is the category list: the same links, repeated
-     * in a narrower column beside the cards that already name them.
+     * in a narrower column beside the cards that already name them. No tags
+     * either — the redesign's sidebar is the Popular Articles and Need
+     * Support pair, and nothing else.
      *
      * @since 1.0.0
      *
      * @return void
      */
     public function test_the_archive_sidebar_does_not_repeat_the_category_grid() {
-        $this->settings( array( 'archive_sidebar_position' => 'right' ) );
+        $this->settings(
+            array(
+                'archive_sidebar_position' => 'right',
+                'support_url'              => 'https://example.test/contact/',
+            )
+        );
         $this->stub_taxonomies(
             array( $this->term( 5, 'Getting started' ) ),
             array( $this->term( 9, 'Avatar', Lisensio_KB_Post_Types::TAXONOMY_TAG ) )
@@ -1401,7 +1417,8 @@ class Lisensio_KB_Sidebar_Test extends Lisensio_KB_Test_Case {
 
         $this->assertStringNotContainsString( 'lisensio-kb-widget--categories', $aside );
         $this->assertStringNotContainsString( 'lisensio-kb-widget--toc', $aside );
-        $this->assertStringContainsString( 'lisensio-kb-widget--tags', $aside );
+        $this->assertStringNotContainsString( 'lisensio-kb-widget--tags', $aside );
+        $this->assertStringContainsString( 'lisensio-kb-widget--support', $aside );
     }
 
     /**

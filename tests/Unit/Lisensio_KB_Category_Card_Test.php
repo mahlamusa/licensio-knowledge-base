@@ -345,7 +345,13 @@ class Lisensio_KB_Category_Card_Test extends Lisensio_KB_Test_Case {
 
         $markup = (string) ob_get_clean();
 
-        $this->assertStringNotContainsString( '<svg', $markup );
+        /*
+         * The card's own decorations — the article icons, the View all arrow —
+         * are always printed, so the assertion is on the specific icon that
+         * was asked not to be read rather than on the svg tag itself.
+         */
+        $this->assertStringNotContainsString( 'lisensio-kb-card__icon', $markup );
+        $this->assertStringNotContainsString( 'M4 4h16', $markup );
         $this->assertStringContainsString( 'Getting started', $markup );
     }
 
@@ -514,30 +520,31 @@ class Lisensio_KB_Category_Card_Test extends Lisensio_KB_Test_Case {
     }
 
     /**
-     * The arrow is drawn by the stylesheet, on the class the card emits.
+     * The document icon is painted by the stylesheet, on the class the card emits.
      *
-     * The arrow is generated content, so no assertion on the markup can see it.
-     * What can be held to account is that the selector the rule is written for
-     * is the class the template actually prints — renaming one without the
-     * other is the way this breaks.
+     * The icon carries `stroke="currentColor"`, so no assertion on the markup
+     * can see its colour. What can be held to account is that the selector the
+     * colour rule is written for is the class the template actually prints —
+     * renaming one without the other is the way this breaks.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_the_stylesheet_draws_an_arrow_on_the_class_the_card_emits() {
+    public function test_the_stylesheet_paints_the_icon_on_the_class_the_card_emits() {
         $this->articles = array( $this->article( 11, 'One' ) );
 
         $markup = $this->render_card();
         $css    = (string) file_get_contents( LISENSIO_KB_ABSPATH . 'assets/css/lisensio-kb.css' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 
-        $this->assertStringContainsString( 'class="lisensio-kb-card__article-link"', $markup );
-        $this->assertStringContainsString( '.lisensio-kb .lisensio-kb-card__article-link::before', $css );
-        $this->assertStringContainsString( 'content: "\2192";', $css );
+        $this->assertStringContainsString( 'lisensio-kb-card__article-icon', $markup );
+        $this->assertStringContainsString( 'lisensio-kb-card__view-all-icon', $markup );
+        $this->assertStringContainsString( '.lisensio-kb .lisensio-kb-card__article-icon {', $css );
+        $this->assertStringContainsString( 'color: var(--lisensio-kb-brand);', $css );
     }
 
     /**
-     * The article count survives the redesign, as secondary meta.
+     * The article count survives, beside the title.
      *
      * @since 1.0.0
      *
@@ -548,8 +555,8 @@ class Lisensio_KB_Category_Card_Test extends Lisensio_KB_Test_Case {
 
         $markup = $this->render_card();
 
-        $this->assertStringContainsString( '<p class="lisensio-kb-card__meta">', $markup );
-        $this->assertStringContainsString( '3 articles', $markup );
+        $this->assertStringContainsString( '<span class="lisensio-kb-card__count">', $markup );
+        $this->assertStringContainsString( '(3 Articles)', $markup );
     }
     /**
      * The icon sits beside the category name, not above it.

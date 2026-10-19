@@ -397,7 +397,7 @@ class Lisensio_KB_Settings_Schema_Test extends Lisensio_KB_Test_Case {
     public function test_the_archive_column_bounds_reach_the_screen() {
         $field = $this->fields()['archive_columns'];
 
-        $this->assertSame( 1, $field['min'] );
+        $this->assertSame( 0, $field['min'] );
         $this->assertSame( 4, $field['max'] );
     }
 
@@ -422,7 +422,7 @@ class Lisensio_KB_Settings_Schema_Test extends Lisensio_KB_Test_Case {
         $this->assertNotSame( '', $sidebar['description'] );
         $this->assertSame( 'core', $sidebar['category'] );
         $this->assertNotSame( 'admin-settings', $sidebar['icon'] );
-        $this->assertSame( 5, $sidebar['count'] );
+        $this->assertSame( 6, $sidebar['count'] );
     }
 
     /**

@@ -114,7 +114,7 @@ class Lisensio_KB_Settings_Schema {
             ),
             'sidebar'           => array(
                 'label'       => __( 'Sidebar', 'lisensio-knowledge-base' ),
-                'description' => __( 'Which side the sidebar sits on, chosen separately for the archive, an article and a category, whether it follows the reader down a long article, and whether it opens with a table of contents.', 'lisensio-knowledge-base' ),
+                'description' => __( 'Which side the sidebar sits on, chosen separately for the archive, an article and a category, whether it follows the reader down a long article, whether it opens with a table of contents, and where the sidebar Contact Support button leads.', 'lisensio-knowledge-base' ),
                 'category'    => 'core',
                 'icon'        => 'align-pull-right',
             ),
@@ -241,7 +241,7 @@ class Lisensio_KB_Settings_Schema {
                     'kind'   => 'map',
                     'values' => array(
                         'shadow' => array(
-                            '--lisensio-kb-card-shadow' => '0 4px 14px rgba(30,122,90,0.08)',
+                            '--lisensio-kb-card-shadow' => '0 4px 14px rgba(16,24,40,0.06)',
                             '--lisensio-kb-card-border' => '1px solid transparent',
                             '--lisensio-kb-card-bg'     => 'var(--lisensio-kb-surface)',
                         ),
@@ -278,7 +278,7 @@ class Lisensio_KB_Settings_Schema {
             'archive_header_text'        => array(
                 'group'       => 'appearance',
                 'label'       => __( 'Archive heading', 'lisensio-knowledge-base' ),
-                'description' => __( 'The heading printed above the search box on the knowledge base archive.', 'lisensio-knowledge-base' ),
+                'description' => __( 'The heading printed above the category grid on the knowledge base archive.', 'lisensio-knowledge-base' ),
                 'control'     => 'text',
             ),
             'search_placeholder'         => array(
@@ -290,7 +290,7 @@ class Lisensio_KB_Settings_Schema {
             'archive_columns'            => array(
                 'group'       => 'appearance',
                 'label'       => __( 'Archive columns', 'lisensio-knowledge-base' ),
-                'description' => __( 'How many category cards sit side by side on a wide screen. Narrow screens collapse the grid regardless.', 'lisensio-knowledge-base' ),
+                'description' => __( 'How many category cards sit side by side on a wide screen. Zero follows the sidebar: two columns beside one, three without it.', 'lisensio-knowledge-base' ),
                 'control'     => 'number',
             ),
             'sticky_sidebar'             => array(
@@ -316,9 +316,15 @@ class Lisensio_KB_Settings_Schema {
             'category_sidebar_position'  => array(
                 'group'       => 'sidebar',
                 'label'       => __( 'Category sidebar', 'lisensio-knowledge-base' ),
-                'description' => __( 'Which side the sidebar sits on when a category archive is shown.', 'lisensio-knowledge-base' ),
+                'description' => __( 'Which side the sidebar sits on when a category archive is shown. Set it to No sidebar and the category grid widens to three columns.', 'lisensio-knowledge-base' ),
                 'control'     => 'select',
                 'choices'     => self::sidebar_choices(),
+            ),
+            'support_url'                => array(
+                'group'       => 'sidebar',
+                'label'       => __( 'Support URL', 'lisensio-knowledge-base' ),
+                'description' => __( 'Where the Contact Support button in the sidebar leads, such as a contact page. Empty hides the Need Support card.', 'lisensio-knowledge-base' ),
+                'control'     => 'text',
             ),
 
             /*

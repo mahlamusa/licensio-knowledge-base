@@ -33,6 +33,31 @@ class Lisensio_KB_Templates {
     const STYLE_HANDLE = 'lisensio-kb-frontend';
 
     /**
+     * The shortcode that renders a knowledge base view body inside a block
+     * template.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    const VIEW_SHORTCODE_TAG = 'lisensio_kb_view';
+
+    /**
+     * The view bodies the view shortcode may render.
+     *
+     * The keys are what a block template names; the values are the body
+     * templates. A whitelist rather than a pass-through so the shortcode can
+     * never be pointed at a template that was not built to stand alone —
+     * `single`, for one, expects article hooks a template part does not fire.
+     *
+     * @since 1.0.0
+     * @var array<string, string>
+     */
+    const VIEW_BODIES = array(
+        'archive'  => 'archive-body',
+        'category' => 'category-body',
+    );
+
+    /**
      * Layout width setting values mapped to a CSS length.
      *
      * @since 1.0.0
@@ -61,10 +86,15 @@ class Lisensio_KB_Templates {
     /**
      * The archive column count used when nothing is stored.
      *
+     * Zero is not a column count; it is the instruction to follow the sidebar —
+     * two columns beside one, three without it. The template layer is what
+     * knows whether a sidebar rendered, so the resolution happens there and
+     * not here.
+     *
      * @since 1.0.0
      * @var int
      */
-    const DEFAULT_ARCHIVE_COLUMNS = 3;
+    const DEFAULT_ARCHIVE_COLUMNS = 0;
 
     /**
      * The settings store the custom properties are read from.
@@ -95,6 +125,40 @@ class Lisensio_KB_Templates {
     public function init_hooks() {
         add_filter( 'template_include', array( $this, 'template_include' ), 20 );
         add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_styles' ) );
+        add_shortcode( self::VIEW_SHORTCODE_TAG, array( $this, 'render_view_shortcode' ) );
+    }
+
+    /**
+     * Render a knowledge base view body inside a block template.
+     *
+     * A block theme resolves a knowledge base request to one of the plugin's
+     * block templates, and those templates render this shortcode for the body
+     * of the view — the same `archive-body` / `category-body` template the
+     * classic layer includes between `get_header()` and `get_footer()`. That
+     * single shared body is what keeps the page identical under a classic
+     * theme, a block theme and any theme in between: one markup, one
+     * stylesheet, no second design to drift.
+     *
+     * @since 1.0.0
+     *
+     * @param array<string, mixed>|string $atts The shortcode attributes.
+     *
+     * @return string The view body markup, or an empty string for an unknown view.
+     */
+    public function render_view_shortcode( $atts = array() ) {
+        $atts = shortcode_atts(
+            array( 'view' => '' ),
+            (array) $atts,
+            self::VIEW_SHORTCODE_TAG
+        );
+
+        $view = isset( self::VIEW_BODIES[ $atts['view'] ] ) ? self::VIEW_BODIES[ $atts['view'] ] : '';
+
+        if ( '' === $view ) {
+            return '';
+        }
+
+        return lisensio_kb_get_template( $view, array(), false );
     }
 
     /**
@@ -270,7 +334,7 @@ class Lisensio_KB_Templates {
         $brand = sanitize_hex_color( (string) $this->settings->get( 'brand_color' ) );
 
         if ( ! is_string( $brand ) || '' === $brand ) {
-            $brand = (string) ( isset( $defaults['brand_color'] ) ? $defaults['brand_color'] : '#2ba377' );
+            $brand = (string) ( isset( $defaults['brand_color'] ) ? $defaults['brand_color'] : '#3c569f' );
         }
 
         $layout         = (string) $this->settings->get( 'layout_width' );
@@ -293,7 +357,7 @@ class Lisensio_KB_Templates {
             '--lisensio-kb-brand-rgb'      => implode( ',', $rgb ),
             '--lisensio-kb-brand-contrast' => self::contrast_color( $rgb ),
             '--lisensio-kb-max-width'      => self::LAYOUT_WIDTHS[ $layout ],
-            '--lisensio-kb-card-shadow'    => 'shadow' === $card ? '0 4px 14px rgba(30,122,90,0.08)' : 'none',
+            '--lisensio-kb-card-shadow'    => 'shadow' === $card ? '0 4px 14px rgba(16,24,40,0.06)' : 'none',
             '--lisensio-kb-card-border'    => 'border' === $card ? '1px solid var(--lisensio-kb-line)' : '1px solid transparent',
             '--lisensio-kb-card-bg'        => 'flat' === $card ? 'transparent' : 'var(--lisensio-kb-surface)',
         );
@@ -328,7 +392,7 @@ class Lisensio_KB_Templates {
         }
 
         if ( 6 !== strlen( $hex ) ) {
-            return array( 43, 163, 119 );
+            return array( 60, 86, 159 );
         }
 
         return array(
@@ -378,6 +442,28 @@ class Lisensio_KB_Templates {
         $settings = new Lisensio_KB_Settings();
 
         return (int) $settings->get( 'archive_columns', self::DEFAULT_ARCHIVE_COLUMNS );
+    }
+
+    /**
+     * The heading the knowledge base archive opens with.
+     *
+     * The `archive_header_text` setting when it holds something, and the
+     * post type archive title otherwise, so a site that clears the setting
+     * still gets a heading rather than an empty rule.
+     *
+     * @since 1.0.0
+     *
+     * @return string The heading text.
+     */
+    public static function archive_title() {
+        $settings = new Lisensio_KB_Settings();
+        $title    = sanitize_text_field( (string) $settings->get( 'archive_header_text' ) );
+
+        if ( '' !== $title ) {
+            return $title;
+        }
+
+        return post_type_archive_title( '', false );
     }
 
     /**

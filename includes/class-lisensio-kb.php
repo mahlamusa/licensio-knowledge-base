@@ -260,6 +260,7 @@ final class Lisensio_KB {
         $this->analytics_privacy->init_hooks();
         $this->settings_api->init_hooks();
         $this->toc->init_hooks();
+        Lisensio_KB_Sidebar::init_hooks();
 
         if ( ! is_admin() ) {
             $import_redirects = new Lisensio_KB_Import_Redirect_Server();

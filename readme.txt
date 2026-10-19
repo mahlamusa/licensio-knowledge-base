@@ -91,12 +91,14 @@ Yes. Every string is translatable under the `lisensio-knowledge-base` text domai
 
 == Screenshots ==
 
-1. The knowledge base archive, rendered by the plugin's own templates.
-2. A single article with breadcrumbs and the helpfulness prompt.
-3. The search block with live type-ahead suggestions.
-4. The analytics dashboard: views, searches and zero-result searches over time.
-5. The feedback inbox.
-6. The settings screen.
+1. The knowledge base home: help topics grouped by category, with the Popular Articles and Need Support sidebar.
+2. A category page listing all of its articles, with the category navigation in the sidebar.
+3. A single article with breadcrumbs, a search bar and an "On this page" table of contents.
+4. The search block with live type-ahead suggestions.
+5. All Articles in the admin, with categories, helpfulness rating, views and reading time columns.
+6. The analytics dashboard: views, searches and zero-result searches over time.
+7. The feedback inbox.
+8. The settings screen.
 
 == Changelog ==
 

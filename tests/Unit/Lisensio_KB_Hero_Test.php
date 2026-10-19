@@ -306,6 +306,7 @@ class Lisensio_KB_Hero_Test extends Lisensio_KB_Test_Case {
         Functions\when( 'get_term_link' )->justReturn( 'https://example.test/docs-category/getting-started/' );
         Functions\when( 'get_ancestors' )->justReturn( array() );
         Functions\when( 'single_term_title' )->justReturn( 'Getting started' );
+        Functions\when( 'get_posts' )->justReturn( array() );
 
         ob_start();
 
@@ -533,6 +534,22 @@ class Lisensio_KB_Hero_Test extends Lisensio_KB_Test_Case {
     }
 
     /**
+     * The views that still render the hero.
+     *
+     * The redesigned archive and category views open with the page header
+     * instead; the hero remains the single article, tag and search opening.
+     *
+     * @since 1.0.0
+     *
+     * @return array<string, string> View name to rendered markup.
+     */
+    private function render_hero_views() {
+        $all = $this->render_every_view();
+
+        return array_intersect_key( $all, array_flip( array( 'single', 'tag', 'search' ) ) );
+    }
+
+    /**
      * The hero paints the last word of its heading, and only that word.
      *
      * @since 1.0.0
@@ -666,7 +683,7 @@ class Lisensio_KB_Hero_Test extends Lisensio_KB_Test_Case {
      * @return void
      */
     public function test_the_hero_is_rendered_outside_the_contained_wrapper() {
-        foreach ( $this->render_every_view() as $view => $markup ) {
+        foreach ( $this->render_hero_views() as $view => $markup ) {
             $bleed = strpos( $markup, 'class="lisensio-kb lisensio-kb--bleed"' );
             $hero  = strpos( $markup, '<header class="lisensio-kb__hero">' );
 
@@ -761,11 +778,31 @@ class Lisensio_KB_Hero_Test extends Lisensio_KB_Test_Case {
      * @return void
      */
     public function test_every_view_renders_exactly_one_hero() {
-        foreach ( $this->render_every_view() as $view => $markup ) {
+        foreach ( $this->render_hero_views() as $view => $markup ) {
             $this->assertSame(
                 1,
                 substr_count( $markup, '<header class="lisensio-kb__hero">' ),
                 $view . ' does not render exactly one hero'
+            );
+            $this->assertSame(
+                1,
+                substr_count( $markup, '<h1' ),
+                $view . ' does not render exactly one first-level heading'
+            );
+        }
+
+        /*
+         * The redesigned views open with the page header instead: no hero
+         * band, still exactly one first-level heading.
+         */
+        foreach ( array(
+            'archive'  => $this->render_archive(),
+            'category' => $this->render_category(),
+        ) as $view => $markup ) {
+            $this->assertSame(
+                0,
+                substr_count( $markup, '<header class="lisensio-kb__hero">' ),
+                $view . ' renders a hero the redesign replaced'
             );
             $this->assertSame(
                 1,
@@ -787,7 +824,7 @@ class Lisensio_KB_Hero_Test extends Lisensio_KB_Test_Case {
      */
     public function test_each_view_puts_its_own_title_through_the_hero() {
         $expected = array(
-            'archive'  => 'Knowledge Base',
+            'archive'  => 'Help Topics',
             'single'   => 'Resetting your password',
             'category' => 'Getting started',
             'tag'      => 'Content',
@@ -797,7 +834,7 @@ class Lisensio_KB_Hero_Test extends Lisensio_KB_Test_Case {
         foreach ( $this->render_every_view() as $view => $markup ) {
             $heading = '';
 
-            if ( preg_match( '#<h1 class="lisensio-kb__title">(.*?)</h1>#s', $markup, $matches ) ) {
+            if ( preg_match( '#<h1 class="lisensio-kb__(?:title|pagehead-title)">(.*?)</h1>#s', $markup, $matches ) ) {
                 $heading = trim( preg_replace( '#\s+#', ' ', wp_strip_all_tags( $matches[1] ) ) );
             }
 
@@ -814,7 +851,7 @@ class Lisensio_KB_Hero_Test extends Lisensio_KB_Test_Case {
      */
     public function test_a_term_description_becomes_the_hero_subtitle() {
         $this->assertStringContainsString(
-            '<p class="lisensio-kb__description">Everything you need to get going.</p>',
+            '<p class="lisensio-kb__pagehead-subtitle">Everything you need to get going.</p>',
             $this->render_category()
         );
 
@@ -834,7 +871,8 @@ class Lisensio_KB_Hero_Test extends Lisensio_KB_Test_Case {
     public function test_a_term_without_a_description_gets_no_hero_subtitle() {
         $markup = $this->render_category( '' );
 
-        $this->assertStringContainsString( '<header class="lisensio-kb__hero">', $markup );
+        $this->assertStringContainsString( '<header class="lisensio-kb__pagehead">', $markup );
+        $this->assertSame( 0, substr_count( $markup, 'lisensio-kb__pagehead-subtitle' ) );
         $this->assertSame( 0, substr_count( $markup, 'lisensio-kb__description' ) );
     }
 
@@ -870,7 +908,7 @@ class Lisensio_KB_Hero_Test extends Lisensio_KB_Test_Case {
             }
         );
 
-        foreach ( $this->render_every_view() as $view => $markup ) {
+        foreach ( $this->render_hero_views() as $view => $markup ) {
             $this->assertStringContainsString(
                 '<section class="theme-page-hero"><h1>THEME HERO</h1></section>',
                 $markup,
@@ -885,22 +923,22 @@ class Lisensio_KB_Hero_Test extends Lisensio_KB_Test_Case {
     }
 
     /**
-     * The archive cards carry no article count.
+     * The archive cards carry their article count beside the title.
      *
-     * The documentation design's cards are icon, title, description and article
-     * list. `category-card.php` keeps counting by default because the grid
-     * block and the category view both want it; the archive turns it off.
+     * The redesign's cards are title, count, article list and View all link.
+     * `category-card.php` counts by default, and the archive keeps it on.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_the_archive_cards_do_not_show_an_article_count() {
+    public function test_the_archive_cards_show_their_article_count() {
         $markup = $this->render_archive();
 
         $this->assertStringContainsString( 'lisensio-kb-card--category', $markup );
         $this->assertStringContainsString( 'Getting started', $markup );
-        $this->assertSame( 0, substr_count( $markup, 'lisensio-kb-card__meta' ) );
+        $this->assertStringContainsString( '<span class="lisensio-kb-card__count">', $markup );
+        $this->assertStringContainsString( '(1 Article)', $markup );
     }
 
     /**
@@ -932,8 +970,8 @@ class Lisensio_KB_Hero_Test extends Lisensio_KB_Test_Case {
             false
         );
 
-        $this->assertStringContainsString( 'lisensio-kb-card__meta', $markup );
-        $this->assertStringContainsString( '3 articles', $markup );
+        $this->assertStringContainsString( 'lisensio-kb-card__count', $markup );
+        $this->assertStringContainsString( '(3 Articles)', $markup );
     }
 
     /**
@@ -946,7 +984,8 @@ class Lisensio_KB_Hero_Test extends Lisensio_KB_Test_Case {
     public function test_the_archive_does_not_render_a_latest_articles_section() {
         $markup = $this->render_archive();
 
-        $this->assertStringContainsString( 'lisensio-kb__grid--cols-3', $markup );
+        $this->assertStringContainsString( 'lisensio-kb__grid--divided', $markup );
+        $this->assertStringContainsString( 'lisensio-kb__grid--cols-2', $markup );
         $this->assertSame( 0, substr_count( $markup, 'Latest articles' ) );
         $this->assertSame( 0, substr_count( $markup, 'lisensio-kb__section-title' ) );
         $this->assertSame( 0, substr_count( $markup, 'lisensio-kb-card--article' ) );
@@ -987,7 +1026,7 @@ class Lisensio_KB_Hero_Test extends Lisensio_KB_Test_Case {
     public function test_the_uncategorised_list_is_absent_when_every_article_is_filed() {
         $markup = $this->render_archive();
 
-        $this->assertStringContainsString( 'lisensio-kb__grid--cols-3', $markup );
+        $this->assertStringContainsString( 'lisensio-kb__grid--cols-2', $markup );
         $this->assertSame( 0, substr_count( $markup, 'Uncategorised' ) );
         $this->assertSame( 0, substr_count( $markup, 'lisensio-kb__section' ) );
     }
@@ -1134,29 +1173,26 @@ class Lisensio_KB_Hero_Test extends Lisensio_KB_Test_Case {
     }
 
     /**
-     * The archive search form sits inside the hero, below the heading.
+     * The archive renders no search form.
      *
-     * The hero is where a reader looks for it, and it is where the reference
-     * design puts it. This asserts the position rather than only the presence,
-     * because the form was previously a sibling of the hero and reverting to
-     * that would still render a working form in roughly the right area - the
-     * kind of regression a presence check cannot see.
+     * The redesign's archive is the Help Topics page: a heading, a rule, the
+     * divided grid and the sidebar, with no hero band and no search box. The
+     * search view still opens with the search form, so the form itself is
+     * asserted there instead.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_the_archive_renders_its_search_form_inside_the_hero_below_the_title() {
+    public function test_the_archive_renders_no_search_form() {
         $markup = $this->render_archive();
 
-        $title  = strpos( $markup, 'class="lisensio-kb__title"' );
-        $search = strpos( $markup, 'class="lisensio-kb__search"' );
-        $close  = strpos( $markup, '</header>' );
+        $this->assertSame( 0, substr_count( $markup, 'lisensio-kb__search' ) );
+        $this->assertSame( 0, substr_count( $markup, '<form role="search"' ) );
 
-        $this->assertNotFalse( $search, 'the archive renders no search form' );
-        $this->assertNotFalse( $title, 'the archive renders no hero title' );
-        $this->assertGreaterThan( $title, $search, 'the search form must follow the heading' );
-        $this->assertLessThan( $close, $search, 'the search form must sit inside the hero' );
+        $search = $this->render_search();
+
+        $this->assertStringContainsString( 'class="lisensio-kb__search"', $search );
     }
 
     /**
@@ -1189,12 +1225,12 @@ class Lisensio_KB_Hero_Test extends Lisensio_KB_Test_Case {
         $this->assertSame( array( 'search-field.php' ), $carriers );
     }
     /**
-     * The archive sidebar carries tags and not a category list.
+     * The archive sidebar carries the redesign widgets, not a category list.
      *
      * The main column of the archive IS the category list, so repeating those
      * links in a narrow column beside the cards that already name them is a
-     * navigation aid that navigates nowhere. Tags are the one thing this view
-     * surfaces nowhere else.
+     * navigation aid that navigates nowhere. The redesign's sidebar is the
+     * Popular Articles and Need Support pair.
      *
      * Asserted rather than left to a comment, because adding the categories
      * back is an obvious-looking change that nothing else would fail on.
@@ -1203,7 +1239,7 @@ class Lisensio_KB_Hero_Test extends Lisensio_KB_Test_Case {
      *
      * @return void
      */
-    public function test_the_archive_sidebar_carries_tags_but_not_categories() {
+    public function test_the_archive_sidebar_carries_popular_articles_but_not_categories() {
         $markup = $this->render_archive();
 
         $at = strpos( $markup, 'lisensio-kb__sidebar' );
@@ -1212,9 +1248,10 @@ class Lisensio_KB_Hero_Test extends Lisensio_KB_Test_Case {
 
         $sidebar = substr( $markup, (int) $at );
 
-        $this->assertStringContainsString( 'lisensio-kb-widget--tags', $sidebar );
+        $this->assertStringContainsString( 'lisensio-kb-widget--popular', $sidebar );
         $this->assertStringNotContainsString( 'lisensio-kb-widget--categories', $sidebar );
         $this->assertStringNotContainsString( 'lisensio-kb-widget--toc', $sidebar );
+        $this->assertStringNotContainsString( 'lisensio-kb-widget--tags', $sidebar );
     }
 
     /**

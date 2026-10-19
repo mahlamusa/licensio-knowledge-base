@@ -85,6 +85,22 @@ class Lisensio_KB_Sidebar {
     const TAG_LIMIT = 40;
 
     /**
+     * How many articles the Popular Articles widget lists.
+     *
+     * @since 1.0.0
+     * @var int
+     */
+    const POPULAR_LIMIT = 5;
+
+    /**
+     * The shortcode twin of the sidebar, for the block template layer.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    const SHORTCODE_TAG = 'lisensio_kb_sidebar';
+
+    /**
      * The settings store, created on first use.
      *
      * @since 1.0.0
@@ -116,6 +132,45 @@ class Lisensio_KB_Sidebar {
      */
     public static function reset() {
         self::$settings = null;
+    }
+
+    /**
+     * Register the sidebar shortcode.
+     *
+     * The classic templates call `render()` directly; the block template layer
+     * cannot, because a block template is static markup. The shortcode is the
+     * one bridge both can cross, which is what keeps a block theme serving the
+     * same sidebar the PHP templates do.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public static function init_hooks() {
+        add_shortcode( self::SHORTCODE_TAG, array( __CLASS__, 'shortcode' ) );
+    }
+
+    /**
+     * Render the sidebar shortcode.
+     *
+     * Accepts a `context` attribute — `archive` or `category` — so the same
+     * tag serves both views with their own widget composition. An unknown
+     * context renders nothing rather than guessing.
+     *
+     * @since 1.0.0
+     *
+     * @param array<string, mixed>|string $atts The shortcode attributes.
+     *
+     * @return string The sidebar markup, or an empty string.
+     */
+    public static function shortcode( $atts = array() ) {
+        $atts = shortcode_atts(
+            array( 'context' => self::CONTEXT_ARCHIVE ),
+            (array) $atts,
+            self::SHORTCODE_TAG
+        );
+
+        return self::render( (string) $atts['context'] );
     }
 
     /**
@@ -218,6 +273,145 @@ class Lisensio_KB_Sidebar {
 
         return 'lisensio-kb--sidebar' . $position;
     }
+
+    /**
+     * The rendered sidebar for a view.
+     *
+     * One composition per context, resolved here rather than repeated in every
+     * template, so the archive and the category archives cannot drift apart
+     * and the shortcode serves both with the same markup:
+     *
+     * - archive:  Popular Articles, then the Need Support card.
+     * - category: the category list with the current one marked, then both of
+     *   the archive widgets — the list is the wayfinding a category view adds.
+     *
+     * The article view keeps its own composition (table of contents,
+     * categories, tags) and is not routed through here: its contents depend on
+     * the article being rendered, which no context constant can name.
+     *
+     * @since 1.0.0
+     *
+     * @param string $context One of the CONTEXT_* constants.
+     *
+     * @return string The `<aside>` markup, or an empty string when the position is `none` or every section is empty.
+     */
+    public static function render( $context ) {
+        if ( self::POSITION_NONE === self::position( $context ) ) {
+            return '';
+        }
+
+        $args = array(
+            'sticky'  => self::is_sticky(),
+            'popular' => self::popular_articles(),
+            'support' => self::support_url(),
+        );
+
+        if ( self::CONTEXT_CATEGORY === $context ) {
+            $queried = get_queried_object();
+
+            $args['categories'] = self::categories();
+            $args['current']    = $queried instanceof WP_Term && Lisensio_KB_Post_Types::TAXONOMY_CATEGORY === $queried->taxonomy
+                ? (int) $queried->term_id
+                : 0;
+        }
+
+        return lisensio_kb_get_template( 'sidebar', $args, false );
+    }
+
+    /**
+     * The articles the Popular Articles widget lists.
+     *
+     * The most-viewed articles when analytics are both enabled and non-empty,
+     * and the most recently published ones otherwise — a knowledge base with
+     * no recorded views yet still has a widget worth reading rather than an
+     * empty panel on a fresh install.
+     *
+     * @since 1.0.0
+     *
+     * @param int $limit How many articles to list. Default self::POPULAR_LIMIT.
+     *
+     * @return WP_Post[] The articles, most viewed or newest first.
+     */
+    public static function popular_articles( $limit = self::POPULAR_LIMIT ) {
+        $limit = max( 1, (int) apply_filters( 'lisensio_kb_popular_limit', (int) $limit ) );
+        $posts = array();
+
+        if ( (bool) self::settings()->get( 'enable_analytics', true ) ) {
+            $rows = Lisensio_KB_Analytics_Repository::top_articles( '0000-00-00 00:00:00', gmdate( 'Y-m-d H:i:s', time() + DAY_IN_SECONDS ), $limit );
+
+            foreach ( $rows as $row ) {
+                $post = get_post( (int) $row['article_id'] );
+
+                if ( $post instanceof WP_Post && 'publish' === $post->post_status ) {
+                    $posts[] = $post;
+                }
+
+                if ( count( $posts ) >= $limit ) {
+                    break;
+                }
+            }
+        }
+
+        if ( count( $posts ) < $limit ) {
+            $recent = get_posts(
+                array(
+                    'post_type'              => Lisensio_KB_Post_Types::POST_TYPE,
+                    'post_status'            => 'publish',
+                    'posts_per_page'         => $limit,
+                    'orderby'                => 'date',
+                    'order'                  => 'DESC',
+                    'ignore_sticky_posts'    => true,
+                    'no_found_rows'          => true,
+                    'update_post_term_cache' => false,
+                )
+            );
+
+            foreach ( is_array( $recent ) ? $recent : array() as $candidate ) {
+                $exists = false;
+
+                foreach ( $posts as $post ) {
+                    if ( (int) $post->ID === (int) $candidate->ID ) {
+                        $exists = true;
+                        break;
+                    }
+                }
+
+                if ( ! $exists ) {
+                    $posts[] = $candidate;
+                }
+
+                if ( count( $posts ) >= $limit ) {
+                    break;
+                }
+            }
+        }
+
+        return $posts;
+    }
+
+    /**
+     * The URL the Contact Support button leads to.
+     *
+     * Empty means the Need Support card is not shown at all: a button with
+     * nowhere to go is worse than no button.
+     *
+     * @since 1.0.0
+     *
+     * @return string The URL, or an empty string.
+     */
+    public static function support_url() {
+        /**
+         * Filter the URL behind the sidebar Contact Support button.
+         *
+         * @since 1.0.0
+         *
+         * @param string $url The URL from the support_url setting, or an empty string.
+         */
+        $url = (string) apply_filters( 'lisensio_kb_support_url', (string) self::settings()->get( 'support_url' ) );
+
+        return '' === $url ? '' : esc_url( $url );
+    }
+
 
     /**
      * The categories the sidebar lists.
@@ -323,5 +517,24 @@ class Lisensio_KB_Sidebar {
      */
     public static function is_term( $term ) {
         return $term instanceof WP_Term;
+    }
+
+    /**
+     * Whether a value is a published article.
+     *
+     * The popular list is built from analytics rows and a recent-posts
+     * fallback, and either source can hand back less than a live post: an
+     * article deleted after its views were counted, or a value no caller
+     * should have passed at all. The list is filtered rather than trusted.
+     *
+     * @since 1.0.0
+     *
+     * @param mixed $post The candidate.
+     *
+     * @return bool True when the value is a published article.
+     */
+    public static function is_post( $post ) {
+        return $post instanceof WP_Post && 'publish' === $post->post_status
+            && Lisensio_KB_Post_Types::POST_TYPE === $post->post_type;
     }
 }

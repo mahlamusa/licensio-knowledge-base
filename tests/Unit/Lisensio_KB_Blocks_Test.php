@@ -1264,9 +1264,10 @@ class Lisensio_KB_Blocks_Test extends Lisensio_KB_Test_Case {
 
         $block = $this->render_callback( 'lisensio-kb/category-grid' );
 
-        $this->assertStringContainsString( 'lisensio-kb-card__meta', $block( array(), '', null ) );
+        $this->assertStringContainsString( 'lisensio-kb-card__count', $block( array(), '', null ) );
+        $this->assertStringContainsString( '(9 Articles)', $block( array(), '', null ) );
         $this->assertStringNotContainsString(
-            'lisensio-kb-card__meta',
+            'lisensio-kb-card__count',
             $block( array( 'showCount' => false ), '', null )
         );
     }

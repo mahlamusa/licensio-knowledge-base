@@ -2,16 +2,17 @@
 /**
  * Category card.
  *
- * One category in a grid: its icon, its name, its description, the first few
- * articles filed beneath it and a preview of its sub-categories, with the
- * article count kept as secondary meta at the foot of the card. Override from a
- * theme by copying this file to `lisensio-kb/category-card.php`.
+ * One category in a grid: its name with its article count beside it, the
+ * first few articles filed beneath it each behind a document icon, and a
+ * View all link into the category archive. Override from a theme by copying
+ * this file to `lisensio-kb/category-card.php`.
  *
  * Three meta keys can supply the icon and only one of them is drawn. The order
  * is inline SVG, then the uploaded attachment, then the dashicon name — most
  * specific first, and set out in full on Lisensio_KB_Term_Meta.
  *
  * @package Lisensio_KB
+ * @since   1.0.0 Redesigned to the Help Topics card: inline article count, icon-fronted article links and a View all link.
  * @since   1.0.0 Added the article list, so a card says what is in the category rather than only how much.
  *
  * @var array $args {
@@ -19,7 +20,7 @@
  *
  *     @type WP_Term $term          The category.
  *     @type bool    $show_children Whether to list the direct sub-categories. Default true.
- *     @type bool    $show_count    Whether to show the article count. Default true.
+ *     @type bool    $show_count    Whether to show the article count beside the name. Default true.
  *     @type bool    $show_icon     Whether to show the category icon. Default false.
  *     @type bool    $show_articles Whether to list the articles in the category. Default true.
  *     @type int     $article_limit How many articles the list is capped at. Default 3.
@@ -70,8 +71,8 @@ $lisensio_kb_icon           = $lisensio_kb_show_icon && '' === $lisensio_kb_icon
              * `script`, no `foreignObject`, no `on*` handler and no `href` that
              * is not a same-document fragment. Reading it back out is not a
              * shortcut past the write-side sanitisation; it is the reason a row
-             * written by an importer or by hand is as safe as one written by
-             * the term form.
+             * written by an importer or by hand is as safe as one written by the
+             * term form.
              */
             echo $lisensio_kb_icon_svg; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Allowlist-sanitized on read by Lisensio_KB_Term_Meta::get_icon_svg().
             ?>
@@ -99,18 +100,32 @@ $lisensio_kb_icon           = $lisensio_kb_show_icon && '' === $lisensio_kb_icon
             <?php echo esc_html( $lisensio_kb_category->name ); ?>
         </a>
     </h3>
-    </div>
 
-    <?php if ( '' !== $lisensio_kb_category->description ) : ?>
-        <p class="lisensio-kb-card__excerpt"><?php echo esc_html( $lisensio_kb_category->description ); ?></p>
+    <?php if ( $lisensio_kb_show_count ) : ?>
+        <span class="lisensio-kb-card__count">
+            <?php
+            printf(
+                esc_html(
+                    /* translators: %s: number of articles. */
+                    _n( '(%s Article)', '(%s Articles)', $lisensio_kb_category_count, 'lisensio-knowledge-base' )
+                ),
+                esc_html( number_format_i18n( $lisensio_kb_category_count ) )
+            );
+            ?>
+        </span>
     <?php endif; ?>
+    </div>
 
     <?php if ( ! empty( $lisensio_kb_articles ) ) : ?>
         <ul class="lisensio-kb-card__articles">
             <?php foreach ( $lisensio_kb_articles as $lisensio_kb_article ) : ?>
                 <li class="lisensio-kb-card__article">
                     <a class="lisensio-kb-card__article-link" href="<?php echo esc_url( (string) get_permalink( $lisensio_kb_article ) ); ?>">
-                        <?php echo esc_html( get_the_title( $lisensio_kb_article ) ); ?>
+                        <svg class="lisensio-kb-card__article-icon" viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M4 1.5h5.2L12.5 4.8V14.5H4z" />
+                            <path d="M9 1.5v3.5h3.5" stroke-linecap="round" />
+                        </svg>
+                        <span class="lisensio-kb-card__article-title"><?php echo esc_html( get_the_title( $lisensio_kb_article ) ); ?></span>
                     </a>
                 </li>
             <?php endforeach; ?>
@@ -129,17 +144,11 @@ $lisensio_kb_icon           = $lisensio_kb_show_icon && '' === $lisensio_kb_icon
         </ul>
     <?php endif; ?>
 
-    <?php if ( $lisensio_kb_show_count ) : ?>
-        <p class="lisensio-kb-card__meta">
-            <?php
-            printf(
-                esc_html(
-                    /* translators: %s: number of articles. */
-                    _n( '%s article', '%s articles', $lisensio_kb_category_count, 'lisensio-knowledge-base' )
-                ),
-                esc_html( number_format_i18n( $lisensio_kb_category_count ) )
-            );
-            ?>
-        </p>
-    <?php endif; ?>
+    <a class="lisensio-kb-card__view-all" href="<?php echo esc_url( $lisensio_kb_category_url ); ?>">
+        <?php echo esc_html__( 'View all', 'lisensio-knowledge-base' ); ?>
+        <svg class="lisensio-kb-card__view-all-icon" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+            <circle cx="8" cy="8" r="6.9" />
+            <path d="M6.8 5.2 9.6 8l-2.8 2.8" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+    </a>
 </article>

@@ -2,12 +2,12 @@
 /**
  * Article and category sidebar.
  *
- * Three sections in the order the reference implementation uses them: the
- * table of contents for the article being read, the knowledge base categories,
- * and the tags. Each one is skipped entirely when it has nothing to show, and
- * when all three are empty the file prints nothing at all — which is what lets
- * the calling template drop the two-column layout rather than reserve a column
- * for an empty box.
+ * The sections a view's sidebar is composed of: the table of contents for the
+ * article being read, the knowledge base categories, the tags, the popular
+ * articles and the Need Support card. Each one is skipped entirely when it has
+ * nothing to show, and when all of them are empty the file prints nothing at
+ * all — which is what lets the calling template drop the two-column layout
+ * rather than reserve a column for an empty box.
  *
  * The side the sidebar sits on is not decided here. It is a modifier class on
  * the layout wrapper, the way the reference encodes it, so the same markup
@@ -16,6 +16,7 @@
  * Override from a theme by copying this file to `lisensio-kb/sidebar.php`.
  *
  * @package Lisensio_KB
+ * @since   1.0.0 Added the Popular Articles and Need Support sections.
  * @since   1.0.0
  *
  * @var array $args {
@@ -26,6 +27,8 @@
  *     @type WP_Term[]                         $categories Optional. The categories to list. Default empty.
  *     @type WP_Term[]                         $tags       Optional. The tags to list. Default empty.
  *     @type int                               $current    Optional. Term ID to mark as the one being read. Default 0.
+ *     @type WP_Post[]                         $popular    Optional. The articles the Popular Articles widget lists. Default empty.
+ *     @type string                            $support    Optional. The URL behind the Contact Support button. Empty hides the card. Default ''.
  * }
  */
 
@@ -36,6 +39,10 @@ $lisensio_kb_headings   = isset( $args['toc'] ) && is_array( $args['toc'] ) ? $a
 $lisensio_kb_categories = isset( $args['categories'] ) && is_array( $args['categories'] ) ? $args['categories'] : array();
 $lisensio_kb_tags       = isset( $args['tags'] ) && is_array( $args['tags'] ) ? $args['tags'] : array();
 $lisensio_kb_current    = isset( $args['current'] ) ? (int) $args['current'] : 0;
+$lisensio_kb_popular    = isset( $args['popular'] ) && is_array( $args['popular'] )
+    ? array_values( array_filter( $args['popular'], array( 'Lisensio_KB_Sidebar', 'is_post' ) ) )
+    : array();
+$lisensio_kb_support    = isset( $args['support'] ) ? (string) $args['support'] : '';
 
 /*
  * A single heading is a link to a page the reader is already looking at, so
@@ -47,7 +54,7 @@ $lisensio_kb_toc = count( $lisensio_kb_headings ) >= Lisensio_KB_TOC::MIN_HEADIN
     ? Lisensio_KB_TOC::tree( $lisensio_kb_headings )
     : array();
 
-if ( empty( $lisensio_kb_toc ) && empty( $lisensio_kb_categories ) && empty( $lisensio_kb_tags ) ) {
+if ( empty( $lisensio_kb_toc ) && empty( $lisensio_kb_categories ) && empty( $lisensio_kb_tags ) && empty( $lisensio_kb_popular ) && '' === $lisensio_kb_support ) {
     return;
 }
 
@@ -122,6 +129,40 @@ $lisensio_kb_sidebar_class = 'lisensio-kb__sidebar' . ( $lisensio_kb_sticky ? ' 
                 <?php endforeach; ?>
             </ul>
         </nav>
+    <?php endif; ?>
+
+    <?php if ( ! empty( $lisensio_kb_popular ) ) : ?>
+        <nav class="lisensio-kb-widget lisensio-kb-widget--popular" aria-label="<?php esc_attr_e( 'Popular articles', 'lisensio-knowledge-base' ); ?>">
+            <h2 class="lisensio-kb-widget__title"><?php esc_html_e( 'Popular Articles', 'lisensio-knowledge-base' ); ?></h2>
+
+            <ul class="lisensio-kb-widget__list lisensio-kb-widget__list--articles">
+                <?php foreach ( $lisensio_kb_popular as $lisensio_kb_article ) : ?>
+                    <li class="lisensio-kb-widget__item">
+                        <a class="lisensio-kb-widget__link lisensio-kb-widget__link--article" href="<?php echo esc_url( (string) get_permalink( $lisensio_kb_article ) ); ?>">
+                            <svg class="lisensio-kb-widget__article-icon" viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M4 1.5h5.2L12.5 4.8V14.5H4z" />
+                                <path d="M9 1.5v3.5h3.5" stroke-linecap="round" />
+                            </svg>
+                            <span class="lisensio-kb-widget__article-title"><?php echo esc_html( get_the_title( $lisensio_kb_article ) ); ?></span>
+                        </a>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        </nav>
+    <?php endif; ?>
+
+    <?php if ( '' !== $lisensio_kb_support ) : ?>
+        <aside class="lisensio-kb-widget lisensio-kb-widget--support">
+            <h2 class="lisensio-kb-widget__title"><?php esc_html_e( 'Need Support?', 'lisensio-knowledge-base' ); ?></h2>
+
+            <p class="lisensio-kb-widget__support-text">
+                <?php esc_html_e( 'Can’t find what you’re looking for? Get in touch and we’ll help you out.', 'lisensio-knowledge-base' ); ?>
+            </p>
+
+            <a class="lisensio-kb-widget__button" href="<?php echo esc_url( $lisensio_kb_support ); ?>">
+                <?php esc_html_e( 'Contact Support', 'lisensio-knowledge-base' ); ?>
+            </a>
+        </aside>
     <?php endif; ?>
 
 </aside>

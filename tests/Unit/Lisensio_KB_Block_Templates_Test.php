@@ -419,7 +419,7 @@ class Lisensio_KB_Block_Templates_Test extends Lisensio_KB_Test_Case {
 
         $this->assertInstanceOf( 'WP_Block_Template', $template );
         $this->assertSame( 'taxonomy-lisensio_category', $template->slug );
-        $this->assertStringContainsString( 'lisensio-kb--category', $template->content );
+        $this->assertStringContainsString( '[lisensio_kb_view view="category"]', $template->content );
     }
 
     /**
@@ -877,7 +877,34 @@ class Lisensio_KB_Block_Templates_Test extends Lisensio_KB_Test_Case {
     }
 
     /**
-     * Every listing template drives a Query Loop over the article post type.
+     * The redesigned views render the shared body through the view shortcode.
+     *
+     * The archive and the category template no longer drive their own Query
+     * Loop: they render `[lisensio_kb_view]`, which includes the same body
+     * template the classic layer includes, so a block theme and a classic
+     * theme serve the same markup.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_redesigned_views_render_the_shared_body_shortcode() {
+        $views = array(
+            'archive-lisensio_article'   => 'archive',
+            'taxonomy-lisensio_category' => 'category',
+        );
+
+        foreach ( $views as $slug => $view ) {
+            $template = $this->block_templates->build_template( $slug, 'wp_template' );
+
+            $this->assertInstanceOf( 'WP_Block_Template', $template, $slug );
+            $this->assertStringContainsString( '[lisensio_kb_view view="' . $view . '"]', $template->content, $slug );
+            $this->assertStringNotContainsString( '<!-- wp:query ', $template->content, $slug );
+        }
+    }
+
+    /**
+     * The remaining listing templates drive a Query Loop over the article post type.
      *
      * @since 1.0.0
      *
@@ -885,8 +912,6 @@ class Lisensio_KB_Block_Templates_Test extends Lisensio_KB_Test_Case {
      */
     public function test_the_listing_templates_drive_a_query_loop_over_articles() {
         $listings = array(
-            'archive-lisensio_article',
-            'taxonomy-lisensio_category',
             'taxonomy-lisensio_tag',
             'search-lisensio_article',
         );
@@ -902,14 +927,23 @@ class Lisensio_KB_Block_Templates_Test extends Lisensio_KB_Test_Case {
     }
 
     /**
-     * Every shipped template pulls in the shared knowledge base header part.
+     * The templates that still open with the hero pull in the shared header part.
+     *
+     * The redesigned archive and category views dropped the part along with
+     * the hero band it carried; single, tag and search still open with it.
      *
      * @since 1.0.0
      *
      * @return void
      */
     public function test_every_template_pulls_in_the_shared_header_part() {
-        foreach ( array_keys( $this->block_templates->templates() ) as $slug ) {
+        $with_part = array(
+            'single-' . Lisensio_KB_Post_Types::POST_TYPE,
+            'taxonomy-' . Lisensio_KB_Post_Types::TAXONOMY_TAG,
+            'search-' . Lisensio_KB_Post_Types::POST_TYPE,
+        );
+
+        foreach ( $with_part as $slug ) {
             $template = $this->block_templates->build_template( $slug, 'wp_template' );
 
             $this->assertInstanceOf( 'WP_Block_Template', $template, $slug );
