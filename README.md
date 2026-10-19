@@ -60,22 +60,34 @@ define( 'HMR_DEV', 'lisensio-kb' );
 ### Building a release
 
 ```bash
-bin/build-release.sh --dry-run   # build, verify, print both manifests, discard
+bin/build-release.sh --dry-run   # build, verify, print all three manifests, discard
 bin/build-release.sh             # the same, but write the zips into releases/
 ```
 
-One command produces both artifacts from a clean checkout:
+One command produces all three artifacts from a clean checkout:
 
 | Artifact | Contents |
 |---|---|
 | `lisensio-knowledge-base.zip` | the free plugin; no `pro/` path anywhere in it |
 | `lisensio-knowledge-base-pro.zip` | the same tree plus `pro/` |
+| `lisensio-knowledge-base-wporg.zip` | the free plugin plus the sources `dist/` is built from (`apps/`, `blocks/`, `tools/build-*.mjs`, `package.json`, `package-lock.json`, `vite.config.mjs`) |
 
-Both run the production Vite and `wp-scripts` builds first and ship compiled `dist/` output only. `libraries/` ships in both — it is the Strauss-prefixed StellarWP DB and the plugin cannot run without it.
+All three run the production Vite and `wp-scripts` builds first. The free and pro zips ship compiled `dist/` output only. The wporg zip exists because WordPress.org requires the human-readable source of every compiled file and this repository is private: it is the plugin review upload and becomes SVN `trunk/`. `libraries/` ships in all three — it is the Strauss-prefixed StellarWP DB and the plugin cannot run without it.
 
-The staged tree is assembled from an **allowlist** (`SHIP_PATHS` in the script), not by pruning a copy of the repository. An exclude list ships whatever it has not heard of yet; an allowlist fails in the safe direction. Nothing under `tools/` or `tests/`, no sources, no `node_modules` and no dev config reaches either zip, and a second assertion re-checks that after staging.
+The staged tree is assembled from an **allowlist** (`SHIP_PATHS` in the script), not by pruning a copy of the repository. An exclude list ships whatever it has not heard of yet; an allowlist fails in the safe direction. Nothing under `tools/` or `tests/`, no sources, no `node_modules` and no dev config reaches the free or pro zip, and a second assertion re-checks that after staging. The wporg zip is allowed exactly the source paths listed above and nothing else from the forbidden list; `tools/migrate-heroic/` stays out of it.
 
 `bin/build-release.sh` requires `php`, `zip`, `unzip`, `npm` and WP-CLI. WP-CLI is used only to generate `languages/lisensio-knowledge-base.pot`; if it is not on `PATH` the script downloads `wp-cli.phar` into `.tmp/`, or you can point `WP_CLI_BIN` at your own.
+
+### Publishing a release
+
+| Command | What it does |
+|---|---|
+| `npm run version:bump -- X.Y.Z` | `bin/bump-version.sh`: writes the version into the plugin header, `LISENSIO_KB_VERSION`, `Stable tag` and `package.json`/`package-lock.json`, then runs `bin/check-versions.sh`. Commits nothing. |
+| `npm run release` | `bin/build-release.sh`: the three zips above, into `releases/`. |
+| `npm run release:github [-- X.Y.Z]` | `bin/github-release.sh`: from a clean tree whose HEAD is the pushed `vX.Y.Z` tag, rebuilds and opens a **draft** GitHub release with the free and pro zips and the readme changelog entry as notes. |
+| `npm run wporg:publish [-- X.Y.Z]` | `bin/wp-org-publish.sh`: rebuilds, then stages the WordPress.org SVN working copy (`/tmp/lisensio-knowledge-base-svn`): `trunk/` gets the wporg build, `tags/X.Y.Z/` is synced to exactly the free zip, `assets/` mirrors `.wordpress-org/`. It stops before `svn ci`. While the plugin has no SVN repository yet, it prints the wporg zip to upload for review and exits with status 2. |
+
+None of these push to git or commit to SVN. The two local Claude skills `prepare-git-release` and `prepare-wporg-release` (in the git-ignored `.claude/skills/`) walk through the full sequence, including the gates and the confirmations.
 
 ### Release gates
 
@@ -88,7 +100,7 @@ The build refuses to package when any of these fails, and CI runs all of them in
 | `bin/check-free-boundary.sh` | the free artifact contains no `pro/` path and no SLSWC or WooCommerce symbol |
 | `bin/check-gates-selftest.sh` | each of the three gates above still goes red on a violation, and still goes green on something that only looks like one |
 
-The boundary check is about **symbols**, not prose. Two shipped files name WooCommerce in a comment and must keep doing so, so PHP is run through `bin/php-code-only.php` — PHP's own tokeniser, not a regex — and the patterns are matched against the code that is left. Files under `dist/` are minified: a minifier mints identifiers like `wC(` and `WC_a`, so bundles are matched against the long tokens (`slswc`, `woocommerce`, `wcSettings`, `wc/v1`) only. The hole that would open there — a WooCommerce call written in `apps/` or `blocks/` and only ever shipped minified — is closed by scanning those source directories with the full pattern set even though they are not themselves shipped.
+The boundary check is about **symbols**, not prose. Two shipped files name WooCommerce in a comment and must keep doing so, so PHP is run through `bin/php-code-only.php` — PHP's own tokeniser, not a regex — and the patterns are matched against the code that is left. Files under `dist/` are minified: a minifier mints identifiers like `wC(` and `WC_a`, so bundles are matched against the long tokens (`slswc`, `woocommerce`, `wcSettings`, `wc/v1`) only. The hole that would open there — a WooCommerce call written in `apps/` or `blocks/` and only ever shipped minified — is closed by scanning those source directories with the full pattern set even though the free zip does not ship them. The wporg zip does ship them, and its boundary check covers them along with the npm manifests and build config beside them.
 
 There is no per-line exemption marker. `readme.txt` therefore answers *"Does this require any other plugin?"* rather than naming the plugin it does not require: a legitimate free-side mention has to be an argued change to the pattern list, reviewed like any other.
 

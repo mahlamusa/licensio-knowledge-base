@@ -1,8 +1,8 @@
 === Lisensio Knowledge Base ===
-Contributors: lisensio
-Tags: knowledge base, documentation, faq, support, help desk
+Contributors: mahlamusa
+Tags: knowledge base, documentation, faq, help center, docs
 Requires at least: 6.4
-Tested up to: 6.8
+Tested up to: 7.1
 Requires PHP: 7.4
 Stable tag: 1.0.0
 License: GPLv2 or later
@@ -14,31 +14,48 @@ A fast, standalone knowledge base with block-first authoring, relevant search an
 
 Lisensio Knowledge Base turns WordPress into a documentation and self-service support site. It is completely standalone: it needs no other plugin, no e-commerce platform and no external service.
 
-Articles are a first-class post type with their own categories and tags, their own templates, and their own search index. Everything a visitor does — the searches that found nothing, the articles that were read, the answers that were voted unhelpful — is recorded without ever storing an IP address, and reported back to you in the admin.
+Articles are a post type of their own, with their own categories and tags, their own templates and their own search index. Everything a visitor does (the searches that found nothing, the articles that were read, the answers voted unhelpful) is recorded without ever storing an IP address, and reported back to you in the admin.
+
+= A knowledge base home that points the way =
+
+* A help topics page that groups every article under its category, with an article count beside each category name and a View all link into it.
+* A sidebar with Popular Articles (your most viewed) and a Need Support card that leads wherever you choose, such as your contact page.
+* Category pages that list every article in the category, with the full category list in the sidebar and the current one highlighted.
+* Single articles with breadcrumbs, a search bar, the last-updated date, and an "On this page" table of contents built from the article's headings.
 
 = Authoring =
 
-* A `Knowledge Base` post type with category and tag taxonomies, category icons and per-term descriptions.
-* Five dynamic blocks — search, article list, category grid, breadcrumbs and FAQ — each previewed in the editor by the same code that renders it on the front end.
-* Every block is also a shortcode (`[lisensio_kb_search]`, `[lisensio_kb_articles]`, `[lisensio_kb_categories]`, `[lisensio_kb_breadcrumbs]`, `[lisensio_kb_faq]`), so page builders and classic themes get identical markup.
+* A Knowledge Base post type with category and tag taxonomies.
+* Category icons (inline SVG, sanitized on save, or an image), descriptions and a manual display order.
+* Admin list columns for categories, tags, attachments, helpfulness rating, views and reading time, so you can see at a glance which articles work.
+* Five dynamic blocks, each previewed in the editor by the same code that renders it on the front end.
+* **Knowledge Base Search** block: an instant search box with keyboard-navigable suggestions.
+* **Knowledge Base Articles** block: a list of articles, optionally filtered to one category.
+* **Knowledge Base Categories** block: a grid of categories with their article counts.
+* **Knowledge Base Breadcrumbs** block: the trail from the site home to the article or category being viewed.
+* **Knowledge Base FAQ** block: articles as an expandable list of questions and answers.
+* Every block is also a shortcode (`[lisensio_kb_search]`, `[lisensio_kb_articles]`, `[lisensio_kb_categories]`, `[lisensio_kb_breadcrumbs]`, `[lisensio_kb_faq]`), and the sidebar is available as `[lisensio_kb_sidebar]`, so page builders and classic themes get identical markup.
 
 = Search that finds things =
 
-* A dedicated search index maintained as articles are saved, so search does not depend on `WP_Query`'s post search.
+* A dedicated search index, kept up to date as articles are saved, so search does not depend on WordPress's own post search.
 * MySQL FULLTEXT relevance ranking where the server supports it, with an automatic fallback that keeps working where it does not.
-* Type-ahead suggestions on the front end from a dependency-free script with full ARIA combobox semantics and keyboard navigation.
-* Every search is logged, including the ones that returned nothing — the fastest way to find the article you have not written yet.
+* Type-ahead suggestions with the matching words highlighted, from a dependency-free script with full ARIA combobox semantics and keyboard navigation.
+* Every search is logged, including the ones that returned nothing: the fastest way to find the article you have not written yet.
+* Rebuild the index from **Knowledge Base > Tools > Search Index**, or with `wp lisensio-kb reindex` from WP-CLI.
 
 = Feedback =
 
-* Was this helpful? voting on every article, with an optional comment.
-* A feedback inbox in the admin for reading, triaging and clearing responses.
+* "Was this helpful?" voting on every article, with a comment box after a negative vote.
+* A feedback inbox for reading, filtering and triaging responses as New, Reviewed or Actioned, with bulk actions.
+* A helpfulness score per article, shown in the article list and sortable.
 
 = Analytics, without tracking people =
 
-* Article views, searches, zero-result searches and helpfulness, reported in a dashboard with sortable tables and trend charts.
-* Visitors are counted through a rotating, salted hash. No IP address is ever written to the database.
-* A retention cron prunes raw events on a schedule you choose, and the privacy layer answers WordPress's personal-data export and erase requests.
+* Searches, search effectiveness, article views and empty searches, reported in a dashboard with a date-range picker and an activity chart.
+* A "Questions with no answer" list of the searches that found nothing, each with a one-click link to write the missing article.
+* Visitors are counted through a salted hash that rotates every day. No IP address is ever written to the database.
+* Analytics can be switched off entirely. Raw events are pruned after the retention period you choose, and WordPress's personal-data export and erase tools cover the plugin's data.
 
 = Switching from another knowledge base =
 
@@ -48,46 +65,129 @@ Articles are a first-class post type with their own categories and tags, their o
 * A migration log records every item: what it was, where it went, its categories, each meta field and whether it was carried over, and a plain-language reason for anything that failed.
 * The old plugin's data is only ever read, never changed, and no IP address from its analytics tables is imported.
 
-= Themes =
+= Tools for keeping it tidy =
 
-* Classic PHP templates for archives, single articles, categories and tags, all overridable from your theme.
-* Block templates and a template part registered with the Site Editor, so block themes can edit the knowledge base like any other template.
+* **Duplicates**: finds articles and terms that exist twice, typically after a migration, and resolves each set: one article is kept and its twins go to the trash.
+* **Data maintenance**: recount every article's helpfulness score from the raw votes, or delete analytics past the retention window now instead of waiting for the scheduled cleanup.
+
+= Make it look like your site =
+
+* One brand colour drives links, buttons and accents; a readable text colour is picked for you.
+* Choose the layout width, the card style (raised, outlined or flat), the archive header (solid colour, gradient or image), the archive heading, the search placeholder and the number of category columns.
+* Put the sidebar on the left, the right or nowhere, separately for the home, categories and articles, and make it follow the reader down long articles.
+* Choose your own article, category and tag URL bases, with optional nested category URLs.
+
+= Works with any theme =
+
+* Classic PHP templates for the archive, single articles, categories and tags, all overridable from your theme.
+* Block templates registered with the Site Editor, so block themes can edit the knowledge base like any other template.
 * Both layers fire the same hooks, so anything you attach works under either.
+
+= For developers =
+
+* More than 60 actions and filters, all prefixed `lisensio_`.
+* A REST API under `lisensio-kb/v1` for search, feedback, analytics and settings.
+* A `manage_lisensio_kb` capability, granted to administrators and editors, controls every knowledge base screen.
+* Every string is translatable under the `lisensio-knowledge-base` text domain.
 
 == Installation ==
 
-1. Upload the `lisensio-knowledge-base` folder to `/wp-content/plugins/`, or install the plugin through the **Plugins > Add New** screen.
+1. In the WordPress admin, go to **Plugins > Add New**, search for "Lisensio Knowledge Base" and click **Install Now**. Or upload the `lisensio-knowledge-base` folder to `/wp-content/plugins/`.
 2. Activate the plugin through the **Plugins** screen.
-3. Visit **Knowledge Base > Settings** to choose your archive slug and analytics retention period.
-4. Visit **Settings > Permalinks** once if your article URLs do not resolve immediately.
+3. Add your first articles under **Knowledge Base > Add New Article**, and file them into categories.
+4. Visit **Knowledge Base > Settings** to set your URL bases, brand colour, sidebar and analytics retention.
+5. If article URLs do not resolve straight away, visit **Settings > Permalinks** once to refresh them.
 
-The plugin creates its own database tables on activation. On a multisite network it creates them per site, including for sites added later.
+Your knowledge base is served at `/docs/` by default. The plugin creates its own database tables on activation. On a multisite network it creates them per site, including for sites added later.
 
 == Frequently Asked Questions ==
 
 = Does this require any other plugin? =
 
-No. The plugin is entirely standalone: no e-commerce plugin, no licensing plugin, no page builder and no external service. Install it on a bare WordPress site and it works.
+No. The plugin is entirely standalone: no e-commerce plugin, no page builder and no external service. Install it on a bare WordPress site and it works.
 
-= What happens to my articles if I deactivate the plugin? =
+= Will it work with my theme? =
 
-Nothing. Deactivating leaves all content and data in place. Data is only removed when you delete the plugin, and then only if you have opted in to data removal on the settings screen.
-
-= Does the plugin store visitors' IP addresses? =
-
-No. Visitors are identified by a salted hash that rotates on a schedule, which is enough to avoid double-counting a page view but not enough to re-identify anyone. No IP address is written to any table.
+Yes. Classic themes get the plugin's own PHP templates, and block themes get Site Editor templates. Both use the same stylesheet, and the brand colour, layout width and card style settings help it match your site.
 
 = Can I override the templates in my theme? =
 
 Yes. Copy any file from the plugin's `templates/` directory into a `lisensio-kb/` directory in your theme and edit it there. If you use a block theme, the block templates are editable directly in the Site Editor.
 
+= Can I change the /docs/ address? =
+
+Yes. Under **Knowledge Base > Settings > Slugs and permalinks** you can set the article, category and tag bases, and choose whether category URLs include their parent categories.
+
+= How do I show the "Need Support?" card? =
+
+Enter a URL under **Knowledge Base > Settings > Sidebar > Support URL**, such as your contact page. The card stays hidden while the field is empty.
+
 = Does search need a third-party service? =
 
 No. Search runs against a table in your own database, using MySQL FULLTEXT indexing where your server supports it and a portable fallback where it does not.
 
+= Does the plugin store visitors' IP addresses? =
+
+No. Visitors are identified by a salted hash that rotates every day, which is enough to avoid double-counting a page view but not enough to re-identify anyone. No IP address is written to any table. See the Privacy section below.
+
+= Can I move my articles over from Heroic Knowledge Base or BetterDocs? =
+
+Yes. The import wizard under **Knowledge Base > Tools** carries over articles, categories, tags, votes, views and searches, sets up redirects from the old URLs, and can be run with a dry run first. The old plugin does not need to be active.
+
+= What happens to my articles if I deactivate the plugin? =
+
+Nothing. Deactivating leaves all content and data in place. Data is only removed when you delete the plugin, and then only if you have turned on **Delete everything on uninstall** under **Knowledge Base > Settings > Privacy**.
+
+= Who can manage the knowledge base? =
+
+Administrators and editors. Both are given the `manage_lisensio_kb` capability on activation, and you can grant it to other roles with any role editor.
+
 = Is the plugin translatable? =
 
 Yes. Every string is translatable under the `lisensio-knowledge-base` text domain, and a `.pot` file ships in `languages/`.
+
+== Privacy ==
+
+Lisensio Knowledge Base stores the following in your own database, and sends nothing anywhere else:
+
+* **Article views and searches**, each with a visitor hash, the time, and (for searches) the search terms and the number of results. The visitor hash is an HMAC of the IP address and user agent with a secret salt that rotates every day, so it cannot be reversed or matched across days. The IP address itself is never stored or logged.
+* **Feedback votes and comments** that visitors choose to leave on an article, with the same visitor hash and, for a signed-in visitor, their user ID.
+
+Analytics can be switched off under **Knowledge Base > Settings > Privacy**, where you also set how long analytics are kept before they are deleted automatically. The plugin registers personal-data exporters and erasers with WordPress's privacy tools.
+
+The plugin sets no cookies of its own and loads no third-party scripts, fonts or images.
+
+== External services ==
+
+This plugin does not connect to any external service. Search, analytics and every admin screen run entirely on your own server, and all scripts and styles ship inside the plugin.
+
+== Source code and build tools ==
+
+The admin screens and the editor blocks are compiled. The compiled files are in `dist/`, and their full, human-readable source is published alongside the plugin in the WordPress.org SVN repository:
+
+* SVN trunk: https://plugins.svn.wordpress.org/lisensio-knowledge-base/trunk/
+* `apps/`: the Vue 3 admin applications (settings, analytics, feedback and tools).
+* `blocks/`: the editor blocks.
+* `package.json`, `package-lock.json`, `vite.config.mjs` and `tools/build-apps.mjs` / `tools/build-blocks.mjs`: the build configuration.
+
+To rebuild `dist/` from source, install Node.js 22 or later, then run `npm ci` followed by `npm run build` in the plugin folder.
+
+The admin applications are built with Vite and the blocks with `@wordpress/scripts`. Everything in `assets/`, `includes/` and `templates/` ships uncompiled.
+
+== Third-party libraries ==
+
+Bundled into the compiled admin applications in `dist/`:
+
+* Vue 3.5.42, MIT License, https://github.com/vuejs/core
+* Pinia 2.3.1, MIT License, https://github.com/vuejs/pinia
+* Ant Design Vue 4.2.6, MIT License, https://github.com/vueComponent/ant-design-vue
+* Chart.js 4.5.1, MIT License, https://github.com/chartjs/Chart.js
+
+These are installed together with the smaller packages they depend on, at the exact versions pinned in `package-lock.json`.
+
+Included as PHP source in `libraries/`:
+
+* StellarWP DB 1.3.0, GPL-2.0, https://github.com/stellarwp/db. The classes are prefixed with `Lisensio_KB\` using Strauss so they cannot collide with another plugin's copy.
 
 == Screenshots ==
 
@@ -105,12 +205,15 @@ Yes. Every string is translatable under the `lisensio-knowledge-base` text domai
 = 1.0.0 =
 * Initial release.
 * Knowledge base post type with category and tag taxonomies, category icons and term meta.
-* Dedicated search index with FULLTEXT relevance ranking, a portable fallback driver, a REST search endpoint and front-end type-ahead.
+* Knowledge base home with a help topics grid, category pages listing every article, and a sidebar with a table of contents, categories, tags, Popular Articles and a Need Support card.
+* Dedicated search index with FULLTEXT relevance ranking, a portable fallback driver, a REST search endpoint, front-end type-ahead and a WP-CLI reindex command.
 * Classic PHP templates and Site Editor block templates, both overridable, sharing one hook contract.
 * Five dynamic blocks, each also registered as a shortcode from the same render callback.
 * Article voting, comment feedback and an admin feedback inbox.
-* Privacy-safe search and view analytics with a reporting dashboard, retention cron and personal-data export and erase support.
-* REST-backed settings screen.
+* Privacy-safe search and view analytics with a reporting dashboard, retention cleanup and personal-data export and erase support.
+* Import wizard for Heroic Knowledge Base and BetterDocs, with dry runs, redirects from old URLs and a migration log.
+* Tools for duplicate articles and terms, search index rebuilds and data maintenance.
+* REST-backed settings screen with appearance, permalink, sidebar, search, feedback and privacy options.
 
 == Upgrade Notice ==
 

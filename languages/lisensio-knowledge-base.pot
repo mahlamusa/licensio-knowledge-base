@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-03T05:52:14+00:00\n"
+"POT-Creation-Date: 2026-10-19T07:03:11+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.7.1\n"
 "X-Domain: lisensio-knowledge-base\n"
@@ -52,6 +52,8 @@ msgid "Rating"
 msgstr ""
 
 #: includes/admin/class-lisensio-kb-admin-columns.php:206
+#: includes/import/class-lisensio-kb-betterdocs-import-driver.php:85
+#: includes/import/class-lisensio-kb-heroic-import-driver.php:84
 msgid "Views"
 msgstr ""
 
@@ -120,6 +122,41 @@ msgid "%1$d%% (%2$d vote)"
 msgid_plural "%1$d%% (%2$d votes)"
 msgstr[0] ""
 msgstr[1] ""
+
+#: includes/admin/class-lisensio-kb-import-admin.php:121
+msgid "You are not allowed to run imports."
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-import-admin.php:125
+#: includes/class-lisensio-kb-rest-controller.php:94
+msgid "Your session has expired. Reload the page and try again."
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-import-admin.php:142
+#: includes/admin/class-lisensio-kb-import-admin.php:369
+msgid "Unknown import source."
+msgstr ""
+
+#. translators: %s: the error message.
+#: includes/admin/class-lisensio-kb-import-admin.php:263
+msgid "The import stopped with an error: %s. The failure is in the migration log; running the import again resumes from the last saved point."
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-import-admin.php:375
+msgid "There is no URL map yet. Run the import first."
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-import-admin.php:398
+msgid "No run was named."
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-import-admin.php:432
+msgid "You are not allowed to download import files."
+msgstr ""
+
+#: includes/admin/class-lisensio-kb-import-admin.php:438
+msgid "The download link has expired. Reload the page and try again."
+msgstr ""
 
 #: includes/admin/class-lisensio-kb-settings-admin.php:96
 msgid "Knowledge Base Settings"
@@ -222,7 +259,7 @@ msgstr ""
 #: includes/class-lisensio-kb-analytics-privacy.php:78
 #: includes/class-lisensio-kb-analytics-privacy.php:98
 #: includes/class-lisensio-kb-blocks.php:164
-#: includes/class-lisensio-kb-templates.php:632
+#: includes/class-lisensio-kb-templates.php:718
 msgid "Knowledge Base"
 msgstr ""
 
@@ -473,8 +510,10 @@ msgid "Category"
 msgstr ""
 
 #: includes/class-lisensio-kb-post-types.php:301
-#: templates/sidebar.php:83
-#: templates/sidebar.php:84
+#: includes/import/class-lisensio-kb-betterdocs-import-driver.php:82
+#: includes/import/class-lisensio-kb-heroic-import-driver.php:81
+#: templates/sidebar.php:90
+#: templates/sidebar.php:91
 #: blocks/category-grid/index.js:45
 msgid "Categories"
 msgstr ""
@@ -526,8 +565,10 @@ msgid "Tag"
 msgstr ""
 
 #: includes/class-lisensio-kb-post-types.php:348
-#: templates/sidebar.php:112
-#: templates/sidebar.php:113
+#: includes/import/class-lisensio-kb-betterdocs-import-driver.php:83
+#: includes/import/class-lisensio-kb-heroic-import-driver.php:82
+#: templates/sidebar.php:119
+#: templates/sidebar.php:120
 msgid "Tags"
 msgstr ""
 
@@ -578,10 +619,6 @@ msgstr ""
 #. translators: %d: article ID.
 #: includes/class-lisensio-kb-rest-analytics-controller.php:337
 msgid "Article #%d"
-msgstr ""
-
-#: includes/class-lisensio-kb-rest-controller.php:94
-msgid "Your session has expired. Reload the page and try again."
 msgstr ""
 
 #: includes/class-lisensio-kb-rest-controller.php:182
@@ -686,7 +723,7 @@ msgid "Sidebar"
 msgstr ""
 
 #: includes/class-lisensio-kb-settings-schema.php:117
-msgid "Which side the sidebar sits on, chosen separately for the archive, an article and a category, whether it follows the reader down a long article, and whether it opens with a table of contents."
+msgid "Which side the sidebar sits on, chosen separately for the archive, an article and a category, whether it follows the reader down a long article, whether it opens with a table of contents, and where the sidebar Contact Support button leads."
 msgstr ""
 
 #: includes/class-lisensio-kb-settings-schema.php:123
@@ -839,7 +876,7 @@ msgid "Archive heading"
 msgstr ""
 
 #: includes/class-lisensio-kb-settings-schema.php:281
-msgid "The heading printed above the search box on the knowledge base archive."
+msgid "The heading printed above the category grid on the knowledge base archive."
 msgstr ""
 
 #: includes/class-lisensio-kb-settings-schema.php:286
@@ -855,7 +892,7 @@ msgid "Archive columns"
 msgstr ""
 
 #: includes/class-lisensio-kb-settings-schema.php:293
-msgid "How many category cards sit side by side on a wide screen. Narrow screens collapse the grid regardless."
+msgid "How many category cards sit side by side on a wide screen. Zero follows the sidebar: two columns beside one, three without it."
 msgstr ""
 
 #: includes/class-lisensio-kb-settings-schema.php:298
@@ -887,79 +924,87 @@ msgid "Category sidebar"
 msgstr ""
 
 #: includes/class-lisensio-kb-settings-schema.php:319
-msgid "Which side the sidebar sits on when a category archive is shown."
+msgid "Which side the sidebar sits on when a category archive is shown. Set it to No sidebar and the category grid widens to three columns."
 msgstr ""
 
-#: includes/class-lisensio-kb-settings-schema.php:333
-msgid "Table of contents"
+#: includes/class-lisensio-kb-settings-schema.php:325
+msgid "Support URL"
 msgstr ""
 
-#: includes/class-lisensio-kb-settings-schema.php:334
-msgid "List an article's headings at the top of its sidebar, each one a link to that section. Articles with fewer than two headings never show it."
+#: includes/class-lisensio-kb-settings-schema.php:326
+msgid "Where the Contact Support button in the sidebar leads, such as a contact page. Empty hides the Need Support card."
 msgstr ""
 
 #: includes/class-lisensio-kb-settings-schema.php:339
-msgid "Results per search"
+msgid "Table of contents"
 msgstr ""
 
 #: includes/class-lisensio-kb-settings-schema.php:340
-msgid "How many articles the search endpoint returns per page, and how many the type-ahead offers."
+msgid "List an article's headings at the top of its sidebar, each one a link to that section. Articles with fewer than two headings never show it."
 msgstr ""
 
 #: includes/class-lisensio-kb-settings-schema.php:345
-msgid "Article voting"
+msgid "Results per search"
 msgstr ""
 
 #: includes/class-lisensio-kb-settings-schema.php:346
-msgid "Show the \"was this helpful?\" prompt at the foot of every article, with a comment box after a negative vote."
+msgid "How many articles the search endpoint returns per page, and how many the type-ahead offers."
 msgstr ""
 
 #: includes/class-lisensio-kb-settings-schema.php:351
-msgid "Collect analytics"
+msgid "Article voting"
 msgstr ""
 
 #: includes/class-lisensio-kb-settings-schema.php:352
-msgid "Record searches and article views. No IP address is ever stored; a visitor is a salted hash that rotates daily."
+msgid "Show the \"was this helpful?\" prompt at the foot of every article, with a comment box after a negative vote."
 msgstr ""
 
 #: includes/class-lisensio-kb-settings-schema.php:357
-msgid "Keep analytics for"
+msgid "Collect analytics"
 msgstr ""
 
 #: includes/class-lisensio-kb-settings-schema.php:358
-msgid "How many days of search and view history the daily purge leaves in place."
+msgid "Record searches and article views. No IP address is ever stored; a visitor is a salted hash that rotates daily."
 msgstr ""
 
-#: includes/class-lisensio-kb-settings-schema.php:360
-msgid "days"
+#: includes/class-lisensio-kb-settings-schema.php:363
+msgid "Keep analytics for"
 msgstr ""
 
 #: includes/class-lisensio-kb-settings-schema.php:364
+msgid "How many days of search and view history the daily purge leaves in place."
+msgstr ""
+
+#: includes/class-lisensio-kb-settings-schema.php:366
+msgid "days"
+msgstr ""
+
+#: includes/class-lisensio-kb-settings-schema.php:370
 msgid "Delete everything on uninstall"
 msgstr ""
 
-#: includes/class-lisensio-kb-settings-schema.php:365
+#: includes/class-lisensio-kb-settings-schema.php:371
 msgid "On, deleting the plugin drops its tables, options and articles. Off, the data survives so a reinstall picks up where it left off."
 msgstr ""
 
-#: includes/class-lisensio-kb-settings-schema.php:486
+#: includes/class-lisensio-kb-settings-schema.php:492
 msgid "Left"
 msgstr ""
 
-#: includes/class-lisensio-kb-settings-schema.php:487
+#: includes/class-lisensio-kb-settings-schema.php:493
 msgid "Right"
 msgstr ""
 
-#: includes/class-lisensio-kb-settings-schema.php:488
+#: includes/class-lisensio-kb-settings-schema.php:494
 msgid "No sidebar"
 msgstr ""
 
-#: includes/class-lisensio-kb-templates.php:623
+#: includes/class-lisensio-kb-templates.php:709
 msgid "Home"
 msgstr ""
 
 #. translators: %s: the search term.
-#: includes/class-lisensio-kb-templates.php:659
+#: includes/class-lisensio-kb-templates.php:745
 #: templates/search-results.php:23
 msgid "Search results for “%s”"
 msgstr ""
@@ -984,20 +1029,59 @@ msgstr ""
 msgid "Manual sort order of the category."
 msgstr ""
 
-#: includes/class-lisensio-kb.php:346
+#: includes/class-lisensio-kb.php:355
 msgid "Lisensio Knowledge Base is missing its bundled database library, so its tables cannot be created. Reinstall the plugin, or run \"composer install\" in the plugin directory."
 msgstr ""
 
-#. translators: %d: number of rows.
-#: includes/import/class-lisensio-kb-heroic-import-driver.php:192
+#: includes/import/class-lisensio-kb-betterdocs-import-driver.php:81
+#: includes/import/class-lisensio-kb-heroic-import-driver.php:80
+#: templates/category-body.php:71
+#: blocks/article-list/index.js:51
+#: blocks/article-list/index.js:119
+msgid "Articles"
+msgstr ""
+
+#: includes/import/class-lisensio-kb-betterdocs-import-driver.php:84
+msgid "Reactions"
+msgstr ""
+
+#: includes/import/class-lisensio-kb-betterdocs-import-driver.php:86
+#: includes/import/class-lisensio-kb-heroic-import-driver.php:85
+msgid "Searches"
+msgstr ""
+
+#: includes/import/class-lisensio-kb-betterdocs-import-driver.php:179
+msgid "Analytics recorded today are still being added to by BetterDocs and were left for the next run."
+msgstr ""
+
+#. translators: %d: number of glossary terms.
+#: includes/import/class-lisensio-kb-betterdocs-import-driver.php:187
+msgid "%d BetterDocs glossary term has no equivalent here and was not imported."
+msgid_plural "%d BetterDocs glossary terms have no equivalent here and were not imported."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/import/class-lisensio-kb-betterdocs-import-driver.php:195
+msgid "BetterDocs Pro feedback messages (betterdocs_analytics_feedback) are not imported; only the reaction counts are."
+msgstr ""
+
+#: includes/import/class-lisensio-kb-betterdocs-import-source.php:59
+msgid "BetterDocs"
+msgstr ""
+
+#: includes/import/class-lisensio-kb-heroic-import-driver.php:83
+msgid "Votes"
+msgstr ""
+
+#. translators: %d: number of outbound-click rows.
+#: includes/import/class-lisensio-kb-heroic-import-driver.php:166
 msgid "%d outbound-click row in the Heroic exits table has no equivalent here and was not migrated."
 msgid_plural "%d outbound-click rows in the Heroic exits table have no equivalent here and were not migrated."
 msgstr[0] ""
 msgstr[1] ""
 
-#. translators: %s: absolute path to the generated redirect drop-in.
-#: includes/import/class-lisensio-kb-heroic-import-driver.php:211
-msgid "Redirect drop-in written to %s — move it to wp-content/mu-plugins/ to serve the 301s."
+#: includes/import/class-lisensio-kb-heroic-import-source.php:42
+msgid "Heroic Knowledge Base"
 msgstr ""
 
 #: includes/rest/class-lisensio-kb-feedback-rest-controller.php:152
@@ -1132,15 +1216,15 @@ msgstr ""
 msgid "This value is not accepted for this setting."
 msgstr ""
 
-#: templates/archive.php:93
+#: templates/archive-body.php:79
 msgid "Uncategorised"
 msgstr ""
 
-#: templates/archive.php:108
+#: templates/archive-body.php:94
 msgid "The knowledge base is empty"
 msgstr ""
 
-#: templates/archive.php:109
+#: templates/archive-body.php:95
 msgid "No articles have been published yet."
 msgstr ""
 
@@ -1157,12 +1241,28 @@ msgstr ""
 msgid "Breadcrumb"
 msgstr ""
 
+#: templates/category-body.php:51
+msgid "Sub-categories"
+msgstr ""
+
+#: templates/category-body.php:90
+msgid "No articles in this category yet"
+msgstr ""
+
+#: templates/category-body.php:91
+msgid "Try another category, or search the knowledge base."
+msgstr ""
+
 #. translators: %s: number of articles.
-#: templates/category-card.php:138
-msgid "%s article"
-msgid_plural "%s articles"
+#: templates/category-card.php:110
+msgid "(%s Article)"
+msgid_plural "(%s Articles)"
 msgstr[0] ""
 msgstr[1] ""
+
+#: templates/category-card.php:148
+msgid "View all"
+msgstr ""
 
 #: templates/category-grid.php:36
 msgid "No categories found"
@@ -1219,9 +1319,29 @@ msgstr ""
 msgid "Try a different wording, or browse the categories."
 msgstr ""
 
-#: templates/sidebar.php:59
-#: templates/sidebar.php:60
+#: templates/sidebar.php:66
+#: templates/sidebar.php:67
 msgid "On this page"
+msgstr ""
+
+#: templates/sidebar.php:135
+msgid "Popular articles"
+msgstr ""
+
+#: templates/sidebar.php:136
+msgid "Popular Articles"
+msgstr ""
+
+#: templates/sidebar.php:156
+msgid "Need Support?"
+msgstr ""
+
+#: templates/sidebar.php:159
+msgid "Can’t find what you’re looking for? Get in touch and we’ll help you out."
+msgstr ""
+
+#: templates/sidebar.php:163
+msgid "Contact Support"
 msgstr ""
 
 #. translators: %s: the date the article was last updated.
@@ -1231,24 +1351,6 @@ msgstr ""
 
 #: templates/single.php:91
 msgid "Tagged:"
-msgstr ""
-
-#: templates/taxonomy-category.php:68
-msgid "Sub-categories"
-msgstr ""
-
-#: templates/taxonomy-category.php:88
-#: blocks/article-list/index.js:51
-#: blocks/article-list/index.js:119
-msgid "Articles"
-msgstr ""
-
-#: templates/taxonomy-category.php:107
-msgid "No articles in this category yet"
-msgstr ""
-
-#: templates/taxonomy-category.php:108
-msgid "Try another category, or search the knowledge base."
 msgstr ""
 
 #: templates/taxonomy-tag.php:53
@@ -1504,4 +1606,8 @@ msgstr ""
 #: blocks/search/block.json
 msgctxt "block keyword"
 msgid "search"
+msgstr ""
+
+msgctxt "block title"
+msgid "Widget Group"
 msgstr ""

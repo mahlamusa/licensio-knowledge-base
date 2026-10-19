@@ -2,10 +2,18 @@
 #
 # Release build.
 #
-# Produces the two shippable artifacts from a clean checkout:
+# Produces the three shippable artifacts from a clean checkout:
 #
-#   lisensio-knowledge-base.zip      free build, no pro/ anywhere in it
-#   lisensio-knowledge-base-pro.zip  the same tree plus pro/
+#   lisensio-knowledge-base.zip        free build, no pro/ anywhere in it
+#   lisensio-knowledge-base-pro.zip    the same tree plus pro/
+#   lisensio-knowledge-base-wporg.zip  the free build plus the sources dist/ is
+#                                      compiled from, for WordPress.org
+#
+# WordPress.org requires the human-readable source of every compiled file, and
+# the repository is private, so the wporg artifact carries `apps/`, `blocks/`,
+# the two build wrappers in `tools/` and the npm manifests beside the build.
+# It is what goes up for plugin review and into SVN trunk. The SVN release tag
+# matches the plain free build (see bin/wp-org-publish.sh).
 #
 # Both are staged from an allowlist rather than pruned from a copy of the
 # repository. An exclude list silently ships whatever it has not heard of yet:
@@ -32,6 +40,7 @@
 #   --output DIR  Where the zips land. Defaults to releases/.
 #
 # @since 1.0.0
+# @since 1.0.0 Added the WordPress.org artifact carrying the sources of dist/.
 
 set -euo pipefail
 
@@ -95,6 +104,30 @@ FORBIDDEN_ROOT_PATHS=(
     'SPEC.md'
 )
 
+# The sources the wporg artifact adds to the free build, so dist/ can be rebuilt
+# from what WordPress.org hosts. Only the two build wrappers come from tools/:
+# the rest of that directory is migration tooling that never ships.
+SOURCE_PATHS=(
+    'apps'
+    'blocks'
+    'tools/build-apps.mjs'
+    'tools/build-blocks.mjs'
+    'package.json'
+    'package-lock.json'
+    'vite.config.mjs'
+)
+
+# The FORBIDDEN_ROOT_PATHS entries the wporg artifact may contain, because
+# SOURCE_PATHS puts them there. Everything else on that list stays forbidden.
+WPORG_ALLOWED_ROOT_PATHS=(
+    'apps'
+    'blocks'
+    'tools'
+    'package.json'
+    'package-lock.json'
+    'vite.config.mjs'
+)
+
 # These must not appear at any depth.
 FORBIDDEN_ANYWHERE=(
     'node_modules'
@@ -144,7 +177,7 @@ while [ "$#" -gt 0 ]; do
             shift
             ;;
         -h|--help)
-            sed -n '2,30p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+            sed -n '2,40p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
             exit 0
             ;;
         *)
@@ -220,7 +253,7 @@ step 'Removing same-version artifacts'
 if [ "$DRY_RUN" -eq 1 ]; then
     printf 'Dry run: nothing in %s is touched.\n' "$OUTPUT_DIR"
 else
-    for zip_file in "${OUTPUT_DIR}/${SLUG}.zip" "${OUTPUT_DIR}/${SLUG}-pro.zip"; do
+    for zip_file in "${OUTPUT_DIR}/${SLUG}.zip" "${OUTPUT_DIR}/${SLUG}-pro.zip" "${OUTPUT_DIR}/${SLUG}-wporg.zip"; do
         if [ -e "$zip_file" ]; then
             rm -f "$zip_file"
             printf '  deleted %s\n' "$zip_file"
@@ -248,6 +281,7 @@ fi
 WORK_DIR="$( mktemp -d )"
 FREE_STAGE="${WORK_DIR}/free/${SLUG}"
 PRO_STAGE="${WORK_DIR}/pro/${SLUG}"
+WPORG_STAGE="${WORK_DIR}/wporg/${SLUG}"
 
 step 'Translation template'
 WP_CLI="$( resolve_wp_cli || true )"
@@ -297,14 +331,23 @@ stage_plugin() {
 
 # Fail if a staged tree contains anything that must never ship.
 #
-# $1 - Staged directory.
+# $1    - Staged directory.
+# $2... - Optional. Top-level forbidden paths this stage may contain.
 #
 # @since 1.0.0
+# @since 1.0.0 Accepts the top-level paths a stage is allowed to contain.
 assert_no_forbidden_paths() {
     stage="$1"
+    shift
     found=0
 
     for path in "${FORBIDDEN_ROOT_PATHS[@]}"; do
+        for allowed in "$@"; do
+            if [ "$path" = "$allowed" ]; then
+                continue 2
+            fi
+        done
+
         if [ -e "${stage}/${path}" ]; then
             printf '  %s\n' "$path" >&2
             found=$(( found + 1 ))
@@ -366,8 +409,22 @@ find "${PRO_STAGE}/pro" -name '.gitkeep' -type f -delete
 assert_no_forbidden_paths "$PRO_STAGE"
 report_stage "$PRO_STAGE" 'Pro build'
 
+step 'Staging the wporg build'
+stage_plugin "$WPORG_STAGE"
+for path in "${SOURCE_PATHS[@]}"; do
+    [ -e "${ROOT}/${path}" ] || abort "source path ${path} is missing from the repository."
+    mkdir -p "$( dirname "${WPORG_STAGE}/${path}" )"
+    cp -a "${ROOT}/${path}" "${WPORG_STAGE}/${path}"
+done
+find "$WPORG_STAGE" -name '.gitkeep' -type f -delete
+assert_no_forbidden_paths "$WPORG_STAGE" "${WPORG_ALLOWED_ROOT_PATHS[@]}"
+[ ! -e "${WPORG_STAGE}/pro" ] || abort 'the wporg stage somehow contains pro/.'
+[ ! -e "${WPORG_STAGE}/tools/migrate-heroic" ] || abort 'the wporg stage contains tools/migrate-heroic/.'
+report_stage "$WPORG_STAGE" 'WordPress.org build'
+
 step 'Free/pro boundary check'
 bash "${SCRIPT_DIR}/check-free-boundary.sh" "$FREE_STAGE" "${ROOT}/apps" "${ROOT}/blocks"
+bash "${SCRIPT_DIR}/check-free-boundary.sh" "$WPORG_STAGE"
 
 step 'Packaging'
 ZIP_DIR="${WORK_DIR}/zips"
@@ -375,8 +432,9 @@ mkdir -p "$ZIP_DIR"
 
 ( cd "${WORK_DIR}/free" && zip -qr "${ZIP_DIR}/${SLUG}.zip" "$SLUG" )
 ( cd "${WORK_DIR}/pro" && zip -qr "${ZIP_DIR}/${SLUG}-pro.zip" "$SLUG" )
+( cd "${WORK_DIR}/wporg" && zip -qr "${ZIP_DIR}/${SLUG}-wporg.zip" "$SLUG" )
 
-for zip_file in "${ZIP_DIR}/${SLUG}.zip" "${ZIP_DIR}/${SLUG}-pro.zip"; do
+for zip_file in "${ZIP_DIR}/${SLUG}.zip" "${ZIP_DIR}/${SLUG}-pro.zip" "${ZIP_DIR}/${SLUG}-wporg.zip"; do
     printf '  %s (%s bytes)\n' "$( basename "$zip_file" )" "$( wc -c < "$zip_file" | tr -d ' ' )"
 done
 
@@ -388,9 +446,22 @@ done
 # closes the pipe early, which inverts both of these assertions.
 FREE_LISTING="$( unzip -Z1 "${ZIP_DIR}/${SLUG}.zip" )"
 PRO_LISTING="$( unzip -Z1 "${ZIP_DIR}/${SLUG}-pro.zip" )"
+WPORG_LISTING="$( unzip -Z1 "${ZIP_DIR}/${SLUG}-wporg.zip" )"
 
 if printf '%s\n' "$FREE_LISTING" | grep -q "^${SLUG}/pro/"; then
     abort 'the packaged free zip contains pro/ paths.'
+fi
+
+if printf '%s\n' "$WPORG_LISTING" | grep -q "^${SLUG}/pro/"; then
+    abort 'the packaged wporg zip contains pro/ paths.'
+fi
+
+if ! printf '%s\n' "$WPORG_LISTING" | grep -q "^${SLUG}/lisensio-knowledge-base\.php$"; then
+    abort 'the packaged wporg zip does not contain the plugin bootstrap.'
+fi
+
+if ! printf '%s\n' "$WPORG_LISTING" | grep -q "^${SLUG}/package\.json$"; then
+    abort 'the packaged wporg zip does not contain its sources.'
 fi
 
 if ! printf '%s\n' "$PRO_LISTING" | grep -q "^${SLUG}/lisensio-knowledge-base\.php$"; then
@@ -410,6 +481,7 @@ fi
 mkdir -p "$OUTPUT_DIR"
 cp -a "${ZIP_DIR}/${SLUG}.zip" "${OUTPUT_DIR}/${SLUG}.zip"
 cp -a "${ZIP_DIR}/${SLUG}-pro.zip" "${OUTPUT_DIR}/${SLUG}-pro.zip"
+cp -a "${ZIP_DIR}/${SLUG}-wporg.zip" "${OUTPUT_DIR}/${SLUG}-wporg.zip"
 
 # The repository copy of the template is refreshed only when its strings
 # actually changed. The extractor stamps every run with a generation time -
@@ -432,10 +504,12 @@ if [ ! -f "$REPO_POT" ] || ! diff -q <( pot_signature "$REPO_POT" ) <( pot_signa
     printf 'Version %s built.\n' "$VERSION"
     printf '  %s/%s.zip\n' "$OUTPUT_DIR" "$SLUG"
     printf '  %s/%s-pro.zip\n' "$OUTPUT_DIR" "$SLUG"
+    printf '  %s/%s-wporg.zip\n' "$OUTPUT_DIR" "$SLUG"
     printf '  %s refreshed - commit it with the strings that caused it.\n' "languages/${SLUG}.pot"
 else
     printf 'Version %s built.\n' "$VERSION"
     printf '  %s/%s.zip\n' "$OUTPUT_DIR" "$SLUG"
     printf '  %s/%s-pro.zip\n' "$OUTPUT_DIR" "$SLUG"
+    printf '  %s/%s-wporg.zip\n' "$OUTPUT_DIR" "$SLUG"
     printf '  languages/%s.pot unchanged; the committed template already matches the sources.\n' "$SLUG"
 fi

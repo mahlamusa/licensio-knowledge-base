@@ -10,7 +10,7 @@
  * depend on it. It is a classic script served straight from `assets/js/`, and
  * `tools/build-apps.mjs` skips this build entirely while `apps/` is empty.
  *
- * Development runs on port 6913 (SLSWC uses 6912). PHP only reaches for the
+ * Development runs on port 6913 (a sibling plugin uses 6912). PHP only reaches for the
  * dev server when the `HMR_DEV` constant is set to `lisensio-kb`, so the port
  * being up is not enough on its own to change how a site loads assets.
  *
