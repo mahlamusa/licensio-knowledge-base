@@ -5,22 +5,22 @@
  * Modified by Lindeni Mahlalela using {@see https://github.com/BrianHenryIE/strauss}.
  */
 
-namespace Lisensio_KB\StellarWP\DB\QueryBuilder;
+namespace Licensio_KB\StellarWP\DB\QueryBuilder;
 
-use Lisensio_KB\StellarWP\DB\QueryBuilder\Concerns\Aggregate;
-use Lisensio_KB\StellarWP\DB\QueryBuilder\Concerns\CRUD;
-use Lisensio_KB\StellarWP\DB\QueryBuilder\Concerns\FromClause;
-use Lisensio_KB\StellarWP\DB\QueryBuilder\Concerns\GroupByStatement;
-use Lisensio_KB\StellarWP\DB\QueryBuilder\Concerns\HavingClause;
-use Lisensio_KB\StellarWP\DB\QueryBuilder\Concerns\JoinClause;
-use Lisensio_KB\StellarWP\DB\QueryBuilder\Concerns\LimitStatement;
-use Lisensio_KB\StellarWP\DB\QueryBuilder\Concerns\MetaQuery;
-use Lisensio_KB\StellarWP\DB\QueryBuilder\Concerns\OffsetStatement;
-use Lisensio_KB\StellarWP\DB\QueryBuilder\Concerns\OrderByStatement;
-use Lisensio_KB\StellarWP\DB\QueryBuilder\Concerns\SelectStatement;
-use Lisensio_KB\StellarWP\DB\QueryBuilder\Concerns\TablePrefix;
-use Lisensio_KB\StellarWP\DB\QueryBuilder\Concerns\UnionOperator;
-use Lisensio_KB\StellarWP\DB\QueryBuilder\Concerns\WhereClause;
+use Licensio_KB\StellarWP\DB\QueryBuilder\Concerns\Aggregate;
+use Licensio_KB\StellarWP\DB\QueryBuilder\Concerns\CRUD;
+use Licensio_KB\StellarWP\DB\QueryBuilder\Concerns\FromClause;
+use Licensio_KB\StellarWP\DB\QueryBuilder\Concerns\GroupByStatement;
+use Licensio_KB\StellarWP\DB\QueryBuilder\Concerns\HavingClause;
+use Licensio_KB\StellarWP\DB\QueryBuilder\Concerns\JoinClause;
+use Licensio_KB\StellarWP\DB\QueryBuilder\Concerns\LimitStatement;
+use Licensio_KB\StellarWP\DB\QueryBuilder\Concerns\MetaQuery;
+use Licensio_KB\StellarWP\DB\QueryBuilder\Concerns\OffsetStatement;
+use Licensio_KB\StellarWP\DB\QueryBuilder\Concerns\OrderByStatement;
+use Licensio_KB\StellarWP\DB\QueryBuilder\Concerns\SelectStatement;
+use Licensio_KB\StellarWP\DB\QueryBuilder\Concerns\TablePrefix;
+use Licensio_KB\StellarWP\DB\QueryBuilder\Concerns\UnionOperator;
+use Licensio_KB\StellarWP\DB\QueryBuilder\Concerns\WhereClause;
 
 /**
  * @since 1.0.0

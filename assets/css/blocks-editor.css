@@ -1,5 +1,5 @@
 /**
- * Lisensio Knowledge Base — block editor styles.
+ * Licensio Knowledge Base — block editor styles.
  *
  * The editor preview is produced by the same PHP render callback the front end
  * uses, so nothing here restyles the block: it only makes the server-rendered
@@ -8,20 +8,20 @@
  * link.
  */
 
-.wp-block[data-type^="lisensio-kb/"] .lisensio-kb {
+.wp-block[data-type^="licensio-kb/"] .licensio-kb {
 	max-width: none;
 }
 
-.wp-block[data-type^="lisensio-kb/"] .lisensio-kb a {
+.wp-block[data-type^="licensio-kb/"] .licensio-kb a {
 	pointer-events: none;
 }
 
-.wp-block[data-type^="lisensio-kb/"] .lisensio-kb-faq__question {
+.wp-block[data-type^="licensio-kb/"] .licensio-kb-faq__question {
 	pointer-events: none;
 }
 
 /* The server renderer's own empty and loading states. */
 
-.wp-block[data-type^="lisensio-kb/"] .components-placeholder {
+.wp-block[data-type^="licensio-kb/"] .components-placeholder {
 	min-height: 0;
 }

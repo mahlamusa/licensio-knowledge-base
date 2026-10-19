@@ -9,7 +9,7 @@
  * unit suite.
  *
  * The suite needs a running WordPress with this plugin active and an
- * administrator account, so it is skipped unless `LISENSIO_KB_E2E=1` and the
+ * administrator account, so it is skipped unless `LICENSIO_KB_E2E=1` and the
  * two credential variables are present. CI has no such site and runs Playwright
  * with `--pass-with-no-tests`.
  *
@@ -18,9 +18,9 @@
 
 import { expect, test, type Page } from '@playwright/test';
 
-const enabled = process.env.LISENSIO_KB_E2E === '1';
-const user = process.env.LISENSIO_KB_ADMIN_USER ?? '';
-const password = process.env.LISENSIO_KB_ADMIN_PASSWORD ?? '';
+const enabled = process.env.LICENSIO_KB_E2E === '1';
+const user = process.env.LICENSIO_KB_ADMIN_USER ?? '';
+const password = process.env.LICENSIO_KB_ADMIN_PASSWORD ?? '';
 
 type BlockFixture = {
 	name: string;
@@ -31,28 +31,28 @@ type BlockFixture = {
 
 const BLOCKS: BlockFixture[] = [
 	{
-		name: 'lisensio-kb/article-list',
+		name: 'licensio-kb/article-list',
 		title: 'Knowledge Base Articles',
-		shortcode: '[lisensio_kb_articles]',
-		marker: 'lisensio-kb-block--article-list',
+		shortcode: '[licensio_kb_articles]',
+		marker: 'licensio-kb-block--article-list',
 	},
 	{
-		name: 'lisensio-kb/category-grid',
+		name: 'licensio-kb/category-grid',
 		title: 'Knowledge Base Categories',
-		shortcode: '[lisensio_kb_categories]',
-		marker: 'lisensio-kb-block--category-grid',
+		shortcode: '[licensio_kb_categories]',
+		marker: 'licensio-kb-block--category-grid',
 	},
 	{
-		name: 'lisensio-kb/breadcrumbs',
+		name: 'licensio-kb/breadcrumbs',
 		title: 'Knowledge Base Breadcrumbs',
-		shortcode: '[lisensio_kb_breadcrumbs]',
-		marker: 'lisensio-kb-block--breadcrumbs',
+		shortcode: '[licensio_kb_breadcrumbs]',
+		marker: 'licensio-kb-block--breadcrumbs',
 	},
 	{
-		name: 'lisensio-kb/faq',
+		name: 'licensio-kb/faq',
 		title: 'Knowledge Base FAQ',
-		shortcode: '[lisensio_kb_faq]',
-		marker: 'lisensio-kb-block--faq',
+		shortcode: '[licensio_kb_faq]',
+		marker: 'licensio-kb-block--faq',
 	},
 ];
 
@@ -89,7 +89,7 @@ async function insertBlock( page: Page, title: string ): Promise< void > {
 test.describe( 'Knowledge base blocks', () => {
 	test.skip(
 		! enabled || '' === user || '' === password,
-		'Set LISENSIO_KB_E2E=1, LISENSIO_KB_ADMIN_USER and LISENSIO_KB_ADMIN_PASSWORD to run this suite.'
+		'Set LICENSIO_KB_E2E=1, LICENSIO_KB_ADMIN_USER and LICENSIO_KB_ADMIN_PASSWORD to run this suite.'
 	);
 
 	test.beforeEach( async ( { page } ) => {
@@ -159,7 +159,7 @@ test.describe( 'Knowledge base blocks', () => {
 				Cookie: cookieHeader,
 			},
 			data: {
-				title: 'Lisensio KB block coverage',
+				title: 'Licensio KB block coverage',
 				status: 'publish',
 				content,
 			},

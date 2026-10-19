@@ -6,7 +6,7 @@
  * callbacks read a header off the request, the route stubs read the route, and
  * the feedback controller reads request parameters.
  *
- * @package Lisensio_KB
+ * @package Licensio_KB
  * @since   1.0.0
  */
 

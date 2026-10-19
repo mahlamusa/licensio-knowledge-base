@@ -2,7 +2,7 @@
  * REST client for the settings screen.
  *
  * Every request carries the `wp_rest` nonce the screen was rendered with, which
- * is what makes the `manage_lisensio_kb` check on the server apply to the
+ * is what makes the `manage_licensio_kb` check on the server apply to the
  * logged-in administrator rather than to an anonymous caller.
  *
  * A rejected save is not an exception here. The server answers a bad payload
@@ -23,7 +23,7 @@ import type {
 
 declare global {
 	interface Window {
-		lisensioKbSettings?: SettingsConfig;
+		licensioKbSettings?: SettingsConfig;
 		wp?: {
 			i18n?: {
 				__: ( text: string, domain?: string ) => string;
@@ -45,7 +45,7 @@ const FALLBACK_CONFIG: SettingsConfig = {
  * @return {SettingsConfig} The configuration, or safe defaults when the page did not supply one.
  */
 export function config(): SettingsConfig {
-	return { ...FALLBACK_CONFIG, ...( window.lisensioKbSettings ?? {} ) };
+	return { ...FALLBACK_CONFIG, ...( window.licensioKbSettings ?? {} ) };
 }
 
 /**
@@ -67,7 +67,7 @@ export function config(): SettingsConfig {
 export function translate( text: string ): string {
 	const translator = window.wp?.i18n?.__;
 
-	return translator ? translator( text, 'lisensio-knowledge-base' ) : text;
+	return translator ? translator( text, 'licensio-knowledge-base' ) : text;
 }
 
 /**

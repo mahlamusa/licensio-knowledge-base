@@ -125,15 +125,15 @@ onMounted( load );
 </script>
 
 <template>
-	<div class="lisensio-kb-data-maintenance">
+	<div class="licensio-kb-data-maintenance">
 		<a-spin v-if="loading">
-			<div class="lisensio-kb-data-maintenance__spin-body"></div>
+			<div class="licensio-kb-data-maintenance__spin-body"></div>
 		</a-spin>
 
 		<a-alert v-else-if="error" type="error" show-icon :message="error" />
 
 		<template v-else-if="status">
-			<a-card class="lisensio-kb-data-maintenance__card" :title="translate( 'Feedback usefulness scores' )">
+			<a-card class="licensio-kb-data-maintenance__card" :title="translate( 'Feedback usefulness scores' )">
 				<p>
 					{{
 						translate(
@@ -142,7 +142,7 @@ onMounted( load );
 					}}
 				</p>
 
-				<dl class="lisensio-kb-data-maintenance__stats">
+				<dl class="licensio-kb-data-maintenance__stats">
 					<div>
 						<dt>{{ translate( 'Articles' ) }}</dt>
 						<dd>{{ status.articles }}</dd>
@@ -162,7 +162,7 @@ onMounted( load );
 					{{ translate( 'Recount scores' ) }}
 				</a-button>
 
-				<p v-if="recounted" class="lisensio-kb-data-maintenance__done">
+				<p v-if="recounted" class="licensio-kb-data-maintenance__done">
 					{{
 						translate( 'Recounted the score of' ) +
 							' ' +
@@ -174,7 +174,7 @@ onMounted( load );
 			</a-card>
 
 			<a-card
-				class="lisensio-kb-data-maintenance__card"
+				class="licensio-kb-data-maintenance__card"
 				:title="translate( 'Analytics retention' )"
 			>
 				<p>
@@ -186,7 +186,7 @@ onMounted( load );
 					{{ retentionSummary }}.
 				</p>
 
-				<dl class="lisensio-kb-data-maintenance__stats">
+				<dl class="licensio-kb-data-maintenance__stats">
 					<div>
 						<dt>{{ translate( 'Retention window' ) }}</dt>
 						<dd>{{ status.retentionDays }} {{ translate( 'days' ) }}</dd>
@@ -222,11 +222,11 @@ onMounted( load );
 				</a-popconfirm>
 
 				<template v-if="prunedTotal > 0 || Object.keys( prunedTables ).length > 0">
-					<p class="lisensio-kb-data-maintenance__done">
+					<p class="licensio-kb-data-maintenance__done">
 						{{ translate( 'Deleted' ) }} {{ prunedTotal }}
 						{{ translate( 'rows:' ) }}
 					</p>
-					<ul class="lisensio-kb-data-maintenance__deleted">
+					<ul class="licensio-kb-data-maintenance__deleted">
 						<li v-for="( rows, table ) in prunedTables" :key="table">
 							{{ table }}: {{ rows }}
 						</li>
@@ -238,37 +238,37 @@ onMounted( load );
 </template>
 
 <style scoped>
-.lisensio-kb-data-maintenance__spin-body {
+.licensio-kb-data-maintenance__spin-body {
 	min-height: 120px;
 }
 
-.lisensio-kb-data-maintenance__card {
+.licensio-kb-data-maintenance__card {
 	margin-bottom: 16px;
 }
 
-.lisensio-kb-data-maintenance__stats {
+.licensio-kb-data-maintenance__stats {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 32px;
 	margin: 0 0 16px;
 }
 
-.lisensio-kb-data-maintenance__stats dt {
+.licensio-kb-data-maintenance__stats dt {
 	color: var( --lkb-ink-wp-muted, #646970 );
 	font-size: 12px;
 }
 
-.lisensio-kb-data-maintenance__stats dd {
+.licensio-kb-data-maintenance__stats dd {
 	margin: 0;
 	font-size: 18px;
 	font-weight: 600;
 }
 
-.lisensio-kb-data-maintenance__done {
+.licensio-kb-data-maintenance__done {
 	margin: 16px 0 0;
 }
 
-.lisensio-kb-data-maintenance__deleted {
+.licensio-kb-data-maintenance__deleted {
 	margin: 4px 0 0;
 	padding-left: 20px;
 }

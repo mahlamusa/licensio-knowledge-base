@@ -5,10 +5,10 @@
  * Modified by Lindeni Mahlalela using {@see https://github.com/BrianHenryIE/strauss}.
  */
 
-namespace Lisensio_KB\StellarWP\DB\QueryBuilder\Clauses;
+namespace Licensio_KB\StellarWP\DB\QueryBuilder\Clauses;
 
-use Lisensio_KB\StellarWP\DB\QueryBuilder\Types\Math;
-use Lisensio_KB\StellarWP\DB\QueryBuilder\Types\Operator;
+use Licensio_KB\StellarWP\DB\QueryBuilder\Types\Math;
+use Licensio_KB\StellarWP\DB\QueryBuilder\Types\Operator;
 use InvalidArgumentException;
 
 /**

@@ -1,6 +1,6 @@
-# Lisensio Knowledge Base — Technical Specification
+# Licensio Knowledge Base — Technical Specification
 
-**Repo:** `slswc/lisensio-knowledge-base` (private)
+**Repo:** `slswc/licensio-knowledge-base` (private)
 **Version under development:** 1.0.0
 **Status:** Specification complete, ready for decomposition
 **Competitive audit:** `docs/heroic-kb-audit.md`
@@ -9,27 +9,27 @@
 
 ## Overview
 
-Lisensio Knowledge Base is a WordPress documentation and self-service support plugin. It is a **fully standalone knowledge base** — it must work with no other plugin installed — with an optional **pro add-on** that integrates deeply with Lisensio (SLSWC) for product-scoped, licence-gated documentation and support-ticket deflection.
+Licensio Knowledge Base is a WordPress documentation and self-service support plugin. It is a **fully standalone knowledge base** — it must work with no other plugin installed — with an optional **pro add-on** that integrates deeply with Licensio (SLSWC) for product-scoped, licence-gated documentation and support-ticket deflection.
 
-It replaces Heroic Knowledge Base on the Lisensio site and competes with it commercially. The audit identified where Heroic is weak: no blocks, a 122 KB procedural settings file, a bundled CMB2 fork, mediocre search relevance, raw IP storage with 10-year retention, no product/version awareness, and deflection that is measured but never acted upon.
+It replaces Heroic Knowledge Base on the Licensio site and competes with it commercially. The audit identified where Heroic is weak: no blocks, a 122 KB procedural settings file, a bundled CMB2 fork, mediocre search relevance, raw IP storage with 10-year retention, no product/version awareness, and deflection that is measured but never acted upon.
 
 ## Goals
 
 **Primary**
 1. A best-in-class standalone KB: fast, relevant search with instant type-ahead; clean content model; modern block-based authoring.
 2. Measurement that drives action — article feedback and search analytics that identify documentation gaps, with privacy-safe collection by default.
-3. A free wordpress.org plugin strong enough to stand on its own and act as top-of-funnel for Lisensio.
+3. A free wordpress.org plugin strong enough to stand on its own and act as top-of-funnel for Licensio.
 
 **Secondary (v2, pro)**
 4. Documentation scoped to a software product and version range, sourced from `WC_Product_Software`.
 5. Licence- and purchase-based gating for private, beta and customer-only documentation.
 6. In-ticket deflection against the existing SLSWC support desk, with real deflection measurement.
-7. A Lisensio-hosted AI assistant grounded in the customer's own knowledge base.
+7. A Licensio-hosted AI assistant grounded in the customer's own knowledge base.
 
 ## Non-Goals
 
 - **No importers beyond Heroic KB and BetterDocs.** The shipped import wizard (see *Import wizard*) covers those two; Echo Knowledge Base and weDocs are left to the driver filter. The disposable one-time Heroic tool in `tools/` still exists, excluded from both builds.
-- **No theme work in this epic.** The plugin ships complete theme-agnostic default templates. Updating `themes/lisensio` (repo `slswc/theme`, 18 `hkb-templates/` overrides + `inc/knowledge-base.php`) is tracked separately.
+- **No theme work in this epic.** The plugin ships complete theme-agnostic default templates. Updating `themes/licensio` (repo `slswc/theme`, 18 `hkb-templates/` overrides + `inc/knowledge-base.php`) is tracked separately.
 - No dedicated KB theme (Heroic sells one; out of scope).
 - No Chrome extension.
 - No third-party helpdesk integrations (HelpScout, Slack, form builders) in v1 or v2.
@@ -43,7 +43,7 @@ It replaces Heroic Knowledge Base on the Lisensio site and competes with it comm
 | Decision | Choice | Rationale |
 |---|---|---|
 | Relationship to Heroic KB | Clean replacement, own CPT and taxonomies | Avoids inheriting `ht_kb` naming and Heroic's architecture permanently |
-| Product scoping | `lisensio_product` taxonomy auto-synced from WC software products | Free archives, fast `tax_query`, clean join for gating |
+| Product scoping | `licensio_product` taxonomy auto-synced from WC software products | Free archives, fast `tax_query`, clean join for gating |
 | Gating posture | Public by default, gating opt-in per article and per category | Documentation should be findable; gating is the exception |
 | Gating rules (v2) | Logged-in; role/capability (free) · active licence; any purchase (pro) | Covers internal docs without WooCommerce, and customer docs with it |
 | Distribution | Free on wordpress.org + paid pro add-on | Reach plus revenue |
@@ -52,14 +52,14 @@ It replaces Heroic Knowledge Base on the Lisensio site and competes with it comm
 | Admin UI | Vue 3 + TypeScript + Pinia + Ant Design Vue on Vite | Matches SLSWC conventions and reviewers |
 | Authoring | Blocks first, shortcode fallback from the same render callbacks | Answers Heroic's biggest structural gap without stranding page-builder users |
 | Analytics privacy | No IPs; rotating salted visitor hash; 90-day default retention | Safest for wordpress.org review and GDPR; sufficient for every report |
-| AI (v2, pro) | Lisensio-hosted service, authenticated by licence key | Best onboarding; ties recurring value to the licence |
+| AI (v2, pro) | Licensio-hosted service, authenticated by licence key | Best onboarding; ties recurring value to the licence |
 | Deflection (v2, pro) | Live non-blocking suggestions while typing a ticket + deflection measurement | Recommended: intervenes where Heroic only observes, without gating a customer asking for help |
 
 ### Free / Pro boundary
 
 **Free (wordpress.org, standalone, no dependencies):** CPT and taxonomies, search index and type-ahead, templates and theme override layer, blocks and shortcodes, voting and feedback, search/view analytics and reporting dashboard, settings, logged-in and role/capability gating, content extras.
 
-**Pro (`pro/`, requires SLSWC + WooCommerce):** `lisensio_product` taxonomy sync and version ranges, licence and purchase gating, in-ticket deflection, docs in My Account, AI assistant, and the `slswc-client` licensing/updater for the pro plugin itself.
+**Pro (`pro/`, requires SLSWC + WooCommerce):** `licensio_product` taxonomy sync and version ranges, licence and purchase gating, in-ticket deflection, docs in My Account, AI assistant, and the `slswc-client` licensing/updater for the pro plugin itself.
 
 The free build must not contain `pro/`. This is enforced by a CI check on the release artifact.
 
@@ -71,7 +71,7 @@ The free build must not contain `pro/`. This is enforced by a CI check on the re
 CPT + taxonomies · search index, FULLTEXT query and type-ahead · classic PHP templates and block-theme templates, both overridable · blocks + shortcodes · voting, feedback and the feedback inbox · search/view analytics, privacy layer, retention cron and reporting dashboard · REST-backed settings · release pipeline.
 
 ### v2.0.0 — pro and content extras
-Gating and access control (all four rules) · `lisensio_product` taxonomy sync and version ranges · in-ticket deflection · docs in My Account · AI assistant · table of contents, related articles, attachments, reading time, drag-and-drop ordering, category icons, FAQ and glossary builders.
+Gating and access control (all four rules) · `licensio_product` taxonomy sync and version ranges · in-ticket deflection · docs in My Account · AI assistant · table of contents, related articles, attachments, reading time, drag-and-drop ordering, category icons, FAQ and glossary builders.
 
 ---
 
@@ -103,7 +103,7 @@ An editor places KB search, article lists or a category grid on any page.
 
 **US-7 — Restyle to match a brand.**
 A site owner changes KB colours and layout without writing CSS.
-*Acceptance:* brand colour, layout width and card style are settings; all default styling derives from CSS custom properties on a single root scope; a classic theme can override any template by placing it in `lisensio-kb/` in the theme directory, and a block theme can override the equivalent block template from the Site Editor.
+*Acceptance:* brand colour, layout width and card style are settings; all default styling derives from CSS custom properties on a single root scope; a classic theme can override any template by placing it in `licensio-kb/` in the theme directory, and a block theme can override the equivalent block template from the Site Editor.
 
 **US-8 — Trust the data collection.**
 A site owner satisfies a privacy review.
@@ -114,11 +114,11 @@ A site owner satisfies a privacy review.
 ## Technical architecture
 
 ### Conventions
-- No namespaces. WordPress class-file convention: `includes/class-lisensio-kb-search-index.php` → `class Lisensio_KB_Search_Index`.
-- Prefixes: `LISENSIO_KB_` constants; `Lisensio_KB_` classes in `class-lisensio-kb-*.php`; **`lisensio_` for all hooks, filters, options and table names**; `lisensio_kb_` for PHP global functions and shortcodes.
-- **Function-prefix rationale:** `themes/lisensio` already owns the bare `lisensio_` function namespace (`inc/knowledge-base.php:29` defines `lisensio_is_knowledge_base()`, and `inc/template-tags.php` uses the same prefix). Plugin global functions therefore use `lisensio_kb_` to avoid a fatal redeclare. Hooks, filters and tables are unaffected and use plain `lisensio_`.
+- No namespaces. WordPress class-file convention: `includes/class-licensio-kb-search-index.php` → `class Licensio_KB_Search_Index`.
+- Prefixes: `LICENSIO_KB_` constants; `Licensio_KB_` classes in `class-licensio-kb-*.php`; **`licensio_` for all hooks, filters, options and table names**; `licensio_kb_` for PHP global functions and shortcodes.
+- **Function-prefix rationale:** `themes/licensio` already owns the bare `licensio_` function namespace (`inc/knowledge-base.php:29` defines `licensio_is_knowledge_base()`, and `inc/template-tags.php` uses the same prefix). Plugin global functions therefore use `licensio_kb_` to avoid a fatal redeclare. Hooks, filters and tables are unaffected and use plain `licensio_`.
 - Base branch: `main`.
-- Text domain `lisensio-knowledge-base`.
+- Text domain `licensio-knowledge-base`.
 - PHP 7.4 minimum, WordPress 6.4 minimum, MySQL 5.6 / MariaDB 10.0 minimum.
 - WordPress Core coding standards, 4 spaces, PHPCS + PHPCBF clean, PHPStan level 5.
 - Full PHPDoc on every class, function and file, with accurate `@since` tags (current dev version 1.0.0).
@@ -127,44 +127,44 @@ A site owner satisfies a privacy review.
 
 | Object | Name | Notes |
 |---|---|---|
-| CPT | `lisensio_article` | `show_in_rest`, Gutenberg, revisions, author, excerpt, thumbnail. Rewrite slug configurable, default `docs` |
-| Taxonomy | `lisensio_category` | Hierarchical, `show_in_rest`, term meta: icon, image, order |
-| Taxonomy | `lisensio_tag` | Flat, `show_in_rest` |
-| Taxonomy (v2, pro) | `lisensio_product` | Synced from `WC_Product_Software`; product ID in term meta |
+| CPT | `licensio_article` | `show_in_rest`, Gutenberg, revisions, author, excerpt, thumbnail. Rewrite slug configurable, default `docs` |
+| Taxonomy | `licensio_category` | Hierarchical, `show_in_rest`, term meta: icon, image, order |
+| Taxonomy | `licensio_tag` | Flat, `show_in_rest` |
+| Taxonomy (v2, pro) | `licensio_product` | Synced from `WC_Product_Software`; product ID in term meta |
 
-Capabilities map to a `manage_lisensio_kb` custom capability granted to administrators and editors, filterable.
+Capabilities map to a `manage_licensio_kb` custom capability granted to administrators and editors, filterable.
 
 ### Database
 
-All tables created and versioned by `class-lisensio-kb-db-installer.php`, accessed through the StellarWP DB query builder (vendored via Composer + Strauss), matching SLSWC.
+All tables created and versioned by `class-licensio-kb-db-installer.php`, accessed through the StellarWP DB query builder (vendored via Composer + Strauss), matching SLSWC.
 
-**`lisensio_search_index`**
+**`licensio_search_index`**
 `article_id` BIGINT PK · `title` TEXT · `excerpt` TEXT · `content` LONGTEXT · `terms` TEXT · `updated_at` DATETIME
 `FULLTEXT KEY ft_all (title, content, terms)` — created only when FULLTEXT is supported; capability probed at install and stored in an option.
 
-**`lisensio_search_log`**
+**`licensio_search_log`**
 `id` · `term` VARCHAR(191) KEY · `normalized_term` VARCHAR(191) KEY · `results_count` INT · `visitor_hash` CHAR(64) · `source` ENUM('site','live','ticket') · `created_at` DATETIME KEY
 
-**`lisensio_article_views`**
+**`licensio_article_views`**
 `id` · `article_id` BIGINT KEY · `visitor_hash` CHAR(64) · `created_at` DATETIME KEY
 
-**`lisensio_feedback`**
+**`licensio_feedback`**
 `id` · `article_id` BIGINT KEY · `vote` TINYINT (−1 / 1) · `comment` TEXT · `visitor_hash` CHAR(64) · `user_id` BIGINT · `status` ENUM('new','reviewed','actioned') KEY · `created_at` DATETIME KEY
 
 **No `user_ip` column exists in any table.**
 
 ### Privacy layer
-`class-lisensio-kb-visitor.php` produces `visitor_hash = hash_hmac( 'sha256', ip . '|' . user_agent, daily_salt )`. The salt is a key, not a prefix, and the `|` delimiter keeps the inputs unambiguous — without it, IP `1.2.3.4` with user agent `5Mozilla` collides with IP `1.2.3.45` and `Mozilla`, collapsing two visitors into one identity and breaking the one-vote-per-visitor and rate-limiting rules built on the hash.
+`class-licensio-kb-visitor.php` produces `visitor_hash = hash_hmac( 'sha256', ip . '|' . user_agent, daily_salt )`. The salt is a key, not a prefix, and the `|` delimiter keeps the inputs unambiguous — without it, IP `1.2.3.4` with user agent `5Mozilla` collides with IP `1.2.3.45` and `Mozilla`, collapsing two visitors into one identity and breaking the one-vote-per-visitor and rate-limiting rules built on the hash.
 
 The salt is stored in an autoloaded option and rotated **lazily on read as well as by cron**: `get_salts()` compares `current_created` against the rotation interval and rotates before returning. Cron is an optimisation, not the guarantee — a site with `DISABLE_WP_CRON` and a misconfigured system cron, or simply very little traffic, would otherwise hold one salt for the whole retention window, and anyone able to read the option could then brute-force the IPv4 space against a known user agent and recover every stored hash. The previous salt is retained for 24 hours to avoid double-counting across a rotation.
 
-The raw IP is never persisted. Retention is `lisensio_analytics_retention_days` (default 90); a value of `0` falls back to the default rather than being clamped to one day, since `0` is commonly meant as "keep forever" and silently applying one-day retention would destroy analytics history. Unbounded retention is deliberately not offered. `lisensio_analytics_cleanup` runs daily and deletes expired rows in chunks. WordPress privacy exporter/eraser handlers are registered against `visitor_hash` and `user_id`, and are owned by the analytics issue.
+The raw IP is never persisted. Retention is `licensio_analytics_retention_days` (default 90); a value of `0` falls back to the default rather than being clamped to one day, since `0` is commonly meant as "keep forever" and silently applying one-day retention would destroy analytics history. Unbounded retention is deliberately not offered. `licensio_analytics_cleanup` runs daily and deletes expired rows in chunks. WordPress privacy exporter/eraser handlers are registered against `visitor_hash` and `user_id`, and are owned by the analytics issue.
 
 ### Search
 
-`class-lisensio-kb-search-index.php` — maintains `lisensio_search_index` on `save_post`, `deleted_post`, `set_object_terms` and term edits; provides a chunked full rebuild driven by cron and exposed as `wp lisensio-kb reindex`.
+`class-licensio-kb-search-index.php` — maintains `licensio_search_index` on `save_post`, `deleted_post`, `set_object_terms` and term edits; provides a chunked full rebuild driven by cron and exposed as `wp licensio-kb reindex`.
 
-`class-lisensio-kb-search-query.php` — two drivers behind one interface:
+`class-licensio-kb-search-query.php` — two drivers behind one interface:
 - **FULLTEXT** — `MATCH … AGAINST` in boolean mode; relevance weighted title ×3, tags ×2, content ×1; prefix-expands the final token for type-ahead.
 - **LIKE fallback** — used when FULLTEXT is unavailable; same ranking applied in PHP.
 
@@ -172,7 +172,7 @@ Both drivers apply post-status and (from v2) gating filters before returning IDs
 
 ### REST API
 
-Namespace `lisensio-kb/v1`:
+Namespace `licensio-kb/v1`:
 
 | Route | Method | Auth |
 |---|---|---|
@@ -181,29 +181,29 @@ Namespace `lisensio-kb/v1`:
 | `/categories` | GET | Public |
 | `/feedback` | POST | Public, nonce + one-per-visitor |
 | `/views` | POST | Public, nonce, throttled |
-| `/analytics/{overview\|searches\|articles\|feedback}` | GET | `manage_lisensio_kb` |
-| `/feedback/{id}` | PATCH | `manage_lisensio_kb` |
-| `/settings` | GET/POST | `manage_lisensio_kb` |
+| `/analytics/{overview\|searches\|articles\|feedback}` | GET | `manage_licensio_kb` |
+| `/feedback/{id}` | PATCH | `manage_licensio_kb` |
+| `/settings` | GET/POST | `manage_licensio_kb` |
 
 ### Frontend
 
 `assets/js/search.js` — dependency-free type-ahead (no Vue on the frontend), debounced 250 ms, aborts in-flight requests, full ARIA combobox semantics, keyboard navigable.
 `assets/js/feedback.js` — vote submission and comment reveal.
-Styling uses CSS custom properties on `.lisensio-kb` so a theme or the settings screen can restyle without overriding rules.
+Styling uses CSS custom properties on `.licensio-kb` so a theme or the settings screen can restyle without overriding rules.
 
 ### Templates — dual system (classic + block themes)
 
-The plugin ships a complete, overridable template set for **both** theme paradigms. `lisensio_kb_get_template()` is block-theme aware: it calls `wp_is_block_theme()` and routes to the correct layer.
+The plugin ships a complete, overridable template set for **both** theme paradigms. `licensio_kb_get_template()` is block-theme aware: it calls `wp_is_block_theme()` and routes to the correct layer.
 
-**Classic themes (PHP templates)** — plugin templates live in `templates/`. Resolution order: `{theme}/lisensio-kb/{template}.php` → plugin `templates/{template}.php`. Templates: archive, single, category, tag, search results, breadcrumbs, article card, category card, feedback form, no-results.
+**Classic themes (PHP templates)** — plugin templates live in `templates/`. Resolution order: `{theme}/licensio-kb/{template}.php` → plugin `templates/{template}.php`. Templates: archive, single, category, tag, search results, breadcrumbs, article card, category card, feedback form, no-results.
 
-**Block themes / Site Editor (HTML block templates)** — the plugin registers block templates and template parts so they appear in the Site Editor and can be overridden there like any theme template. Registered via `get_block_templates` / `wp_template` resolution against `block-templates/`: `single-lisensio_article`, `archive-lisensio_article`, `taxonomy-lisensio_category`, `taxonomy-lisensio_tag`, `search-lisensio_article`, plus a `lisensio-kb-header` template part. Query Loop supports the `lisensio_article` post type and both taxonomies. A theme overrides by shipping its own `templates/single-lisensio_article.html`.
+**Block themes / Site Editor (HTML block templates)** — the plugin registers block templates and template parts so they appear in the Site Editor and can be overridden there like any theme template. Registered via `get_block_templates` / `wp_template` resolution against `block-templates/`: `single-licensio_article`, `archive-licensio_article`, `taxonomy-licensio_category`, `taxonomy-licensio_tag`, `search-licensio_article`, plus a `licensio-kb-header` template part. Query Loop supports the `licensio_article` post type and both taxonomies. A theme overrides by shipping its own `templates/single-licensio_article.html`.
 
-Both layers fire the same frontend hook contract (`lisensio_before_article`, `lisensio_after_article`, `lisensio_article_footer`), so feedback, analytics and future gating attach once and work under either paradigm.
+Both layers fire the same frontend hook contract (`licensio_before_article`, `licensio_after_article`, `licensio_article_footer`), so feedback, analytics and future gating attach once and work under either paradigm.
 
 ### Blocks and shortcodes
 
-`blocks/` built with `wp-scripts`: `lisensio-kb/search`, `lisensio-kb/article-list`, `lisensio-kb/category-grid`, `lisensio-kb/breadcrumbs`, `lisensio-kb/faq`. Every block's `render_callback` is also registered as a shortcode (`[lisensio_kb_search]`, `[lisensio_kb_articles]`, `[lisensio_kb_categories]`, `[lisensio_kb_breadcrumbs]`, `[lisensio_kb_faq]`) so both paths produce identical markup from one implementation.
+`blocks/` built with `wp-scripts`: `licensio-kb/search`, `licensio-kb/article-list`, `licensio-kb/category-grid`, `licensio-kb/breadcrumbs`, `licensio-kb/faq`. Every block's `render_callback` is also registered as a shortcode (`[licensio_kb_search]`, `[licensio_kb_articles]`, `[licensio_kb_categories]`, `[licensio_kb_breadcrumbs]`, `[licensio_kb_faq]`) so both paths produce identical markup from one implementation.
 
 ### Admin
 
@@ -213,7 +213,7 @@ Article editing stays native Gutenberg with native list tables. Only the data-he
 - `apps/feedback/` — feedback inbox
 - `apps/settings/` — settings
 
-Stack matches SLSWC: Vue 3, TypeScript, Pinia, Ant Design Vue, Axios, Vite. Dev server on port **6913** (SLSWC uses 6912), gated by `HMR_DEV === 'lisensio-kb'`; production reads `dist/.vite/manifest.json`.
+Stack matches SLSWC: Vue 3, TypeScript, Pinia, Ant Design Vue, Axios, Vite. Dev server on port **6913** (SLSWC uses 6912), gated by `HMR_DEV === 'licensio-kb'`; production reads `dist/.vite/manifest.json`.
 
 Menu: top-level **Knowledge Base** → Articles · Categories · Tags · Feedback · Analytics · Settings.
 
@@ -221,26 +221,26 @@ Menu: top-level **Knowledge Base** → Articles · Categories · Tags · Feedbac
 
 - Composer with Strauss for vendor prefixing; PHPCS, PHPStan, PHPUnit.
 - npm: Vite for admin apps, `wp-scripts` for blocks, both emitting to `dist/`.
-- `bin/build-release.sh` produces two artifacts: `lisensio-knowledge-base.zip` (free, `pro/` excluded) and `lisensio-knowledge-base-pro.zip`.
+- `bin/build-release.sh` produces two artifacts: `licensio-knowledge-base.zip` (free, `pro/` excluded) and `licensio-knowledge-base-pro.zip`.
 - CI asserts the free artifact contains no path under `pro/` and no reference to SLSWC or WooCommerce symbols outside `pro/`.
 - `readme.txt` maintained to wordpress.org standards; all strings translatable; `.pot` generated on release.
 
 ### The disposable migrator
 
-`tools/migrate-heroic/` — a WP-CLI command run once against the Lisensio site, excluded from both build artifacts and from the wordpress.org submission. Migrates `ht_kb` posts, `ht_kb_category`/`ht_kb_tag` terms and term meta, article and category ordering, historical votes from `hkb_voting`, and search/visit/exit analytics from Heroic's three tables into the new schema (dropping IPs during the import). Generates 301 redirects from every old Heroic URL to the new permalink and writes a mapping file. Idempotent, resumable, with a `--dry-run` mode.
+`tools/migrate-heroic/` — a WP-CLI command run once against the Licensio site, excluded from both build artifacts and from the wordpress.org submission. Migrates `ht_kb` posts, `ht_kb_category`/`ht_kb_tag` terms and term meta, article and category ordering, historical votes from `hkb_voting`, and search/visit/exit analytics from Heroic's three tables into the new schema (dropping IPs during the import). Generates 301 redirects from every old Heroic URL to the new permalink and writes a mapping file. Idempotent, resumable, with a `--dry-run` mode.
 
 ### Import wizard
 
 Decided 2026-10-04 (issue #13), shipped in the free build in 1.0.0. **Knowledge Base > Tools > Migration** imports from Heroic Knowledge Base and BetterDocs through one framework:
 
-- `Lisensio_KB_Import_Driver` runs every import (phases `terms`, `articles`, then the source's analytics phases, one AJAX batch at a time); `Lisensio_KB_Import_Source` reads a source's posts and terms straight from the tables, so the source plugin may be deactivated. A third source is a pair of subclasses registered through the `lisensio_import_drivers` filter.
+- `Licensio_KB_Import_Driver` runs every import (phases `terms`, `articles`, then the source's analytics phases, one AJAX batch at a time); `Licensio_KB_Import_Source` reads a source's posts and terms straight from the tables, so the source plugin may be deactivated. A third source is a pair of subclasses registered through the `licensio_import_drivers` filter.
 - Flow: pick a detected source → map each source category to *create new* or *merge into an existing category* → dry run → import → summary and log.
 - Dry runs write nothing but the log; their scratch state is deleted when they finish, and their analytics phases start from the real import's cursors so they preview only what is new.
-- Content is idempotent through provenance meta (`_lisensio_{source}_post_id` / `_term_id`); a re-run skips what was imported and leaves it unchanged. Analytics are idempotent through per-phase cursors, which a new run keeps, so a re-run imports only rows recorded since. An interrupted run resumes; the wizard never resets a real run.
+- Content is idempotent through provenance meta (`_licensio_{source}_post_id` / `_term_id`); a re-run skips what was imported and leaves it unchanged. Analytics are idempotent through per-phase cursors, which a new run keeps, so a re-run imports only rows recorded since. An interrupted run resumes; the wizard never resets a real run.
 - The source is read-only: attachments are not re-parented, the imported article points at the same attachment.
-- Redirects: old paths → new URLs are stored in the `lisensio_import_redirects` option and served with a 301 on requests that would otherwise 404. A per-source CSV URL map is downloadable.
+- Redirects: old paths → new URLs are stored in the `licensio_import_redirects` option and served with a 301 on requests that would otherwise 404. A per-source CSV URL map is downloadable.
 - BetterDocs specifics: each `knowledge_base` term becomes a top-level category over its categories; daily analytics totals are expanded into per-event rows (happy/normal → helpful, sad → not helpful; found and not-found searches separately); today's still-changing totals wait for the next run.
-- Migration log: table `lisensio_import_log` (DB schema 1.0.1) with one row per category, tag and article — title, ids, categories, each source meta key with its truncated value and outcome, status and a plain-language error — plus one row per analytics batch and per failed or orphaned record. Dry runs are logged and flagged. Kept until cleared; CSV export; dropped on uninstall.
+- Migration log: table `licensio_import_log` (DB schema 1.0.1) with one row per category, tag and article — title, ids, categories, each source meta key with its truncated value and outcome, status and a plain-language error — plus one row per analytics batch and per failed or orphaned record. Dry runs are logged and flagged. Kept until cleared; CSV export; dropped on uninstall.
 
 ---
 
@@ -264,7 +264,7 @@ The front end keeps `#2ba377`, the theme's `--primary`. Admin chrome and publish
 
 ### The shared shell
 
-`Lisensio_KB_Admin_Page::shell()` prints the frame for all three screens, in PHP rather than in each app:
+`Licensio_KB_Admin_Page::shell()` prints the frame for all three screens, in PHP rather than in each app:
 
 ```
 .wrap.lkb-wrap > .lkb-page > .lkb-page__inner > h1.lkb-page__title + #mount
@@ -283,7 +283,7 @@ Colour, spacing and radius come from `apps/styles/tokens.css`; the shell from `a
 
 ## Security considerations
 
-- All REST writes require a nonce; all reads that expose non-public data require `manage_lisensio_kb`.
+- All REST writes require a nonce; all reads that expose non-public data require `manage_licensio_kb`.
 - Public endpoints are rate-limited per visitor hash to prevent search-log flooding and vote stuffing.
 - Search input is bound as parameters; FULLTEXT boolean operators are stripped from user input before use.
 - Feedback comments are sanitised on input and escaped on output; they are never rendered as HTML.
@@ -326,7 +326,7 @@ Phase 1 is the scaffold PR; phases 2–11 are independent sub-issues that each b
 ## Open questions and risks
 
 1. ~~**No in-plugin migrator is an adoption cost.**~~ Resolved 2026-10-04: the free build ships the Heroic and BetterDocs import wizard (see *Import wizard*).
-2. **Theme cutover risk.** `themes/lisensio` breaks when Heroic KB is deactivated. Mitigated by theme-agnostic defaults, but the Lisensio site temporarily loses its bespoke KB design until `slswc/theme` is updated. Must be sequenced with whoever owns that repo.
+2. **Theme cutover risk.** `themes/licensio` breaks when Heroic KB is deactivated. Mitigated by theme-agnostic defaults, but the Licensio site temporarily loses its bespoke KB design until `slswc/theme` is updated. Must be sequenced with whoever owns that repo.
 3. **Ant Design in a wordpress.org plugin.** Bundle size and committed build artifacts will draw reviewer attention, and the admin will not look native. Accepted deliberately for consistency with SLSWC.
-4. **Lisensio-hosted AI is a service commitment**, not a plugin feature — token cost, uptime, abuse protection. Scoped to v2; needs its own infrastructure spec before that epic.
+4. **Licensio-hosted AI is a service commitment**, not a plugin feature — token cost, uptime, abuse protection. Scoped to v2; needs its own infrastructure spec before that epic.
 5. **Default branch is `main`** by decision, which differs from the rest of the `slswc` org (`slswc/slswc` and `slswc/client` both use `master`). The scaffold PR sets it.

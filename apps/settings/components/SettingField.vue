@@ -90,7 +90,7 @@ function update( value: SettingValue ): void {
 			</a-select-option>
 		</a-select>
 
-		<span v-else-if="field.control === 'color'" class="lisensio-kb-settings__color">
+		<span v-else-if="field.control === 'color'" class="licensio-kb-settings__color">
 			<input
 				type="color"
 				:value="String( value ?? '#000000' )"
@@ -110,13 +110,13 @@ function update( value: SettingValue ): void {
 			@update:value="update( String( $event ) )"
 		/>
 
-		<span v-if="field.unit" class="lisensio-kb-settings__unit">
+		<span v-if="field.unit" class="licensio-kb-settings__unit">
 			{{ field.unit }}
 		</span>
 
-		<span v-if="bounds" class="lisensio-kb-settings__bounds">{{ bounds }}</span>
+		<span v-if="bounds" class="licensio-kb-settings__bounds">{{ bounds }}</span>
 
-		<span v-if="changed" class="lisensio-kb-settings__changed">•</span>
+		<span v-if="changed" class="licensio-kb-settings__changed">•</span>
 			</div>
 
 			<p v-if="error" class="lkb-field__error">{{ error }}</p>

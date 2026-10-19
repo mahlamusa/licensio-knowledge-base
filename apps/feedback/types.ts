@@ -2,7 +2,7 @@
  * Feedback inbox types.
  *
  * The shapes the REST layer actually returns, so a change in
- * `Lisensio_KB_Feedback_REST_Controller::prepare_row()` is a compile error
+ * `Licensio_KB_Feedback_REST_Controller::prepare_row()` is a compile error
  * here rather than an undefined at runtime.
  *
  * @since 1.0.0

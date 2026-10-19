@@ -1,0 +1,177 @@
+<?php
+/**
+ * The settings screen.
+ *
+ * Registers **Knowledge Base → Settings** through the shared admin menu seam
+ * and mounts the Vue settings app on it. The screen itself renders nothing but
+ * a mount point: every field, label and group comes from the schema the REST
+ * route answers with, so adding a setting to the registry never means editing
+ * a template here.
+ *
+ * @package Licensio_KB
+ * @since   1.0.0
+ */
+
+defined( 'ABSPATH' ) || exit;
+
+/**
+ * The Settings admin screen.
+ *
+ * @since 1.0.0
+ */
+class Licensio_KB_Settings_Admin {
+
+    /**
+     * The page slug.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    const MENU_SLUG = 'licensio-kb-settings';
+
+    /**
+     * The script handle the settings app is registered under.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    const SCRIPT_HANDLE = 'licensio-kb-settings';
+
+    /**
+     * The Vite entry, relative to the plugin root.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    const APP_ENTRY = 'apps/settings/index.ts';
+
+    /**
+     * The build asset loader.
+     *
+     * @since 1.0.0
+     * @var Licensio_KB_Assets
+     */
+    private $assets;
+
+    /**
+     * Build the screen.
+     *
+     * @since 1.0.0
+     *
+     * @param Licensio_KB_Assets $assets The build asset loader.
+     */
+    public function __construct( Licensio_KB_Assets $assets ) {
+        $this->assets = $assets;
+    }
+
+    /**
+     * Register the WordPress hooks.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function init_hooks() {
+        add_filter( 'licensio_admin_menu_pages', array( $this, 'register_page' ) );
+        add_action( 'admin_enqueue_scripts', array( $this, 'enqueue' ) );
+    }
+
+    /**
+     * Add the Settings page to the shared Knowledge Base menu.
+     *
+     * Registered through `licensio_admin_menu_pages` rather than by calling
+     * `add_submenu_page()` here, so the parent slug, the capability default and
+     * the ordering stay owned by Licensio_KB_Admin_Menu.
+     *
+     * @since 1.0.0
+     *
+     * @param array<int, array<string, mixed>>|mixed $pages The registered pages.
+     *
+     * @return array<int, array<string, mixed>> The pages, with Settings added.
+     */
+    public function register_page( $pages ) {
+        $pages   = is_array( $pages ) ? $pages : array();
+        $pages[] = array(
+            'menu_slug'  => self::MENU_SLUG,
+            'page_title' => __( 'Knowledge Base Settings', 'licensio-knowledge-base' ),
+            'menu_title' => __( 'Settings', 'licensio-knowledge-base' ),
+            'callback'   => array( $this, 'render' ),
+            'position'   => 40,
+        );
+
+        return $pages;
+    }
+
+    /**
+     * Render the mount point the Vue app takes over.
+     *
+     * The shared shell prints the heading and the measured column so the three
+     * admin screens frame their applications identically.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function render() {
+        if ( ! Licensio_KB_Capabilities::current_user_can_manage() ) {
+            wp_die( esc_html__( 'You are not allowed to manage the knowledge base settings.', 'licensio-knowledge-base' ) );
+        }
+
+        Licensio_KB_Admin_Page::shell(
+            __( 'Settings', 'licensio-knowledge-base' ),
+            self::SCRIPT_HANDLE,
+            __( 'Loading the knowledge base settings…', 'licensio-knowledge-base' ),
+            'licensio-kb-settings-app'
+        );
+    }
+
+    /**
+     * Enqueue the settings app on its own screen and nowhere else.
+     *
+     * @since 1.0.0
+     *
+     * @param string $hook_suffix The screen the enqueue is running for.
+     *
+     * @return void
+     */
+    public function enqueue( $hook_suffix ) {
+        $expected = Licensio_KB_Admin_Menu::hook_suffix( self::MENU_SLUG );
+
+        if ( '' === $expected || $hook_suffix !== $expected ) {
+            return;
+        }
+
+        if ( ! Licensio_KB_Capabilities::current_user_can_manage() ) {
+            return;
+        }
+
+        if ( ! $this->assets->enqueue_app( self::SCRIPT_HANDLE, self::APP_ENTRY, array( 'wp-i18n' ) ) ) {
+            return;
+        }
+
+        wp_set_script_translations( self::SCRIPT_HANDLE, 'licensio-knowledge-base' );
+
+        wp_localize_script( self::SCRIPT_HANDLE, 'licensioKbSettings', $this->app_data() );
+    }
+
+    /**
+     * The bootstrap data the settings app reads.
+     *
+     * Only the endpoint and the nonce. Everything else — the fields, their
+     * groups, their bounds, their current values — is fetched from the endpoint,
+     * so the screen cannot show a stale field list after another request has
+     * changed the registry.
+     *
+     * @since 1.0.0
+     *
+     * @return array<string, mixed> The app configuration.
+     */
+    public function app_data() {
+        return array(
+            'restUrl'     => esc_url_raw( Licensio_KB_REST_API::url( ltrim( Licensio_KB_REST_Settings_Controller::ROUTE, '/' ) ) ),
+            'nonce'       => wp_create_nonce( 'wp_rest' ),
+            'settingsUrl' => Licensio_KB_Admin_Page::settings_url(),
+            'archiveUrl'  => (string) get_post_type_archive_link( Licensio_KB_Post_Types::POST_TYPE ),
+        );
+    }
+}

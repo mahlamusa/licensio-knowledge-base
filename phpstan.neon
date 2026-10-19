@@ -2,7 +2,7 @@ parameters:
     level: 5
     phpVersion: 70400
     paths:
-        - lisensio-knowledge-base.php
+        - licensio-knowledge-base.php
         - uninstall.php
         - includes
         - templates
@@ -20,10 +20,10 @@ parameters:
     scanFiles:
         - libraries/autoload.php
     dynamicConstantNames:
-        - LISENSIO_KB_ABSPATH
-        - LISENSIO_KB_PLUGIN_URL
-        - LISENSIO_KB_DIST_URL
-        - LISENSIO_KB_DIST_PATH
+        - LICENSIO_KB_ABSPATH
+        - LICENSIO_KB_PLUGIN_URL
+        - LICENSIO_KB_DIST_URL
+        - LICENSIO_KB_DIST_PATH
         - HMR_DEV
         - WP_CLI
     treatPhpDocTypesAsCertain: false

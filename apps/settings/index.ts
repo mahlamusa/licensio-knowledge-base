@@ -8,7 +8,7 @@
  * it. Naming the twelve components this screen actually uses lets Rollup drop
  * the rest.
  *
- * Mounts onto the container `Lisensio_KB_Settings_Admin::render()` printed, and
+ * Mounts onto the container `Licensio_KB_Settings_Admin::render()` printed, and
  * bails quietly when it is absent so the bundle is inert if it is ever enqueued
  * on the wrong screen.
  *
@@ -37,7 +37,7 @@ import App from './App.vue';
 import 'ant-design-vue/dist/reset.css';
 import '../styles/admin.css';
 
-const container = document.getElementById( 'lisensio-kb-settings' );
+const container = document.getElementById( 'licensio-kb-settings' );
 
 if ( container ) {
 	container.innerHTML = '';

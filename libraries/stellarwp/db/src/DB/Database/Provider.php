@@ -5,7 +5,7 @@
  * Modified by Lindeni Mahlalela using {@see https://github.com/BrianHenryIE/strauss}.
  */
 
-namespace Lisensio_KB\StellarWP\DB\Database;
+namespace Licensio_KB\StellarWP\DB\Database;
 
 class Provider {
 	/**

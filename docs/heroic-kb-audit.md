@@ -91,7 +91,7 @@ Legacy/aggregate tables referenced: `hkb_analytics_search`, `hkb_analytics_searc
 7. **Deflection is measured but not acted on** — exits are only tracked; nothing suggests articles inside a support form.
 8. **AI is an upsell to a third-party SaaS** (HelpJet), not self-hosted or bring-your-own-key.
 
-## 5. Lisensio (SLSWC) integration surface
+## 5. Licensio (SLSWC) integration surface
 
 `slswc` v1.0.1 already provides what a KB companion should plug into:
 
@@ -103,9 +103,9 @@ Legacy/aggregate tables referenced: `hkb_analytics_search`, `hkb_analytics_searc
 - **Conventions**: filterable prefix `apply_filters('slswc_slug', 'slswc_')`, Strauss vendor prefixing, PHPCS (WPCS), PHPStan level 5, PHPUnit + Playwright
 - **Product types**: `WC_Product_Software`, variable + variation — the natural anchor for "docs for this product/version"
 
-**Theme**: `themes/lisensio` already ships an `hkb-templates/` override dir (18 templates) and `inc/knowledge-base.php`, which hard-codes `ht_kb`, `ht_kb_category`, `ht_kb_tag`, `ht_kb_is_ht_kb_search()`, `ht_kb_get_kb_archive_page_id()`. Any replacement plugin must either reuse those names/functions or ship a theme update in the same epic.
+**Theme**: `themes/licensio` already ships an `hkb-templates/` override dir (18 templates) and `inc/knowledge-base.php`, which hard-codes `ht_kb`, `ht_kb_category`, `ht_kb_tag`, `ht_kb_is_ht_kb_search()`, `ht_kb_get_kb_archive_page_id()`. Any replacement plugin must either reuse those names/functions or ship a theme update in the same epic.
 
-## 6. Differentiators available to Lisensio
+## 6. Differentiators available to Licensio
 
 - Articles scoped to a **software product + version range** (from `WC_Product_Software`)
 - **Licence-gated docs** — private/beta documentation visible only to holders of an active licence for that product

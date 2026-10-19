@@ -7,7 +7,7 @@
  * declared rather than assigned dynamically, so PHPStan sees the same shape as
  * the real class.
  *
- * @package Lisensio_KB
+ * @package Licensio_KB
  * @since   1.0.0
  */
 

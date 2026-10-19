@@ -5,10 +5,10 @@
  * Modified by Lindeni Mahlalela using {@see https://github.com/BrianHenryIE/strauss}.
  */
 
-namespace Lisensio_KB\StellarWP\DB\QueryBuilder\Concerns;
+namespace Licensio_KB\StellarWP\DB\QueryBuilder\Concerns;
 
-use Lisensio_KB\StellarWP\DB\QueryBuilder\Clauses\Union;
-use Lisensio_KB\StellarWP\DB\QueryBuilder\QueryBuilder;
+use Licensio_KB\StellarWP\DB\QueryBuilder\Clauses\Union;
+use Licensio_KB\StellarWP\DB\QueryBuilder\QueryBuilder;
 
 /**
  * @since 1.0.0

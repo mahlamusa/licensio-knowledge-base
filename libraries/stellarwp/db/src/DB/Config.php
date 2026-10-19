@@ -5,9 +5,9 @@
  * Modified by Lindeni Mahlalela using {@see https://github.com/BrianHenryIE/strauss}.
  */
 
-namespace Lisensio_KB\StellarWP\DB;
+namespace Licensio_KB\StellarWP\DB;
 
-use Lisensio_KB\StellarWP\DB\Database\Exceptions\DatabaseQueryException;
+use Licensio_KB\StellarWP\DB\Database\Exceptions\DatabaseQueryException;
 
 class Config {
 	/**

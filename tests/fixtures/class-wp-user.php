@@ -5,7 +5,7 @@
  * Brain Monkey supplies WordPress functions but no classes. The privacy
  * exporter resolves an email address to a user and reads its ID.
  *
- * @package Lisensio_KB
+ * @package Licensio_KB
  * @since   1.0.0
  */
 

@@ -5,9 +5,9 @@
  * Modified by Lindeni Mahlalela using {@see https://github.com/BrianHenryIE/strauss}.
  */
 
-namespace Lisensio_KB\StellarWP\DB\QueryBuilder\Clauses;
+namespace Licensio_KB\StellarWP\DB\QueryBuilder\Clauses;
 
-use Lisensio_KB\StellarWP\DB\QueryBuilder\QueryBuilder;
+use Licensio_KB\StellarWP\DB\QueryBuilder\QueryBuilder;
 
 /**
  * @since 1.0.0

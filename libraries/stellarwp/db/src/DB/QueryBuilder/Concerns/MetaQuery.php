@@ -5,12 +5,12 @@
  * Modified by Lindeni Mahlalela using {@see https://github.com/BrianHenryIE/strauss}.
  */
 
-namespace Lisensio_KB\StellarWP\DB\QueryBuilder\Concerns;
+namespace Licensio_KB\StellarWP\DB\QueryBuilder\Concerns;
 
-use Lisensio_KB\StellarWP\DB\QueryBuilder\Clauses\MetaTable;
-use Lisensio_KB\StellarWP\DB\QueryBuilder\Clauses\RawSQL;
-use Lisensio_KB\StellarWP\DB\QueryBuilder\JoinQueryBuilder;
-use Lisensio_KB\StellarWP\DB\QueryBuilder\QueryBuilder;
+use Licensio_KB\StellarWP\DB\QueryBuilder\Clauses\MetaTable;
+use Licensio_KB\StellarWP\DB\QueryBuilder\Clauses\RawSQL;
+use Licensio_KB\StellarWP\DB\QueryBuilder\JoinQueryBuilder;
+use Licensio_KB\StellarWP\DB\QueryBuilder\QueryBuilder;
 
 /**
  * @since 1.0.0

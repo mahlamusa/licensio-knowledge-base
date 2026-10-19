@@ -6,7 +6,7 @@
  * they are handed, so the class has to exist for them to be testable without a
  * WordPress installation.
  *
- * @package Lisensio_KB
+ * @package Licensio_KB
  * @since   1.0.0
  */
 

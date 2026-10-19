@@ -5,7 +5,7 @@
  * Modified by Lindeni Mahlalela using {@see https://github.com/BrianHenryIE/strauss}.
  */
 
-namespace Lisensio_KB\StellarWP\DB\QueryBuilder\Types;
+namespace Licensio_KB\StellarWP\DB\QueryBuilder\Types;
 
 use ReflectionClass;
 

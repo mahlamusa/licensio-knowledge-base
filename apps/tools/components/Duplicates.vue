@@ -130,8 +130,8 @@ const resultLines = computed( () => {
 </script>
 
 <template>
-	<div class="lisensio-kb-duplicates">
-		<p class="lisensio-kb-duplicates__lede">
+	<div class="licensio-kb-duplicates">
+		<p class="licensio-kb-duplicates__lede">
 			{{
 				translate(
 					'Duplicate articles share a title, a slug once any -2 style suffix is stripped, a date and the opening lines of their content; duplicate categories and tags share a name, a slug and a description. Merging keeps the member without a suffix: for articles the duplicate with the most meta provides the content and the rest go to the trash, for terms the meta and article assignments move across and the empty duplicate is deleted. Anything the knowledge base does not own is listed for you to resolve by hand.'
@@ -139,7 +139,7 @@ const resultLines = computed( () => {
 			}}
 		</p>
 
-		<div class="lisensio-kb-duplicates__actions">
+		<div class="licensio-kb-duplicates__actions">
 			<a-button type="primary" :loading="loading" :disabled="fixing" @click="scan">
 				{{ translate( 'Scan for duplicates' ) }}
 			</a-button>
@@ -161,26 +161,26 @@ const resultLines = computed( () => {
 			</a-popconfirm>
 		</div>
 
-		<a-alert v-if="error" type="error" show-icon :message="error" class="lisensio-kb-duplicates__error" />
+		<a-alert v-if="error" type="error" show-icon :message="error" class="licensio-kb-duplicates__error" />
 
 		<a-alert
 			v-if="nothingFound"
 			type="success"
 			show-icon
 			:message="translate( 'No duplicate articles, categories or tags detected.' )"
-			class="lisensio-kb-duplicates__error"
+			class="licensio-kb-duplicates__error"
 		/>
 
 		<template v-if="result">
-			<a-card :title="translate( 'Merge report' )" class="lisensio-kb-duplicates__card">
-				<ul class="lisensio-kb-duplicates__report">
+			<a-card :title="translate( 'Merge report' )" class="licensio-kb-duplicates__card">
+				<ul class="licensio-kb-duplicates__report">
 					<li v-for="line in resultLines" :key="line">{{ line }}</li>
 				</ul>
 
-				<p v-if="result.notes.length" class="lisensio-kb-duplicates__notes">
+				<p v-if="result.notes.length" class="licensio-kb-duplicates__notes">
 					{{ translate( 'What was done' ) }}:
 				</p>
-				<ul class="lisensio-kb-duplicates__report">
+				<ul class="licensio-kb-duplicates__report">
 					<li v-for="note in result.notes" :key="note">{{ note }}</li>
 				</ul>
 			</a-card>
@@ -189,19 +189,19 @@ const resultLines = computed( () => {
 		<a-card
 			v-if="mergeablePosts.length > 0"
 			:title="translate( 'Mergeable article groups' )"
-			class="lisensio-kb-duplicates__card"
+			class="licensio-kb-duplicates__card"
 		>
 			<div
 				v-for="group in mergeablePosts"
 				:key="group.baseSlug + group.date"
-				class="lisensio-kb-duplicates__group"
+				class="licensio-kb-duplicates__group"
 			>
 				<strong>{{ group.title }}</strong>
-				<span class="lisensio-kb-duplicates__group-meta">
+				<span class="licensio-kb-duplicates__group-meta">
 					{{ group.baseSlug }} · {{ group.date }}
 				</span>
 
-				<ul class="lisensio-kb-duplicates__members">
+				<ul class="licensio-kb-duplicates__members">
 					<li v-for="member in group.members" :key="member.id">
 						#{{ member.id }}
 						{{ member.slug }}
@@ -211,7 +211,7 @@ const resultLines = computed( () => {
 						<a-tag v-if="member.id === group.winner" color="blue">
 							{{ translate( 'provides the content' ) }}
 						</a-tag>
-						<span class="lisensio-kb-duplicates__meta-count">
+						<span class="licensio-kb-duplicates__meta-count">
 							{{ member.metaCount }} {{ translate( 'meta' ) }}
 						</span>
 					</li>
@@ -222,9 +222,9 @@ const resultLines = computed( () => {
 		<a-card
 			v-if="sourcePosts.length > 0"
 			:title="translate( 'Migration sources to clean up' )"
-			class="lisensio-kb-duplicates__card"
+			class="licensio-kb-duplicates__card"
 		>
-			<p class="lisensio-kb-duplicates__flagged-note">
+			<p class="licensio-kb-duplicates__flagged-note">
 				{{
 					translate(
 						'Each pair is an article and the migration source post it replaced. Merging moves the source post to the trash; the article is left exactly as the site serves it.'
@@ -235,17 +235,17 @@ const resultLines = computed( () => {
 			<div
 				v-for="group in sourcePosts"
 				:key="group.baseSlug + group.date"
-				class="lisensio-kb-duplicates__group"
+				class="licensio-kb-duplicates__group"
 			>
 				<strong>{{ group.title }}</strong>
-				<span class="lisensio-kb-duplicates__group-meta">
+				<span class="licensio-kb-duplicates__group-meta">
 					{{ group.baseSlug }} · {{ group.date }}
 				</span>
 
-				<ul class="lisensio-kb-duplicates__members">
+				<ul class="licensio-kb-duplicates__members">
 					<li v-for="member in group.members" :key="member.id">
 						#{{ member.id }}
-						<a-tag :color="member.type === 'lisensio_article' ? 'green' : 'blue'">
+						<a-tag :color="member.type === 'licensio_article' ? 'green' : 'blue'">
 							{{ member.type }}
 						</a-tag>
 						{{ member.slug }}
@@ -263,19 +263,19 @@ const resultLines = computed( () => {
 		<a-card
 			v-if="fixableTerms.length > 0"
 			:title="translate( 'Mergeable term groups' )"
-			class="lisensio-kb-duplicates__card"
+			class="licensio-kb-duplicates__card"
 		>
 			<div
 				v-for="group in fixableTerms"
 				:key="group.taxonomy + group.baseSlug"
-				class="lisensio-kb-duplicates__group"
+				class="licensio-kb-duplicates__group"
 			>
 				<strong>{{ group.name }}</strong>
-				<span class="lisensio-kb-duplicates__group-meta">
+				<span class="licensio-kb-duplicates__group-meta">
 					{{ group.taxonomy }} · {{ group.baseSlug }}
 				</span>
 
-				<ul class="lisensio-kb-duplicates__members">
+				<ul class="licensio-kb-duplicates__members">
 					<li v-for="member in group.members" :key="member.id">
 						#{{ member.id }}
 						{{ member.slug }}
@@ -285,7 +285,7 @@ const resultLines = computed( () => {
 						<a-tag v-if="member.id === group.winner" color="blue">
 							{{ translate( 'provides the meta' ) }}
 						</a-tag>
-						<span class="lisensio-kb-duplicates__meta-count">
+						<span class="licensio-kb-duplicates__meta-count">
 							{{ member.metaCount }} {{ translate( 'meta' ) }} ·
 							{{ member.count }} {{ translate( 'articles' ) }}
 						</span>
@@ -297,9 +297,9 @@ const resultLines = computed( () => {
 		<a-card
 			v-if="flaggedPosts.length > 0 || flaggedTerms.length > 0"
 			:title="translate( 'Flagged for manual review' )"
-			class="lisensio-kb-duplicates__card"
+			class="licensio-kb-duplicates__card"
 		>
-			<p class="lisensio-kb-duplicates__flagged-note">
+			<p class="licensio-kb-duplicates__flagged-note">
 				{{
 					translate(
 						'These groups involve a post type the knowledge base does not own, or have no un-suffixed member to merge into. Nothing was changed.'
@@ -310,17 +310,17 @@ const resultLines = computed( () => {
 			<div
 				v-for="group in flaggedPosts"
 				:key="group.baseSlug + group.date"
-				class="lisensio-kb-duplicates__group"
+				class="licensio-kb-duplicates__group"
 			>
 				<strong>{{ group.title }}</strong>
-				<span class="lisensio-kb-duplicates__group-meta">
+				<span class="licensio-kb-duplicates__group-meta">
 					{{ group.baseSlug }} · {{ group.date }}
 				</span>
 
-				<ul class="lisensio-kb-duplicates__members">
+				<ul class="licensio-kb-duplicates__members">
 					<li v-for="member in group.members" :key="member.id">
 						#{{ member.id }}
-						<a-tag :color="member.type === 'lisensio_article' ? 'green' : 'orange'">
+						<a-tag :color="member.type === 'licensio_article' ? 'green' : 'orange'">
 							{{ member.type }}
 						</a-tag>
 						{{ member.slug }} ({{ member.status }})
@@ -331,14 +331,14 @@ const resultLines = computed( () => {
 			<div
 				v-for="group in flaggedTerms"
 				:key="group.taxonomy + group.baseSlug"
-				class="lisensio-kb-duplicates__group"
+				class="licensio-kb-duplicates__group"
 			>
 				<strong>{{ group.name }}</strong>
-				<span class="lisensio-kb-duplicates__group-meta">
+				<span class="licensio-kb-duplicates__group-meta">
 					{{ group.taxonomy }} · {{ group.baseSlug }}
 				</span>
 
-				<ul class="lisensio-kb-duplicates__members">
+				<ul class="licensio-kb-duplicates__members">
 					<li v-for="member in group.members" :key="member.id">
 						#{{ member.id }} {{ member.slug }}
 					</li>
@@ -349,61 +349,61 @@ const resultLines = computed( () => {
 </template>
 
 <style scoped>
-.lisensio-kb-duplicates__lede {
+.licensio-kb-duplicates__lede {
 	margin: 0 0 16px;
 }
 
-.lisensio-kb-duplicates__actions {
+.licensio-kb-duplicates__actions {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 8px;
 	margin-bottom: 16px;
 }
 
-.lisensio-kb-duplicates__error {
+.licensio-kb-duplicates__error {
 	margin-bottom: 16px;
 }
 
-.lisensio-kb-duplicates__card {
+.licensio-kb-duplicates__card {
 	margin-bottom: 16px;
 }
 
-.lisensio-kb-duplicates__group {
+.licensio-kb-duplicates__group {
 	padding: 12px 0;
 	border-bottom: 1px solid var( --lkb-border-wp, #f0f0f0 );
 }
 
-.lisensio-kb-duplicates__group:last-child {
+.licensio-kb-duplicates__group:last-child {
 	border-bottom: none;
 }
 
-.lisensio-kb-duplicates__group-meta {
+.licensio-kb-duplicates__group-meta {
 	margin-left: 8px;
 	color: var( --lkb-ink-wp-muted, #646970 );
 	font-size: 12px;
 }
 
-.lisensio-kb-duplicates__members {
+.licensio-kb-duplicates__members {
 	margin: 8px 0 0;
 	padding-left: 20px;
 }
 
-.lisensio-kb-duplicates__meta-count {
+.licensio-kb-duplicates__meta-count {
 	margin-left: 8px;
 	color: var( --lkb-ink-wp-muted, #646970 );
 	font-size: 12px;
 }
 
-.lisensio-kb-duplicates__report {
+.licensio-kb-duplicates__report {
 	margin: 0;
 	padding-left: 20px;
 }
 
-.lisensio-kb-duplicates__notes {
+.licensio-kb-duplicates__notes {
 	margin: 16px 0 4px;
 }
 
-.lisensio-kb-duplicates__flagged-note {
+.licensio-kb-duplicates__flagged-note {
 	margin: 0 0 8px;
 	color: var( --lkb-ink-wp-muted, #646970 );
 }

@@ -86,7 +86,7 @@ onMounted( () => {
 
 <template>
 	<a-config-provider :theme="lkbTheme">
-		<div class="lkb-page lisensio-kb-inbox">
+		<div class="lkb-page licensio-kb-inbox">
 			<AppHeader :settings-url="chrome.settingsUrl" />
 
 			<div id="lkb-main" class="lkb-page__body lkb-measure">
@@ -99,7 +99,7 @@ onMounted( () => {
 					type="error"
 					show-icon
 					:message="store.error"
-					class="lisensio-kb-inbox__error"
+					class="licensio-kb-inbox__error"
 				/>
 
 				<div class="lkb-toolbar">
@@ -198,7 +198,7 @@ onMounted( () => {
 					</template>
 
 					<template v-else-if="'comment' === column.key">
-						<span class="lisensio-kb-inbox__comment">{{
+						<span class="licensio-kb-inbox__comment">{{
 							record.comment || '—'
 						}}</span>
 					</template>
@@ -228,7 +228,7 @@ onMounted( () => {
 </template>
 
 <style scoped>
-.lisensio-kb-inbox__error {
+.licensio-kb-inbox__error {
 	margin-bottom: var(--lkb-gap);
 }
 
@@ -353,7 +353,7 @@ onMounted( () => {
 	box-shadow: var(--lkb-shadow-sm);
 }
 
-.lisensio-kb-inbox__comment {
+.licensio-kb-inbox__comment {
 	color: var(--lkb-ink-muted);
 }
 

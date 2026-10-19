@@ -1,5 +1,5 @@
 /**
- * Shapes returned by the `lisensio-kb/v1/settings` endpoint.
+ * Shapes returned by the `licensio-kb/v1/settings` endpoint.
  *
  * The field list is not declared here as a union of known keys. The server
  * builds it from the settings registry, which is extensible, so the app treats

@@ -281,8 +281,8 @@ defineExpose( { reload: loadRuns } );
 </script>
 
 <template>
-	<div class="lisensio-kb-migration-log">
-		<a-alert v-if="error" type="error" show-icon :message="error" class="lisensio-kb-migration-log__error" />
+	<div class="licensio-kb-migration-log">
+		<a-alert v-if="error" type="error" show-icon :message="error" class="licensio-kb-migration-log__error" />
 
 		<a-empty
 			v-if="! runs.length && ! error"
@@ -290,10 +290,10 @@ defineExpose( { reload: loadRuns } );
 		/>
 
 		<template v-else-if="runs.length">
-			<div class="lisensio-kb-migration-log__toolbar">
+			<div class="licensio-kb-migration-log__toolbar">
 				<a-select
 					v-model:value="selectedRun"
-					class="lisensio-kb-migration-log__run"
+					class="licensio-kb-migration-log__run"
 					:aria-label="translate( 'Run' )"
 				>
 					<a-select-option v-for="item in runs" :key="item.run_id" :value="item.run_id">
@@ -303,7 +303,7 @@ defineExpose( { reload: loadRuns } );
 
 				<a-select
 					v-model:value="status"
-					class="lisensio-kb-migration-log__status"
+					class="licensio-kb-migration-log__status"
 					:options="statusOptions"
 					:aria-label="translate( 'Status' )"
 				/>
@@ -339,7 +339,7 @@ defineExpose( { reload: loadRuns } );
 				:pagination="{ current: page, pageSize: PAGE_SIZE, total, showSizeChanger: false }"
 				:row-expandable="expandable"
 				size="small"
-				class="lisensio-kb-migration-log__table"
+				class="licensio-kb-migration-log__table"
 				@change="onTableChange"
 			>
 				<template #emptyText>
@@ -361,7 +361,7 @@ defineExpose( { reload: loadRuns } );
 				</template>
 
 				<template #expandedRowRender="{ record }">
-					<div class="lisensio-kb-migration-log__details">
+					<div class="licensio-kb-migration-log__details">
 						<section v-if="termsOf( record ).length">
 							<h4>{{ translate( 'Categories and tags' ) }}</h4>
 							<ul>
@@ -375,7 +375,7 @@ defineExpose( { reload: loadRuns } );
 
 						<section v-if="metaOf( record ).length">
 							<h4>{{ translate( 'Meta' ) }}</h4>
-							<table class="lisensio-kb-migration-log__meta">
+							<table class="licensio-kb-migration-log__meta">
 								<thead>
 									<tr>
 										<th>{{ translate( 'Key' ) }}</th>
@@ -387,7 +387,7 @@ defineExpose( { reload: loadRuns } );
 								<tbody>
 									<tr v-for="meta in metaOf( record )" :key="meta.key">
 										<td><code>{{ meta.key }}</code></td>
-										<td class="lisensio-kb-migration-log__value">{{ meta.value }}</td>
+										<td class="licensio-kb-migration-log__value">{{ meta.value }}</td>
 										<td>
 											<a-tag :color="ACTION_COLORS[ meta.action ] ?? 'default'">{{ words( meta.action ) }}</a-tag>
 										</td>
@@ -397,7 +397,7 @@ defineExpose( { reload: loadRuns } );
 							</table>
 						</section>
 
-						<dl v-if="otherDetails( record ).length" class="lisensio-kb-migration-log__other">
+						<dl v-if="otherDetails( record ).length" class="licensio-kb-migration-log__other">
 							<template v-for="[ key, value ] in otherDetails( record )" :key="key">
 								<dt>{{ key }}</dt>
 								<dd>{{ value }}</dd>
@@ -411,57 +411,57 @@ defineExpose( { reload: loadRuns } );
 </template>
 
 <style scoped>
-.lisensio-kb-migration-log__error {
+.licensio-kb-migration-log__error {
 	margin-bottom: 12px;
 }
 
-.lisensio-kb-migration-log__toolbar {
+.licensio-kb-migration-log__toolbar {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 8px;
 	margin-bottom: 12px;
 }
 
-.lisensio-kb-migration-log__run {
+.licensio-kb-migration-log__run {
 	flex: 1 1 360px;
 	min-width: 0;
 }
 
-.lisensio-kb-migration-log__status {
+.licensio-kb-migration-log__status {
 	width: 140px;
 }
 
-.lisensio-kb-migration-log__details h4 {
+.licensio-kb-migration-log__details h4 {
 	margin: 8px 0 4px;
 	font-size: 13px;
 }
 
-.lisensio-kb-migration-log__details ul {
+.licensio-kb-migration-log__details ul {
 	margin: 0;
 	padding-left: 18px;
 }
 
-.lisensio-kb-migration-log__meta {
+.licensio-kb-migration-log__meta {
 	width: 100%;
 	border-collapse: collapse;
 	font-size: 12px;
 }
 
-.lisensio-kb-migration-log__meta th,
-.lisensio-kb-migration-log__meta td {
+.licensio-kb-migration-log__meta th,
+.licensio-kb-migration-log__meta td {
 	padding: 4px 8px;
 	border-bottom: 1px solid var( --lkb-border-wp, #dcdcde );
 	text-align: left;
 	vertical-align: top;
 }
 
-.lisensio-kb-migration-log__value {
+.licensio-kb-migration-log__value {
 	max-width: 320px;
 	overflow-wrap: anywhere;
 	color: var( --lkb-ink-wp-muted, #646970 );
 }
 
-.lisensio-kb-migration-log__other {
+.licensio-kb-migration-log__other {
 	display: grid;
 	grid-template-columns: max-content 1fr;
 	gap: 2px 12px;
@@ -469,12 +469,12 @@ defineExpose( { reload: loadRuns } );
 	font-size: 12px;
 }
 
-.lisensio-kb-migration-log__other dt {
+.licensio-kb-migration-log__other dt {
 	font-weight: 600;
 	text-transform: capitalize;
 }
 
-.lisensio-kb-migration-log__other dd {
+.licensio-kb-migration-log__other dd {
 	margin: 0;
 	overflow-wrap: anywhere;
 }

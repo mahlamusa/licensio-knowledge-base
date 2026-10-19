@@ -105,21 +105,21 @@ make_fixture() {
 
     mkdir -p "${fixture}/includes" "${fixture}/dist/apps/demo" "${fixture}/languages"
 
-    cat > "${fixture}/lisensio-knowledge-base.php" <<PHP
+    cat > "${fixture}/licensio-knowledge-base.php" <<PHP
 <?php
 /**
- * Plugin Name: Lisensio Knowledge Base
+ * Plugin Name: Licensio Knowledge Base
  * Version: ${version}
- * Text Domain: lisensio-knowledge-base
+ * Text Domain: licensio-knowledge-base
  * Requires at least: 6.4
  * Requires PHP: 7.4
  */
 
-define( 'LISENSIO_KB_VERSION', '${version}' );
+define( 'LICENSIO_KB_VERSION', '${version}' );
 PHP
 
     cat > "${fixture}/readme.txt" <<README
-=== Lisensio Knowledge Base ===
+=== Licensio Knowledge Base ===
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 7.4
@@ -128,19 +128,19 @@ README
 
     cat > "${fixture}/package.json" <<JSON
 {
-  "name": "lisensio-knowledge-base",
+  "name": "licensio-knowledge-base",
   "version": "${version}"
 }
 JSON
 
-    cat > "${fixture}/includes/class-lisensio-kb-demo.php" <<'PHP'
+    cat > "${fixture}/includes/class-licensio-kb-demo.php" <<'PHP'
 <?php
 /**
  * A demo class.
  */
-class Lisensio_KB_Demo {
+class Licensio_KB_Demo {
     public function label() {
-        return esc_html__( 'Demo', 'lisensio-knowledge-base' );
+        return esc_html__( 'Demo', 'licensio-knowledge-base' );
     }
 }
 PHP
@@ -171,14 +171,14 @@ assert_green 'minified identifiers such as wC( and WC do not trip the dist scan'
 
 BOUNDARY_COMMENT="${WORK_DIR}/boundary-comment"
 make_fixture "$BOUNDARY_COMMENT" '1.0.0'
-cat > "${BOUNDARY_COMMENT}/includes/class-lisensio-kb-standalone.php" <<'PHP'
+cat > "${BOUNDARY_COMMENT}/includes/class-licensio-kb-standalone.php" <<'PHP'
 <?php
 /**
  * The plugin is standalone: it needs neither SLSWC nor WooCommerce.
  *
  * Not even a WC_Order or a call to wc_get_product() - in prose.
  */
-class Lisensio_KB_Standalone {
+class Licensio_KB_Standalone {
     public function ok() {
         // WooCommerce is not required here either.
         return true;
@@ -191,37 +191,37 @@ assert_green 'SLSWC and WooCommerce named in PHP comments are allowed' \
 BOUNDARY_PRO="${WORK_DIR}/boundary-pro"
 make_fixture "$BOUNDARY_PRO" '1.0.0'
 mkdir -p "${BOUNDARY_PRO}/pro"
-printf '<?php\nclass Lisensio_KB_Pro_Gate {}\n' > "${BOUNDARY_PRO}/pro/class-lisensio-kb-pro-gate.php"
+printf '<?php\nclass Licensio_KB_Pro_Gate {}\n' > "${BOUNDARY_PRO}/pro/class-licensio-kb-pro-gate.php"
 assert_red 'a file under pro/ fails the free build' \
-    'pro/class-lisensio-kb-pro-gate.php' \
+    'pro/class-licensio-kb-pro-gate.php' \
     bash "${SCRIPT_DIR}/check-free-boundary.sh" "$BOUNDARY_PRO"
 
 BOUNDARY_WC="${WORK_DIR}/boundary-wc"
 make_fixture "$BOUNDARY_WC" '1.0.0'
-cat > "${BOUNDARY_WC}/includes/class-lisensio-kb-gate.php" <<'PHP'
+cat > "${BOUNDARY_WC}/includes/class-licensio-kb-gate.php" <<'PHP'
 <?php
-class Lisensio_KB_Gate {
+class Licensio_KB_Gate {
     public function order() {
         return new WC_Order( 1 );
     }
 }
 PHP
 assert_red 'a WooCommerce class outside pro/ fails the free build' \
-    'includes/class-lisensio-kb-gate.php:4' \
+    'includes/class-licensio-kb-gate.php:4' \
     bash "${SCRIPT_DIR}/check-free-boundary.sh" "$BOUNDARY_WC"
 
 BOUNDARY_SLSWC="${WORK_DIR}/boundary-slswc"
 make_fixture "$BOUNDARY_SLSWC" '1.0.0'
-cat > "${BOUNDARY_SLSWC}/includes/class-lisensio-kb-licence.php" <<'PHP'
+cat > "${BOUNDARY_SLSWC}/includes/class-licensio-kb-licence.php" <<'PHP'
 <?php
-class Lisensio_KB_Licence {
+class Licensio_KB_Licence {
     public function check() {
         return slswc_client_is_active();
     }
 }
 PHP
 assert_red 'an SLSWC symbol outside pro/ fails the free build' \
-    'includes/class-lisensio-kb-licence.php:4' \
+    'includes/class-licensio-kb-licence.php:4' \
     bash "${SCRIPT_DIR}/check-free-boundary.sh" "$BOUNDARY_SLSWC"
 
 BOUNDARY_DIST="${WORK_DIR}/boundary-dist"
@@ -258,12 +258,12 @@ for location in header constant readme package; do
 
     case "$location" in
         header)
-            sed -i.bak 's/^ \* Version: 1.0.0$/ * Version: 1.1.0/' "${fixture}/lisensio-knowledge-base.php"
+            sed -i.bak 's/^ \* Version: 1.0.0$/ * Version: 1.1.0/' "${fixture}/licensio-knowledge-base.php"
             expected='plugin header Version (1.1.0)'
             ;;
         constant)
-            sed -i.bak "s/'LISENSIO_KB_VERSION', '1.0.0'/'LISENSIO_KB_VERSION', '1.1.0'/" "${fixture}/lisensio-knowledge-base.php"
-            expected='LISENSIO_KB_VERSION (1.1.0)'
+            sed -i.bak "s/'LICENSIO_KB_VERSION', '1.0.0'/'LICENSIO_KB_VERSION', '1.1.0'/" "${fixture}/licensio-knowledge-base.php"
+            expected='LICENSIO_KB_VERSION (1.1.0)'
             ;;
         readme)
             sed -i.bak 's/^Stable tag: 1.0.0$/Stable tag: 1.1.0/' "${fixture}/readme.txt"
@@ -303,7 +303,7 @@ else
 
     cat > "${I18N_DIR}/good.php" <<'PHP'
 <?php
-$label = esc_html__( 'Demo', 'lisensio-knowledge-base' );
+$label = esc_html__( 'Demo', 'licensio-knowledge-base' );
 PHP
 
     cat > "${I18N_DIR}/missing.php" <<'PHP'
@@ -330,12 +330,12 @@ PHP
     printf '{ "rules": {} }\n' > "${WORK_DIR}/unpinned-eslintrc.json"
     assert_red 'an eslint config that no longer pins the JS text domain fails' \
         'no longer pins @wordpress/i18n-text-domain' \
-        env "LISENSIO_KB_ESLINTRC=${WORK_DIR}/unpinned-eslintrc.json" \
+        env "LICENSIO_KB_ESLINTRC=${WORK_DIR}/unpinned-eslintrc.json" \
         bash "${SCRIPT_DIR}/check-i18n.sh" "${I18N_DIR}/good.php"
 
     assert_red 'a missing eslint config fails' \
         'is missing' \
-        env "LISENSIO_KB_ESLINTRC=${WORK_DIR}/no-such-eslintrc.json" \
+        env "LICENSIO_KB_ESLINTRC=${WORK_DIR}/no-such-eslintrc.json" \
         bash "${SCRIPT_DIR}/check-i18n.sh" "${I18N_DIR}/good.php"
 fi
 

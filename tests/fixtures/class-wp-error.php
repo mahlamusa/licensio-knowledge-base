@@ -6,7 +6,7 @@
  * query builder constructs a WP_Error on every statement it runs, so the
  * class has to exist for the installer to be testable.
  *
- * @package Lisensio_KB
+ * @package Licensio_KB
  * @since   1.0.0
  */
 

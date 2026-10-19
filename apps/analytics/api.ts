@@ -2,7 +2,7 @@
  * REST client for the analytics dashboard.
  *
  * Every request is authenticated with the `wp_rest` nonce the screen was
- * rendered with, which is what makes the `manage_lisensio_kb` capability check
+ * rendered with, which is what makes the `manage_licensio_kb` capability check
  * on the server side apply to the logged-in administrator rather than to an
  * anonymous caller.
  *
@@ -13,7 +13,7 @@ import type { AnalyticsConfig } from './types';
 
 declare global {
 	interface Window {
-		lisensioKbAnalytics?: AnalyticsConfig;
+		licensioKbAnalytics?: AnalyticsConfig;
 		wp?: {
 			i18n?: {
 				__: ( text: string, domain?: string ) => string;
@@ -40,7 +40,7 @@ const FALLBACK_CONFIG: AnalyticsConfig = {
  * @return {AnalyticsConfig} The configuration, or safe defaults when the page did not supply one.
  */
 export function config(): AnalyticsConfig {
-	return { ...FALLBACK_CONFIG, ...( window.lisensioKbAnalytics ?? {} ) };
+	return { ...FALLBACK_CONFIG, ...( window.licensioKbAnalytics ?? {} ) };
 }
 
 /**
@@ -64,7 +64,7 @@ export function translate( text: string ): string {
 	// and the lint rule both treat that spelling as a translation call site.
 	const translator = window.wp?.i18n?.__;
 
-	return translator ? translator( text, 'lisensio-knowledge-base' ) : text;
+	return translator ? translator( text, 'licensio-knowledge-base' ) : text;
 }
 
 /**

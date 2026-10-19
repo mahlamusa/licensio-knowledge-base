@@ -8,7 +8,7 @@
  * and a search results page all render this file, so the five views cannot
  * drift apart.
  *
- * A theme that copies this file to `lisensio-kb/hero.php` replaces the hero on
+ * A theme that copies this file to `licensio-kb/hero.php` replaces the hero on
  * all five at once, which is how a theme hands the knowledge base the hero it
  * already uses everywhere else. That indirection — rather than the plugin
  * imitating a particular theme's markup — is the reason this is a template of
@@ -18,7 +18,7 @@
  * site-specific, so a standalone install renders a sensible hero with no
  * configuration and no copy the plugin had to invent.
  *
- * @package Lisensio_KB
+ * @package Licensio_KB
  * @since   1.0.0
  *
  * @var array $args {
@@ -33,30 +33,30 @@
 
 defined( 'ABSPATH' ) || exit;
 
-$lisensio_kb_hero_title       = isset( $args['title'] ) ? (string) $args['title'] : '';
-$lisensio_kb_hero_subtitle    = isset( $args['subtitle'] ) ? (string) $args['subtitle'] : '';
-$lisensio_kb_hero_breadcrumbs = ! isset( $args['breadcrumbs'] ) || (bool) $args['breadcrumbs'];
-$lisensio_kb_hero_search      = isset( $args['search'] ) && (bool) $args['search'];
+$licensio_kb_hero_title       = isset( $args['title'] ) ? (string) $args['title'] : '';
+$licensio_kb_hero_subtitle    = isset( $args['subtitle'] ) ? (string) $args['subtitle'] : '';
+$licensio_kb_hero_breadcrumbs = ! isset( $args['breadcrumbs'] ) || (bool) $args['breadcrumbs'];
+$licensio_kb_hero_search      = isset( $args['search'] ) && (bool) $args['search'];
 
-list( $lisensio_kb_hero_lead, $lisensio_kb_hero_accent ) = Lisensio_KB_Templates::split_title( $lisensio_kb_hero_title );
+list( $licensio_kb_hero_lead, $licensio_kb_hero_accent ) = Licensio_KB_Templates::split_title( $licensio_kb_hero_title );
 ?>
-<header class="lisensio-kb__hero">
-    <?php if ( $lisensio_kb_hero_breadcrumbs ) : ?>
-        <?php lisensio_kb_get_template( 'breadcrumbs', array( 'items' => Lisensio_KB_Templates::breadcrumb_items() ) ); ?>
+<header class="licensio-kb__hero">
+    <?php if ( $licensio_kb_hero_breadcrumbs ) : ?>
+        <?php licensio_kb_get_template( 'breadcrumbs', array( 'items' => Licensio_KB_Templates::breadcrumb_items() ) ); ?>
     <?php endif; ?>
 
-    <h1 class="lisensio-kb__title">
-        <?php if ( '' !== $lisensio_kb_hero_lead ) : ?>
-            <?php echo esc_html( $lisensio_kb_hero_lead ); ?>
+    <h1 class="licensio-kb__title">
+        <?php if ( '' !== $licensio_kb_hero_lead ) : ?>
+            <?php echo esc_html( $licensio_kb_hero_lead ); ?>
         <?php endif; ?>
-        <span class="lisensio-kb__title-accent"><?php echo esc_html( $lisensio_kb_hero_accent ); ?></span>
+        <span class="licensio-kb__title-accent"><?php echo esc_html( $licensio_kb_hero_accent ); ?></span>
     </h1>
 
-    <?php if ( '' !== $lisensio_kb_hero_subtitle ) : ?>
-        <p class="lisensio-kb__description"><?php echo esc_html( $lisensio_kb_hero_subtitle ); ?></p>
+    <?php if ( '' !== $licensio_kb_hero_subtitle ) : ?>
+        <p class="licensio-kb__description"><?php echo esc_html( $licensio_kb_hero_subtitle ); ?></p>
     <?php endif; ?>
 
-    <?php if ( $lisensio_kb_hero_search ) : ?>
-        <?php lisensio_kb_get_template( 'search-field' ); ?>
+    <?php if ( $licensio_kb_hero_search ) : ?>
+        <?php licensio_kb_get_template( 'search-field' ); ?>
     <?php endif; ?>
 </header>

@@ -10,7 +10,7 @@
 #                     the npm manifests), so the hosted code can be traced and
 #                     rebuilt from SVN.
 #   tags/<version>/   a copy of trunk synced down to exactly the free build,
-#                     the same files as releases/lisensio-knowledge-base.zip.
+#                     the same files as releases/licensio-knowledge-base.zip.
 #   assets/           .wordpress-org/ (screenshots, and banners and icons when
 #                     they exist).
 #
@@ -37,7 +37,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" && pwd )"
 ROOT="$( dirname "$SCRIPT_DIR" )"
-SLUG='lisensio-knowledge-base'
+SLUG='licensio-knowledge-base'
 ASSETS_DIR="${ROOT}/.wordpress-org"
 SVN_URL="${SVN_URL:-https://plugins.svn.wordpress.org/${SLUG}/}"
 SVN_DIR="${SVN_DIR:-/tmp/${SLUG}-svn}"

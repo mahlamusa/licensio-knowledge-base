@@ -11,7 +11,7 @@
  * `transition_post_status` fires for every post on the site, so that guard is
  * load-bearing rather than decorative.
  *
- * @package Lisensio_KB
+ * @package Licensio_KB
  * @since   1.0.0
  */
 

@@ -23,9 +23,9 @@
 ( function () {
 	'use strict';
 
-	window.lisensioKB = window.lisensioKB || {};
+	window.licensioKB = window.licensioKB || {};
 
-	const settings = window.lisensioKBFeedbackData || {};
+	const settings = window.licensioKBFeedbackData || {};
 	const strings = settings.i18n || {};
 
 	/**
@@ -53,7 +53,7 @@
 	 * @return {void}
 	 */
 	function announce( widget, message ) {
-		const status = part( widget, 'data-lisensio-kb-feedback-status' );
+		const status = part( widget, 'data-licensio-kb-feedback-status' );
 
 		if ( ! status ) {
 			return;
@@ -89,8 +89,8 @@
 	 * @return {void}
 	 */
 	function collapse( widget ) {
-		const actions = part( widget, 'data-lisensio-kb-feedback-actions' );
-		const comment = part( widget, 'data-lisensio-kb-feedback-comment' );
+		const actions = part( widget, 'data-licensio-kb-feedback-actions' );
+		const comment = part( widget, 'data-licensio-kb-feedback-comment' );
 
 		if ( actions ) {
 			actions.hidden = true;
@@ -146,7 +146,7 @@
 				if ( ! result.ok ) {
 					const known =
 						result.body &&
-						result.body.code === 'lisensio_already_voted';
+						result.body.code === 'licensio_already_voted';
 
 					announce(
 						widget,
@@ -190,23 +190,23 @@
 	 * @return {void}
 	 */
 	function enhance( widget ) {
-		if ( widget.getAttribute( 'data-lisensio-kb-feedback-ready' ) ) {
+		if ( widget.getAttribute( 'data-licensio-kb-feedback-ready' ) ) {
 			return;
 		}
 
-		widget.setAttribute( 'data-lisensio-kb-feedback-ready', '1' );
+		widget.setAttribute( 'data-licensio-kb-feedback-ready', '1' );
 
-		const commentBox = part( widget, 'data-lisensio-kb-feedback-comment' );
-		const textarea = part( widget, 'data-lisensio-kb-feedback-textarea' );
-		const send = part( widget, 'data-lisensio-kb-feedback-send' );
+		const commentBox = part( widget, 'data-licensio-kb-feedback-comment' );
+		const textarea = part( widget, 'data-licensio-kb-feedback-textarea' );
+		const send = part( widget, 'data-licensio-kb-feedback-send' );
 
 		widget
-			.querySelectorAll( '[data-lisensio-kb-vote]' )
+			.querySelectorAll( '[data-licensio-kb-vote]' )
 			.forEach( function ( button ) {
 				button.addEventListener( 'click', function ( event ) {
 					const vote = parseInt(
 						event.currentTarget.getAttribute(
-							'data-lisensio-kb-vote'
+							'data-licensio-kb-vote'
 						),
 						10
 					);
@@ -241,11 +241,11 @@
 	 */
 	function init() {
 		document
-			.querySelectorAll( '[data-lisensio-kb-feedback]' )
+			.querySelectorAll( '[data-licensio-kb-feedback]' )
 			.forEach( enhance );
 	}
 
-	window.lisensioKB.feedback = { init };
+	window.licensioKB.feedback = { init };
 
 	if ( 'loading' === document.readyState ) {
 		document.addEventListener( 'DOMContentLoaded', init );

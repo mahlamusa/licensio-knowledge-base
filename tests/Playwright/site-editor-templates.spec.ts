@@ -8,7 +8,7 @@
  *
  * The suite needs a running WordPress with this plugin active, a block theme
  * (Twenty Twenty-Four or newer) and an administrator account, so it is skipped
- * unless `LISENSIO_KB_E2E=1` and the two credential variables are present. CI
+ * unless `LICENSIO_KB_E2E=1` and the two credential variables are present. CI
  * has no such site and runs Playwright with `--pass-with-no-tests`.
  *
  * @since 1.0.0
@@ -16,11 +16,11 @@
 
 import { expect, test, type Page } from '@playwright/test';
 
-const enabled = process.env.LISENSIO_KB_E2E === '1';
-const user = process.env.LISENSIO_KB_ADMIN_USER ?? '';
-const password = process.env.LISENSIO_KB_ADMIN_PASSWORD ?? '';
+const enabled = process.env.LICENSIO_KB_E2E === '1';
+const user = process.env.LICENSIO_KB_ADMIN_USER ?? '';
+const password = process.env.LICENSIO_KB_ADMIN_PASSWORD ?? '';
 
-const MARKER = 'Lisensio KB override marker';
+const MARKER = 'Licensio KB override marker';
 
 async function logIn( page: Page ): Promise< void > {
 	await page.goto( '/wp-login.php' );
@@ -40,7 +40,7 @@ async function openTemplateList( page: Page ): Promise< void > {
 test.describe( 'Knowledge base block templates in the Site Editor', () => {
 	test.skip(
 		! enabled || '' === user || '' === password,
-		'Set LISENSIO_KB_E2E=1, LISENSIO_KB_ADMIN_USER and LISENSIO_KB_ADMIN_PASSWORD to run this suite.'
+		'Set LICENSIO_KB_E2E=1, LICENSIO_KB_ADMIN_USER and LICENSIO_KB_ADMIN_PASSWORD to run this suite.'
 	);
 
 	test.beforeEach( async ( { page } ) => {
@@ -88,7 +88,7 @@ test.describe( 'Knowledge base block templates in the Site Editor', () => {
 
 		// The saved customisation is what the front end now renders.
 		const article = await page.evaluate( async () => {
-			const response = await window.fetch( '/wp-json/wp/v2/lisensio_articles?per_page=1' );
+			const response = await window.fetch( '/wp-json/wp/v2/licensio_articles?per_page=1' );
 			const items = await response.json();
 
 			return Array.isArray( items ) && items.length > 0 ? items[ 0 ].link : '';

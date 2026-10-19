@@ -1,52 +1,52 @@
 /**
- * Lisensio Knowledge Base — block styles.
+ * Licensio Knowledge Base — block styles.
  *
  * Loaded by every knowledge base block, on the front end and in the editor.
- * Depends on `lisensio-kb.css`, which declares the custom properties, the column
+ * Depends on `licensio-kb.css`, which declares the custom properties, the column
  * counts and the card rules used here, so this file only adds what a block needs
  * beyond them: the block wrapper and the FAQ disclosure list.
  *
- * Every rule is scoped to `.lisensio-kb`, so nothing here can reach the rest of
+ * Every rule is scoped to `.licensio-kb`, so nothing here can reach the rest of
  * the theme.
  */
 
-.lisensio-kb-block {
+.licensio-kb-block {
 	padding-top: 0;
 	padding-bottom: 0;
 }
 
 /* FAQ disclosure list. */
 
-.lisensio-kb .lisensio-kb-faq {
+.licensio-kb .licensio-kb-faq {
 	display: grid;
 	gap: 0.5rem;
 }
 
-.lisensio-kb .lisensio-kb-faq__item {
+.licensio-kb .licensio-kb-faq__item {
 	padding: 0.875rem 1.25rem;
-	border: var(--lisensio-kb-card-border);
-	border-radius: var(--lisensio-kb-radius);
-	background: var(--lisensio-kb-card-bg);
-	box-shadow: var(--lisensio-kb-card-shadow);
+	border: var(--licensio-kb-card-border);
+	border-radius: var(--licensio-kb-radius);
+	background: var(--licensio-kb-card-bg);
+	box-shadow: var(--licensio-kb-card-shadow);
 }
 
-.lisensio-kb .lisensio-kb-faq__question {
+.licensio-kb .licensio-kb-faq__question {
 	cursor: pointer;
 	font-weight: 600;
 	overflow-wrap: anywhere;
 }
 
-.lisensio-kb .lisensio-kb-faq__answer {
+.licensio-kb .licensio-kb-faq__answer {
 	padding-top: 0.5rem;
 }
 
-.lisensio-kb .lisensio-kb-faq__text {
+.licensio-kb .licensio-kb-faq__text {
 	margin: 0;
-	color: var(--lisensio-kb-muted);
+	color: var(--licensio-kb-muted);
 	overflow-wrap: anywhere;
 }
 
-.lisensio-kb .lisensio-kb-faq__more {
+.licensio-kb .licensio-kb-faq__more {
 	margin: 0.5rem 0 0;
 	font-size: 0.9375rem;
 }

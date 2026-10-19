@@ -3,11 +3,11 @@
  * Minimal WP_REST_Controller double.
  *
  * Brain Monkey supplies WordPress functions but no classes.
- * Lisensio_KB_REST_Controller extends WP_REST_Controller, so without this the
+ * Licensio_KB_REST_Controller extends WP_REST_Controller, so without this the
  * plugin's whole REST layer cannot even be loaded in the unit process — which
  * is why it shipped with no tests.
  *
- * @package Lisensio_KB
+ * @package Licensio_KB
  * @since   1.0.0
  */
 

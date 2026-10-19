@@ -17,7 +17,7 @@ import type {
 
 declare global {
 	interface Window {
-		lisensioKBFeedbackInbox?: InboxSettings;
+		licensioKBFeedbackInbox?: InboxSettings;
 	}
 }
 
@@ -30,7 +30,7 @@ declare global {
  */
 export function settings(): InboxSettings {
 	return (
-		window.lisensioKBFeedbackInbox ?? {
+		window.licensioKBFeedbackInbox ?? {
 			root: '',
 			nonce: '',
 			perPage: 20,

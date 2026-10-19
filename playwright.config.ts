@@ -2,7 +2,7 @@
  * Playwright configuration.
  *
  * End-to-end specs live in `tests/Playwright/`. The base URL comes from
- * `LISENSIO_KB_BASE_URL` so the same suite runs against a local LocalWP site,
+ * `LICENSIO_KB_BASE_URL` so the same suite runs against a local LocalWP site,
  * a Playground instance or CI.
  *
  * @since 1.0.0
@@ -10,7 +10,7 @@
 
 import { defineConfig, devices } from '@playwright/test';
 
-const baseURL = process.env.LISENSIO_KB_BASE_URL ?? 'http://lisenseserver.local';
+const baseURL = process.env.LICENSIO_KB_BASE_URL ?? 'http://lisenseserver.local';
 
 export default defineConfig( {
 	testDir: './tests/Playwright',

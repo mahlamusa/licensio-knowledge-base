@@ -7,9 +7,9 @@
  * category archive both render this file, so the two views cannot drift apart.
  *
  * Override from a theme by copying this file to
- * `lisensio-kb/page-header.php`.
+ * `licensio-kb/page-header.php`.
  *
- * @package Lisensio_KB
+ * @package Licensio_KB
  * @since   1.0.0
  *
  * @var array $args {
@@ -22,13 +22,13 @@
 
 defined( 'ABSPATH' ) || exit;
 
-$lisensio_kb_header_title    = isset( $args['title'] ) ? (string) $args['title'] : '';
-$lisensio_kb_header_subtitle = isset( $args['subtitle'] ) ? (string) $args['subtitle'] : '';
+$licensio_kb_header_title    = isset( $args['title'] ) ? (string) $args['title'] : '';
+$licensio_kb_header_subtitle = isset( $args['subtitle'] ) ? (string) $args['subtitle'] : '';
 ?>
-<header class="lisensio-kb__pagehead">
-    <h1 class="lisensio-kb__pagehead-title"><?php echo esc_html( $lisensio_kb_header_title ); ?></h1>
+<header class="licensio-kb__pagehead">
+    <h1 class="licensio-kb__pagehead-title"><?php echo esc_html( $licensio_kb_header_title ); ?></h1>
 
-    <?php if ( '' !== $lisensio_kb_header_subtitle ) : ?>
-        <p class="lisensio-kb__pagehead-subtitle"><?php echo esc_html( $lisensio_kb_header_subtitle ); ?></p>
+    <?php if ( '' !== $licensio_kb_header_subtitle ) : ?>
+        <p class="licensio-kb__pagehead-subtitle"><?php echo esc_html( $licensio_kb_header_subtitle ); ?></p>
     <?php endif; ?>
 </header>

@@ -35,20 +35,20 @@ import { useCategoryOptions } from '../shared/categories.js';
 function Edit( { attributes, setAttributes } ) {
 	const blockProps = useBlockProps();
 	const categories = useCategoryOptions(
-		__( 'Top level', 'lisensio-knowledge-base' )
+		__( 'Top level', 'licensio-knowledge-base' )
 	);
 
 	return (
 		<div { ...blockProps }>
 			<InspectorControls>
 				<PanelBody
-					title={ __( 'Categories', 'lisensio-knowledge-base' ) }
+					title={ __( 'Categories', 'licensio-knowledge-base' ) }
 				>
 					<SelectControl
 						__nextHasNoMarginBottom
 						label={ __(
 							'Show children of',
-							'lisensio-knowledge-base'
+							'licensio-knowledge-base'
 						) }
 						value={ attributes.parent }
 						options={ categories }
@@ -56,17 +56,17 @@ function Edit( { attributes, setAttributes } ) {
 					/>
 					<SelectControl
 						__nextHasNoMarginBottom
-						label={ __( 'Order by', 'lisensio-knowledge-base' ) }
+						label={ __( 'Order by', 'licensio-knowledge-base' ) }
 						value={ attributes.orderBy }
 						options={ [
 							{
-								label: __( 'Name', 'lisensio-knowledge-base' ),
+								label: __( 'Name', 'licensio-knowledge-base' ),
 								value: 'name',
 							},
 							{
 								label: __(
 									'Article count',
-									'lisensio-knowledge-base'
+									'licensio-knowledge-base'
 								),
 								value: 'count',
 							},
@@ -75,20 +75,20 @@ function Edit( { attributes, setAttributes } ) {
 					/>
 					<SelectControl
 						__nextHasNoMarginBottom
-						label={ __( 'Order', 'lisensio-knowledge-base' ) }
+						label={ __( 'Order', 'licensio-knowledge-base' ) }
 						value={ attributes.order }
 						options={ [
 							{
 								label: __(
 									'Ascending',
-									'lisensio-knowledge-base'
+									'licensio-knowledge-base'
 								),
 								value: 'asc',
 							},
 							{
 								label: __(
 									'Descending',
-									'lisensio-knowledge-base'
+									'licensio-knowledge-base'
 								),
 								value: 'desc',
 							},
@@ -99,7 +99,7 @@ function Edit( { attributes, setAttributes } ) {
 						__nextHasNoMarginBottom
 						label={ __(
 							'Categories (0 for all)',
-							'lisensio-knowledge-base'
+							'licensio-knowledge-base'
 						) }
 						value={ attributes.count }
 						min={ 0 }
@@ -108,7 +108,7 @@ function Edit( { attributes, setAttributes } ) {
 					/>
 					<RangeControl
 						__nextHasNoMarginBottom
-						label={ __( 'Columns', 'lisensio-knowledge-base' ) }
+						label={ __( 'Columns', 'licensio-knowledge-base' ) }
 						value={ attributes.columns }
 						min={ 1 }
 						max={ 4 }
@@ -118,7 +118,7 @@ function Edit( { attributes, setAttributes } ) {
 						__nextHasNoMarginBottom
 						label={ __(
 							'Show article counts',
-							'lisensio-knowledge-base'
+							'licensio-knowledge-base'
 						) }
 						checked={ attributes.showCount }
 						onChange={ ( showCount ) =>
@@ -127,7 +127,7 @@ function Edit( { attributes, setAttributes } ) {
 					/>
 					<ToggleControl
 						__nextHasNoMarginBottom
-						label={ __( 'Show icons', 'lisensio-knowledge-base' ) }
+						label={ __( 'Show icons', 'licensio-knowledge-base' ) }
 						checked={ attributes.showIcon }
 						onChange={ ( showIcon ) =>
 							setAttributes( { showIcon } )
@@ -137,7 +137,7 @@ function Edit( { attributes, setAttributes } ) {
 						__nextHasNoMarginBottom
 						label={ __(
 							'Show sub-categories',
-							'lisensio-knowledge-base'
+							'licensio-knowledge-base'
 						) }
 						checked={ attributes.showChildren }
 						onChange={ ( showChildren ) =>

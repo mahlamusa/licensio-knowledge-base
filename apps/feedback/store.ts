@@ -27,7 +27,7 @@ interface State {
 	error: string;
 }
 
-export const useFeedbackStore = defineStore( 'lisensioKBFeedback', {
+export const useFeedbackStore = defineStore( 'licensioKBFeedback', {
 	state: (): State => ( {
 		items: [],
 		counts: {},

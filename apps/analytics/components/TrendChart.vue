@@ -110,13 +110,13 @@ onBeforeUnmount( () => {
 </script>
 
 <template>
-	<div class="lisensio-kb-chart">
+	<div class="licensio-kb-chart">
 		<canvas ref="canvas"></canvas>
 	</div>
 </template>
 
 <style scoped>
-.lisensio-kb-chart {
+.licensio-kb-chart {
 	position: relative;
 	height: 280px;
 }

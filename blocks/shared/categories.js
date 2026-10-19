@@ -16,7 +16,7 @@ import { store as coreStore } from '@wordpress/core-data';
  * @since 1.0.0
  * @type {string}
  */
-export const CATEGORY_TAXONOMY = 'lisensio_category';
+export const CATEGORY_TAXONOMY = 'licensio_category';
 
 /**
  * Read every knowledge base category as a `SelectControl` option list.

@@ -5,13 +5,13 @@
  * One category in a grid: its name with its article count beside it, the
  * first few articles filed beneath it each behind a document icon, and a
  * View all link into the category archive. Override from a theme by copying
- * this file to `lisensio-kb/category-card.php`.
+ * this file to `licensio-kb/category-card.php`.
  *
  * Three meta keys can supply the icon and only one of them is drawn. The order
  * is inline SVG, then the uploaded attachment, then the dashicon name — most
- * specific first, and set out in full on Lisensio_KB_Term_Meta.
+ * specific first, and set out in full on Licensio_KB_Term_Meta.
  *
- * @package Lisensio_KB
+ * @package Licensio_KB
  * @since   1.0.0 Redesigned to the Help Topics card: inline article count, icon-fronted article links and a View all link.
  * @since   1.0.0 Added the article list, so a card says what is in the category rather than only how much.
  *
@@ -29,43 +29,43 @@
 
 defined( 'ABSPATH' ) || exit;
 
-$lisensio_kb_category = isset( $args['term'] ) ? $args['term'] : null;
+$licensio_kb_category = isset( $args['term'] ) ? $args['term'] : null;
 
-if ( ! $lisensio_kb_category instanceof WP_Term ) {
+if ( ! $licensio_kb_category instanceof WP_Term ) {
     return;
 }
 
-$lisensio_kb_category_url   = Lisensio_KB_Templates::term_link( $lisensio_kb_category );
-$lisensio_kb_category_count = Lisensio_KB_Templates::category_article_count( $lisensio_kb_category );
-$lisensio_kb_show_children  = ! isset( $args['show_children'] ) || (bool) $args['show_children'];
-$lisensio_kb_show_count     = ! isset( $args['show_count'] ) || (bool) $args['show_count'];
-$lisensio_kb_show_icon      = isset( $args['show_icon'] ) && (bool) $args['show_icon'];
-$lisensio_kb_show_articles  = ! isset( $args['show_articles'] ) || (bool) $args['show_articles'];
-$lisensio_kb_article_limit  = isset( $args['article_limit'] ) ? (int) $args['article_limit'] : 3;
-$lisensio_kb_children       = $lisensio_kb_show_children ? Lisensio_KB_Templates::child_categories( $lisensio_kb_category->term_id ) : array();
-$lisensio_kb_articles       = $lisensio_kb_show_articles
-    ? Lisensio_KB_Templates::category_articles( $lisensio_kb_category, $lisensio_kb_article_limit )
+$licensio_kb_category_url   = Licensio_KB_Templates::term_link( $licensio_kb_category );
+$licensio_kb_category_count = Licensio_KB_Templates::category_article_count( $licensio_kb_category );
+$licensio_kb_show_children  = ! isset( $args['show_children'] ) || (bool) $args['show_children'];
+$licensio_kb_show_count     = ! isset( $args['show_count'] ) || (bool) $args['show_count'];
+$licensio_kb_show_icon      = isset( $args['show_icon'] ) && (bool) $args['show_icon'];
+$licensio_kb_show_articles  = ! isset( $args['show_articles'] ) || (bool) $args['show_articles'];
+$licensio_kb_article_limit  = isset( $args['article_limit'] ) ? (int) $args['article_limit'] : 3;
+$licensio_kb_children       = $licensio_kb_show_children ? Licensio_KB_Templates::child_categories( $licensio_kb_category->term_id ) : array();
+$licensio_kb_articles       = $licensio_kb_show_articles
+    ? Licensio_KB_Templates::category_articles( $licensio_kb_category, $licensio_kb_article_limit )
     : array();
-$lisensio_kb_icon_svg       = $lisensio_kb_show_icon ? Lisensio_KB_Term_Meta::get_icon_svg( $lisensio_kb_category->term_id ) : '';
-$lisensio_kb_icon_id        = $lisensio_kb_show_icon && '' === $lisensio_kb_icon_svg
-    ? Lisensio_KB_Term_Meta::get_icon_id( $lisensio_kb_category->term_id )
+$licensio_kb_icon_svg       = $licensio_kb_show_icon ? Licensio_KB_Term_Meta::get_icon_svg( $licensio_kb_category->term_id ) : '';
+$licensio_kb_icon_id        = $licensio_kb_show_icon && '' === $licensio_kb_icon_svg
+    ? Licensio_KB_Term_Meta::get_icon_id( $licensio_kb_category->term_id )
     : 0;
-$lisensio_kb_icon           = $lisensio_kb_show_icon && '' === $lisensio_kb_icon_svg && 0 === $lisensio_kb_icon_id
-    ? Lisensio_KB_Term_Meta::get_icon( $lisensio_kb_category->term_id )
+$licensio_kb_icon           = $licensio_kb_show_icon && '' === $licensio_kb_icon_svg && 0 === $licensio_kb_icon_id
+    ? Licensio_KB_Term_Meta::get_icon( $licensio_kb_category->term_id )
     : '';
 ?>
-<article class="lisensio-kb-card lisensio-kb-card--category">
-    <div class="lisensio-kb-card__heading">
-    <?php if ( '' !== $lisensio_kb_icon_svg ) : ?>
-        <span class="lisensio-kb-card__icon lisensio-kb-card__icon--svg" aria-hidden="true">
+<article class="licensio-kb-card licensio-kb-card--category">
+    <div class="licensio-kb-card__heading">
+    <?php if ( '' !== $licensio_kb_icon_svg ) : ?>
+        <span class="licensio-kb-card__icon licensio-kb-card__icon--svg" aria-hidden="true">
             <?php
             /*
              * Printed unescaped, and it has to be: escaping it would put the
              * source of the icon on the card instead of the icon.
              *
              * That is safe here because of what the value is, not because of
-             * where it is printed. Lisensio_KB_Term_Meta::get_icon_svg() runs
-             * every read through Lisensio_KB_SVG_Sanitizer::sanitize(), which
+             * where it is printed. Licensio_KB_Term_Meta::get_icon_svg() runs
+             * every read through Licensio_KB_SVG_Sanitizer::sanitize(), which
              * rebuilds the markup from an allowlist of element and attribute
              * names — so whatever is in the database, what arrives here has no
              * `script`, no `foreignObject`, no `on*` handler and no `href` that
@@ -74,79 +74,79 @@ $lisensio_kb_icon           = $lisensio_kb_show_icon && '' === $lisensio_kb_icon
              * written by an importer or by hand is as safe as one written by the
              * term form.
              */
-            echo $lisensio_kb_icon_svg; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Allowlist-sanitized on read by Lisensio_KB_Term_Meta::get_icon_svg().
+            echo $licensio_kb_icon_svg; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Allowlist-sanitized on read by Licensio_KB_Term_Meta::get_icon_svg().
             ?>
         </span>
-    <?php elseif ( $lisensio_kb_icon_id > 0 ) : ?>
+    <?php elseif ( $licensio_kb_icon_id > 0 ) : ?>
         <?php
         echo wp_kses_post(
             (string) wp_get_attachment_image(
-                $lisensio_kb_icon_id,
+                $licensio_kb_icon_id,
                 'thumbnail',
                 false,
                 array(
-                    'class' => 'lisensio-kb-card__icon-image',
+                    'class' => 'licensio-kb-card__icon-image',
                     'alt'   => '',
                 )
             )
         );
         ?>
-    <?php elseif ( '' !== $lisensio_kb_icon ) : ?>
-        <span class="lisensio-kb-card__icon dashicons <?php echo esc_attr( $lisensio_kb_icon ); ?>" aria-hidden="true"></span>
+    <?php elseif ( '' !== $licensio_kb_icon ) : ?>
+        <span class="licensio-kb-card__icon dashicons <?php echo esc_attr( $licensio_kb_icon ); ?>" aria-hidden="true"></span>
     <?php endif; ?>
 
-    <h3 class="lisensio-kb-card__title">
-        <a class="lisensio-kb-card__link" href="<?php echo esc_url( $lisensio_kb_category_url ); ?>">
-            <?php echo esc_html( $lisensio_kb_category->name ); ?>
+    <h3 class="licensio-kb-card__title">
+        <a class="licensio-kb-card__link" href="<?php echo esc_url( $licensio_kb_category_url ); ?>">
+            <?php echo esc_html( $licensio_kb_category->name ); ?>
         </a>
     </h3>
 
-    <?php if ( $lisensio_kb_show_count ) : ?>
-        <span class="lisensio-kb-card__count">
+    <?php if ( $licensio_kb_show_count ) : ?>
+        <span class="licensio-kb-card__count">
             <?php
             printf(
                 esc_html(
                     /* translators: %s: number of articles. */
-                    _n( '(%s Article)', '(%s Articles)', $lisensio_kb_category_count, 'lisensio-knowledge-base' )
+                    _n( '(%s Article)', '(%s Articles)', $licensio_kb_category_count, 'licensio-knowledge-base' )
                 ),
-                esc_html( number_format_i18n( $lisensio_kb_category_count ) )
+                esc_html( number_format_i18n( $licensio_kb_category_count ) )
             );
             ?>
         </span>
     <?php endif; ?>
     </div>
 
-    <?php if ( ! empty( $lisensio_kb_articles ) ) : ?>
-        <ul class="lisensio-kb-card__articles">
-            <?php foreach ( $lisensio_kb_articles as $lisensio_kb_article ) : ?>
-                <li class="lisensio-kb-card__article">
-                    <a class="lisensio-kb-card__article-link" href="<?php echo esc_url( (string) get_permalink( $lisensio_kb_article ) ); ?>">
-                        <svg class="lisensio-kb-card__article-icon" viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" aria-hidden="true">
+    <?php if ( ! empty( $licensio_kb_articles ) ) : ?>
+        <ul class="licensio-kb-card__articles">
+            <?php foreach ( $licensio_kb_articles as $licensio_kb_article ) : ?>
+                <li class="licensio-kb-card__article">
+                    <a class="licensio-kb-card__article-link" href="<?php echo esc_url( (string) get_permalink( $licensio_kb_article ) ); ?>">
+                        <svg class="licensio-kb-card__article-icon" viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" aria-hidden="true">
                             <path d="M4 1.5h5.2L12.5 4.8V14.5H4z" />
                             <path d="M9 1.5v3.5h3.5" stroke-linecap="round" />
                         </svg>
-                        <span class="lisensio-kb-card__article-title"><?php echo esc_html( get_the_title( $lisensio_kb_article ) ); ?></span>
+                        <span class="licensio-kb-card__article-title"><?php echo esc_html( get_the_title( $licensio_kb_article ) ); ?></span>
                     </a>
                 </li>
             <?php endforeach; ?>
         </ul>
     <?php endif; ?>
 
-    <?php if ( ! empty( $lisensio_kb_children ) ) : ?>
-        <ul class="lisensio-kb-card__children">
-            <?php foreach ( $lisensio_kb_children as $lisensio_kb_child ) : ?>
-                <li class="lisensio-kb-card__child">
-                    <a href="<?php echo esc_url( Lisensio_KB_Templates::term_link( $lisensio_kb_child ) ); ?>">
-                        <?php echo esc_html( $lisensio_kb_child->name ); ?>
+    <?php if ( ! empty( $licensio_kb_children ) ) : ?>
+        <ul class="licensio-kb-card__children">
+            <?php foreach ( $licensio_kb_children as $licensio_kb_child ) : ?>
+                <li class="licensio-kb-card__child">
+                    <a href="<?php echo esc_url( Licensio_KB_Templates::term_link( $licensio_kb_child ) ); ?>">
+                        <?php echo esc_html( $licensio_kb_child->name ); ?>
                     </a>
                 </li>
             <?php endforeach; ?>
         </ul>
     <?php endif; ?>
 
-    <a class="lisensio-kb-card__view-all" href="<?php echo esc_url( $lisensio_kb_category_url ); ?>">
-        <?php echo esc_html__( 'View all', 'lisensio-knowledge-base' ); ?>
-        <svg class="lisensio-kb-card__view-all-icon" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+    <a class="licensio-kb-card__view-all" href="<?php echo esc_url( $licensio_kb_category_url ); ?>">
+        <?php echo esc_html__( 'View all', 'licensio-knowledge-base' ); ?>
+        <svg class="licensio-kb-card__view-all-icon" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
             <circle cx="8" cy="8" r="6.9" />
             <path d="M6.8 5.2 9.6 8l-2.8 2.8" stroke-linecap="round" stroke-linejoin="round" />
         </svg>

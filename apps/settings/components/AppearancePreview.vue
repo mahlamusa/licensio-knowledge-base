@@ -2,11 +2,11 @@
 /**
  * A live sample of the knowledge base under the draft appearance values.
  *
- * The markup carries the `lisensio-kb` class and consumes the same custom
+ * The markup carries the `licensio-kb` class and consumes the same custom
  * properties the classic and block template layers do, so what is drawn here is
  * the frontend's own styling rather than an approximation of it. The properties
  * are set inline on this element, which is exactly how they reach the frontend:
- * `Lisensio_KB_Templates::inline_css()` writes them into a `.lisensio-kb` rule.
+ * `Licensio_KB_Templates::inline_css()` writes them into a `.licensio-kb` rule.
  *
  * @since 1.0.0
  */
@@ -31,8 +31,8 @@ const declarations = computed( () =>
 </script>
 
 <template>
-	<div class="lisensio-kb lisensio-kb-settings__preview" :style="style">
-		<div class="lisensio-kb-settings__preview-card">
+	<div class="licensio-kb licensio-kb-settings__preview" :style="style">
+		<div class="licensio-kb-settings__preview-card">
 			<h3>{{ translate( 'Resetting your password' ) }}</h3>
 			<p>
 				{{
@@ -41,15 +41,15 @@ const declarations = computed( () =>
 					)
 				}}
 			</p>
-			<a class="lisensio-kb-settings__preview-link" href="#preview">
+			<a class="licensio-kb-settings__preview-link" href="#preview">
 				{{ translate( 'Read the article' ) }}
 			</a>
-			<span class="lisensio-kb-settings__preview-button">
+			<span class="licensio-kb-settings__preview-button">
 				{{ translate( 'Was this helpful?' ) }}
 			</span>
 		</div>
 
-		<pre class="lisensio-kb-settings__preview-code">{{
+		<pre class="licensio-kb-settings__preview-code">{{
 			declarations.join( '\n' )
 		}}</pre>
 	</div>
@@ -62,9 +62,9 @@ const declarations = computed( () =>
  * notice above it does. Without one the preview's lower edge landed exactly on
  * the section card's header strip and the two read as one collided block.
  */
-.lisensio-kb-settings__preview {
-	--lisensio-kb-surface: #ffffff;
-	--lisensio-kb-line: #e2e8f0;
+.licensio-kb-settings__preview {
+	--licensio-kb-surface: #ffffff;
+	--licensio-kb-line: #e2e8f0;
 
 	display: grid;
 	gap: var(--lkb-gap);
@@ -72,30 +72,30 @@ const declarations = computed( () =>
 	margin-bottom: var(--lkb-gap-lg);
 }
 
-.lisensio-kb-settings__preview-card {
-	background: var( --lisensio-kb-card-bg, var( --lisensio-kb-surface ) );
-	border: var( --lisensio-kb-card-border, 1px solid transparent );
+.licensio-kb-settings__preview-card {
+	background: var( --licensio-kb-card-bg, var( --licensio-kb-surface ) );
+	border: var( --licensio-kb-card-border, 1px solid transparent );
 	border-radius: 10px;
-	box-shadow: var( --lisensio-kb-card-shadow, none );
-	max-inline-size: var( --lisensio-kb-max-width, 72rem );
+	box-shadow: var( --licensio-kb-card-shadow, none );
+	max-inline-size: var( --licensio-kb-max-width, 72rem );
 	padding: 20px;
 }
 
-.lisensio-kb-settings__preview-card h3 {
+.licensio-kb-settings__preview-card h3 {
 	margin-block: 0 8px;
 }
 
-.lisensio-kb-settings__preview-link {
-	color: var( --lisensio-kb-brand, #2ba377 );
+.licensio-kb-settings__preview-link {
+	color: var( --licensio-kb-brand, #2ba377 );
 	font-weight: 600;
 	margin-inline-end: 16px;
 	text-decoration: none;
 }
 
-.lisensio-kb-settings__preview-button {
-	background: var( --lisensio-kb-brand, #2ba377 );
+.licensio-kb-settings__preview-button {
+	background: var( --licensio-kb-brand, #2ba377 );
 	border-radius: 6px;
-	color: var( --lisensio-kb-brand-contrast, #ffffff );
+	color: var( --licensio-kb-brand-contrast, #ffffff );
 	display: inline-block;
 	padding: 6px 14px;
 }
@@ -109,8 +109,8 @@ const declarations = computed( () =>
  * is indented so it is still obvious where one declaration ends and the next
  * begins.
  */
-.lisensio-kb-settings__preview-code {
-	background: rgba( var( --lisensio-kb-brand-rgb, 37, 99, 235 ), 0.06 );
+.licensio-kb-settings__preview-code {
+	background: rgba( var( --licensio-kb-brand-rgb, 37, 99, 235 ), 0.06 );
 	border-radius: 8px;
 	font-size: 12px;
 	line-height: 1.6;
@@ -123,7 +123,7 @@ const declarations = computed( () =>
 }
 
 @media ( max-width: 782px ) {
-	.lisensio-kb-settings__preview {
+	.licensio-kb-settings__preview {
 		grid-template-columns: minmax( 0, 1fr );
 	}
 }

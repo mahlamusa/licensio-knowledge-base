@@ -1,18 +1,18 @@
 /**
  * End-to-end coverage of the knowledge base search type-ahead.
  *
- * Gated on LISENSIO_KB_E2E because it needs a WordPress site with the plugin
- * active, a page carrying the search block or the `[lisensio_kb_search]`
+ * Gated on LICENSIO_KB_E2E because it needs a WordPress site with the plugin
+ * active, a page carrying the search block or the `[licensio_kb_search]`
  * shortcode, and at least one published article. The CI JavaScript job has none
  * of those, and a spec that failed there would be reporting the absence of a
  * site rather than a defect in the feature.
  *
  * Run it against a live site with:
  *
- *   LISENSIO_KB_E2E=1 \
- *   LISENSIO_KB_BASE_URL=https://lisenseserver.local \
- *   LISENSIO_KB_E2E_PATH=/kb-search-test/ \
- *   LISENSIO_KB_E2E_TERM=licence \
+ *   LICENSIO_KB_E2E=1 \
+ *   LICENSIO_KB_BASE_URL=https://lisenseserver.local \
+ *   LICENSIO_KB_E2E_PATH=/kb-search-test/ \
+ *   LICENSIO_KB_E2E_TERM=licence \
  *   npx playwright test
  *
  * @since 1.0.0
@@ -20,10 +20,10 @@
 
 import { expect, test, Page } from '@playwright/test';
 
-const enabled = !! process.env.LISENSIO_KB_E2E;
-const path = process.env.LISENSIO_KB_E2E_PATH ?? '/';
-const term = process.env.LISENSIO_KB_E2E_TERM ?? 'licence';
-const missing = process.env.LISENSIO_KB_E2E_MISSING ?? 'zzqqxxnotathing';
+const enabled = !! process.env.LICENSIO_KB_E2E;
+const path = process.env.LICENSIO_KB_E2E_PATH ?? '/';
+const term = process.env.LICENSIO_KB_E2E_TERM ?? 'licence';
+const missing = process.env.LICENSIO_KB_E2E_MISSING ?? 'zzqqxxnotathing';
 
 /**
  * Open the page carrying the search form and return the combobox.
@@ -37,7 +37,7 @@ const missing = process.env.LISENSIO_KB_E2E_MISSING ?? 'zzqqxxnotathing';
 async function openSearch( page: Page ) {
 	await page.goto( path );
 
-	const combobox = page.locator( '[data-lisensio-kb-search] [role="combobox"]' ).first();
+	const combobox = page.locator( '[data-licensio-kb-search] [role="combobox"]' ).first();
 	await expect( combobox ).toBeVisible();
 
 	const listboxId = await combobox.getAttribute( 'aria-controls' );
@@ -47,7 +47,7 @@ async function openSearch( page: Page ) {
 }
 
 test.describe( 'knowledge base search type-ahead', () => {
-	test.skip( ! enabled, 'Set LISENSIO_KB_E2E to run against a live site.' );
+	test.skip( ! enabled, 'Set LICENSIO_KB_E2E to run against a live site.' );
 
 	test( 'suggestions appear as the visitor types', async ( { page } ) => {
 		const { combobox, listbox } = await openSearch( page );
@@ -142,7 +142,7 @@ test.describe( 'knowledge base search type-ahead', () => {
 		await page.waitForURL( /[?&]s=/ );
 
 		expect( page.url() ).toContain( `s=${ term }` );
-		expect( page.url() ).toContain( 'post_type=lisensio_article' );
+		expect( page.url() ).toContain( 'post_type=licensio_article' );
 	} );
 
 	test( 'a term with no matches renders a distinct empty state', async ( {
@@ -152,7 +152,7 @@ test.describe( 'knowledge base search type-ahead', () => {
 
 		await combobox.fill( missing );
 
-		await expect( listbox.locator( '.lisensio-kb-search__empty' ) ).toBeVisible();
+		await expect( listbox.locator( '.licensio-kb-search__empty' ) ).toBeVisible();
 		await expect( listbox.locator( '[role="option"]' ) ).toHaveCount( 0 );
 
 		// The empty state is not selectable, so arrowing must not pick it.
@@ -166,7 +166,7 @@ test.describe( 'knowledge base search type-ahead', () => {
 		const requests: string[] = [];
 
 		page.on( 'request', ( request ) => {
-			if ( request.url().includes( 'lisensio-kb/v1/search' ) ) {
+			if ( request.url().includes( 'licensio-kb/v1/search' ) ) {
 				requests.push( request.url() );
 			}
 		} );

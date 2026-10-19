@@ -1,5 +1,5 @@
 /**
- * Shapes returned by the `lisensio-kb/v1/analytics/*` endpoints.
+ * Shapes returned by the `licensio-kb/v1/analytics/*` endpoints.
  *
  * @since 1.0.0
  */

@@ -1,6 +1,6 @@
 {
-    "name": "slswc/lisensio-knowledge-base",
-    "description": "Lisensio Knowledge Base - WordPress documentation and self-service support plugin.",
+    "name": "slswc/licensio-knowledge-base",
+    "description": "Licensio Knowledge Base - WordPress documentation and self-service support plugin.",
     "type": "wordpress-plugin",
     "license": "GPL-2.0-or-later",
     "keywords": [
@@ -49,9 +49,9 @@
     "extra": {
         "strauss": {
             "target_directory": "libraries",
-            "namespace_prefix": "Lisensio_KB\\",
-            "classmap_prefix": "Lisensio_KB_",
-            "constant_prefix": "LISENSIO_KB_",
+            "namespace_prefix": "Licensio_KB\\",
+            "classmap_prefix": "Licensio_KB_",
+            "constant_prefix": "LICENSIO_KB_",
             "include_modified_date": false,
             "delete_vendor_packages": false,
             "packages": [

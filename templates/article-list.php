@@ -2,12 +2,12 @@
 /**
  * Article list.
  *
- * The body of the `lisensio-kb/article-list` block and the
- * `[lisensio_kb_articles]` shortcode. Each article is drawn by
+ * The body of the `licensio-kb/article-list` block and the
+ * `[licensio_kb_articles]` shortcode. Each article is drawn by
  * `article-card.php`, so overriding the card changes this listing too.
- * Override from a theme by copying this file to `lisensio-kb/article-list.php`.
+ * Override from a theme by copying this file to `licensio-kb/article-list.php`.
  *
- * @package Lisensio_KB
+ * @package Licensio_KB
  * @since   1.0.0
  *
  * @var array $args {
@@ -21,30 +21,30 @@
 
 defined( 'ABSPATH' ) || exit;
 
-$lisensio_kb_articles     = isset( $args['posts'] ) && is_array( $args['posts'] ) ? $args['posts'] : array();
-$lisensio_kb_columns      = isset( $args['columns'] ) ? max( 1, min( 4, (int) $args['columns'] ) ) : 1;
-$lisensio_kb_show_excerpt = ! isset( $args['show_excerpt'] ) || (bool) $args['show_excerpt'];
+$licensio_kb_articles     = isset( $args['posts'] ) && is_array( $args['posts'] ) ? $args['posts'] : array();
+$licensio_kb_columns      = isset( $args['columns'] ) ? max( 1, min( 4, (int) $args['columns'] ) ) : 1;
+$licensio_kb_show_excerpt = ! isset( $args['show_excerpt'] ) || (bool) $args['show_excerpt'];
 
-if ( empty( $lisensio_kb_articles ) ) {
-    lisensio_kb_get_template(
+if ( empty( $licensio_kb_articles ) ) {
+    licensio_kb_get_template(
         'no-results',
         array(
-            'title'       => __( 'No articles found', 'lisensio-knowledge-base' ),
-            'description' => __( 'Nothing has been published here yet.', 'lisensio-knowledge-base' ),
+            'title'       => __( 'No articles found', 'licensio-knowledge-base' ),
+            'description' => __( 'Nothing has been published here yet.', 'licensio-knowledge-base' ),
         )
     );
 
     return;
 }
 ?>
-<div class="lisensio-kb__grid lisensio-kb__grid--cols-<?php echo esc_attr( (string) $lisensio_kb_columns ); ?>">
-    <?php foreach ( $lisensio_kb_articles as $lisensio_kb_article ) : ?>
+<div class="licensio-kb__grid licensio-kb__grid--cols-<?php echo esc_attr( (string) $licensio_kb_columns ); ?>">
+    <?php foreach ( $licensio_kb_articles as $licensio_kb_article ) : ?>
         <?php
-        lisensio_kb_get_template(
+        licensio_kb_get_template(
             'article-card',
             array(
-                'post'         => $lisensio_kb_article,
-                'show_excerpt' => $lisensio_kb_show_excerpt,
+                'post'         => $licensio_kb_article,
+                'show_excerpt' => $licensio_kb_show_excerpt,
             )
         );
         ?>

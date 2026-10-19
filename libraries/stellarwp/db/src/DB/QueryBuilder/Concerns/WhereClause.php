@@ -5,15 +5,15 @@
  * Modified by Lindeni Mahlalela using {@see https://github.com/BrianHenryIE/strauss}.
  */
 
-namespace Lisensio_KB\StellarWP\DB\QueryBuilder\Concerns;
+namespace Licensio_KB\StellarWP\DB\QueryBuilder\Concerns;
 
 use Closure;
-use Lisensio_KB\StellarWP\DB\DB;
-use Lisensio_KB\StellarWP\DB\QueryBuilder\Clauses\RawSQL;
-use Lisensio_KB\StellarWP\DB\QueryBuilder\Clauses\Where;
-use Lisensio_KB\StellarWP\DB\QueryBuilder\QueryBuilder;
-use Lisensio_KB\StellarWP\DB\QueryBuilder\Types\Operator;
-use Lisensio_KB\StellarWP\DB\QueryBuilder\WhereQueryBuilder;
+use Licensio_KB\StellarWP\DB\DB;
+use Licensio_KB\StellarWP\DB\QueryBuilder\Clauses\RawSQL;
+use Licensio_KB\StellarWP\DB\QueryBuilder\Clauses\Where;
+use Licensio_KB\StellarWP\DB\QueryBuilder\QueryBuilder;
+use Licensio_KB\StellarWP\DB\QueryBuilder\Types\Operator;
+use Licensio_KB\StellarWP\DB\QueryBuilder\WhereQueryBuilder;
 
 
 /**

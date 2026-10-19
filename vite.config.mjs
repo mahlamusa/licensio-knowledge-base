@@ -4,18 +4,18 @@
  * Every directory under `apps/` that contains an `index.ts` or `index.js`
  * becomes a build entry.
  *
- * `assets/js/lisensio-kb.js` is deliberately NOT an entry. Vite entries are ES
+ * `assets/js/licensio-kb.js` is deliberately NOT an entry. Vite entries are ES
  * modules, and module scripts execute after every classic script on the page,
  * so the plugin's own dependency-free classic frontend scripts could never
  * depend on it. It is a classic script served straight from `assets/js/`, and
  * `tools/build-apps.mjs` skips this build entirely while `apps/` is empty.
  *
  * Development runs on port 6913 (a sibling plugin uses 6912). PHP only reaches for the
- * dev server when the `HMR_DEV` constant is set to `lisensio-kb`, so the port
+ * dev server when the `HMR_DEV` constant is set to `licensio-kb`, so the port
  * being up is not enough on its own to change how a site loads assets.
  *
  * Production output goes to `dist/`, with the manifest at
- * `dist/.vite/manifest.json`, which `Lisensio_KB_Assets` reads.
+ * `dist/.vite/manifest.json`, which `Licensio_KB_Assets` reads.
  *
  * @since 1.0.0
  */

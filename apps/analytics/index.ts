@@ -1,7 +1,7 @@
 /**
  * Analytics dashboard entry point.
  *
- * Mounts the Vue app onto the container `Lisensio_KB_Analytics_Admin::render()`
+ * Mounts the Vue app onto the container `Licensio_KB_Analytics_Admin::render()`
  * printed. Bails quietly when the container is absent, so the bundle is inert
  * if it is ever enqueued on the wrong screen.
  *
@@ -15,7 +15,7 @@ import App from './App.vue';
 import 'ant-design-vue/dist/reset.css';
 import '../styles/admin.css';
 
-const container = document.getElementById( 'lisensio-kb-analytics' );
+const container = document.getElementById( 'licensio-kb-analytics' );
 
 if ( container ) {
 	container.innerHTML = '';

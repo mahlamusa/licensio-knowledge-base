@@ -7,7 +7,7 @@
 
 declare( strict_types=1 );
 
-namespace Lisensio_KB\StellarWP\DB\Database\Actions;
+namespace Licensio_KB\StellarWP\DB\Database\Actions;
 
 class EnableBigSqlSelects {
 	/**

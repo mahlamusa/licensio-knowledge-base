@@ -5,11 +5,11 @@
  * Modified by Lindeni Mahlalela using {@see https://github.com/BrianHenryIE/strauss}.
  */
 
-namespace Lisensio_KB\StellarWP\DB\QueryBuilder\Concerns;
+namespace Licensio_KB\StellarWP\DB\QueryBuilder\Concerns;
 
-use Lisensio_KB\StellarWP\DB\DB;
-use Lisensio_KB\StellarWP\DB\QueryBuilder\Clauses\RawSQL;
-use Lisensio_KB\StellarWP\DB\QueryBuilder\Clauses\Select;
+use Licensio_KB\StellarWP\DB\DB;
+use Licensio_KB\StellarWP\DB\QueryBuilder\Clauses\RawSQL;
+use Licensio_KB\StellarWP\DB\QueryBuilder\Clauses\Select;
 
 /**
  * @since 1.0.0

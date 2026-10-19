@@ -3,7 +3,7 @@
 # Text domain check.
 #
 # Fails when a PHP translation call is missing its text domain, or carries a
-# domain other than `lisensio-knowledge-base`. Both cases are what PHPCS's
+# domain other than `licensio-knowledge-base`. Both cases are what PHPCS's
 # `WordPress.WP.I18n` sniff reports once `phpcs.xml` declares the domain, which
 # it does, so this runs that sniff on its own rather than reimplementing it. Run
 # alone it gives a failure message about text domains instead of burying one in
@@ -29,12 +29,12 @@ set -euo pipefail
 SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" && pwd )"
 ROOT="$( dirname "$SCRIPT_DIR" )"
 
-TEXT_DOMAIN='lisensio-knowledge-base'
+TEXT_DOMAIN='licensio-knowledge-base'
 PHPCS="${ROOT}/vendor/bin/phpcs"
 
 # Overridable so the gate's own self-test can point the pin check at a fixture.
 # Nothing else should set it.
-ESLINTRC="${LISENSIO_KB_ESLINTRC:-${ROOT}/.eslintrc.json}"
+ESLINTRC="${LICENSIO_KB_ESLINTRC:-${ROOT}/.eslintrc.json}"
 
 if [ ! -x "$PHPCS" ]; then
     printf 'i18n check: %s is missing. Run composer install first.\n' "$PHPCS" >&2

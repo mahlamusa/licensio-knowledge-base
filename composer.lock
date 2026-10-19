@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b687cc6d5f0e8fadec274a3dd83fd04c",
+    "content-hash": "896512633633ee0f797d3163e27ad870",
     "packages": [
         {
             "name": "stellarwp/db",

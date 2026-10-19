@@ -2,12 +2,12 @@
 /**
  * Frequently asked questions.
  *
- * The body of the `lisensio-kb/faq` block and the `[lisensio_kb_faq]`
+ * The body of the `licensio-kb/faq` block and the `[licensio_kb_faq]`
  * shortcode. A disclosure list built from `<details>`, so it opens and closes
  * with no JavaScript and stays keyboard accessible. Override from a theme by
- * copying this file to `lisensio-kb/faq.php`.
+ * copying this file to `licensio-kb/faq.php`.
  *
- * @package Lisensio_KB
+ * @package Licensio_KB
  * @since   1.0.0
  *
  * @var array $args {
@@ -20,44 +20,44 @@
 
 defined( 'ABSPATH' ) || exit;
 
-$lisensio_kb_faq_items  = isset( $args['items'] ) && is_array( $args['items'] ) ? $args['items'] : array();
-$lisensio_kb_open_first = isset( $args['open_first'] ) && (bool) $args['open_first'];
+$licensio_kb_faq_items  = isset( $args['items'] ) && is_array( $args['items'] ) ? $args['items'] : array();
+$licensio_kb_open_first = isset( $args['open_first'] ) && (bool) $args['open_first'];
 
-if ( empty( $lisensio_kb_faq_items ) ) {
-    lisensio_kb_get_template(
+if ( empty( $licensio_kb_faq_items ) ) {
+    licensio_kb_get_template(
         'no-results',
         array(
-            'title'       => __( 'No questions found', 'lisensio-knowledge-base' ),
-            'description' => __( 'Nothing has been published here yet.', 'lisensio-knowledge-base' ),
+            'title'       => __( 'No questions found', 'licensio-knowledge-base' ),
+            'description' => __( 'Nothing has been published here yet.', 'licensio-knowledge-base' ),
         )
     );
 
     return;
 }
 ?>
-<div class="lisensio-kb-faq">
-    <?php foreach ( $lisensio_kb_faq_items as $lisensio_kb_faq_index => $lisensio_kb_faq_item ) : ?>
+<div class="licensio-kb-faq">
+    <?php foreach ( $licensio_kb_faq_items as $licensio_kb_faq_index => $licensio_kb_faq_item ) : ?>
         <?php
-        $lisensio_kb_question = isset( $lisensio_kb_faq_item['question'] ) ? (string) $lisensio_kb_faq_item['question'] : '';
-        $lisensio_kb_answer   = isset( $lisensio_kb_faq_item['answer'] ) ? (string) $lisensio_kb_faq_item['answer'] : '';
-        $lisensio_kb_url      = isset( $lisensio_kb_faq_item['url'] ) ? (string) $lisensio_kb_faq_item['url'] : '';
+        $licensio_kb_question = isset( $licensio_kb_faq_item['question'] ) ? (string) $licensio_kb_faq_item['question'] : '';
+        $licensio_kb_answer   = isset( $licensio_kb_faq_item['answer'] ) ? (string) $licensio_kb_faq_item['answer'] : '';
+        $licensio_kb_url      = isset( $licensio_kb_faq_item['url'] ) ? (string) $licensio_kb_faq_item['url'] : '';
 
-        if ( '' === $lisensio_kb_question ) {
+        if ( '' === $licensio_kb_question ) {
             continue;
         }
 
-        $lisensio_kb_open = $lisensio_kb_open_first && 0 === $lisensio_kb_faq_index;
+        $licensio_kb_open = $licensio_kb_open_first && 0 === $licensio_kb_faq_index;
         ?>
-        <details class="lisensio-kb-faq__item"<?php echo $lisensio_kb_open ? ' open' : ''; ?>>
-            <summary class="lisensio-kb-faq__question"><?php echo esc_html( $lisensio_kb_question ); ?></summary>
-            <div class="lisensio-kb-faq__answer">
-                <?php if ( '' !== $lisensio_kb_answer ) : ?>
-                    <p class="lisensio-kb-faq__text"><?php echo esc_html( $lisensio_kb_answer ); ?></p>
+        <details class="licensio-kb-faq__item"<?php echo $licensio_kb_open ? ' open' : ''; ?>>
+            <summary class="licensio-kb-faq__question"><?php echo esc_html( $licensio_kb_question ); ?></summary>
+            <div class="licensio-kb-faq__answer">
+                <?php if ( '' !== $licensio_kb_answer ) : ?>
+                    <p class="licensio-kb-faq__text"><?php echo esc_html( $licensio_kb_answer ); ?></p>
                 <?php endif; ?>
-                <?php if ( '' !== $lisensio_kb_url ) : ?>
-                    <p class="lisensio-kb-faq__more">
-                        <a href="<?php echo esc_url( $lisensio_kb_url ); ?>">
-                            <?php esc_html_e( 'Read the full article', 'lisensio-knowledge-base' ); ?>
+                <?php if ( '' !== $licensio_kb_url ) : ?>
+                    <p class="licensio-kb-faq__more">
+                        <a href="<?php echo esc_url( $licensio_kb_url ); ?>">
+                            <?php esc_html_e( 'Read the full article', 'licensio-knowledge-base' ); ?>
                         </a>
                     </p>
                 <?php endif; ?>

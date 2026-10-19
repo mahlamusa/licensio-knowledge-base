@@ -7,7 +7,7 @@
  * `instanceof`, so the unit suite needs the class to exist before it can prove
  * the guard works.
  *
- * @package Lisensio_KB
+ * @package Licensio_KB
  * @since   1.0.0
  */
 

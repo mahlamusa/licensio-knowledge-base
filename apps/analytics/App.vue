@@ -93,7 +93,7 @@ onMounted( () => {
 
 <template>
 	<a-config-provider :theme="lkbTheme">
-	<div class="lkb-page lisensio-kb-analytics">
+	<div class="lkb-page licensio-kb-analytics">
 		<AppHeader :settings-url="settings.settingsUrl" />
 
 		<div id="lkb-main" class="lkb-page__body lkb-measure">
@@ -106,7 +106,7 @@ onMounted( () => {
 			type="error"
 			show-icon
 			:message="store.error"
-			class="lisensio-kb-analytics__notice"
+			class="licensio-kb-analytics__notice"
 		/>
 
 		<a-alert
@@ -118,10 +118,10 @@ onMounted( () => {
 					'Analytics collection is switched off, so nothing new is being recorded.'
 				)
 			"
-			class="lisensio-kb-analytics__notice"
+			class="licensio-kb-analytics__notice"
 		/>
 
-		<div class="lisensio-kb-analytics__range">
+		<div class="licensio-kb-analytics__range">
 			<label>
 				{{ translate( 'From' ) }}
 				<input v-model="start" type="date" />
@@ -140,14 +140,14 @@ onMounted( () => {
 			>
 				{{ days }} {{ translate( 'days' ) }}
 			</a-button>
-			<span class="lisensio-kb-analytics__retention">
+			<span class="licensio-kb-analytics__retention">
 				{{ translate( 'Rows are kept for' ) }} {{ settings.retentionDays }}
 				{{ translate( 'days.' ) }}
 			</span>
 		</div>
 
 		<a-spin :spinning="store.loading">
-			<a-row :gutter="16" class="lisensio-kb-analytics__cards">
+			<a-row :gutter="16" class="licensio-kb-analytics__cards">
 				<a-col :span="6">
 					<a-card>
 						<a-statistic
@@ -185,25 +185,25 @@ onMounted( () => {
 				</a-col>
 			</a-row>
 
-			<a-card :title="translate( 'Activity' )" class="lisensio-kb-analytics__block">
+			<a-card :title="translate( 'Activity' )" class="licensio-kb-analytics__block">
 				<TrendChart :series="trend" />
 			</a-card>
 
 			<a-card
 				:title="translate( 'Questions with no answer' )"
-				class="lisensio-kb-analytics__block"
+				class="licensio-kb-analytics__block"
 			>
 				<ZeroResultTable :rows="store.searches?.zero_results ?? []" />
 			</a-card>
 
 			<a-card
 				:title="translate( 'Top searches' )"
-				class="lisensio-kb-analytics__block"
+				class="licensio-kb-analytics__block"
 			>
 				<SearchTable :rows="store.searches?.top ?? []" />
 			</a-card>
 
-			<a-row :gutter="16" class="lisensio-kb-analytics__block">
+			<a-row :gutter="16" class="licensio-kb-analytics__block">
 				<a-col :span="12">
 					<a-card :title="translate( 'Most useful articles' )">
 						<ArticleTable
@@ -224,7 +224,7 @@ onMounted( () => {
 
 			<a-card
 				:title="translate( 'Most read articles' )"
-				class="lisensio-kb-analytics__block"
+				class="licensio-kb-analytics__block"
 			>
 				<ArticleTable
 					:rows="store.articles?.most_viewed ?? []"
@@ -234,7 +234,7 @@ onMounted( () => {
 
 			<a-card
 				:title="translate( 'Feedback' )"
-				class="lisensio-kb-analytics__block"
+				class="licensio-kb-analytics__block"
 			>
 				<a-descriptions bordered size="small" :column="4">
 					<a-descriptions-item :label="translate( 'Votes' )">
@@ -258,12 +258,12 @@ onMounted( () => {
 </template>
 
 <style scoped>
-.lisensio-kb-analytics__notice,
-.lisensio-kb-analytics__block {
+.licensio-kb-analytics__notice,
+.licensio-kb-analytics__block {
 	margin-bottom: 16px;
 }
 
-.lisensio-kb-analytics__range {
+.licensio-kb-analytics__range {
 	align-items: center;
 	display: flex;
 	flex-wrap: wrap;
@@ -271,11 +271,11 @@ onMounted( () => {
 	margin-bottom: 16px;
 }
 
-.lisensio-kb-analytics__cards {
+.licensio-kb-analytics__cards {
 	margin-bottom: 16px;
 }
 
-.lisensio-kb-analytics__retention {
+.licensio-kb-analytics__retention {
 	color: #646970;
 }
 </style>

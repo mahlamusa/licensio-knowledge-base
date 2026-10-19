@@ -3,7 +3,7 @@
  *
  * Dependency-free by design: no Vue, no jQuery, no build step. It is served
  * straight from `assets/js/` as a classic script so it runs in document order
- * alongside `lisensio-kb.js`, which declares the shared namespace it reads its
+ * alongside `licensio-kb.js`, which declares the shared namespace it reads its
  * configuration from.
  *
  * Implements the ARIA 1.2 combobox pattern. The input carries `role="combobox"`
@@ -41,7 +41,7 @@
 	 * @return {Object} The merged configuration.
 	 */
 	function config() {
-		const namespace = window.lisensioKB || {};
+		const namespace = window.licensioKB || {};
 		const supplied = namespace.search || {};
 		const merged = {};
 		let key;
@@ -295,26 +295,26 @@
 		const title = document.createElement( 'span' );
 		let meta;
 
-		option.className = 'lisensio-kb-search__option';
+		option.className = 'licensio-kb-search__option';
 		option.setAttribute( 'role', 'option' );
 		option.setAttribute( 'id', this.input.id + '-option-' + index );
 		option.setAttribute( 'aria-selected', 'false' );
 		option.setAttribute( 'data-url', item.url || '' );
 
-		title.className = 'lisensio-kb-search__option-title';
+		title.className = 'licensio-kb-search__option-title';
 		title.textContent = item.title || '';
 		option.appendChild( title );
 
 		if ( item.snippet ) {
 			meta = document.createElement( 'span' );
-			meta.className = 'lisensio-kb-search__option-snippet';
+			meta.className = 'licensio-kb-search__option-snippet';
 			meta.innerHTML = item.snippet;
 			option.appendChild( meta );
 		}
 
 		if ( item.category && item.category.name ) {
 			meta = document.createElement( 'span' );
-			meta.className = 'lisensio-kb-search__option-category';
+			meta.className = 'licensio-kb-search__option-category';
 			meta.textContent = item.category.name;
 			option.appendChild( meta );
 		}
@@ -342,7 +342,7 @@
 		this.active = -1;
 		this.listbox.innerHTML = '';
 
-		empty.className = 'lisensio-kb-search__empty';
+		empty.className = 'licensio-kb-search__empty';
 		empty.setAttribute( 'role', 'presentation' );
 		empty.textContent = message;
 
@@ -534,19 +534,19 @@
 	 */
 	function init() {
 		const settings = config();
-		const roots = document.querySelectorAll( '[data-lisensio-kb-search]' );
+		const roots = document.querySelectorAll( '[data-licensio-kb-search]' );
 		let i;
 
 		for ( i = 0; i < roots.length; i++ ) {
-			if ( ! roots[ i ].hasAttribute( 'data-lisensio-kb-bound' ) ) {
-				roots[ i ].setAttribute( 'data-lisensio-kb-bound', 'true' );
+			if ( ! roots[ i ].hasAttribute( 'data-licensio-kb-bound' ) ) {
+				roots[ i ].setAttribute( 'data-licensio-kb-bound', 'true' );
 				new TypeAhead( roots[ i ], settings );
 			}
 		}
 	}
 
-	window.lisensioKB = window.lisensioKB || {};
-	window.lisensioKB.initSearch = init;
+	window.licensioKB = window.licensioKB || {};
+	window.licensioKB.initSearch = init;
 
 	if ( document.readyState === 'loading' ) {
 		document.addEventListener( 'DOMContentLoaded', init );

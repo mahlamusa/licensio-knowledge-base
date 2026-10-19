@@ -4,8 +4,8 @@
 #
 # The release version lives in four places that nothing keeps in step:
 #
-#   * the `Version:` plugin header in lisensio-knowledge-base.php
-#   * the `LISENSIO_KB_VERSION` constant in the same file
+#   * the `Version:` plugin header in licensio-knowledge-base.php
+#   * the `LICENSIO_KB_VERSION` constant in the same file
 #   * `Stable tag:` in readme.txt
 #   * `version` in package.json
 #
@@ -26,7 +26,7 @@ set -euo pipefail
 SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" && pwd )"
 ROOT="${1:-$( dirname "$SCRIPT_DIR" )}"
 
-PLUGIN_FILE="${ROOT}/lisensio-knowledge-base.php"
+PLUGIN_FILE="${ROOT}/licensio-knowledge-base.php"
 README_FILE="${ROOT}/readme.txt"
 PACKAGE_FILE="${ROOT}/package.json"
 
@@ -72,8 +72,8 @@ fi
 HEADER_VERSION="$( header_value "$PLUGIN_FILE" 'Version' )"
 
 CONSTANT_VERSION="$(
-    grep -m1 -E "define\([[:space:]]*'LISENSIO_KB_VERSION'" "$PLUGIN_FILE" \
-        | sed -E "s/.*'LISENSIO_KB_VERSION'[[:space:]]*,[[:space:]]*'([^']*)'.*/\1/"
+    grep -m1 -E "define\([[:space:]]*'LICENSIO_KB_VERSION'" "$PLUGIN_FILE" \
+        | sed -E "s/.*'LICENSIO_KB_VERSION'[[:space:]]*,[[:space:]]*'([^']*)'.*/\1/"
 )"
 
 README_VERSION="$( header_value "$README_FILE" 'Stable tag' )"
@@ -92,7 +92,7 @@ README_PHP="$( header_value "$README_FILE" 'Requires PHP' )"
 
 printf 'Version check\n'
 printf '  plugin header Version      : %s\n' "${HEADER_VERSION:-<missing>}"
-printf '  LISENSIO_KB_VERSION        : %s\n' "${CONSTANT_VERSION:-<missing>}"
+printf '  LICENSIO_KB_VERSION        : %s\n' "${CONSTANT_VERSION:-<missing>}"
 printf '  readme.txt Stable tag      : %s\n' "${README_VERSION:-<missing>}"
 printf '  package.json version       : %s\n' "${PACKAGE_VERSION:-<missing>}"
 printf '  Requires at least (header) : %s\n' "${HEADER_WP:-<missing>}"
@@ -102,7 +102,7 @@ printf '  Requires PHP (readme)      : %s\n' "${README_PHP:-<missing>}"
 
 for pair in \
     "plugin header Version:${HEADER_VERSION}" \
-    "LISENSIO_KB_VERSION:${CONSTANT_VERSION}" \
+    "LICENSIO_KB_VERSION:${CONSTANT_VERSION}" \
     "readme.txt Stable tag:${README_VERSION}" \
     "package.json version:${PACKAGE_VERSION}"
 do
@@ -113,7 +113,7 @@ done
 
 if [ "$failures" -eq 0 ]; then
     if [ "$HEADER_VERSION" != "$CONSTANT_VERSION" ]; then
-        fail "Version mismatch: plugin header Version (${HEADER_VERSION}) != LISENSIO_KB_VERSION (${CONSTANT_VERSION})."
+        fail "Version mismatch: plugin header Version (${HEADER_VERSION}) != LICENSIO_KB_VERSION (${CONSTANT_VERSION})."
     fi
 
     if [ "$HEADER_VERSION" != "$README_VERSION" ]; then

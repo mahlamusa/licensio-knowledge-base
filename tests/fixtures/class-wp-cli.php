@@ -2,7 +2,7 @@
 /**
  * Minimal WP_CLI double.
  *
- * `wp lisensio-kb reindex` is a shipped entry point, so it needs a test that
+ * `wp licensio-kb reindex` is a shipped entry point, so it needs a test that
  * runs it. WP-CLI is not a Composer dependency of this plugin and its class is
  * absent from both the unit process and static analysis, which without this
  * double leaves the command as the one piece of the search feature that nothing
@@ -11,7 +11,7 @@
  * Everything the command prints is recorded rather than written out, so a test
  * can assert on the operator-facing output as well as on the side effects.
  *
- * @package Lisensio_KB
+ * @package Licensio_KB
  * @since   1.0.0
  */
 

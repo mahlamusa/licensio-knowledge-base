@@ -46,7 +46,7 @@ interface SettingsState {
 	defaults: SettingsMap;
 }
 
-export const useSettingsStore = defineStore( 'lisensioKbSettings', {
+export const useSettingsStore = defineStore( 'licensioKbSettings', {
 	state: (): SettingsState => ( {
 		loading: false,
 		saving: false,

@@ -7,7 +7,7 @@ import { lkbTheme } from '../styles/theme';
  * index rebuild, the data maintenance jobs, and the duplicate cleanup. A later
  * tool joins by adding
  * a tab pane here and its keys to the server-side
- * `lisensio_kb_tools_app_data` filter.
+ * `licensio_kb_tools_app_data` filter.
  *
  * @since 1.0.0
  */
@@ -25,7 +25,7 @@ const hasImportSources = chrome.wizard?.available === true;
 
 <template>
 	<a-config-provider :theme="lkbTheme">
-		<div class="lkb-page lisensio-kb-tools">
+		<div class="lkb-page licensio-kb-tools">
 			<AppHeader :settings-url="chrome.settingsUrl" />
 
 			<div id="lkb-main" class="lkb-page__body lkb-measure">
@@ -33,7 +33,7 @@ const hasImportSources = chrome.wizard?.available === true;
 					<h1 class="lkb-page__title">{{ 'Tools' }}</h1>
 				</div>
 
-				<a-tabs class="lisensio-kb-tools__tabs">
+				<a-tabs class="licensio-kb-tools__tabs">
 					<a-tab-pane v-if="hasImportSources" key="migration" :tab="'Migration'">
 						<MigrationWizard />
 					</a-tab-pane>
@@ -53,7 +53,7 @@ const hasImportSources = chrome.wizard?.available === true;
 </template>
 
 <style scoped>
-.lisensio-kb-tools__tabs {
+.licensio-kb-tools__tabs {
 	background: var( --lkb-surface, #fff );
 	border: 1px solid var( --lkb-border-wp, #dcdcde );
 	border-radius: 8px;

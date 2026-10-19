@@ -5,13 +5,13 @@
  * Modified by Lindeni Mahlalela using {@see https://github.com/BrianHenryIE/strauss}.
  */
 
-namespace Lisensio_KB\StellarWP\DB\QueryBuilder;
+namespace Licensio_KB\StellarWP\DB\QueryBuilder;
 
-use Lisensio_KB\StellarWP\DB\QueryBuilder\Clauses\Join;
-use Lisensio_KB\StellarWP\DB\QueryBuilder\Clauses\JoinCondition;
-use Lisensio_KB\StellarWP\DB\QueryBuilder\Clauses\RawSQL;
-use Lisensio_KB\StellarWP\DB\QueryBuilder\Types\JoinType;
-use Lisensio_KB\StellarWP\DB\QueryBuilder\Types\Operator;
+use Licensio_KB\StellarWP\DB\QueryBuilder\Clauses\Join;
+use Licensio_KB\StellarWP\DB\QueryBuilder\Clauses\JoinCondition;
+use Licensio_KB\StellarWP\DB\QueryBuilder\Clauses\RawSQL;
+use Licensio_KB\StellarWP\DB\QueryBuilder\Types\JoinType;
+use Licensio_KB\StellarWP\DB\QueryBuilder\Types\Operator;
 
 /**
  * @since 1.0.0

@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<ruleset name="Lisensio Knowledge Base Heroic Migrator">
+<ruleset name="Licensio Knowledge Base Heroic Migrator">
     <description>
         The project ruleset excludes tools/ from the plugin's lint gate, because
         nothing under tools/ ships. That exclusion is about scope, not about
@@ -50,9 +50,9 @@
     <rule ref="WordPress.NamingConventions.PrefixAllGlobals">
         <properties>
             <property name="prefixes" type="array">
-                <element value="lisensio"/>
-                <element value="Lisensio_KB"/>
-                <element value="LISENSIO_KB"/>
+                <element value="licensio"/>
+                <element value="Licensio_KB"/>
+                <element value="LICENSIO_KB"/>
             </property>
         </properties>
     </rule>

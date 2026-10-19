@@ -5,14 +5,14 @@
  * Modified by Lindeni Mahlalela using {@see https://github.com/BrianHenryIE/strauss}.
  */
 
-namespace Lisensio_KB\StellarWP\DB;
+namespace Licensio_KB\StellarWP\DB;
 
 use Closure;
 use Exception;
 use Generator;
-use Lisensio_KB\StellarWP\DB\Database\Exceptions\DatabaseQueryException;
-use Lisensio_KB\StellarWP\DB\QueryBuilder\Clauses\RawSQL;
-use Lisensio_KB\StellarWP\DB\QueryBuilder\QueryBuilder;
+use Licensio_KB\StellarWP\DB\Database\Exceptions\DatabaseQueryException;
+use Licensio_KB\StellarWP\DB\QueryBuilder\Clauses\RawSQL;
+use Licensio_KB\StellarWP\DB\QueryBuilder\QueryBuilder;
 use WP_Error;
 
 /**

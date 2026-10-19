@@ -7,7 +7,7 @@
 /**
  * The bootstrap data PHP localised onto the page.
  *
- * Each tool contributes its key through the `lisensio_kb_tools_app_data`
+ * Each tool contributes its key through the `licensio_kb_tools_app_data`
  * filter on the server; a tool whose key is absent is treated as unavailable
  * by the client.
  *

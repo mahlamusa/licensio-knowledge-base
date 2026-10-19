@@ -4,9 +4,9 @@
 #
 # Produces the three shippable artifacts from a clean checkout:
 #
-#   lisensio-knowledge-base.zip        free build, no pro/ anywhere in it
-#   lisensio-knowledge-base-pro.zip    the same tree plus pro/
-#   lisensio-knowledge-base-wporg.zip  the free build plus the sources dist/ is
+#   licensio-knowledge-base.zip        free build, no pro/ anywhere in it
+#   licensio-knowledge-base-pro.zip    the same tree plus pro/
+#   licensio-knowledge-base-wporg.zip  the free build plus the sources dist/ is
 #                                      compiled from, for WordPress.org
 #
 # WordPress.org requires the human-readable source of every compiled file, and
@@ -47,8 +47,8 @@ set -euo pipefail
 SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" && pwd )"
 ROOT="$( dirname "$SCRIPT_DIR" )"
 
-SLUG='lisensio-knowledge-base'
-TEXT_DOMAIN='lisensio-knowledge-base'
+SLUG='licensio-knowledge-base'
+TEXT_DOMAIN='licensio-knowledge-base'
 
 DRY_RUN=0
 SKIP_BUILD=0
@@ -58,7 +58,7 @@ OUTPUT_DIR="${ROOT}/releases"
 # the repository root. `pro/` is added to the pro build only, and `languages/`
 # is generated during the run.
 SHIP_PATHS=(
-    'lisensio-knowledge-base.php'
+    'licensio-knowledge-base.php'
     'uninstall.php'
     'readme.txt'
     'includes'
@@ -223,7 +223,7 @@ resolve_wp_cli() {
     printf 'php %s\n' "$phar"
 }
 
-printf 'Lisensio Knowledge Base release build\n'
+printf 'Licensio Knowledge Base release build\n'
 printf 'Repository: %s\n' "$ROOT"
 if [ "$DRY_RUN" -eq 1 ]; then
     printf 'Mode: dry run - artifacts are reported and then discarded.\n'
@@ -235,8 +235,8 @@ step 'Version consistency'
 bash "${SCRIPT_DIR}/check-versions.sh" "$ROOT"
 
 VERSION="$(
-    grep -m1 -E "define\([[:space:]]*'LISENSIO_KB_VERSION'" "${ROOT}/lisensio-knowledge-base.php" \
-        | sed -E "s/.*'LISENSIO_KB_VERSION'[[:space:]]*,[[:space:]]*'([^']*)'.*/\1/"
+    grep -m1 -E "define\([[:space:]]*'LICENSIO_KB_VERSION'" "${ROOT}/licensio-knowledge-base.php" \
+        | sed -E "s/.*'LICENSIO_KB_VERSION'[[:space:]]*,[[:space:]]*'([^']*)'.*/\1/"
 )"
 
 # A zip left over from an earlier build of the same version is a stale
@@ -293,8 +293,8 @@ POT_FILE="${WORK_DIR}/${SLUG}.pot"
 $WP_CLI i18n make-pot "$ROOT" "$POT_FILE" \
     --domain="$TEXT_DOMAIN" \
     --slug="$SLUG" \
-    --exclude='node_modules,vendor,libraries,dist,tests,tools,bin,docs,.github,releases,.tmp' \
-    --headers='{"Report-Msgid-Bugs-To":"https://wordpress.org/support/plugin/lisensio-knowledge-base"}' \
+    --exclude='node_modules,vendor,libraries,dist,tests,tools,bin,docs,.github,releases,.tmp,.sandbox' \
+    --headers='{"Report-Msgid-Bugs-To":"https://wordpress.org/support/plugin/licensio-knowledge-base"}' \
     --allow-root
 
 printf 'Extracted %s strings.\n' "$( grep -c '^msgid ' "$POT_FILE" )"
@@ -456,7 +456,7 @@ if printf '%s\n' "$WPORG_LISTING" | grep -q "^${SLUG}/pro/"; then
     abort 'the packaged wporg zip contains pro/ paths.'
 fi
 
-if ! printf '%s\n' "$WPORG_LISTING" | grep -q "^${SLUG}/lisensio-knowledge-base\.php$"; then
+if ! printf '%s\n' "$WPORG_LISTING" | grep -q "^${SLUG}/licensio-knowledge-base\.php$"; then
     abort 'the packaged wporg zip does not contain the plugin bootstrap.'
 fi
 
@@ -464,11 +464,11 @@ if ! printf '%s\n' "$WPORG_LISTING" | grep -q "^${SLUG}/package\.json$"; then
     abort 'the packaged wporg zip does not contain its sources.'
 fi
 
-if ! printf '%s\n' "$PRO_LISTING" | grep -q "^${SLUG}/lisensio-knowledge-base\.php$"; then
+if ! printf '%s\n' "$PRO_LISTING" | grep -q "^${SLUG}/licensio-knowledge-base\.php$"; then
     abort 'the packaged pro zip does not contain the plugin bootstrap.'
 fi
 
-if ! printf '%s\n' "$FREE_LISTING" | grep -q "^${SLUG}/lisensio-knowledge-base\.php$"; then
+if ! printf '%s\n' "$FREE_LISTING" | grep -q "^${SLUG}/licensio-knowledge-base\.php$"; then
     abort 'the packaged free zip does not contain the plugin bootstrap.'
 fi
 

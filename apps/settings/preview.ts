@@ -2,14 +2,14 @@
  * Turning appearance values into the CSS custom properties the frontend uses.
  *
  * The preview is only worth having if it is the real thing, so it sets exactly
- * the custom properties `Lisensio_KB_Templates::custom_properties()` publishes
- * on `.lisensio-kb`, under exactly those names. For the two enumerated settings
+ * the custom properties `Licensio_KB_Templates::custom_properties()` publishes
+ * on `.licensio-kb`, under exactly those names. For the two enumerated settings
  * the name/value pairs come from the server in the field's `preview.values`, so
  * they cannot drift from the PHP.
  *
  * The brand colour is the one exception: it is continuous, so its derived
  * `-rgb` and `-contrast` properties have to be computed here. `hexToRgb` and
- * `contrastColor` mirror `Lisensio_KB_Templates::hex_to_rgb()` and
+ * `contrastColor` mirror `Licensio_KB_Templates::hex_to_rgb()` and
  * `::contrast_color()` — same fallback, same luminance coefficients, same
  * threshold. A unit test pins the PHP side of that pair.
  *

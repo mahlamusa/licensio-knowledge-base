@@ -1,5 +1,5 @@
 /**
- * Lisensio Knowledge Base — shared admin shell.
+ * Licensio Knowledge Base — shared admin shell.
  *
  * Imported by every admin app so the three screens frame identically. Holds
  * only what is common: the page ground, the content measure, the page title
@@ -7,7 +7,7 @@
  * screen.
  *
  * The frame the applications mount into is printed by
- * `Lisensio_KB_Admin_Page::shell()`, so the screen is named before a bundle
+ * `Licensio_KB_Admin_Page::shell()`, so the screen is named before a bundle
  * has parsed.
  *
  * @since 1.0.0

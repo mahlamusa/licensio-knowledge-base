@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<ruleset name="Lisensio Knowledge Base">
-    <description>WordPress Coding Standards for the Lisensio Knowledge Base plugin.</description>
+<ruleset name="Licensio Knowledge Base">
+    <description>WordPress Coding Standards for the Licensio Knowledge Base plugin.</description>
 
     <arg name="basepath" value="."/>
     <arg name="extensions" value="php"/>
@@ -9,7 +9,7 @@
     <arg value="s"/>
 
     <!-- What to check. -->
-    <file>lisensio-knowledge-base.php</file>
+    <file>licensio-knowledge-base.php</file>
     <file>uninstall.php</file>
     <file>includes</file>
     <file>templates</file>
@@ -26,7 +26,7 @@
     <exclude-pattern>*/languages/*</exclude-pattern>
     <exclude-pattern>*/tools/*</exclude-pattern>
     <!-- Template fixtures written by the test suite; removed in tearDown. -->
-    <exclude-pattern>*/lisensio-kb-test-fixture.*</exclude-pattern>
+    <exclude-pattern>*/licensio-kb-test-fixture.*</exclude-pattern>
 
     <config name="minimum_supported_wp_version" value="6.4"/>
     <config name="testVersion" value="7.4-"/>
@@ -63,9 +63,9 @@
     <rule ref="WordPress.NamingConventions.PrefixAllGlobals">
         <properties>
             <property name="prefixes" type="array">
-                <element value="lisensio"/>
-                <element value="Lisensio_KB"/>
-                <element value="LISENSIO_KB"/>
+                <element value="licensio"/>
+                <element value="Licensio_KB"/>
+                <element value="LICENSIO_KB"/>
             </property>
         </properties>
     </rule>
@@ -92,7 +92,7 @@
     <rule ref="WordPress.WP.I18n">
         <properties>
             <property name="text_domain" type="array">
-                <element value="lisensio-knowledge-base"/>
+                <element value="licensio-knowledge-base"/>
             </property>
         </properties>
     </rule>

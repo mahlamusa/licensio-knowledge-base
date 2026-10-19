@@ -6,7 +6,7 @@
  * file before calling dbDelta(). The stub records the statements it is given
  * so a test can assert on the schema without a database.
  *
- * @package Lisensio_KB
+ * @package Licensio_KB
  * @since   1.0.0
  */
 
@@ -22,11 +22,11 @@ if ( ! function_exists( 'dbDelta' ) ) {
      * @return array<string, string> Always an empty report.
      */
     function dbDelta( $queries = '', $execute = true ) { // phpcs:ignore WordPress.NamingConventions.ValidFunctionName.FunctionNameInvalid, Generic.CodeAnalysis.UnusedFunctionParameter
-        if ( ! isset( $GLOBALS['lisensio_kb_delta_calls'] ) || ! is_array( $GLOBALS['lisensio_kb_delta_calls'] ) ) {
-            $GLOBALS['lisensio_kb_delta_calls'] = array();
+        if ( ! isset( $GLOBALS['licensio_kb_delta_calls'] ) || ! is_array( $GLOBALS['licensio_kb_delta_calls'] ) ) {
+            $GLOBALS['licensio_kb_delta_calls'] = array();
         }
 
-        $GLOBALS['lisensio_kb_delta_calls'][] = $queries;
+        $GLOBALS['licensio_kb_delta_calls'][] = $queries;
 
         return array();
     }

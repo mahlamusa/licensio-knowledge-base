@@ -49,7 +49,7 @@ function defaultRange(): { start: string; end: string } {
 	return { start: toIsoDate( start ), end: toIsoDate( end ) };
 }
 
-export const useAnalyticsStore = defineStore( 'lisensioKbAnalytics', {
+export const useAnalyticsStore = defineStore( 'licensioKbAnalytics', {
 	state: () => ( {
 		range: defaultRange(),
 		limit: config().defaultLimit,

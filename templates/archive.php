@@ -5,14 +5,14 @@
  * The redesigned knowledge base home: a page heading and a hairline rule, a
  * divided grid of category cards, and a sidebar carrying the Popular Articles
  * and Need Support widgets. Override from a theme by copying this file to
- * `lisensio-kb/archive.php`.
+ * `licensio-kb/archive.php`.
  *
  * Everything between the theme's header and footer lives in
- * `archive-body.php`, which the `[lisensio_kb_view view="archive"]` shortcode
+ * `archive-body.php`, which the `[licensio_kb_view view="archive"]` shortcode
  * renders too — that is how a block theme serves the same markup a classic
  * theme does, without a second copy of the design to keep in step.
  *
- * @package Lisensio_KB
+ * @package Licensio_KB
  * @since   1.0.0 Redesigned to the Help Topics layout: page header, divided grid, popular articles and support widgets.
  * @since   1.0.0 Added the sidebar.
  */
@@ -21,7 +21,7 @@ defined( 'ABSPATH' ) || exit;
 
 get_header();
 
-lisensio_kb_get_template( 'archive-body' );
+licensio_kb_get_template( 'archive-body' );
 
 /**
  * Fires at the end of the knowledge base archive.
@@ -30,15 +30,15 @@ lisensio_kb_get_template( 'archive-body' );
  * band, a support link, a contact form. The plugin ships none of that itself:
  * the copy would belong to one site rather than to every install.
  *
- * Fired outside every `.lisensio-kb` wrapper, deliberately. What a theme hangs
+ * Fired outside every `.licensio-kb` wrapper, deliberately. What a theme hangs
  * here is the theme's own markup, and inside that wrapper it would inherit the
  * plugin's link colour, focus ring and type — which is not a hypothetical:
- * a theme button rendered inside it came out with `color: var(--lisensio-kb-brand)`
+ * a theme button rendered inside it came out with `color: var(--licensio-kb-brand)`
  * over a brand-coloured background, unreadable.
  *
  * @since 1.0.0
  */
-do_action( 'lisensio_kb_after_archive' );
+do_action( 'licensio_kb_after_archive' );
 ?>
 <?php
 get_footer();

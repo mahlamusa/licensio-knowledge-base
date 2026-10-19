@@ -38,10 +38,10 @@ function Edit( { attributes, setAttributes } ) {
 	return (
 		<div { ...blockProps }>
 			<InspectorControls>
-				<PanelBody title={ __( 'Search', 'lisensio-knowledge-base' ) }>
+				<PanelBody title={ __( 'Search', 'licensio-knowledge-base' ) }>
 					<TextControl
 						__nextHasNoMarginBottom
-						label={ __( 'Placeholder', 'lisensio-knowledge-base' ) }
+						label={ __( 'Placeholder', 'licensio-knowledge-base' ) }
 						value={ attributes.placeholder }
 						onChange={ ( placeholder ) =>
 							setAttributes( { placeholder } )
@@ -51,18 +51,18 @@ function Edit( { attributes, setAttributes } ) {
 						__nextHasNoMarginBottom
 						label={ __(
 							'Accessible label',
-							'lisensio-knowledge-base'
+							'licensio-knowledge-base'
 						) }
 						help={ __(
 							'Announced to screen readers. Not shown on screen.',
-							'lisensio-knowledge-base'
+							'licensio-knowledge-base'
 						) }
 						value={ attributes.label }
 						onChange={ ( label ) => setAttributes( { label } ) }
 					/>
 					<TextControl
 						__nextHasNoMarginBottom
-						label={ __( 'Button text', 'lisensio-knowledge-base' ) }
+						label={ __( 'Button text', 'licensio-knowledge-base' ) }
 						value={ attributes.button }
 						onChange={ ( button ) => setAttributes( { button } ) }
 					/>

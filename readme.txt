@@ -1,4 +1,4 @@
-=== Lisensio Knowledge Base ===
+=== Licensio Knowledge Base ===
 Contributors: mahlamusa
 Tags: knowledge base, documentation, faq, help center, docs
 Requires at least: 6.4
@@ -12,7 +12,7 @@ A fast, standalone knowledge base with block-first authoring, relevant search an
 
 == Description ==
 
-Lisensio Knowledge Base turns WordPress into a documentation and self-service support site. It is completely standalone: it needs no other plugin, no e-commerce platform and no external service.
+Licensio Knowledge Base turns WordPress into a documentation and self-service support site. It is completely standalone: it needs no other plugin, no e-commerce platform and no external service.
 
 Articles are a post type of their own, with their own categories and tags, their own templates and their own search index. Everything a visitor does (the searches that found nothing, the articles that were read, the answers voted unhelpful) is recorded without ever storing an IP address, and reported back to you in the admin.
 
@@ -34,7 +34,7 @@ Articles are a post type of their own, with their own categories and tags, their
 * **Knowledge Base Categories** block: a grid of categories with their article counts.
 * **Knowledge Base Breadcrumbs** block: the trail from the site home to the article or category being viewed.
 * **Knowledge Base FAQ** block: articles as an expandable list of questions and answers.
-* Every block is also a shortcode (`[lisensio_kb_search]`, `[lisensio_kb_articles]`, `[lisensio_kb_categories]`, `[lisensio_kb_breadcrumbs]`, `[lisensio_kb_faq]`), and the sidebar is available as `[lisensio_kb_sidebar]`, so page builders and classic themes get identical markup.
+* Every block is also a shortcode (`[licensio_kb_search]`, `[licensio_kb_articles]`, `[licensio_kb_categories]`, `[licensio_kb_breadcrumbs]`, `[licensio_kb_faq]`), and the sidebar is available as `[licensio_kb_sidebar]`, so page builders and classic themes get identical markup.
 
 = Search that finds things =
 
@@ -42,7 +42,7 @@ Articles are a post type of their own, with their own categories and tags, their
 * MySQL FULLTEXT relevance ranking where the server supports it, with an automatic fallback that keeps working where it does not.
 * Type-ahead suggestions with the matching words highlighted, from a dependency-free script with full ARIA combobox semantics and keyboard navigation.
 * Every search is logged, including the ones that returned nothing: the fastest way to find the article you have not written yet.
-* Rebuild the index from **Knowledge Base > Tools > Search Index**, or with `wp lisensio-kb reindex` from WP-CLI.
+* Rebuild the index from **Knowledge Base > Tools > Search Index**, or with `wp licensio-kb reindex` from WP-CLI.
 
 = Feedback =
 
@@ -85,14 +85,14 @@ Articles are a post type of their own, with their own categories and tags, their
 
 = For developers =
 
-* More than 60 actions and filters, all prefixed `lisensio_`.
-* A REST API under `lisensio-kb/v1` for search, feedback, analytics and settings.
-* A `manage_lisensio_kb` capability, granted to administrators and editors, controls every knowledge base screen.
-* Every string is translatable under the `lisensio-knowledge-base` text domain.
+* More than 60 actions and filters, all prefixed `licensio_`.
+* A REST API under `licensio-kb/v1` for search, feedback, analytics and settings.
+* A `manage_licensio_kb` capability, granted to administrators and editors, controls every knowledge base screen.
+* Every string is translatable under the `licensio-knowledge-base` text domain.
 
 == Installation ==
 
-1. In the WordPress admin, go to **Plugins > Add New**, search for "Lisensio Knowledge Base" and click **Install Now**. Or upload the `lisensio-knowledge-base` folder to `/wp-content/plugins/`.
+1. In the WordPress admin, go to **Plugins > Add New**, search for "Licensio Knowledge Base" and click **Install Now**. Or upload the `licensio-knowledge-base` folder to `/wp-content/plugins/`.
 2. Activate the plugin through the **Plugins** screen.
 3. Add your first articles under **Knowledge Base > Add New Article**, and file them into categories.
 4. Visit **Knowledge Base > Settings** to set your URL bases, brand colour, sidebar and analytics retention.
@@ -112,7 +112,7 @@ Yes. Classic themes get the plugin's own PHP templates, and block themes get Sit
 
 = Can I override the templates in my theme? =
 
-Yes. Copy any file from the plugin's `templates/` directory into a `lisensio-kb/` directory in your theme and edit it there. If you use a block theme, the block templates are editable directly in the Site Editor.
+Yes. Copy any file from the plugin's `templates/` directory into a `licensio-kb/` directory in your theme and edit it there. If you use a block theme, the block templates are editable directly in the Site Editor.
 
 = Can I change the /docs/ address? =
 
@@ -140,15 +140,15 @@ Nothing. Deactivating leaves all content and data in place. Data is only removed
 
 = Who can manage the knowledge base? =
 
-Administrators and editors. Both are given the `manage_lisensio_kb` capability on activation, and you can grant it to other roles with any role editor.
+Administrators and editors. Both are given the `manage_licensio_kb` capability on activation, and you can grant it to other roles with any role editor.
 
 = Is the plugin translatable? =
 
-Yes. Every string is translatable under the `lisensio-knowledge-base` text domain, and a `.pot` file ships in `languages/`.
+Yes. Every string is translatable under the `licensio-knowledge-base` text domain, and a `.pot` file ships in `languages/`.
 
 == Privacy ==
 
-Lisensio Knowledge Base stores the following in your own database, and sends nothing anywhere else:
+Licensio Knowledge Base stores the following in your own database, and sends nothing anywhere else:
 
 * **Article views and searches**, each with a visitor hash, the time, and (for searches) the search terms and the number of results. The visitor hash is an HMAC of the IP address and user agent with a secret salt that rotates every day, so it cannot be reversed or matched across days. The IP address itself is never stored or logged.
 * **Feedback votes and comments** that visitors choose to leave on an article, with the same visitor hash and, for a signed-in visitor, their user ID.
@@ -165,7 +165,7 @@ This plugin does not connect to any external service. Search, analytics and ever
 
 The admin screens and the editor blocks are compiled. The compiled files are in `dist/`, and their full, human-readable source is published alongside the plugin in the WordPress.org SVN repository:
 
-* SVN trunk: https://plugins.svn.wordpress.org/lisensio-knowledge-base/trunk/
+* SVN trunk: https://plugins.svn.wordpress.org/licensio-knowledge-base/trunk/
 * `apps/`: the Vue 3 admin applications (settings, analytics, feedback and tools).
 * `blocks/`: the editor blocks.
 * `package.json`, `package-lock.json`, `vite.config.mjs` and `tools/build-apps.mjs` / `tools/build-blocks.mjs`: the build configuration.
@@ -187,7 +187,7 @@ These are installed together with the smaller packages they depend on, at the ex
 
 Included as PHP source in `libraries/`:
 
-* StellarWP DB 1.3.0, GPL-2.0, https://github.com/stellarwp/db. The classes are prefixed with `Lisensio_KB\` using Strauss so they cannot collide with another plugin's copy.
+* StellarWP DB 1.3.0, GPL-2.0, https://github.com/stellarwp/db. The classes are prefixed with `Licensio_KB\` using Strauss so they cannot collide with another plugin's copy.
 
 == Screenshots ==
 

@@ -4,7 +4,7 @@
 	"rules": {
 		"@wordpress/i18n-text-domain": [
 			"error",
-			{ "allowedTextDomain": [ "lisensio-knowledge-base" ] }
+			{ "allowedTextDomain": [ "licensio-knowledge-base" ] }
 		]
 	}
 }

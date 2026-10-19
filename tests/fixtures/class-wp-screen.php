@@ -7,7 +7,7 @@
  * `instanceof` guard can only ever be tested from its failing side, which would
  * leave the branch that actually enqueues the picker uncovered.
  *
- * @package Lisensio_KB
+ * @package Licensio_KB
  * @since   1.0.0
  */
 

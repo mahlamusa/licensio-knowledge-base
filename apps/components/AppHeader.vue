@@ -2,7 +2,7 @@
 /**
  * The product header the three admin screens share.
  *
- * Carries the License Server mark and the Lisensio wordmark, so a reader
+ * Carries the License Server mark and the Licensio wordmark, so a reader
  * moving between the two admins sees one product rather than two plugins that
  * happen to be installed together. The action buttons are the same four, in
  * the same order, for the same reason.
@@ -88,7 +88,7 @@ onUnmounted( () => {
 					/>
 				</svg>
 
-				<span class="lkb-header__wordmark">Lisensio</span>
+				<span class="lkb-header__wordmark">Licensio</span>
 			</span>
 
 			<div class="lkb-header__actions">

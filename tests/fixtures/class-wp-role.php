@@ -8,7 +8,7 @@
  * ask — whether a role ends up holding the capability — so this double stores
  * capabilities the way core does and answers has_cap() from that store.
  *
- * @package Lisensio_KB
+ * @package Licensio_KB
  * @since   1.0.0
  */
 

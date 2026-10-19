@@ -13,9 +13,9 @@
  * the layout wrapper, the way the reference encodes it, so the same markup
  * serves both sides and a theme restyles either with one selector.
  *
- * Override from a theme by copying this file to `lisensio-kb/sidebar.php`.
+ * Override from a theme by copying this file to `licensio-kb/sidebar.php`.
  *
- * @package Lisensio_KB
+ * @package Licensio_KB
  * @since   1.0.0 Added the Popular Articles and Need Support sections.
  * @since   1.0.0
  *
@@ -34,15 +34,15 @@
 
 defined( 'ABSPATH' ) || exit;
 
-$lisensio_kb_sticky     = isset( $args['sticky'] ) && (bool) $args['sticky'];
-$lisensio_kb_headings   = isset( $args['toc'] ) && is_array( $args['toc'] ) ? $args['toc'] : array();
-$lisensio_kb_categories = isset( $args['categories'] ) && is_array( $args['categories'] ) ? $args['categories'] : array();
-$lisensio_kb_tags       = isset( $args['tags'] ) && is_array( $args['tags'] ) ? $args['tags'] : array();
-$lisensio_kb_current    = isset( $args['current'] ) ? (int) $args['current'] : 0;
-$lisensio_kb_popular    = isset( $args['popular'] ) && is_array( $args['popular'] )
-    ? array_values( array_filter( $args['popular'], array( 'Lisensio_KB_Sidebar', 'is_post' ) ) )
+$licensio_kb_sticky     = isset( $args['sticky'] ) && (bool) $args['sticky'];
+$licensio_kb_headings   = isset( $args['toc'] ) && is_array( $args['toc'] ) ? $args['toc'] : array();
+$licensio_kb_categories = isset( $args['categories'] ) && is_array( $args['categories'] ) ? $args['categories'] : array();
+$licensio_kb_tags       = isset( $args['tags'] ) && is_array( $args['tags'] ) ? $args['tags'] : array();
+$licensio_kb_current    = isset( $args['current'] ) ? (int) $args['current'] : 0;
+$licensio_kb_popular    = isset( $args['popular'] ) && is_array( $args['popular'] )
+    ? array_values( array_filter( $args['popular'], array( 'Licensio_KB_Sidebar', 'is_post' ) ) )
     : array();
-$lisensio_kb_support    = isset( $args['support'] ) ? (string) $args['support'] : '';
+$licensio_kb_support    = isset( $args['support'] ) ? (string) $args['support'] : '';
 
 /*
  * A single heading is a link to a page the reader is already looking at, so
@@ -50,32 +50,32 @@ $lisensio_kb_support    = isset( $args['support'] ) ? (string) $args['support'] 
  * list rather than on the tree, because two sub-sections of one section are
  * still two places to go.
  */
-$lisensio_kb_toc = count( $lisensio_kb_headings ) >= Lisensio_KB_TOC::MIN_HEADINGS
-    ? Lisensio_KB_TOC::tree( $lisensio_kb_headings )
+$licensio_kb_toc = count( $licensio_kb_headings ) >= Licensio_KB_TOC::MIN_HEADINGS
+    ? Licensio_KB_TOC::tree( $licensio_kb_headings )
     : array();
 
-if ( empty( $lisensio_kb_toc ) && empty( $lisensio_kb_categories ) && empty( $lisensio_kb_tags ) && empty( $lisensio_kb_popular ) && '' === $lisensio_kb_support ) {
+if ( empty( $licensio_kb_toc ) && empty( $licensio_kb_categories ) && empty( $licensio_kb_tags ) && empty( $licensio_kb_popular ) && '' === $licensio_kb_support ) {
     return;
 }
 
-$lisensio_kb_sidebar_class = 'lisensio-kb__sidebar' . ( $lisensio_kb_sticky ? ' lisensio-kb__sidebar--sticky' : '' );
+$licensio_kb_sidebar_class = 'licensio-kb__sidebar' . ( $licensio_kb_sticky ? ' licensio-kb__sidebar--sticky' : '' );
 ?>
-<aside class="<?php echo esc_attr( $lisensio_kb_sidebar_class ); ?>">
+<aside class="<?php echo esc_attr( $licensio_kb_sidebar_class ); ?>">
 
-    <?php if ( ! empty( $lisensio_kb_toc ) ) : ?>
-        <nav class="lisensio-kb-widget lisensio-kb-widget--toc" aria-label="<?php esc_attr_e( 'On this page', 'lisensio-knowledge-base' ); ?>">
-            <h2 class="lisensio-kb-widget__title"><?php esc_html_e( 'On this page', 'lisensio-knowledge-base' ); ?></h2>
+    <?php if ( ! empty( $licensio_kb_toc ) ) : ?>
+        <nav class="licensio-kb-widget licensio-kb-widget--toc" aria-label="<?php esc_attr_e( 'On this page', 'licensio-knowledge-base' ); ?>">
+            <h2 class="licensio-kb-widget__title"><?php esc_html_e( 'On this page', 'licensio-knowledge-base' ); ?></h2>
 
-            <ol class="lisensio-kb-toc">
-                <?php foreach ( $lisensio_kb_toc as $lisensio_kb_heading ) : ?>
-                    <li class="lisensio-kb-toc__item">
-                        <a class="lisensio-kb-toc__link" href="#<?php echo esc_attr( $lisensio_kb_heading['id'] ); ?>"><?php echo esc_html( $lisensio_kb_heading['text'] ); ?></a>
+            <ol class="licensio-kb-toc">
+                <?php foreach ( $licensio_kb_toc as $licensio_kb_heading ) : ?>
+                    <li class="licensio-kb-toc__item">
+                        <a class="licensio-kb-toc__link" href="#<?php echo esc_attr( $licensio_kb_heading['id'] ); ?>"><?php echo esc_html( $licensio_kb_heading['text'] ); ?></a>
 
-                        <?php if ( ! empty( $lisensio_kb_heading['children'] ) ) : ?>
-                            <ol class="lisensio-kb-toc lisensio-kb-toc--nested">
-                                <?php foreach ( $lisensio_kb_heading['children'] as $lisensio_kb_child ) : ?>
-                                    <li class="lisensio-kb-toc__item">
-                                        <a class="lisensio-kb-toc__link" href="#<?php echo esc_attr( $lisensio_kb_child['id'] ); ?>"><?php echo esc_html( $lisensio_kb_child['text'] ); ?></a>
+                        <?php if ( ! empty( $licensio_kb_heading['children'] ) ) : ?>
+                            <ol class="licensio-kb-toc licensio-kb-toc--nested">
+                                <?php foreach ( $licensio_kb_heading['children'] as $licensio_kb_child ) : ?>
+                                    <li class="licensio-kb-toc__item">
+                                        <a class="licensio-kb-toc__link" href="#<?php echo esc_attr( $licensio_kb_child['id'] ); ?>"><?php echo esc_html( $licensio_kb_child['text'] ); ?></a>
                                     </li>
                                 <?php endforeach; ?>
                             </ol>
@@ -86,18 +86,18 @@ $lisensio_kb_sidebar_class = 'lisensio-kb__sidebar' . ( $lisensio_kb_sticky ? ' 
         </nav>
     <?php endif; ?>
 
-    <?php if ( ! empty( $lisensio_kb_categories ) ) : ?>
-        <nav class="lisensio-kb-widget lisensio-kb-widget--categories" aria-label="<?php esc_attr_e( 'Categories', 'lisensio-knowledge-base' ); ?>">
-            <h2 class="lisensio-kb-widget__title"><?php esc_html_e( 'Categories', 'lisensio-knowledge-base' ); ?></h2>
+    <?php if ( ! empty( $licensio_kb_categories ) ) : ?>
+        <nav class="licensio-kb-widget licensio-kb-widget--categories" aria-label="<?php esc_attr_e( 'Categories', 'licensio-knowledge-base' ); ?>">
+            <h2 class="licensio-kb-widget__title"><?php esc_html_e( 'Categories', 'licensio-knowledge-base' ); ?></h2>
 
-            <ul class="lisensio-kb-widget__list">
-                <?php foreach ( $lisensio_kb_categories as $lisensio_kb_category ) : ?>
-                    <?php if ( $lisensio_kb_category instanceof WP_Term ) : ?>
-                        <?php $lisensio_kb_is_current = $lisensio_kb_current > 0 && (int) $lisensio_kb_category->term_id === $lisensio_kb_current; ?>
-                        <li class="lisensio-kb-widget__item<?php echo $lisensio_kb_is_current ? ' is-current' : ''; ?>">
+            <ul class="licensio-kb-widget__list">
+                <?php foreach ( $licensio_kb_categories as $licensio_kb_category ) : ?>
+                    <?php if ( $licensio_kb_category instanceof WP_Term ) : ?>
+                        <?php $licensio_kb_is_current = $licensio_kb_current > 0 && (int) $licensio_kb_category->term_id === $licensio_kb_current; ?>
+                        <li class="licensio-kb-widget__item<?php echo $licensio_kb_is_current ? ' is-current' : ''; ?>">
                             <a
-                                class="lisensio-kb-widget__link"
-                                href="<?php echo esc_url( Lisensio_KB_Templates::term_link( $lisensio_kb_category ) ); ?>"
+                                class="licensio-kb-widget__link"
+                                href="<?php echo esc_url( Licensio_KB_Templates::term_link( $licensio_kb_category ) ); ?>"
                                 <?php
                                 /*
                                  * `aria-current="page"` rather than a visual
@@ -105,9 +105,9 @@ $lisensio_kb_sidebar_class = 'lisensio-kb__sidebar' . ( $lisensio_kb_sticky ? ' 
                                  * reader which category they are in, and this
                                  * tells everyone else the same thing.
                                  */
-                                echo $lisensio_kb_is_current ? ' aria-current="page"' : '';
+                                echo $licensio_kb_is_current ? ' aria-current="page"' : '';
                                 ?>
-                            ><?php echo esc_html( $lisensio_kb_category->name ); ?></a>
+                            ><?php echo esc_html( $licensio_kb_category->name ); ?></a>
                         </li>
                     <?php endif; ?>
                 <?php endforeach; ?>
@@ -115,15 +115,15 @@ $lisensio_kb_sidebar_class = 'lisensio-kb__sidebar' . ( $lisensio_kb_sticky ? ' 
         </nav>
     <?php endif; ?>
 
-    <?php if ( ! empty( $lisensio_kb_tags ) ) : ?>
-        <nav class="lisensio-kb-widget lisensio-kb-widget--tags" aria-label="<?php esc_attr_e( 'Tags', 'lisensio-knowledge-base' ); ?>">
-            <h2 class="lisensio-kb-widget__title"><?php esc_html_e( 'Tags', 'lisensio-knowledge-base' ); ?></h2>
+    <?php if ( ! empty( $licensio_kb_tags ) ) : ?>
+        <nav class="licensio-kb-widget licensio-kb-widget--tags" aria-label="<?php esc_attr_e( 'Tags', 'licensio-knowledge-base' ); ?>">
+            <h2 class="licensio-kb-widget__title"><?php esc_html_e( 'Tags', 'licensio-knowledge-base' ); ?></h2>
 
-            <ul class="lisensio-kb-tags">
-                <?php foreach ( $lisensio_kb_tags as $lisensio_kb_tag ) : ?>
-                    <?php if ( $lisensio_kb_tag instanceof WP_Term ) : ?>
-                        <li class="lisensio-kb-tags__item">
-                            <a class="lisensio-kb-tag" href="<?php echo esc_url( Lisensio_KB_Templates::term_link( $lisensio_kb_tag ) ); ?>"><?php echo esc_html( $lisensio_kb_tag->name ); ?></a>
+            <ul class="licensio-kb-tags">
+                <?php foreach ( $licensio_kb_tags as $licensio_kb_tag ) : ?>
+                    <?php if ( $licensio_kb_tag instanceof WP_Term ) : ?>
+                        <li class="licensio-kb-tags__item">
+                            <a class="licensio-kb-tag" href="<?php echo esc_url( Licensio_KB_Templates::term_link( $licensio_kb_tag ) ); ?>"><?php echo esc_html( $licensio_kb_tag->name ); ?></a>
                         </li>
                     <?php endif; ?>
                 <?php endforeach; ?>
@@ -131,19 +131,19 @@ $lisensio_kb_sidebar_class = 'lisensio-kb__sidebar' . ( $lisensio_kb_sticky ? ' 
         </nav>
     <?php endif; ?>
 
-    <?php if ( ! empty( $lisensio_kb_popular ) ) : ?>
-        <nav class="lisensio-kb-widget lisensio-kb-widget--popular" aria-label="<?php esc_attr_e( 'Popular articles', 'lisensio-knowledge-base' ); ?>">
-            <h2 class="lisensio-kb-widget__title"><?php esc_html_e( 'Popular Articles', 'lisensio-knowledge-base' ); ?></h2>
+    <?php if ( ! empty( $licensio_kb_popular ) ) : ?>
+        <nav class="licensio-kb-widget licensio-kb-widget--popular" aria-label="<?php esc_attr_e( 'Popular articles', 'licensio-knowledge-base' ); ?>">
+            <h2 class="licensio-kb-widget__title"><?php esc_html_e( 'Popular Articles', 'licensio-knowledge-base' ); ?></h2>
 
-            <ul class="lisensio-kb-widget__list lisensio-kb-widget__list--articles">
-                <?php foreach ( $lisensio_kb_popular as $lisensio_kb_article ) : ?>
-                    <li class="lisensio-kb-widget__item">
-                        <a class="lisensio-kb-widget__link lisensio-kb-widget__link--article" href="<?php echo esc_url( (string) get_permalink( $lisensio_kb_article ) ); ?>">
-                            <svg class="lisensio-kb-widget__article-icon" viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" aria-hidden="true">
+            <ul class="licensio-kb-widget__list licensio-kb-widget__list--articles">
+                <?php foreach ( $licensio_kb_popular as $licensio_kb_article ) : ?>
+                    <li class="licensio-kb-widget__item">
+                        <a class="licensio-kb-widget__link licensio-kb-widget__link--article" href="<?php echo esc_url( (string) get_permalink( $licensio_kb_article ) ); ?>">
+                            <svg class="licensio-kb-widget__article-icon" viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" aria-hidden="true">
                                 <path d="M4 1.5h5.2L12.5 4.8V14.5H4z" />
                                 <path d="M9 1.5v3.5h3.5" stroke-linecap="round" />
                             </svg>
-                            <span class="lisensio-kb-widget__article-title"><?php echo esc_html( get_the_title( $lisensio_kb_article ) ); ?></span>
+                            <span class="licensio-kb-widget__article-title"><?php echo esc_html( get_the_title( $licensio_kb_article ) ); ?></span>
                         </a>
                     </li>
                 <?php endforeach; ?>
@@ -151,16 +151,16 @@ $lisensio_kb_sidebar_class = 'lisensio-kb__sidebar' . ( $lisensio_kb_sticky ? ' 
         </nav>
     <?php endif; ?>
 
-    <?php if ( '' !== $lisensio_kb_support ) : ?>
-        <aside class="lisensio-kb-widget lisensio-kb-widget--support">
-            <h2 class="lisensio-kb-widget__title"><?php esc_html_e( 'Need Support?', 'lisensio-knowledge-base' ); ?></h2>
+    <?php if ( '' !== $licensio_kb_support ) : ?>
+        <aside class="licensio-kb-widget licensio-kb-widget--support">
+            <h2 class="licensio-kb-widget__title"><?php esc_html_e( 'Need Support?', 'licensio-knowledge-base' ); ?></h2>
 
-            <p class="lisensio-kb-widget__support-text">
-                <?php esc_html_e( 'Can’t find what you’re looking for? Get in touch and we’ll help you out.', 'lisensio-knowledge-base' ); ?>
+            <p class="licensio-kb-widget__support-text">
+                <?php esc_html_e( 'Can’t find what you’re looking for? Get in touch and we’ll help you out.', 'licensio-knowledge-base' ); ?>
             </p>
 
-            <a class="lisensio-kb-widget__button" href="<?php echo esc_url( $lisensio_kb_support ); ?>">
-                <?php esc_html_e( 'Contact Support', 'lisensio-knowledge-base' ); ?>
+            <a class="licensio-kb-widget__button" href="<?php echo esc_url( $licensio_kb_support ); ?>">
+                <?php esc_html_e( 'Contact Support', 'licensio-knowledge-base' ); ?>
             </a>
         </aside>
     <?php endif; ?>

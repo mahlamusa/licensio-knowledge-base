@@ -7,7 +7,7 @@
  * every value back.
  *
  * The suite needs a running WordPress with this plugin active and an
- * administrator account, so it is skipped unless `LISENSIO_KB_E2E=1` and the
+ * administrator account, so it is skipped unless `LICENSIO_KB_E2E=1` and the
  * two credential variables are present. CI has no such site and runs Playwright
  * with `--pass-with-no-tests`.
  *
@@ -16,12 +16,12 @@
 
 import { expect, test, type Page } from '@playwright/test';
 
-const enabled = process.env.LISENSIO_KB_E2E === '1';
-const user = process.env.LISENSIO_KB_ADMIN_USER ?? '';
-const password = process.env.LISENSIO_KB_ADMIN_PASSWORD ?? '';
+const enabled = process.env.LICENSIO_KB_E2E === '1';
+const user = process.env.LICENSIO_KB_ADMIN_USER ?? '';
+const password = process.env.LICENSIO_KB_ADMIN_PASSWORD ?? '';
 
 const SETTINGS_URL =
-	'/wp-admin/edit.php?post_type=lisensio_article&page=lisensio-kb-settings';
+	'/wp-admin/edit.php?post_type=licensio_article&page=licensio-kb-settings';
 
 const BRAND = '#b91c1c';
 
@@ -82,7 +82,7 @@ async function setBrandColour( page: Page, value: string ): Promise< void > {
 test.describe( 'Knowledge base settings', () => {
 	test.skip(
 		! enabled || ! user || ! password,
-		'Set LISENSIO_KB_E2E=1, LISENSIO_KB_ADMIN_USER and LISENSIO_KB_ADMIN_PASSWORD to run.'
+		'Set LICENSIO_KB_E2E=1, LICENSIO_KB_ADMIN_USER and LICENSIO_KB_ADMIN_PASSWORD to run.'
 	);
 
 	test.beforeEach( async ( { page } ) => {
@@ -106,8 +106,8 @@ test.describe( 'Knowledge base settings', () => {
 		await setBrandColour( page, BRAND );
 
 		// The preview reflects the draft before anything is saved.
-		await expect( page.locator( '.lisensio-kb-settings__preview' ) ).toHaveCSS(
-			'--lisensio-kb-brand',
+		await expect( page.locator( '.licensio-kb-settings__preview' ) ).toHaveCSS(
+			'--licensio-kb-brand',
 			BRAND
 		);
 
@@ -115,11 +115,11 @@ test.describe( 'Knowledge base settings', () => {
 		await expect( page.getByText( 'Settings saved.' ) ).toBeVisible();
 
 		// No permalink save, no cache flush: straight to the archive.
-		await page.goto( '/?post_type=lisensio_article' );
+		await page.goto( '/?post_type=licensio_article' );
 
-		const root = page.locator( '.lisensio-kb' ).first();
+		const root = page.locator( '.licensio-kb' ).first();
 
-		await expect( root ).toHaveCSS( '--lisensio-kb-brand', BRAND );
+		await expect( root ).toHaveCSS( '--licensio-kb-brand', BRAND );
 	} );
 
 	test( 'leaving with unsaved changes warns first', async ( { page } ) => {

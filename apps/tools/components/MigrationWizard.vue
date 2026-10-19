@@ -351,9 +351,9 @@ onMounted( detect );
 </script>
 
 <template>
-	<div class="lisensio-kb-migration">
+	<div class="licensio-kb-migration">
 		<a-spin v-if="booting" :tip="translate( 'Checking for import sources…' )">
-			<div class="lisensio-kb-migration__spin-body"></div>
+			<div class="licensio-kb-migration__spin-body"></div>
 		</a-spin>
 
 		<a-alert
@@ -367,7 +367,7 @@ onMounted( detect );
 			<a-steps
 				:current="[ 'source', 'categories', 'run' ].indexOf( step )"
 				size="small"
-				class="lisensio-kb-migration__steps"
+				class="licensio-kb-migration__steps"
 				:items="[
 					{ title: translate( 'Source' ) },
 					{ title: translate( 'Categories' ) },
@@ -383,27 +383,27 @@ onMounted( detect );
 			/>
 
 			<template v-else-if="'source' === step">
-				<p class="lisensio-kb-migration__lede">
+				<p class="licensio-kb-migration__lede">
 					{{ translate( 'These knowledge base plugins have data available for import:' ) }}
 				</p>
 
-				<a-radio-group v-model:value="selected" class="lisensio-kb-migration__sources">
+				<a-radio-group v-model:value="selected" class="licensio-kb-migration__sources">
 					<a-card
 						v-for="item in drivers"
 						:key="item.id"
-						class="lisensio-kb-migration__source"
+						class="licensio-kb-migration__source"
 					>
 						<a-radio :value="item.id">
 							<strong>{{ item.label }}</strong>
 						</a-radio>
 
-						<dl class="lisensio-kb-migration__counts">
+						<dl class="licensio-kb-migration__counts">
 							<div v-for="count in item.counts" :key="count.key">
 								<dt>{{ count.label }}</dt>
 								<dd>{{ count.count }}</dd>
 							</div>
 						</dl>
-						<p class="lisensio-kb-migration__hint">
+						<p class="licensio-kb-migration__hint">
 							{{ translate( 'Totals as stored by the source. Records for deleted articles, and analytics from today, are not imported; the dry run shows the exact numbers.' ) }}
 						</p>
 
@@ -411,20 +411,20 @@ onMounted( detect );
 							v-if="item.status.in_progress"
 							type="warning"
 							show-icon
-							class="lisensio-kb-migration__status"
+							class="licensio-kb-migration__status"
 							:message="translate( 'An import from this source was interrupted. Resume it to carry on from where it stopped; nothing is imported twice.' )"
 						/>
 						<a-alert
 							v-else-if="item.status.finished_at"
 							type="info"
 							show-icon
-							class="lisensio-kb-migration__status"
+							class="licensio-kb-migration__status"
 							:message="translate( 'Last imported' ) + ' ' + formatTime( item.status.finished_at ) + '. ' + translate( 'Importing again adds new content and the analytics recorded since; content already imported is left as it is.' )"
 						/>
 					</a-card>
 				</a-radio-group>
 
-				<div class="lisensio-kb-migration__actions">
+				<div class="licensio-kb-migration__actions">
 					<a-button
 						v-if="driver?.status.in_progress"
 						type="primary"
@@ -444,11 +444,11 @@ onMounted( detect );
 			</template>
 
 			<template v-else-if="'categories' === step">
-				<p class="lisensio-kb-migration__lede">
+				<p class="licensio-kb-migration__lede">
 					{{ translate( 'Choose where each category goes. A new category is created by default; merging files its articles under an existing category and redirects its old address there.' ) }}
 				</p>
 
-				<a-alert v-if="runError" type="error" show-icon :message="runError" class="lisensio-kb-migration__error" />
+				<a-alert v-if="runError" type="error" show-icon :message="runError" class="licensio-kb-migration__error" />
 
 				<a-spin :spinning="loadingCategories">
 					<a-empty
@@ -456,7 +456,7 @@ onMounted( detect );
 						:description="translate( 'This source has no categories.' )"
 					/>
 
-					<table v-else class="lisensio-kb-migration__map">
+					<table v-else class="licensio-kb-migration__map">
 						<thead>
 							<tr>
 								<th>{{ translate( 'Source category' ) }}</th>
@@ -479,7 +479,7 @@ onMounted( detect );
 										:options="targetOptions"
 										show-search
 										option-filter-prop="label"
-										class="lisensio-kb-migration__target"
+										class="licensio-kb-migration__target"
 										:aria-label="translate( 'Import as' ) + ' ' + category.name"
 									/>
 								</td>
@@ -488,13 +488,13 @@ onMounted( detect );
 					</table>
 				</a-spin>
 
-				<div class="lisensio-kb-migration__options">
+				<div class="licensio-kb-migration__options">
 					<a-checkbox v-model:checked="importSettings">
 						{{ translate( 'Also copy the matching settings (layout, columns, sidebars, search placeholder, feedback). URL slugs are never changed, and every change is in the log.' ) }}
 					</a-checkbox>
 				</div>
 
-				<div class="lisensio-kb-migration__actions">
+				<div class="licensio-kb-migration__actions">
 					<a-button @click="step = 'source'">{{ translate( 'Back' ) }}</a-button>
 					<a-button type="primary" :disabled="loadingCategories" @click="start( true )">
 						{{ translate( 'Start dry run' ) }}
@@ -510,8 +510,8 @@ onMounted( detect );
 				</div>
 			</template>
 
-			<div v-else class="lisensio-kb-migration__run">
-				<h2 class="lisensio-kb-migration__run-title">
+			<div v-else class="licensio-kb-migration__run">
+				<h2 class="licensio-kb-migration__run-title">
 					{{
 						runIsDry
 							? translate( 'Verifying import (dry run)' )
@@ -524,7 +524,7 @@ onMounted( detect );
 					type="error"
 					show-icon
 					:message="runError"
-					class="lisensio-kb-migration__error"
+					class="licensio-kb-migration__error"
 				/>
 
 				<a-progress
@@ -532,8 +532,8 @@ onMounted( detect );
 					:status="runError ? 'exception' : summary ? 'success' : 'active'"
 				/>
 
-				<p class="lisensio-kb-migration__phase">{{ phaseLabel }}</p>
-				<p v-if="running" class="lisensio-kb-migration__batch">
+				<p class="licensio-kb-migration__phase">{{ phaseLabel }}</p>
+				<p v-if="running" class="licensio-kb-migration__batch">
 					{{ translate( 'Processed' ) + ' ' + lastBatch + ' ' + translate( 'items in the latest batch.' ) }}
 				</p>
 
@@ -542,7 +542,7 @@ onMounted( detect );
 						v-if="runIsDry"
 						type="info"
 						show-icon
-						class="lisensio-kb-migration__status"
+						class="licensio-kb-migration__status"
 						:message="translate( 'Dry run complete. Nothing was imported; the counts below are what the import would do, and the log shows every item.' )"
 					/>
 
@@ -550,7 +550,7 @@ onMounted( detect );
 						:column="2"
 						bordered
 						size="small"
-						class="lisensio-kb-migration__counts-table"
+						class="licensio-kb-migration__counts-table"
 					>
 						<a-descriptions-item
 							v-for="[ key, value ] in summaryEntries"
@@ -564,7 +564,7 @@ onMounted( detect );
 					<section
 						v-for="[ category, lines ] in noteSections"
 						:key="category"
-						class="lisensio-kb-migration__notes"
+						class="licensio-kb-migration__notes"
 					>
 						<h3>{{ humanize( category ) }}</h3>
 						<ul>
@@ -572,14 +572,14 @@ onMounted( detect );
 						</ul>
 					</section>
 
-					<div v-if="summary.url_map_url" class="lisensio-kb-migration__downloads">
+					<div v-if="summary.url_map_url" class="licensio-kb-migration__downloads">
 						<a-button :href="summary.url_map_url">
 							{{ translate( 'Download URL map (CSV)' ) }}
 						</a-button>
 					</div>
 				</template>
 
-				<div class="lisensio-kb-migration__actions">
+				<div class="licensio-kb-migration__actions">
 					<a-button
 						v-if="summary && runIsDry"
 						type="primary"
@@ -606,8 +606,8 @@ onMounted( detect );
 				</div>
 			</div>
 
-			<section class="lisensio-kb-migration__log">
-				<h2 class="lisensio-kb-migration__run-title">{{ translate( 'Migration log' ) }}</h2>
+			<section class="licensio-kb-migration__log">
+				<h2 class="licensio-kb-migration__run-title">{{ translate( 'Migration log' ) }}</h2>
 				<MigrationLog :key="summary?.run_id ?? 'log'" :run-id="summary?.run_id" />
 			</section>
 		</template>
@@ -615,119 +615,119 @@ onMounted( detect );
 </template>
 
 <style scoped>
-.lisensio-kb-migration__spin-body {
+.licensio-kb-migration__spin-body {
 	min-height: 120px;
 }
 
-.lisensio-kb-migration__steps {
+.licensio-kb-migration__steps {
 	margin-bottom: 20px;
 }
 
-.lisensio-kb-migration__lede {
+.licensio-kb-migration__lede {
 	margin: 0 0 12px;
 }
 
-.lisensio-kb-migration__sources {
+.licensio-kb-migration__sources {
 	display: block;
 	width: 100%;
 }
 
-.lisensio-kb-migration__source {
+.licensio-kb-migration__source {
 	margin-bottom: 12px;
 }
 
-.lisensio-kb-migration__counts {
+.licensio-kb-migration__counts {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 16px 32px;
 	margin: 12px 0 0 26px;
 }
 
-.lisensio-kb-migration__counts dt {
+.licensio-kb-migration__counts dt {
 	color: var( --lkb-ink-wp-muted, #646970 );
 	font-size: 12px;
 }
 
-.lisensio-kb-migration__counts dd {
+.licensio-kb-migration__counts dd {
 	margin: 0;
 	font-size: 18px;
 	font-weight: 600;
 }
 
-.lisensio-kb-migration__options {
+.licensio-kb-migration__options {
 	margin-top: 16px;
 }
 
-.lisensio-kb-migration__hint {
+.licensio-kb-migration__hint {
 	margin: 8px 0 0 26px;
 	color: var( --lkb-ink-wp-muted, #646970 );
 	font-size: 12px;
 }
 
-.lisensio-kb-migration__status {
+.licensio-kb-migration__status {
 	margin-top: 12px;
 }
 
-.lisensio-kb-migration__map {
+.licensio-kb-migration__map {
 	width: 100%;
 	border-collapse: collapse;
 }
 
-.lisensio-kb-migration__map th,
-.lisensio-kb-migration__map td {
+.licensio-kb-migration__map th,
+.licensio-kb-migration__map td {
 	padding: 6px 8px;
 	border-bottom: 1px solid var( --lkb-border-wp, #dcdcde );
 	text-align: left;
 }
 
-.lisensio-kb-migration__target {
+.licensio-kb-migration__target {
 	width: 100%;
 	min-width: 220px;
 }
 
-.lisensio-kb-migration__run-title {
+.licensio-kb-migration__run-title {
 	margin: 0 0 16px;
 	font-size: 16px;
 }
 
-.lisensio-kb-migration__error {
+.licensio-kb-migration__error {
 	margin-bottom: 16px;
 }
 
-.lisensio-kb-migration__phase {
+.licensio-kb-migration__phase {
 	margin: 12px 0 4px;
 	font-weight: 600;
 }
 
-.lisensio-kb-migration__batch {
+.licensio-kb-migration__batch {
 	margin: 0;
 	color: var( --lkb-ink-wp-muted, #646970 );
 	font-size: 12px;
 }
 
-.lisensio-kb-migration__counts-table {
+.licensio-kb-migration__counts-table {
 	margin-top: 20px;
 }
 
-.lisensio-kb-migration__notes h3 {
+.licensio-kb-migration__notes h3 {
 	margin: 20px 0 4px;
 	font-size: 13px;
 }
 
-.lisensio-kb-migration__notes ul {
+.licensio-kb-migration__notes ul {
 	margin: 0;
 	padding-left: 20px;
 }
 
-.lisensio-kb-migration__downloads,
-.lisensio-kb-migration__actions {
+.licensio-kb-migration__downloads,
+.licensio-kb-migration__actions {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 8px;
 	margin-top: 20px;
 }
 
-.lisensio-kb-migration__log {
+.licensio-kb-migration__log {
 	margin-top: 32px;
 	padding-top: 20px;
 	border-top: 1px solid var( --lkb-border-wp, #dcdcde );

@@ -30,7 +30,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" && pwd )"
 ROOT="$( dirname "$SCRIPT_DIR" )"
-SLUG='lisensio-knowledge-base'
+SLUG='licensio-knowledge-base'
 README_FILE="${ROOT}/readme.txt"
 
 # Abort with a message.

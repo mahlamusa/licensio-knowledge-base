@@ -6,7 +6,7 @@
  * unit suite needs somewhere for those headers to land. Brain Monkey supplies
  * WordPress functions but no classes.
  *
- * @package Lisensio_KB
+ * @package Licensio_KB
  * @since   1.0.0
  */
 

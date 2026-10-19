@@ -35,17 +35,17 @@ function Edit( { attributes, setAttributes } ) {
 		<div { ...blockProps }>
 			<InspectorControls>
 				<PanelBody
-					title={ __( 'Breadcrumbs', 'lisensio-knowledge-base' ) }
+					title={ __( 'Breadcrumbs', 'licensio-knowledge-base' ) }
 				>
 					<ToggleControl
 						__nextHasNoMarginBottom
 						label={ __(
 							'Show the home link',
-							'lisensio-knowledge-base'
+							'licensio-knowledge-base'
 						) }
 						help={ __(
 							'Start the trail at the site home rather than at the knowledge base.',
-							'lisensio-knowledge-base'
+							'licensio-knowledge-base'
 						) }
 						checked={ attributes.showHome }
 						onChange={ ( showHome ) =>

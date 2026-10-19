@@ -17,7 +17,7 @@
  *
  * Usage: php bin/php-code-only.php <file>
  *
- * @package Lisensio_KB
+ * @package Licensio_KB
  * @since   1.0.0
  */
 
@@ -30,7 +30,7 @@
  *
  * @return string The newlines the token spanned, and nothing else.
  */
-function lisensio_kb_blank_token( $text ) {
+function licensio_kb_blank_token( $text ) {
     return str_repeat( "\n", substr_count( $text, "\n" ) );
 }
 
@@ -39,35 +39,35 @@ if ( $argc < 2 ) {
     exit( 2 );
 }
 
-$lisensio_kb_file = $argv[1];
+$licensio_kb_file = $argv[1];
 
-if ( ! is_readable( $lisensio_kb_file ) ) {
-    fwrite( STDERR, sprintf( "Cannot read %s\n", $lisensio_kb_file ) );
+if ( ! is_readable( $licensio_kb_file ) ) {
+    fwrite( STDERR, sprintf( "Cannot read %s\n", $licensio_kb_file ) );
     exit( 2 );
 }
 
-$lisensio_kb_source = file_get_contents( $lisensio_kb_file );
+$licensio_kb_source = file_get_contents( $licensio_kb_file );
 
-if ( false === $lisensio_kb_source ) {
-    fwrite( STDERR, sprintf( "Cannot read %s\n", $lisensio_kb_file ) );
+if ( false === $licensio_kb_source ) {
+    fwrite( STDERR, sprintf( "Cannot read %s\n", $licensio_kb_file ) );
     exit( 2 );
 }
 
-$lisensio_kb_tokens = token_get_all( $lisensio_kb_source );
-$lisensio_kb_output = '';
+$licensio_kb_tokens = token_get_all( $licensio_kb_source );
+$licensio_kb_output = '';
 
-foreach ( $lisensio_kb_tokens as $lisensio_kb_token ) {
-    if ( is_string( $lisensio_kb_token ) ) {
-        $lisensio_kb_output .= $lisensio_kb_token;
+foreach ( $licensio_kb_tokens as $licensio_kb_token ) {
+    if ( is_string( $licensio_kb_token ) ) {
+        $licensio_kb_output .= $licensio_kb_token;
         continue;
     }
 
-    if ( T_COMMENT === $lisensio_kb_token[0] || T_DOC_COMMENT === $lisensio_kb_token[0] ) {
-        $lisensio_kb_output .= lisensio_kb_blank_token( $lisensio_kb_token[1] );
+    if ( T_COMMENT === $licensio_kb_token[0] || T_DOC_COMMENT === $licensio_kb_token[0] ) {
+        $licensio_kb_output .= licensio_kb_blank_token( $licensio_kb_token[1] );
         continue;
     }
 
-    $lisensio_kb_output .= $lisensio_kb_token[1];
+    $licensio_kb_output .= $licensio_kb_token[1];
 }
 
-echo $lisensio_kb_output;
+echo $licensio_kb_output;

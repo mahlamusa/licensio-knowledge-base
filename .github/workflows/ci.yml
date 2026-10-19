@@ -90,10 +90,10 @@ jobs:
 
       - name: Integration tests against ${{ matrix.db.name }}
         env:
-          LISENSIO_KB_TEST_DB_HOST: 127.0.0.1
-          LISENSIO_KB_TEST_DB_PORT: 3306
-          LISENSIO_KB_TEST_DB_USER: root
-          LISENSIO_KB_TEST_DB_PASS: root
+          LICENSIO_KB_TEST_DB_HOST: 127.0.0.1
+          LICENSIO_KB_TEST_DB_PORT: 3306
+          LICENSIO_KB_TEST_DB_USER: root
+          LICENSIO_KB_TEST_DB_PASS: root
         # The suite skips itself when no database is reachable, and a skipped
         # suite still reports success. Without the grep this job would go green
         # while proving nothing, which is the exact failure it exists to catch.

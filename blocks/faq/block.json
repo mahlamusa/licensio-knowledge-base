@@ -1,13 +1,13 @@
 {
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
-	"name": "lisensio-kb/faq",
+	"name": "licensio-kb/faq",
 	"title": "Knowledge Base FAQ",
-	"category": "lisensio-kb",
+	"category": "licensio-kb",
 	"icon": "editor-help",
 	"description": "Knowledge base articles as an expandable list of questions and answers.",
 	"keywords": [ "faq", "questions", "accordion", "knowledge base" ],
-	"textdomain": "lisensio-knowledge-base",
+	"textdomain": "licensio-knowledge-base",
 	"supports": {
 		"html": false,
 		"customClassName": false,
@@ -40,6 +40,6 @@
 		}
 	},
 	"editorScript": "file:./index.js",
-	"style": "lisensio-kb-blocks",
-	"editorStyle": "lisensio-kb-blocks-editor"
+	"style": "licensio-kb-blocks",
+	"editorStyle": "licensio-kb-blocks-editor"
 }

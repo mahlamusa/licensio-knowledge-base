@@ -30,7 +30,7 @@ import type {
 
 declare global {
 	interface Window {
-		lisensioKbTools?: ToolsConfig;
+		licensioKbTools?: ToolsConfig;
 		wp?: {
 			i18n?: {
 				__: ( text: string, domain?: string ) => string;
@@ -47,7 +47,7 @@ declare global {
  * @return {ToolsConfig} The configuration, with safe defaults when the page did not supply one.
  */
 export function config(): ToolsConfig {
-	return window.lisensioKbTools ?? {};
+	return window.licensioKbTools ?? {};
 }
 
 /**
@@ -71,7 +71,7 @@ export function translate( text: string ): string {
 	// and the lint rule both treat that spelling as a translation call site.
 	const translator = window.wp?.i18n?.__;
 
-	return translator ? translator( text, 'lisensio-knowledge-base' ) : text;
+	return translator ? translator( text, 'licensio-knowledge-base' ) : text;
 }
 
 /**
@@ -160,7 +160,7 @@ async function postAction(
 export async function detectSources(): Promise< SourceDriver[] > {
 	const data = ( await postAction(
 		requireEndpoint( config().wizard ),
-		'lisensio_import_detect'
+		'licensio_import_detect'
 	) ) as {
 		drivers?: SourceDriver[];
 	};
@@ -182,7 +182,7 @@ export async function fetchCategories(
 ): Promise< { source: SourceCategory[]; targets: TargetCategory[] } > {
 	const data = ( await postAction(
 		requireEndpoint( config().wizard ),
-		'lisensio_import_categories',
+		'licensio_import_categories',
 		{ source }
 	) ) as { source?: SourceCategory[]; targets?: TargetCategory[] };
 
@@ -211,7 +211,7 @@ export async function runBatch(
 ): Promise< { progress: ImportProgress; summary?: ImportSummary } > {
 	return postAction(
 		requireEndpoint( config().wizard ),
-		'lisensio_import_run',
+		'licensio_import_run',
 		{
 			source,
 			dry_run: dryRun ? 'true' : 'false',
@@ -241,7 +241,7 @@ export async function resetMigration(
 ): Promise< void > {
 	await postAction(
 		requireEndpoint( config().wizard ),
-		'lisensio_import_reset',
+		'licensio_import_reset',
 		{
 			source,
 			dry_run: dryRun ? 'true' : 'false',
@@ -259,7 +259,7 @@ export async function resetMigration(
 export async function fetchLogRuns(): Promise< LogRun[] > {
 	const data = ( await postAction(
 		requireEndpoint( config().wizard ),
-		'lisensio_import_log_runs'
+		'licensio_import_log_runs'
 	) ) as { runs?: LogRun[] };
 
 	return data.runs ?? [];
@@ -283,7 +283,7 @@ export async function fetchLogEntries(
 ): Promise< { items: LogEntry[]; total: number } > {
 	const data = ( await postAction(
 		requireEndpoint( config().wizard ),
-		'lisensio_import_log_entries',
+		'licensio_import_log_entries',
 		{ run_id: runId, status, page: String( page ) }
 	) ) as { items?: LogEntry[]; total?: number };
 
@@ -302,7 +302,7 @@ export async function fetchLogEntries(
 export async function clearLog( runId: string ): Promise< void > {
 	await postAction(
 		requireEndpoint( config().wizard ),
-		'lisensio_import_log_clear',
+		'licensio_import_log_clear',
 		{ run_id: runId }
 	);
 }
@@ -317,7 +317,7 @@ export async function clearLog( runId: string ): Promise< void > {
 export async function indexStatus(): Promise< IndexStatus > {
 	return postAction(
 		requireEndpoint( config().searchIndex ),
-		'lisensio_tools_index_status'
+		'licensio_tools_index_status'
 	) as Promise< IndexStatus >;
 }
 
@@ -331,7 +331,7 @@ export async function indexStatus(): Promise< IndexStatus > {
 export async function indexStart(): Promise< IndexStatus > {
 	return postAction(
 		requireEndpoint( config().searchIndex ),
-		'lisensio_tools_index_start'
+		'licensio_tools_index_start'
 	) as Promise< IndexStatus >;
 }
 
@@ -345,7 +345,7 @@ export async function indexStart(): Promise< IndexStatus > {
 export async function indexChunk(): Promise< IndexChunkResponse > {
 	return postAction(
 		requireEndpoint( config().searchIndex ),
-		'lisensio_tools_index_chunk'
+		'licensio_tools_index_chunk'
 	) as Promise< IndexChunkResponse >;
 }
 
@@ -359,7 +359,7 @@ export async function indexChunk(): Promise< IndexChunkResponse > {
 export async function maintenanceStatus(): Promise< MaintenanceStatus > {
 	return postAction(
 		requireEndpoint( config().maintenance ),
-		'lisensio_tools_maintenance_status'
+		'licensio_tools_maintenance_status'
 	) as Promise< MaintenanceStatus >;
 }
 
@@ -376,7 +376,7 @@ export async function recountScores(): Promise< {
 } > {
 	return postAction(
 		requireEndpoint( config().maintenance ),
-		'lisensio_tools_recount_scores'
+		'licensio_tools_recount_scores'
 	) as Promise< { articles: number; status: MaintenanceStatus } >;
 }
 
@@ -393,7 +393,7 @@ export async function scanDuplicates(): Promise< {
 } > {
 	const data = ( await postAction(
 		requireEndpoint( config().duplicates ),
-		'lisensio_tools_duplicates_scan'
+		'licensio_tools_duplicates_scan'
 	) ) as {
 		posts?: DuplicateGroup[];
 		terms?: DuplicateTermGroup[];
@@ -415,7 +415,7 @@ export async function scanDuplicates(): Promise< {
 export async function fixDuplicates(): Promise< DuplicateFixReport > {
 	return postAction(
 		requireEndpoint( config().duplicates ),
-		'lisensio_tools_duplicates_fix'
+		'licensio_tools_duplicates_fix'
 	) as Promise< DuplicateFixReport >;
 }
 
@@ -429,6 +429,6 @@ export async function fixDuplicates(): Promise< DuplicateFixReport > {
 export async function pruneAnalytics(): Promise< PruneResponse > {
 	return postAction(
 		requireEndpoint( config().maintenance ),
-		'lisensio_tools_prune_analytics'
+		'licensio_tools_prune_analytics'
 	) as Promise< PruneResponse >;
 }

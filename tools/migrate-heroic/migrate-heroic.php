@@ -3,20 +3,20 @@
  * Entry point for the disposable Heroic Knowledge Base migrator.
  *
  * This is NOT a plugin feature. It is a one-time tool, excluded from both build
- * artifacts and from the wordpress.org submission, and deleted once the Lisensio
+ * artifacts and from the wordpress.org submission, and deleted once the Licensio
  * site has been migrated. Nothing here is autoloaded and nothing is wired into
- * `Lisensio_KB::boot()`; the operator loads it explicitly, which is what keeps
+ * `Licensio_KB::boot()`; the operator loads it explicitly, which is what keeps
  * it out of every request that is not this migration:
  *
- *     wp --require=wp-content/plugins/lisensio-knowledge-base/tools/migrate-heroic/migrate-heroic.php \
- *        lisensio-kb migrate-heroic --dry-run
+ *     wp --require=wp-content/plugins/licensio-knowledge-base/tools/migrate-heroic/migrate-heroic.php \
+ *        licensio-kb migrate-heroic --dry-run
  *
  * The plugin itself must be active, because the migrator writes through the
- * plugin's own components — `Lisensio_KB_DB`, `Lisensio_KB_Feedback`,
- * `Lisensio_KB_Term_Meta`, `Lisensio_KB_Visitor` — rather than reimplementing
+ * plugin's own components — `Licensio_KB_DB`, `Licensio_KB_Feedback`,
+ * `Licensio_KB_Term_Meta`, `Licensio_KB_Visitor` — rather than reimplementing
  * their row shapes. Heroic does not need to be active, and normally is not.
  *
- * @package Lisensio_KB
+ * @package Licensio_KB
  * @since   1.0.0
  */
 
@@ -44,33 +44,33 @@ if ( ! defined( 'WP_CLI' ) ) {
  *
  * @return void
  */
-function lisensio_kb_register_heroic_migrator() {
+function licensio_kb_register_heroic_migrator() {
     /*
      * Required here rather than at file scope. Each class carries the standard
      * direct-access guard, and WP-CLI loads a --require file before WordPress,
      * so requiring them at the top meant the first guard exited the process
      * before the command could be registered.
      */
-    require_once __DIR__ . '/class-lisensio-kb-heroic-schema.php';
-    require_once __DIR__ . '/class-lisensio-kb-heroic-map.php';
-    require_once __DIR__ . '/class-lisensio-kb-heroic-state.php';
-    require_once __DIR__ . '/class-lisensio-kb-heroic-report.php';
-    require_once __DIR__ . '/class-lisensio-kb-heroic-source.php';
-    require_once __DIR__ . '/class-lisensio-kb-heroic-redirects.php';
-    require_once __DIR__ . '/class-lisensio-kb-heroic-content-migrator.php';
-    require_once __DIR__ . '/class-lisensio-kb-heroic-data-migrator.php';
-    require_once __DIR__ . '/class-lisensio-kb-heroic-cli.php';
+    require_once __DIR__ . '/class-licensio-kb-heroic-schema.php';
+    require_once __DIR__ . '/class-licensio-kb-heroic-map.php';
+    require_once __DIR__ . '/class-licensio-kb-heroic-state.php';
+    require_once __DIR__ . '/class-licensio-kb-heroic-report.php';
+    require_once __DIR__ . '/class-licensio-kb-heroic-source.php';
+    require_once __DIR__ . '/class-licensio-kb-heroic-redirects.php';
+    require_once __DIR__ . '/class-licensio-kb-heroic-content-migrator.php';
+    require_once __DIR__ . '/class-licensio-kb-heroic-data-migrator.php';
+    require_once __DIR__ . '/class-licensio-kb-heroic-cli.php';
 
 
-    if ( ! class_exists( 'Lisensio_KB_Post_Types' ) ) {
+    if ( ! class_exists( 'Licensio_KB_Post_Types' ) ) {
         if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( 'WP_CLI' ) ) {
-            WP_CLI::warning( 'The Lisensio Knowledge Base plugin is not active; the migrator has nothing to write into.' );
+            WP_CLI::warning( 'The Licensio Knowledge Base plugin is not active; the migrator has nothing to write into.' );
         }
 
         return;
     }
 
-    Lisensio_KB_Heroic_CLI::register();
+    Licensio_KB_Heroic_CLI::register();
 }
 
 /*
@@ -79,4 +79,4 @@ function lisensio_kb_register_heroic_migrator() {
  * yet and plugins_loaded has already fired by the time WP-CLI hands over. This
  * is WP-CLI's own hook for work that needs a loaded WordPress.
  */
-WP_CLI::add_hook( 'after_wp_load', 'lisensio_kb_register_heroic_migrator' );
+WP_CLI::add_hook( 'after_wp_load', 'licensio_kb_register_heroic_migrator' );

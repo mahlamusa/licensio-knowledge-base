@@ -1,90 +1,90 @@
 /**
- * Lisensio Knowledge Base — article feedback widget.
+ * Licensio Knowledge Base — article feedback widget.
  *
- * Every rule is scoped to `.lisensio-kb-feedback`, and every colour is read
- * from the custom properties Lisensio_KB_Templates declares on `.lisensio-kb`,
+ * Every rule is scoped to `.licensio-kb-feedback`, and every colour is read
+ * from the custom properties Licensio_KB_Templates declares on `.licensio-kb`,
  * so a site that changes its brand colour restyles this widget too without a
  * single rule-level override. The fallbacks let the widget stand alone if a
- * theme renders the article footer outside the `.lisensio-kb` wrapper.
+ * theme renders the article footer outside the `.licensio-kb` wrapper.
  */
 
-.lisensio-kb-feedback {
-	margin: var(--lisensio-kb-space, 2.5rem) 0 0;
-	padding: var(--lisensio-kb-gap, 1.5rem);
-	border: 1px solid var(--lisensio-kb-line, #dcefe4);
-	border-radius: var(--lisensio-kb-radius, 18px);
-	background: var(--lisensio-kb-tint, rgba(43, 163, 119, 0.08));
+.licensio-kb-feedback {
+	margin: var(--licensio-kb-space, 2.5rem) 0 0;
+	padding: var(--licensio-kb-gap, 1.5rem);
+	border: 1px solid var(--licensio-kb-line, #dcefe4);
+	border-radius: var(--licensio-kb-radius, 18px);
+	background: var(--licensio-kb-tint, rgba(43, 163, 119, 0.08));
 }
 
-.lisensio-kb-feedback__heading {
+.licensio-kb-feedback__heading {
 	margin: 0 0 0.75rem;
 	font-size: 1.0625rem;
 	line-height: 1.4;
 }
 
-.lisensio-kb-feedback__actions {
+.licensio-kb-feedback__actions {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 0.5rem;
 }
 
-.lisensio-kb-feedback__button {
+.licensio-kb-feedback__button {
 	min-width: 5rem;
 	padding: 0.5rem 1rem;
-	border: 1px solid var(--lisensio-kb-brand, #2ba377);
-	border-radius: var(--lisensio-kb-radius, 18px);
-	background: var(--lisensio-kb-surface, #fff);
-	color: var(--lisensio-kb-brand, #2ba377);
+	border: 1px solid var(--licensio-kb-brand, #2ba377);
+	border-radius: var(--licensio-kb-radius, 18px);
+	background: var(--licensio-kb-surface, #fff);
+	color: var(--licensio-kb-brand, #2ba377);
 	font: inherit;
 	line-height: 1.2;
 	cursor: pointer;
 }
 
-.lisensio-kb-feedback__button:hover:not( [disabled] ),
-.lisensio-kb-feedback__button:focus-visible {
-	background: var(--lisensio-kb-brand, #2ba377);
-	color: var(--lisensio-kb-brand-contrast, #fff);
+.licensio-kb-feedback__button:hover:not( [disabled] ),
+.licensio-kb-feedback__button:focus-visible {
+	background: var(--licensio-kb-brand, #2ba377);
+	color: var(--licensio-kb-brand-contrast, #fff);
 }
 
-.lisensio-kb-feedback__button[disabled] {
+.licensio-kb-feedback__button[disabled] {
 	opacity: 0.55;
 	cursor: default;
 }
 
-.lisensio-kb-feedback__comment {
+.licensio-kb-feedback__comment {
 	margin-top: 1rem;
 }
 
-.lisensio-kb-feedback__label {
+.licensio-kb-feedback__label {
 	display: block;
 	margin-bottom: 0.375rem;
 	font-weight: 600;
 }
 
-.lisensio-kb-feedback__textarea {
+.licensio-kb-feedback__textarea {
 	display: block;
 	width: 100%;
 	margin-bottom: 0.75rem;
 	padding: 0.5rem;
-	border: 1px solid var(--lisensio-kb-line, #dcefe4);
-	border-radius: var(--lisensio-kb-radius, 18px);
-	background: var(--lisensio-kb-surface, #fff);
+	border: 1px solid var(--licensio-kb-line, #dcefe4);
+	border-radius: var(--licensio-kb-radius, 18px);
+	background: var(--licensio-kb-surface, #fff);
 	color: inherit;
 	font: inherit;
 	resize: vertical;
 }
 
-.lisensio-kb-feedback__status:empty {
+.licensio-kb-feedback__status:empty {
 	display: none;
 }
 
-.lisensio-kb-feedback__status {
+.licensio-kb-feedback__status {
 	margin: 0.75rem 0 0;
 	font-weight: 600;
 }
 
-.lisensio-kb-feedback__summary {
+.licensio-kb-feedback__summary {
 	margin: 0.5rem 0 0;
-	color: var(--lisensio-kb-muted, #8b86a0);
+	color: var(--licensio-kb-muted, #8b86a0);
 	font-size: 0.875rem;
 }

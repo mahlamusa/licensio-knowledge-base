@@ -134,15 +134,15 @@ onMounted( load );
 </script>
 
 <template>
-	<div class="lisensio-kb-search-index">
+	<div class="licensio-kb-search-index">
 		<a-spin v-if="loading">
-			<div class="lisensio-kb-search-index__spin-body"></div>
+			<div class="licensio-kb-search-index__spin-body"></div>
 		</a-spin>
 
 		<a-alert v-else-if="error" type="error" show-icon :message="error" />
 
 		<template v-else-if="status">
-			<p class="lisensio-kb-search-index__lede">
+			<p class="licensio-kb-search-index__lede">
 				{{
 					translate(
 						'The search index holds one row per article. It is kept in sync automatically; rebuild it after bulk edits outside the editor, or when search results look stale.'
@@ -150,7 +150,7 @@ onMounted( load );
 				}}
 			</p>
 
-			<dl class="lisensio-kb-search-index__stats">
+			<dl class="licensio-kb-search-index__stats">
 				<div>
 					<dt>{{ translate( 'Indexed articles' ) }}</dt>
 					<dd>{{ indexed }}</dd>
@@ -171,11 +171,11 @@ onMounted( load );
 				:status="error ? 'exception' : finishedAt ? 'success' : 'active'"
 			/>
 
-			<p v-if="finishedAt" class="lisensio-kb-search-index__done">
+			<p v-if="finishedAt" class="licensio-kb-search-index__done">
 				{{ translate( 'The index was rebuilt.' ) }}
 			</p>
 
-			<div class="lisensio-kb-search-index__actions">
+			<div class="licensio-kb-search-index__actions">
 				<a-popconfirm
 					:title="translate( 'Empty the index and re-index every article?' )"
 					:ok-text="translate( 'Rebuild' )"
@@ -196,36 +196,36 @@ onMounted( load );
 </template>
 
 <style scoped>
-.lisensio-kb-search-index__spin-body {
+.licensio-kb-search-index__spin-body {
 	min-height: 120px;
 }
 
-.lisensio-kb-search-index__lede {
+.licensio-kb-search-index__lede {
 	margin: 0 0 16px;
 }
 
-.lisensio-kb-search-index__stats {
+.licensio-kb-search-index__stats {
 	display: flex;
 	gap: 32px;
 	margin: 0 0 16px;
 }
 
-.lisensio-kb-search-index__stats dt {
+.licensio-kb-search-index__stats dt {
 	color: var( --lkb-ink-wp-muted, #646970 );
 	font-size: 12px;
 }
 
-.lisensio-kb-search-index__stats dd {
+.licensio-kb-search-index__stats dd {
 	margin: 0;
 	font-size: 18px;
 	font-weight: 600;
 }
 
-.lisensio-kb-search-index__done {
+.licensio-kb-search-index__done {
 	margin: 12px 0 0;
 }
 
-.lisensio-kb-search-index__actions {
+.licensio-kb-search-index__actions {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 8px;

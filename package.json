@@ -1,7 +1,7 @@
 {
-  "name": "lisensio-knowledge-base",
+  "name": "licensio-knowledge-base",
   "version": "1.0.0",
-  "description": "Lisensio Knowledge Base - WordPress documentation and self-service support plugin.",
+  "description": "Licensio Knowledge Base - WordPress documentation and self-service support plugin.",
   "license": "GPL-2.0-or-later",
   "private": true,
   "type": "module",
