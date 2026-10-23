@@ -469,13 +469,13 @@ class Licensio_KB_BetterDocs_Import_Source_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * The lowest-ID category listing the article decides its order.
+     * The lowest-ID category listing the article decides its fallback order.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_article_order_takes_the_lowest_category_and_flags_a_disagreement() {
+    public function test_article_order_takes_the_lowest_category_and_keeps_every_position() {
         $source = new Licensio_KB_BetterDocs_Import_Source_Double();
 
         $source->post_term_ids = array( 30 => array( 'doc_category' => array( 5, 4 ) ) );
@@ -486,9 +486,11 @@ class Licensio_KB_BetterDocs_Import_Source_Test extends Licensio_KB_Test_Case {
 
         $this->assertSame(
             array(
-                'order'          => 2,
-                'ambiguous'      => true,
-                'source_term_id' => 4,
+                'order'     => 2,
+                'positions' => array(
+                    4 => 2,
+                    5 => 0,
+                ),
             ),
             $source->article_order( 30 )
         );
@@ -509,12 +511,31 @@ class Licensio_KB_BetterDocs_Import_Source_Test extends Licensio_KB_Test_Case {
 
         $this->assertSame(
             array(
-                'order'          => 0,
-                'ambiguous'      => false,
-                'source_term_id' => 0,
+                'order'     => 0,
+                'positions' => array(),
             ),
             $source->article_order( 30 )
         );
+    }
+
+    /**
+     * A category's last position is one less than the articles its list names.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_last_position_counts_the_listed_articles() {
+        $source = new Licensio_KB_BetterDocs_Import_Source_Double();
+
+        $source->meta = array(
+            4 => array( '_docs_order' => '10, ,20,30,' ),
+            5 => array( '_docs_order' => '' ),
+        );
+
+        $this->assertSame( 2, $source->last_position( 4 ) );
+        $this->assertSame( -1, $source->last_position( 5 ) );
+        $this->assertSame( -1, $source->last_position( 6 ) );
     }
 
     /**
@@ -548,6 +569,7 @@ class Licensio_KB_BetterDocs_Import_Source_Test extends Licensio_KB_Test_Case {
         }
 
         $this->assertSame( Licensio_KB_Term_Meta::META_ORDER, $source->classify_term_meta( 'kb_order' )['target'] );
+        $this->assertSame( 'licensio_order_{term} (per category)', $source->classify_term_meta( '_docs_order' )['target'] );
         $this->assertSame( 'not_migrated', $source->classify_term_meta( 'anything_else' )['action'] );
     }
 

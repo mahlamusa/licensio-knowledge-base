@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-23T23:07:54+00:00\n"
+"POT-Creation-Date: 2026-10-23T22:33:32+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.7.1\n"
 "X-Domain: licensio-knowledge-base\n"
@@ -93,32 +93,15 @@ msgstr ""
 msgid "Loading the knowledge base analytics…"
 msgstr ""
 
-#: includes/admin/class-licensio-kb-categories-admin.php:140
-#: includes/admin/class-licensio-kb-categories-admin.php:141
-#: includes/admin/class-licensio-kb-categories-admin.php:217
-#: includes/class-licensio-kb-post-types.php:301
-#: includes/import/class-licensio-kb-betterdocs-import-driver.php:82
-#: includes/import/class-licensio-kb-heroic-import-driver.php:81
-#: templates/sidebar.php:90
-#: templates/sidebar.php:91
-#: blocks/category-grid/index.js:45
-msgid "Categories"
-msgstr ""
-
-#: includes/admin/class-licensio-kb-categories-admin.php:213
-#: includes/admin/class-licensio-kb-feedback-admin.php:168
-#: includes/class-licensio-kb-rest-controller.php:124
-msgid "You are not allowed to manage the knowledge base."
-msgstr ""
-
-#: includes/admin/class-licensio-kb-categories-admin.php:219
-msgid "Loading categories…"
-msgstr ""
-
 #: includes/admin/class-licensio-kb-feedback-admin.php:91
 #: includes/admin/class-licensio-kb-feedback-admin.php:92
 #: includes/class-licensio-kb-settings-schema.php:128
 msgid "Feedback"
+msgstr ""
+
+#: includes/admin/class-licensio-kb-feedback-admin.php:168
+#: includes/class-licensio-kb-rest-controller.php:124
+msgid "You are not allowed to manage the knowledge base."
 msgstr ""
 
 #: includes/admin/class-licensio-kb-feedback-admin.php:172
@@ -272,7 +255,7 @@ msgstr ""
 #: includes/class-licensio-kb-analytics-privacy.php:78
 #: includes/class-licensio-kb-analytics-privacy.php:98
 #: includes/class-licensio-kb-blocks.php:164
-#: includes/class-licensio-kb-templates.php:718
+#: includes/class-licensio-kb-templates.php:724
 msgid "Knowledge Base"
 msgstr ""
 
@@ -522,6 +505,15 @@ msgctxt "taxonomy singular name"
 msgid "Category"
 msgstr ""
 
+#: includes/class-licensio-kb-post-types.php:301
+#: includes/import/class-licensio-kb-betterdocs-import-driver.php:82
+#: includes/import/class-licensio-kb-heroic-import-driver.php:81
+#: templates/sidebar.php:90
+#: templates/sidebar.php:91
+#: blocks/category-grid/index.js:45
+msgid "Categories"
+msgstr ""
+
 #: includes/class-licensio-kb-post-types.php:302
 msgid "All Categories"
 msgstr ""
@@ -631,7 +623,6 @@ msgstr ""
 
 #. translators: %s: REST route path
 #: includes/class-licensio-kb-rest-controller.php:223
-#: includes/rest/class-licensio-kb-category-order-rest-controller.php:196
 msgid "The %s endpoint is registered but not yet implemented."
 msgstr ""
 
@@ -1012,12 +1003,12 @@ msgstr ""
 msgid "No sidebar"
 msgstr ""
 
-#: includes/class-licensio-kb-templates.php:709
+#: includes/class-licensio-kb-templates.php:715
 msgid "Home"
 msgstr ""
 
 #. translators: %s: the search term.
-#: includes/class-licensio-kb-templates.php:745
+#: includes/class-licensio-kb-templates.php:751
 #: templates/search-results.php:23
 msgid "Search results for “%s”"
 msgstr ""
@@ -1058,7 +1049,7 @@ msgstr ""
 msgid "One of the chosen terms does not exist."
 msgstr ""
 
-#: includes/class-licensio-kb.php:385
+#: includes/class-licensio-kb.php:384
 msgid "Licensio Knowledge Base is missing its bundled database library, so its tables cannot be created. Reinstall the plugin, or run \"composer install\" in the plugin directory."
 msgstr ""
 
@@ -1113,112 +1104,32 @@ msgstr[1] ""
 msgid "Heroic Knowledge Base"
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:193
-msgid "The category ID."
-msgstr ""
-
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:214
-msgid "The category name."
-msgstr ""
-
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:220
-msgid "The category slug. Made unique when it is taken."
-msgstr ""
-
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:226
-msgid "The parent category ID, 0 for the top level."
-msgstr ""
-
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:231
-msgid "The category description."
-msgstr ""
-
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:236
-msgid "A Dashicons name, e.g. dashicons-book-alt."
-msgstr ""
-
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:242
-msgid "The attachment ID of an uploaded icon, 0 for none."
-msgstr ""
-
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:247
-msgid "Inline SVG icon markup. Reduced to an allowlist on save."
-msgstr ""
-
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:253
-msgid "The attachment ID of the category image, 0 for none."
-msgstr ""
-
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:302
-msgid "Choose an image from the media library."
-msgstr ""
-
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:328
-msgid "Where the articles go: parent, none, or a category ID."
-msgstr ""
-
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:334
-msgid "Where the child categories go: parent, or a category ID."
-msgstr ""
-
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:353
-msgid "The parent the categories are placed under, 0 for the top level."
-msgstr ""
-
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:365
-msgid "The children of the parent, in the new order, first first. Children left out follow them in their current order."
-msgstr ""
-
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:391
-msgid "The categories to merge away."
-msgstr ""
-
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:398
-msgid "The category that remains."
-msgstr ""
-
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:800
-msgid "The category could not be deleted."
-msgstr ""
-
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:834
-msgid "A top-level category has no parent to move its articles to. Choose a category, or leave them without one."
-msgstr ""
-
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:1486
-msgid "That category does not exist."
-msgstr ""
-
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:1501
-msgid "One of the chosen categories does not exist."
-msgstr ""
-
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:1516
-msgid "A category cannot be moved onto itself."
-msgstr ""
-
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:1531
-msgid "A category cannot be placed inside itself or one of its own subcategories."
-msgstr ""
-
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:1546
-msgid "You are not allowed to change knowledge base categories."
-msgstr ""
-
-#: includes/rest/class-licensio-kb-category-order-rest-controller.php:101
+#: includes/rest/class-licensio-kb-category-order-rest-controller.php:118
 msgid "The category whose articles are ordered."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-category-order-rest-controller.php:120
+#: includes/rest/class-licensio-kb-category-order-rest-controller.php:137
 msgid "The page of articles to return."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-category-order-rest-controller.php:128
+#: includes/rest/class-licensio-kb-category-order-rest-controller.php:145
 msgid "How many articles a page holds."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-category-order-rest-controller.php:151
+#: includes/rest/class-licensio-kb-category-order-rest-controller.php:169
 msgid "The article IDs in their new order, first first."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-category-order-rest-controller.php:298
+msgid "Some of these articles are not in this category."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-category-order-rest-controller.php:310
+msgid "You are not allowed to reorder one of these articles."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-category-order-rest-controller.php:339
+msgid "That category does not exist."
 msgstr ""
 
 #: includes/rest/class-licensio-kb-feedback-rest-controller.php:152
