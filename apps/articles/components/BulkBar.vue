@@ -130,11 +130,14 @@ const request = computed< { action: BulkAction; args: BulkArgs } | null >(
 
 const count = computed( () => store.selected.length );
 
-const pageFullySelected = computed(
-	() =>
+const pageFullySelected = computed( () => {
+	const selected = new Set( store.selected );
+
+	return (
 		store.items.length > 0 &&
-		store.items.every( ( item ) => store.selected.includes( item.id ) )
-);
+		store.items.every( ( item ) => selected.has( item.id ) )
+	);
+} );
 
 const canSelectAll = computed(
 	() =>

@@ -18,6 +18,7 @@ import { __, sprintf } from '../../components/i18n';
 import { config } from '../api';
 import { confirmTitle, performAction } from '../actions';
 import { useArticlesStore } from '../store';
+import { ORDER_BY } from '../url';
 import QuickEditRow from './QuickEditRow.vue';
 import type {
 	ArticleColumn,
@@ -37,14 +38,6 @@ const STATUS_LABELS: Record< ArticleStatus, string > = {
 	private: __( 'Private', 'licensio-knowledge-base' ),
 	trash: __( 'Trash', 'licensio-knowledge-base' ),
 };
-
-const SORTABLE: ArticleOrderBy[] = [
-	'title',
-	'date',
-	'modified',
-	'views',
-	'rating',
-];
 
 /**
  * The current sort of a column, in Ant's terms.
@@ -75,7 +68,7 @@ function sortOrder( key: string ): 'ascend' | 'descend' | null {
  * @return {Object} The column.
  */
 function column( key: string, title: string, width?: number ) {
-	const sortable = SORTABLE.includes( key as ArticleOrderBy );
+	const sortable = ORDER_BY.includes( key as ArticleOrderBy );
 
 	return {
 		key,
@@ -109,22 +102,6 @@ const columns = computed( () => {
 } );
 
 const inTrash = computed( () => 'trash' === store.query.status );
-
-/**
- * Whether an article's rating marks it as needing attention.
- *
- * The server decides with the same exact rule as the Needs attention
- * filter, so the badge and the filter always agree.
- *
- * @since 1.0.0
- *
- * @param {ArticleItem} item The article.
- *
- * @return {boolean} True below the threshold with enough votes.
- */
-function needsAttention( item: ArticleItem ): boolean {
-	return item.needs_attention;
-}
 
 /**
  * A site-local date for display.
@@ -171,18 +148,15 @@ function onChange(
 	const sort = Array.isArray( sorter ) ? sorter[ 0 ] : sorter;
 	const key = ( sort as { columnKey?: unknown } )?.columnKey;
 	const order = ( sort as { order?: string | null } )?.order;
+	const direction = 'ascend' === order ? 'asc' : 'desc';
 
 	if (
 		typeof key === 'string' &&
-		SORTABLE.includes( key as ArticleOrderBy ) &&
+		ORDER_BY.includes( key as ArticleOrderBy ) &&
 		order &&
-		( key !== store.query.orderby ||
-			( 'ascend' === order ? 'asc' : 'desc' ) !== store.query.order )
+		( key !== store.query.orderby || direction !== store.query.order )
 	) {
-		store.setSort(
-			key as ArticleOrderBy,
-			'ascend' === order ? 'asc' : 'desc'
-		);
+		store.setSort( key as ArticleOrderBy, direction );
 		return;
 	}
 
@@ -300,7 +274,7 @@ const expandedKeys = computed( () =>
 							<a v-if="record.view_url" :href="record.view_url">
 								{{ 'publish' === record.status ? __( 'View', 'licensio-knowledge-base' ) : __( 'Preview', 'licensio-knowledge-base' ) }}
 							</a>
-							<a v-if="needsAttention( record as ArticleItem ) || store.query.needs_attention" :href="feedbackUrl( record.id )">
+							<a v-if="record.needs_attention || store.query.needs_attention" :href="feedbackUrl( record.id )">
 								{{ __( 'View feedback', 'licensio-knowledge-base' ) }}
 							</a>
 							<ConfirmButton
@@ -352,7 +326,7 @@ const expandedKeys = computed( () =>
 					<span v-if="null === record.rating.share" class="lkb-muted">—</span>
 					<span
 						v-else
-						:class="{ 'lkb-rating--low': needsAttention( record as ArticleItem ) }"
+						:class="{ 'lkb-rating--low': record.needs_attention }"
 						:title="sprintf( __( '%1$d helpful, %2$d not helpful', 'licensio-knowledge-base' ), record.rating.up, record.rating.down )"
 					>
 						{{ record.rating.share }}%

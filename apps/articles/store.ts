@@ -32,7 +32,6 @@ import type {
 	ListPreferences,
 	PerPage,
 	RevertResult,
-	SkipReason,
 	StatusCounts,
 } from './types';
 
@@ -45,15 +44,11 @@ const PREFERENCES_DELAY = 600;
 /**
  * The progress and outcome of a bulk run.
  */
-export interface BulkRun {
+export interface BulkRun extends RevertResult {
 	open: boolean;
 	running: boolean;
-	action: BulkAction | '';
 	total: number;
 	processed: number;
-	done: number[];
-	skipped: Array< { id: number; reason: SkipReason } >;
-	failed: Array< { id: number; message: string } >;
 	/** Set when a batch failed and the run stopped. */
 	error: string;
 	/** Each successful batch's answer, kept for Undo. */
@@ -64,7 +59,6 @@ interface State {
 	query: ArticleQuery;
 	items: ArticleItem[];
 	total: number;
-	pages: number;
 	counts: Partial< StatusCounts >;
 	loading: boolean;
 	loaded: boolean;
@@ -93,7 +87,6 @@ function emptyRun(): BulkRun {
 	return {
 		open: false,
 		running: false,
-		action: '',
 		total: 0,
 		processed: 0,
 		done: [],
@@ -130,7 +123,6 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 			query: defaultQuery( perPage ),
 			items: [],
 			total: 0,
-			pages: 0,
 			counts: {},
 			loading: false,
 			loaded: false,
@@ -270,7 +262,6 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 
 				this.items = page.items;
 				this.total = page.total;
-				this.pages = page.pages;
 				this.counts = page.counts ?? {};
 				this.loaded = true;
 
@@ -573,7 +564,6 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 				...emptyRun(),
 				open: modal,
 				running: true,
-				action,
 				total: ids.length,
 			};
 

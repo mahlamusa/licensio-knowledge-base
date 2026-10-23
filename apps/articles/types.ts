@@ -233,14 +233,7 @@ export interface Snapshot {
  * comments). `snapshot_at` (unix seconds) and `token` must be sent back
  * unchanged with the snapshots to `POST articles/revert`.
  */
-export interface BulkResult {
-	done: number[];
-	skipped: Array< { id: number; reason: SkipReason } >;
-	failed: Array< { id: number; message: string } >;
-	previous: Record< string, Snapshot >;
-	snapshot_at: number;
-	token: string;
-}
+export interface BulkResult extends RevertRequest, RevertResult {}
 
 /**
  * `POST articles/revert` body. At most 100 snapshots, no older than

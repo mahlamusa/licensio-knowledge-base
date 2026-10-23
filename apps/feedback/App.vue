@@ -16,7 +16,7 @@ import { lkbTheme } from '../styles/theme';
  */
 
 import { computed, onMounted, ref } from 'vue';
-import { settings } from './api';
+import { articleFilter, settings } from './api';
 import { useFeedbackStore } from './store';
 import AppHeader from '../components/AppHeader.vue';
 import type { FeedbackItem, FeedbackStatus } from './types';
@@ -83,14 +83,7 @@ function isHelpful( item: FeedbackItem ): boolean {
  * The article the inbox is filtered to, from the `article_id` the Articles
  * app links here with. 0 when it shows every article.
  */
-const articleId = ref(
-	Math.max(
-		0,
-		Number(
-			new URLSearchParams( window.location.search ).get( 'article_id' )
-		) || 0
-	)
-);
+const articleId = ref( articleFilter() );
 
 /** The filtered article's title, once a row of it has loaded. */
 const articleName = computed(

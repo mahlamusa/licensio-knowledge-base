@@ -50,14 +50,6 @@ class Licensio_KB_Article_Metrics {
     const DEFAULT_WINDOW = 30;
 
     /**
-     * The views table, unprefixed.
-     *
-     * @since 1.0.0
-     * @var string
-     */
-    const VIEWS_TABLE = 'licensio_article_views';
-
-    /**
      * The query var that asks `clauses()` to add the metrics joins.
      *
      * Its value is the spec array `clauses()` reads. A query without it is
@@ -262,7 +254,7 @@ class Licensio_KB_Article_Metrics {
 
         return $wpdb->prepare(
             'LEFT JOIN ( SELECT article_id, COUNT(*) AS views FROM %i WHERE created_at >= %s GROUP BY article_id ) AS lkb_views ON lkb_views.article_id = %i.ID',
-            $wpdb->prefix . self::VIEWS_TABLE,
+            $wpdb->prefix . Licensio_KB_Analytics::TABLE_ARTICLE_VIEWS,
             self::window_start( $window, false ),
             $wpdb->posts
         );
@@ -306,7 +298,7 @@ class Licensio_KB_Article_Metrics {
     public function for_articles( array $ids, $window ) {
         global $wpdb;
 
-        $ids     = self::clean_ids( $ids );
+        $ids     = Licensio_KB_Article_Bulk::clean_ids( $ids );
         $figures = array();
 
         foreach ( $ids as $id ) {
@@ -328,7 +320,7 @@ class Licensio_KB_Article_Metrics {
         $views = $wpdb->get_results(
             $wpdb->prepare(
                 "SELECT article_id, COUNT(*) AS views FROM %i WHERE article_id IN ( {$placeholders} ) AND created_at >= %s GROUP BY article_id",
-                array_merge( array( $wpdb->prefix . self::VIEWS_TABLE ), $ids, array( self::window_start( $window, false ) ) )
+                array_merge( array( $wpdb->prefix . Licensio_KB_Analytics::TABLE_ARTICLE_VIEWS ), $ids, array( self::window_start( $window, false ) ) )
             )
         );
 
@@ -400,7 +392,7 @@ class Licensio_KB_Article_Metrics {
     public function attachment_counts( array $ids ) {
         global $wpdb;
 
-        $ids    = self::clean_ids( $ids );
+        $ids    = Licensio_KB_Article_Bulk::clean_ids( $ids );
         $counts = array_fill_keys( $ids, 0 );
 
         if ( empty( $ids ) ) {
@@ -423,18 +415,5 @@ class Licensio_KB_Article_Metrics {
         }
 
         return $counts;
-    }
-
-    /**
-     * Positive, unique integer IDs.
-     *
-     * @since 1.0.0
-     *
-     * @param array<mixed> $ids The IDs.
-     *
-     * @return int[] The cleaned IDs, in their first order.
-     */
-    private static function clean_ids( array $ids ) {
-        return Licensio_KB_Article_Bulk::clean_ids( $ids );
     }
 }

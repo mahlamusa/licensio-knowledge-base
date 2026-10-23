@@ -532,7 +532,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
             return true;
         }
 
-        if ( is_string( $value ) && preg_match( '/^(\d{4})-(\d{2})-(\d{2})$/', $value, $parts ) && checkdate( (int) $parts[2], (int) $parts[3], (int) $parts[1] ) ) {
+        if ( Licensio_KB_REST_Analytics_Controller::is_valid_date( $value ) ) {
             return true;
         }
 
@@ -745,7 +745,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
         foreach ( array( 'after', 'before' ) as $bound ) {
             $day = isset( $params[ $bound ] ) ? (string) $params[ $bound ] : '';
 
-            if ( '' === $day || true !== self::validate_day( $day ) ) {
+            if ( ! Licensio_KB_REST_Analytics_Controller::is_valid_date( $day ) ) {
                 continue;
             }
 
@@ -800,7 +800,14 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
         $params = $request->get_params();
         $args   = $this->query_args( $params );
         $query  = $this->run_query( $args );
-        $posts  = array_values( array_filter( (array) $query->posts, array( __CLASS__, 'is_post' ) ) );
+        $posts  = array_values(
+            array_filter(
+                (array) $query->posts,
+                function ( $post ) {
+                    return $post instanceof WP_Post;
+                }
+            )
+        );
         $window = Licensio_KB_Article_Metrics::normalize_window( isset( $params['window'] ) ? $params['window'] : 0 );
 
         return rest_ensure_response(
@@ -834,19 +841,6 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
                 'truncated' => $total > count( $ids ),
             )
         );
-    }
-
-    /**
-     * Whether a value is a post object.
-     *
-     * @since 1.0.0
-     *
-     * @param mixed $post The value.
-     *
-     * @return bool True for a WP_Post.
-     */
-    public static function is_post( $post ) {
-        return $post instanceof WP_Post;
     }
 
     /**
@@ -898,10 +892,8 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
         $attachments = $this->metrics->attachment_counts( $ids );
         $locks       = array();
 
-        Licensio_KB_Article_Bulk::load_post_functions();
-
         foreach ( $ids as $id ) {
-            $locks[ $id ] = (int) wp_check_post_lock( $id );
+            $locks[ $id ] = Licensio_KB_Article_Bulk::lock_holder( $id );
         }
 
         $users = array_merge( array_map( 'intval', wp_list_pluck( $posts, 'post_author' ) ), array_values( $locks ) );
@@ -1099,9 +1091,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      * @return WP_Error|null The error, or null when the article is free.
      */
     private function lock_error( $id ) {
-        Licensio_KB_Article_Bulk::load_post_functions();
-
-        $holder = (int) wp_check_post_lock( $id );
+        $holder = Licensio_KB_Article_Bulk::lock_holder( $id );
 
         if ( $holder < 1 ) {
             return null;

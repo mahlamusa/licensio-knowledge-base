@@ -63,6 +63,8 @@ class Licensio_KB_Article_Bulk_Test extends Licensio_KB_Test_Case {
         $this->locked      = array();
         $this->core_writes = array();
 
+        Functions\when( '_prime_post_caches' )->justReturn( null );
+        Functions\when( 'wp_defer_term_counting' )->justReturn( false );
         Functions\when( 'get_post' )->alias(
             function ( $id ) {
                 return isset( $this->posts[ (int) $id ] ) ? $this->posts[ (int) $id ] : null;

@@ -134,8 +134,14 @@ class Licensio_KB_Article_Bulk {
             'snapshot_at' => $snapshot_at,
             'token'       => '',
         );
+        $ids         = self::clean_ids( $ids );
 
-        foreach ( self::clean_ids( $ids ) as $id ) {
+        // Load the posts and their meta (the edit lock) in two queries, not two per article.
+        _prime_post_caches( $ids, false, true );
+        // Recount each changed term once at the end, not once per article.
+        wp_defer_term_counting( true );
+
+        foreach ( $ids as $id ) {
             $post   = get_post( $id );
             $reason = $this->skip_reason( $post, $action, $args );
 
@@ -164,6 +170,8 @@ class Licensio_KB_Article_Bulk {
                 $result['previous'][ $id ] = $snapshot;
             }
         }
+
+        wp_defer_term_counting( false );
 
         // Minted last, so the token covers the snapshot that goes back.
         $result['token'] = self::snapshot_token( $snapshot_at, $result['previous'] );
@@ -196,7 +204,7 @@ class Licensio_KB_Article_Bulk {
             return 'forbidden';
         }
 
-        if ( self::is_locked( $id ) ) {
+        if ( self::lock_holder( $id ) > 0 ) {
             return 'locked';
         }
 
@@ -363,6 +371,9 @@ class Licensio_KB_Article_Bulk {
             'failed'  => array(),
         );
 
+        _prime_post_caches( array_map( 'intval', array_keys( $previous ) ), false, true );
+        wp_defer_term_counting( true );
+
         foreach ( $previous as $id => $snapshot ) {
             $id     = (int) $id;
             $post   = get_post( $id );
@@ -388,6 +399,8 @@ class Licensio_KB_Article_Bulk {
 
             $result['done'][] = $id;
         }
+
+        wp_defer_term_counting( false );
 
         return $result;
     }
@@ -540,7 +553,7 @@ class Licensio_KB_Article_Bulk {
             }
         }
 
-        return self::is_locked( $id ) ? 'locked' : '';
+        return self::lock_holder( $id ) > 0 ? 'locked' : '';
     }
 
     /**
@@ -690,18 +703,18 @@ class Licensio_KB_Article_Bulk {
     }
 
     /**
-     * Whether another user is editing an article.
+     * Who else is editing an article, if anyone.
      *
      * @since 1.0.0
      *
      * @param int $id The article ID.
      *
-     * @return bool True when locked by someone else.
+     * @return int The ID of the other user holding the edit lock, or 0.
      */
-    public static function is_locked( $id ) {
+    public static function lock_holder( $id ) {
         self::load_post_functions();
 
-        return (bool) wp_check_post_lock( (int) $id );
+        return (int) wp_check_post_lock( (int) $id );
     }
 
     /**
@@ -713,7 +726,7 @@ class Licensio_KB_Article_Bulk {
      *
      * @return void
      */
-    public static function load_post_functions() {
+    private static function load_post_functions() {
         if ( ! function_exists( 'wp_check_post_lock' ) ) {
             require_once ABSPATH . 'wp-admin/includes/post.php';
         }

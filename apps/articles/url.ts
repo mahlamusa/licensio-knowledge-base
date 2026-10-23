@@ -30,7 +30,8 @@ const STATUSES: StatusFilter[] = [
 	'trash',
 ];
 
-const ORDER_BY: ArticleOrderBy[] = [
+/** The columns the list can be sorted by. */
+export const ORDER_BY: ArticleOrderBy[] = [
 	'date',
 	'modified',
 	'title',

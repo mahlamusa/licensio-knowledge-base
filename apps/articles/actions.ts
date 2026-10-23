@@ -11,7 +11,11 @@
 import { message } from 'ant-design-vue';
 import { __, _n, sprintf } from '../components/i18n';
 import { showUndoToast } from './components/UndoToast';
-import { messageOf, useArticlesStore as articlesStore } from './store';
+import {
+	BATCH_SIZE,
+	messageOf,
+	useArticlesStore as articlesStore,
+} from './store';
 import type { BulkAction, BulkArgs, SkipReason } from './types';
 
 /** The actions that can be undone. Author and comments are left out on purpose. */
@@ -261,7 +265,12 @@ export async function performAction(
 	ids: number[]
 ): Promise< void > {
 	const store = articlesStore();
-	const run = await store.runBulk( action, args, ids, ids.length > 1 );
+	const run = await store.runBulk(
+		action,
+		args,
+		ids,
+		ids.length > BATCH_SIZE
+	);
 
 	if ( '' !== run.error || run.skipped.length || run.failed.length ) {
 		store.bulk.open = true;
