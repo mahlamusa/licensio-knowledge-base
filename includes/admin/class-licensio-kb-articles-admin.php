@@ -4,9 +4,10 @@
  *
  * Registers the Articles Vue app as a hidden admin page
  * (`admin.php?page=licensio-kb-articles`), loads its bundle on that page only,
- * and announces its REST controller. The page has no menu entry and nothing
- * redirects to it yet: the content manager switch-on moves it into the menu
- * and sends the core article list here.
+ * and announces its REST controller. The controller owns `/articles`, so the
+ * scaffold's not-implemented stub for that path is released. The page has no
+ * menu entry and nothing redirects to it yet: the content manager switch-on
+ * moves it into the menu and sends the core article list here.
  *
  * Constructed on every request, not only in wp-admin, because the REST
  * controller it announces must be registered for REST requests too.
@@ -67,6 +68,7 @@ class Licensio_KB_Articles_Admin {
      */
     public function init_hooks() {
         add_filter( 'licensio_rest_controllers', array( $this, 'register_rest_controller' ) );
+        add_filter( 'licensio_rest_stub_routes', array( $this, 'release_stub_route' ) );
         add_action( 'admin_menu', array( $this, 'register_page' ) );
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_app' ) );
     }
@@ -85,6 +87,27 @@ class Licensio_KB_Articles_Admin {
         $controllers[] = 'Licensio_KB_Articles_REST_Controller';
 
         return $controllers;
+    }
+
+    /**
+     * Take `/articles` off the scaffold's not-implemented stub list.
+     *
+     * The articles controller registers the real, manager-only `/articles`
+     * route. Left reserved, the stub would add a second, public GET handler to
+     * the same route in the REST index.
+     *
+     * @since 1.0.0
+     *
+     * @param array<string, array<string, string>>|mixed $routes The reserved stub routes.
+     *
+     * @return array<string, array<string, string>> The stub routes, without `/articles`.
+     */
+    public function release_stub_route( $routes ) {
+        $routes = is_array( $routes ) ? $routes : array();
+
+        unset( $routes['/articles'] );
+
+        return $routes;
     }
 
     /**

@@ -1011,6 +1011,14 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      * so a tag that cannot be created leaves the article untouched. A slug
      * that collides is made unique by core.
      *
+     * The title is deliberately not run through sanitize_text_field().
+     * wp_update_post() applies core's title filters, which run kses on the
+     * title for users without `unfiltered_html`, the same treatment the block
+     * editor gives it. sanitize_text_field() would corrupt legitimate titles
+     * on top of that: it stores a lone `<` as the `&lt;` entity and deletes
+     * any `%` followed by two hex digits, as core's _sanitize_text_fields()
+     * does for every value.
+     *
      * @since 1.0.0
      *
      * @param WP_REST_Request $request The request.
