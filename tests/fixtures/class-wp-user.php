@@ -34,6 +34,17 @@ if ( ! class_exists( 'WP_User' ) ) {
         public $user_email = '';
 
         /**
+         * The user's display name.
+         *
+         * Nullable so code that guards the read with isset(), as code reading
+         * a real user may, still type-checks.
+         *
+         * @since 1.0.0
+         * @var string|null
+         */
+        public $display_name = '';
+
+        /**
          * Constructor.
          *
          * @since 1.0.0

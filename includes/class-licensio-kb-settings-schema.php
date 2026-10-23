@@ -358,6 +358,20 @@ class Licensio_KB_Settings_Schema {
                 'description' => __( 'Show the "was this helpful?" prompt at the foot of every article, with a comment box after a negative vote.', 'licensio-knowledge-base' ),
                 'control'     => 'toggle',
             ),
+            'low_rating_threshold'       => array(
+                'group'       => 'feedback',
+                'label'       => __( 'Low rating threshold', 'licensio-knowledge-base' ),
+                'description' => __( 'An article needs attention when its helpful share in the chosen window falls below this percentage.', 'licensio-knowledge-base' ),
+                'control'     => 'number',
+                'unit'        => '%',
+            ),
+            'low_rating_min_votes'       => array(
+                'group'       => 'feedback',
+                'label'       => __( 'Minimum votes', 'licensio-knowledge-base' ),
+                'description' => __( 'How many votes an article needs in the chosen window before it can be flagged as needing attention.', 'licensio-knowledge-base' ),
+                'control'     => 'number',
+                'unit'        => __( 'votes', 'licensio-knowledge-base' ),
+            ),
             'enable_analytics'           => array(
                 'group'       => 'privacy',
                 'label'       => __( 'Collect analytics', 'licensio-knowledge-base' ),
