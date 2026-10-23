@@ -129,9 +129,12 @@ class Licensio_KB_Feedback_Admin {
 
         $assets = licensio_kb()->assets();
 
-        if ( ! $assets->enqueue_app( self::APP_HANDLE, self::APP_ENTRY ) ) {
+        // The inbox translates its strings through the page's wp.i18n.
+        if ( ! $assets->enqueue_app( self::APP_HANDLE, self::APP_ENTRY, array( 'wp-i18n' ) ) ) {
             return;
         }
+
+        wp_set_script_translations( self::APP_HANDLE, 'licensio-knowledge-base' );
 
         wp_localize_script( self::APP_HANDLE, 'licensioKBFeedbackInbox', $this->app_data() );
     }
