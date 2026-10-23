@@ -106,6 +106,23 @@ class Licensio_KB_Term_Operations {
             return $valid;
         }
 
+        return $this->move_objects( $from, $to, $taxonomy );
+    }
+
+    /**
+     * Move every object from one checked term to another.
+     *
+     * The inputs must already have passed `validate()`.
+     *
+     * @since 1.0.0
+     *
+     * @param int    $from     The term to move assignments off.
+     * @param int    $to       The term to move assignments onto.
+     * @param string $taxonomy The taxonomy both terms belong to.
+     *
+     * @return int|WP_Error The number of objects moved, or an error when a write fails.
+     */
+    private function move_objects( $from, $to, $taxonomy ) {
         $object_ids = get_objects_in_term( $from, $taxonomy );
 
         if ( is_wp_error( $object_ids ) ) {
@@ -166,8 +183,7 @@ class Licensio_KB_Term_Operations {
      */
     public function merge_terms( array $sources, $target, $taxonomy ) {
         $target  = absint( $target );
-        $sources = array_values( array_unique( array_filter( array_map( 'absint', $sources ) ) ) );
-        $sources = array_values( array_diff( $sources, array( $target ) ) );
+        $sources = array_values( array_diff( array_unique( array_filter( array_map( 'absint', $sources ) ) ), array( $target ) ) );
 
         if ( empty( $sources ) ) {
             return new WP_Error(
@@ -186,7 +202,7 @@ class Licensio_KB_Term_Operations {
         $moved = 0;
 
         foreach ( $sources as $source ) {
-            $count = $this->move_assignments( $source, $target, $taxonomy );
+            $count = $this->move_objects( $source, $target, $taxonomy );
 
             if ( is_wp_error( $count ) ) {
                 return $count;

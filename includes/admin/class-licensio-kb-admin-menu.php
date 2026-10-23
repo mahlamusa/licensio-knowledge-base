@@ -124,7 +124,7 @@ class Licensio_KB_Admin_Menu {
         $normalized = array();
 
         foreach ( (array) $pages as $page ) {
-            $page = $this->normalize_page( $page );
+            $page = self::normalize_page( $page );
 
             if ( null !== $page ) {
                 $normalized[] = $page;
@@ -160,13 +160,16 @@ class Licensio_KB_Admin_Menu {
     /**
      * Validate and fill in one page definition.
      *
+     * Also used by `Licensio_KB_Content_Manager::register_hidden_page()`, so
+     * menu pages and hidden pages follow the same rules.
+     *
      * @since 1.0.0
      *
      * @param mixed $page The raw definition supplied by a consumer.
      *
      * @return array<string, mixed>|null The normalised definition, or null when it is unusable.
      */
-    private function normalize_page( $page ) {
+    public static function normalize_page( $page ) {
         if ( ! is_array( $page ) || empty( $page['menu_slug'] ) || empty( $page['callback'] ) ) {
             return null;
         }

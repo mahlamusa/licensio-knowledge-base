@@ -134,14 +134,17 @@ class Licensio_KB_Terms_REST_Controller extends Licensio_KB_REST_Controller {
         $per_page = min( self::MAX_PER_PAGE, max( 1, absint( $request->get_param( 'per_page' ) ) ) );
 
         $args = array(
-            'taxonomy'   => $taxonomy,
-            'hide_empty' => false,
-            'orderby'    => 'name',
-            'order'      => 'ASC',
-            'number'     => empty( $include ) ? $per_page : count( $include ),
-            'search'     => (string) $request->get_param( 'search' ),
-            'include'    => $include,
-            'exclude'    => array_map( 'absint', (array) $request->get_param( 'exclude' ) ),
+            'taxonomy'               => $taxonomy,
+            'hide_empty'             => false,
+            'orderby'                => 'name',
+            'order'                  => 'ASC',
+            'number'                 => empty( $include ) ? $per_page : count( $include ),
+            'search'                 => (string) $request->get_param( 'search' ),
+            'include'                => $include,
+            'exclude'                => array_map( 'absint', (array) $request->get_param( 'exclude' ) ),
+
+            // Nothing here reads term meta.
+            'update_term_meta_cache' => false,
         );
 
         $terms = get_terms( $args );
@@ -150,10 +153,11 @@ class Licensio_KB_Terms_REST_Controller extends Licensio_KB_REST_Controller {
             return $terms;
         }
 
-        $paths = $this->ancestor_paths( $taxonomy );
+        $terms = (array) $terms;
+        $paths = $this->ancestor_paths( $terms, $taxonomy );
         $items = array();
 
-        foreach ( (array) $terms as $term ) {
+        foreach ( $terms as $term ) {
             if ( ! $term instanceof WP_Term ) {
                 continue;
             }
@@ -172,27 +176,42 @@ class Licensio_KB_Terms_REST_Controller extends Licensio_KB_REST_Controller {
     }
 
     /**
-     * The ancestor names of every term in a hierarchical taxonomy.
+     * The ancestor names of the given terms in a hierarchical taxonomy.
      *
      * Reads the whole taxonomy's IDs, parents and names in one query, so the
      * labels cost the same however deep the tree is. Category trees are small;
-     * tags are not hierarchical and skip the query.
+     * tags are not hierarchical, and a list of top-level terms has no
+     * ancestors, so both skip the query.
      *
      * @since 1.0.0
      *
-     * @param string $taxonomy The taxonomy.
+     * @param array<mixed> $terms    The terms to label.
+     * @param string       $taxonomy The taxonomy.
      *
-     * @return array<int, string[]> Term ID to ancestor names, top first.
+     * @return array<int, string[]> Term ID to ancestor names, top first, for each child term given.
      */
-    private function ancestor_paths( $taxonomy ) {
+    private function ancestor_paths( array $terms, $taxonomy ) {
         if ( Licensio_KB_Post_Types::TAXONOMY_CATEGORY !== $taxonomy ) {
+            return array();
+        }
+
+        $children = array();
+
+        foreach ( $terms as $term ) {
+            if ( $term instanceof WP_Term && (int) $term->parent > 0 ) {
+                $children[] = (int) $term->term_id;
+            }
+        }
+
+        if ( empty( $children ) ) {
             return array();
         }
 
         $all = get_terms(
             array(
-                'taxonomy'   => $taxonomy,
-                'hide_empty' => false,
+                'taxonomy'               => $taxonomy,
+                'hide_empty'             => false,
+                'update_term_meta_cache' => false,
             )
         );
 
@@ -212,13 +231,13 @@ class Licensio_KB_Terms_REST_Controller extends Licensio_KB_REST_Controller {
 
         $paths = array();
 
-        foreach ( array_keys( $parents ) as $term_id ) {
+        foreach ( $children as $term_id ) {
             $path    = array();
-            $current = $parents[ $term_id ];
+            $current = isset( $parents[ $term_id ] ) ? $parents[ $term_id ] : 0;
             $seen    = array( $term_id => true );
 
             // The seen list stops a corrupted parent loop from spinning forever.
-            while ( $current > 0 && isset( $names[ $current ] ) && ! isset( $seen[ $current ] ) ) {
+            while ( isset( $names[ $current ] ) && ! isset( $seen[ $current ] ) ) {
                 $seen[ $current ] = true;
                 array_unshift( $path, $names[ $current ] );
                 $current = $parents[ $current ];

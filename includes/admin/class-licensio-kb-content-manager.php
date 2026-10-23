@@ -233,31 +233,25 @@ class Licensio_KB_Content_Manager {
      *
      *     @type string   $menu_slug  Required. The page slug, `[a-z0-9_-]` only.
      *     @type callable $callback   Required. Renders the page.
-     *     @type string   $page_title The browser title. Defaults to the slug.
+     *     @type string   $page_title The browser title. Defaults to `menu_title`, then the slug.
      *     @type string   $capability Defaults to `manage_licensio_kb`.
      * }
      *
      * @return string The hook suffix, or an empty string when the page was not registered.
      */
     public static function register_hidden_page( array $page ) {
-        if ( empty( $page['menu_slug'] ) || empty( $page['callback'] ) ) {
+        $page = Licensio_KB_Admin_Menu::normalize_page( $page );
+
+        if ( null === $page ) {
             return '';
         }
-
-        $slug = (string) $page['menu_slug'];
-
-        if ( ! preg_match( '/^[a-z0-9_-]+$/', $slug ) || ! is_callable( $page['callback'] ) ) {
-            return '';
-        }
-
-        $title = isset( $page['page_title'] ) ? (string) $page['page_title'] : $slug;
 
         $hook_suffix = add_submenu_page(
             self::HIDDEN_PARENT,
-            $title,
-            $title,
-            isset( $page['capability'] ) ? (string) $page['capability'] : Licensio_KB_Capabilities::CAPABILITY,
-            $slug,
+            $page['page_title'],
+            $page['page_title'],
+            $page['capability'],
+            $page['menu_slug'],
             $page['callback']
         );
 

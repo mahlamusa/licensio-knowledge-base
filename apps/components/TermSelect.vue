@@ -270,9 +270,7 @@ function onSearch( text: string ): void {
  * @return {void}
  */
 function scheduleSearch(): void {
-	if ( searchTimer ) {
-		clearTimeout( searchTimer );
-	}
+	clearTimeout( searchTimer );
 
 	searchTimer = setTimeout(
 		() => runSearch( searchText.value ),
@@ -326,7 +324,7 @@ function resetResults(): void {
 
 	if ( open.value ) {
 		scheduleSearch();
-	} else if ( searchTimer ) {
+	} else {
 		clearTimeout( searchTimer );
 	}
 }
@@ -420,11 +418,7 @@ watch(
 
 watch( () => props.exclude.join( ',' ), resetResults );
 
-onBeforeUnmount( () => {
-	if ( searchTimer ) {
-		clearTimeout( searchTimer );
-	}
-} );
+onBeforeUnmount( () => clearTimeout( searchTimer ) );
 </script>
 
 <template>
