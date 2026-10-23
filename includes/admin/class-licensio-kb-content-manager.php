@@ -91,6 +91,17 @@ class Licensio_KB_Content_Manager {
     const ACTION_ARGS = array( 'action', 'action2', 'delete_all', 'delete_all2' );
 
     /**
+     * Query arguments that mean a core term screen request is an action.
+     *
+     * Core runs single and bulk term deletes through `edit-tags.php` itself.
+     * A request carrying any of these is left alone so the core handler runs.
+     *
+     * @since 1.0.0
+     * @var string[]
+     */
+    const TERM_ACTION_ARGS = array( 'action', 'action2', 'delete_tags' );
+
+    /**
      * The settings store.
      *
      * @since 1.0.0
@@ -320,7 +331,9 @@ class Licensio_KB_Content_Manager {
      * Send a core list or term screen request to the matching app.
      *
      * Hooked to `load-edit.php`, `load-edit-tags.php` and `load-term.php`
-     * only once the content manager is active.
+     * only once the content manager is active. A POST is always a core form
+     * submission (adding, editing or bulk deleting terms), so it is never
+     * redirected.
      *
      * @since 1.0.0
      *
@@ -330,6 +343,10 @@ class Licensio_KB_Content_Manager {
         global $pagenow;
 
         if ( ! $this->enabled() ) {
+            return;
+        }
+
+        if ( isset( $_SERVER['REQUEST_METHOD'] ) && 'POST' === strtoupper( sanitize_key( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) ) ) {
             return;
         }
 
@@ -350,10 +367,10 @@ class Licensio_KB_Content_Manager {
      *
      * - `edit.php` for the article post type, without an action, goes to the
      *   Articles app. `post_status`, `s`, `licensio_category` and
-     *   `licensio_tag` become `status`, `search`, `category` and `tag`; a
-     *   category or tag given by slug (as core's own links do) becomes its ID.
-     * - `edit-tags.php` for either plugin taxonomy goes to the Categories or
-     *   Tags app, with `s` as `search`.
+     *   `licensio_tag` become `status`, `search`, `category` and `tag`. The
+     *   category and tag query vars always carry a slug, which becomes its ID.
+     * - `edit-tags.php` for either plugin taxonomy, without an action, goes
+     *   to the Categories or Tags app, with `s` as `search`.
      * - `term.php` for either plugin taxonomy goes to the same app with the
      *   term's ID as `term`, so the app opens that term.
      *
@@ -386,6 +403,10 @@ class Licensio_KB_Content_Manager {
             return '';
         }
 
+        if ( 'edit-tags.php' === $screen && self::has_action( $query, self::TERM_ACTION_ARGS ) ) {
+            return '';
+        }
+
         $args = array();
 
         if ( 'term.php' === $screen ) {
@@ -415,10 +436,8 @@ class Licensio_KB_Content_Manager {
             return '';
         }
 
-        foreach ( self::ACTION_ARGS as $action ) {
-            if ( isset( $query[ $action ] ) && '' !== $query[ $action ] && '-1' !== $query[ $action ] ) {
-                return '';
-            }
+        if ( self::has_action( $query, self::ACTION_ARGS ) ) {
+            return '';
         }
 
         $args   = array();
@@ -449,6 +468,28 @@ class Licensio_KB_Content_Manager {
     }
 
     /**
+     * Whether a request carries any of the given action arguments.
+     *
+     * The empty bulk action placeholder `-1` is not an action.
+     *
+     * @since 1.0.0
+     *
+     * @param array<string, mixed> $query The query arguments.
+     * @param string[]             $keys  The action argument names.
+     *
+     * @return bool True when the request is a core action.
+     */
+    private static function has_action( array $query, array $keys ) {
+        foreach ( $keys as $key ) {
+            if ( isset( $query[ $key ] ) && '' !== $query[ $key ] && '-1' !== $query[ $key ] ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * One query argument as a string.
      *
      * An argument sent as an array (`?s[]=x`) reads as empty rather than as
@@ -466,11 +507,14 @@ class Licensio_KB_Content_Manager {
     }
 
     /**
-     * Resolve a term given by ID or slug to its ID.
+     * Resolve a term given by slug to its ID.
+     *
+     * The `licensio_category` and `licensio_tag` query vars always carry a
+     * slug, so an all-digit value such as `2024` is a slug, never an ID.
      *
      * @since 1.0.0
      *
-     * @param string $value    A term ID or slug.
+     * @param string $value    A term slug.
      * @param string $taxonomy The taxonomy.
      *
      * @return int The term ID, or 0 when no such term exists.
@@ -478,10 +522,6 @@ class Licensio_KB_Content_Manager {
     private function term_id( $value, $taxonomy ) {
         if ( '' === $value ) {
             return 0;
-        }
-
-        if ( ctype_digit( $value ) ) {
-            return absint( $value );
         }
 
         $term = get_term_by( 'slug', sanitize_title( $value ), $taxonomy );

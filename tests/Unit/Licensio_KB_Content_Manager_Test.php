@@ -384,6 +384,10 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
                     return new WP_Term( array( 'term_id' => 12 ) );
                 }
 
+                if ( 'slug' === $field && 'how-to' === $value && 'licensio_tag' === $taxonomy ) {
+                    return new WP_Term( array( 'term_id' => 5 ) );
+                }
+
                 return false;
             }
         );
@@ -404,7 +408,7 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
                     'post_status'       => 'draft',
                     's'                 => 'reset password',
                     'licensio_category' => 'getting-started',
-                    'licensio_tag'      => '5',
+                    'licensio_tag'      => 'how-to',
                     'paged'             => '3',
                 )
             )
@@ -430,6 +434,50 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
                     'licensio_category' => 'no-such-category',
                 )
             )
+        );
+    }
+
+    /**
+     * An all-digit category slug is looked up as a slug, not read as an ID.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_numeric_term_slug_is_looked_up_as_a_slug() {
+        Functions\when( 'get_term_by' )->alias(
+            function ( $field, $value, $taxonomy ) {
+                if ( 'slug' === $field && '2024' === $value && 'licensio_category' === $taxonomy ) {
+                    return new WP_Term( array( 'term_id' => 31 ) );
+                }
+
+                return false;
+            }
+        );
+
+        $manager = new Licensio_KB_Content_Manager( $this->settings() );
+
+        $this->assertSame(
+            'https://example.test/wp-admin/admin.php?page=licensio-kb-articles&category=31',
+            $manager->redirect_url(
+                'edit.php',
+                array(
+                    'post_type'         => 'licensio_article',
+                    'licensio_category' => '2024',
+                )
+            )
+        );
+
+        $this->assertSame(
+            'https://example.test/wp-admin/admin.php?page=licensio-kb-articles',
+            $manager->redirect_url(
+                'edit.php',
+                array(
+                    'post_type'    => 'licensio_article',
+                    'licensio_tag' => '7',
+                )
+            ),
+            'A number that is no tag slug is dropped rather than read as an ID.'
         );
     }
 
@@ -521,6 +569,80 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
                 )
             )
         );
+    }
+
+    /**
+     * Core term deletes and bulk actions on the term screens are left alone.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_term_screen_actions_are_not_redirected() {
+        $manager = new Licensio_KB_Content_Manager( $this->settings() );
+
+        $actions = array(
+            'action'      => 'delete',
+            'action2'     => 'bulk-delete',
+            'delete_tags' => array( '3', '4' ),
+        );
+
+        foreach ( $actions as $action => $value ) {
+            $this->assertSame(
+                '',
+                $manager->redirect_url(
+                    'edit-tags.php',
+                    array(
+                        'taxonomy' => 'licensio_tag',
+                        $action    => $value,
+                    )
+                ),
+                $action . ' must reach the core handler.'
+            );
+        }
+
+        $this->assertSame(
+            'https://example.test/wp-admin/admin.php?page=licensio-kb-categories',
+            $manager->redirect_url(
+                'edit-tags.php',
+                array(
+                    'taxonomy' => 'licensio_category',
+                    'action'   => '-1',
+                    'action2'  => '-1',
+                )
+            ),
+            'The empty bulk action placeholder is not an action.'
+        );
+    }
+
+    /**
+     * A POST to a core screen is a form submission and is never redirected.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_post_request_is_not_redirected() {
+        global $pagenow;
+
+        $pagenow                   = 'edit-tags.php'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- The screen under test.
+        $_GET                      = array( 'taxonomy' => 'licensio_tag' );
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+
+        // Throw instead of redirecting so a wrong redirect fails the test before exit runs.
+        Functions\when( 'wp_safe_redirect' )->alias(
+            function () {
+                throw new RuntimeException( 'A POST request was redirected.' );
+            }
+        );
+
+        try {
+            $this->active()->maybe_redirect();
+            $this->addToAssertionCount( 1 );
+        } finally {
+            $_GET = array();
+            unset( $_SERVER['REQUEST_METHOD'] );
+        }
     }
 
     /**

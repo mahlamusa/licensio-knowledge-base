@@ -6,8 +6,9 @@
  * through `rest.ts`, so the app must call `configure()` before this mounts.
  * That route is the plugin's own read-only term search, built for this picker
  * so no app depends on the categories or tags endpoints, and so the apps never
- * use core's `wp/v2` term routes. It searches as the user types, and looks up
- * the labels of already-selected IDs with `include`.
+ * use core's `wp/v2` term routes. It searches as the user types, refreshes
+ * the list each time the dropdown opens (so terms added elsewhere show up),
+ * and looks up the labels of already-selected IDs with `include`.
  *
  * - `v-model` is a term ID (or null), or with `multiple` an array of them.
  * - `allow-create` adds a "Create …" option for a name that does not exist.
@@ -72,11 +73,15 @@ const emit = defineEmits< {
 const NEW_PREFIX = 'new:';
 const SEARCH_DELAY = 250;
 
+// The terms route accepts at most this many IDs in `include` per request.
+const LABELS_PER_REQUEST = 100;
+
 const results = ref< TermItem[] >( [] );
 const labels = ref< Record< number, string > >( {} );
 const searchText = ref( '' );
 const loading = ref( false );
 const failed = ref( false );
+const open = ref( false );
 
 let searchTimer: ReturnType< typeof setTimeout > | undefined;
 let latestSearch = 0;
@@ -253,26 +258,76 @@ async function runSearch( text: string ): Promise< void > {
  */
 function onSearch( text: string ): void {
 	searchText.value = text;
+	scheduleSearch();
+}
 
+/**
+ * Search for the current text once no other search is asked for within the
+ * search delay, so quick typing or reopening sends one request.
+ *
+ * @since 1.0.0
+ *
+ * @return {void}
+ */
+function scheduleSearch(): void {
 	if ( searchTimer ) {
 		clearTimeout( searchTimer );
 	}
 
-	searchTimer = setTimeout( () => runSearch( text ), SEARCH_DELAY );
+	searchTimer = setTimeout(
+		() => runSearch( searchText.value ),
+		SEARCH_DELAY
+	);
 }
 
 /**
- * Load the first page of terms when the dropdown opens.
+ * Load or refresh the terms when the dropdown opens.
+ *
+ * The first open loads at once. Later opens refresh through the search
+ * delay, so terms created elsewhere on the page appear without a request per
+ * click.
  *
  * @since 1.0.0
  *
- * @param {boolean} open Whether the dropdown is open.
+ * @param {boolean} visible Whether the dropdown is open.
  *
  * @return {void}
  */
-function onDropdown( open: boolean ): void {
-	if ( open && results.value.length === 0 && ! loading.value ) {
+function onDropdown( visible: boolean ): void {
+	open.value = visible;
+
+	if ( ! visible ) {
+		return;
+	}
+
+	if ( results.value.length === 0 && ! loading.value ) {
 		runSearch( searchText.value );
+		return;
+	}
+
+	scheduleSearch();
+}
+
+/**
+ * Drop the loaded terms after the query they came from has changed.
+ *
+ * Any search still in flight is ignored when it answers. An open dropdown
+ * searches again; a closed one loads on its next open.
+ *
+ * @since 1.0.0
+ *
+ * @return {void}
+ */
+function resetResults(): void {
+	++latestSearch;
+	results.value = [];
+	loading.value = false;
+	failed.value = false;
+
+	if ( open.value ) {
+		scheduleSearch();
+	} else if ( searchTimer ) {
+		clearTimeout( searchTimer );
 	}
 }
 
@@ -307,6 +362,10 @@ function onChange( value: unknown ): void {
 /**
  * Look up the labels of selected IDs the picker has not seen yet.
  *
+ * The IDs are sent in batches the terms route accepts. A batch that fails
+ * leaves its IDs on show as numbers. Batches still pending when the taxonomy
+ * changes are dropped.
+ *
  * @since 1.0.0
  *
  * @return {Promise<void>} Resolves once the labels are stored.
@@ -321,16 +380,30 @@ async function loadMissingLabels(): Promise< void > {
 		return;
 	}
 
-	try {
-		remember(
-			await get< TermItem[] >( 'terms', {
-				taxonomy: props.taxonomy,
-				include: missing,
-				per_page: missing.length,
-			} )
-		);
-	} catch {
-		// The IDs stay on show as numbers; the search still works.
+	const taxonomy = props.taxonomy;
+
+	for (
+		let start = 0;
+		start < missing.length;
+		start += LABELS_PER_REQUEST
+	) {
+		const batch = missing.slice( start, start + LABELS_PER_REQUEST );
+
+		try {
+			const terms = await get< TermItem[] >( 'terms', {
+				taxonomy,
+				include: batch,
+				per_page: batch.length,
+			} );
+
+			if ( taxonomy !== props.taxonomy ) {
+				return;
+			}
+
+			remember( terms );
+		} catch {
+			// The IDs stay on show as numbers; the search still works.
+		}
 	}
 }
 
@@ -339,11 +412,13 @@ watch( selected, loadMissingLabels, { immediate: true } );
 watch(
 	() => props.taxonomy,
 	() => {
-		results.value = [];
+		resetResults();
 		labels.value = {};
 		loadMissingLabels();
 	}
 );
+
+watch( () => props.exclude.join( ',' ), resetResults );
 
 onBeforeUnmount( () => {
 	if ( searchTimer ) {

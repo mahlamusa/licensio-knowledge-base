@@ -84,6 +84,10 @@ class Licensio_KB_Term_Operations {
      * target term simply loses the source term. The source term itself is
      * left in place.
      *
+     * No capability is checked here. Callers must check the current user's
+     * capability first, for example through the REST controller's permission
+     * callback.
+     *
      * @since 1.0.0
      *
      * @param int    $from     The term to move assignments off.
@@ -146,6 +150,11 @@ class Licensio_KB_Term_Operations {
      *
      * Every input is checked before anything is written. The target is
      * ignored if it also appears among the sources.
+     *
+     * No capability is checked and the sources list is not capped here.
+     * Callers must check the current user's capability first and limit how
+     * many sources one request may send (for example with `maxItems` in the
+     * REST argument schema), since every source is deleted.
      *
      * @since 1.0.0
      *

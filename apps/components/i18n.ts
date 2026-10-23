@@ -57,7 +57,8 @@ export function __( text: string, domain?: string ): string {
 /**
  * Fill the placeholders in a translated format string.
  *
- * Supports `%s`, `%d` and numbered `%1$s` placeholders, as `wp.i18n` does.
+ * Delegates to `wp.i18n.sprintf`, which the page's `wp-i18n` script
+ * dependency provides.
  *
  * @since 1.0.0
  *
@@ -72,18 +73,5 @@ export function sprintf(
 ): string {
 	const format_ = translator().sprintf;
 
-	if ( format_ ) {
-		return format_( format, ...args );
-	}
-
-	let next = 0;
-
-	return format.replace(
-		/%(?:(\d+)\$)?[sd]/g,
-		( _match: string, position?: string ) => {
-			const index = position ? parseInt( position, 10 ) - 1 : next++;
-
-			return String( args[ index ] ?? '' );
-		}
-	);
+	return format_ ? format_( format, ...args ) : format;
 }
