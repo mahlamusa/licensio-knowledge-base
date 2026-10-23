@@ -1,11 +1,10 @@
 <?php
 /**
  * Plugin Name: Licensio Knowledge Base
- * Plugin URI: https://licenseserver.io/plugins/licensio-knowledge-base
+ * Plugin URI: https://github.com/mahlamusa/licensio-knowledge-base
  * Description: A fast, standalone WordPress knowledge base with block-first authoring, relevant search and privacy-safe analytics.
  * Version: 1.0.0
- * Author: Licensio
- * Author URI: https://licenseserver.io
+ * Author: Lindeni Mahlalela
  * License: GPL-2.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: licensio-knowledge-base
