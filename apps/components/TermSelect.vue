@@ -17,6 +17,8 @@
  * - `exclude` hides term IDs, e.g. a category and its descendants when
  *   choosing its parent.
  * - Subcategories are labelled with their ancestors: "Parent › Child".
+ * - An `aria-label` names the search input itself (through a visually hidden
+ *   label), not the select's wrapper, so screen readers announce it.
  *
  * Usage:
  *
@@ -28,7 +30,7 @@
  * @since 1.0.0
  */
 
-import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, ref, useAttrs, useId, watch } from 'vue';
 import { Select as ASelect } from 'ant-design-vue';
 import { get } from './rest';
 import { __, sprintf } from './i18n';
@@ -64,6 +66,23 @@ const props = withDefaults(
 		placeholder: '',
 		disabled: false,
 	}
+);
+
+defineOptions( { inheritAttrs: false } );
+
+const attrs = useAttrs();
+const fallbackId = 'lkb-term-select-' + useId();
+
+const ariaLabel = computed( () => attrs[ 'aria-label' ] as string | undefined );
+
+const inputId = computed( () =>
+	ariaLabel.value ? ( attrs.id as string | undefined ) || fallbackId : undefined
+);
+
+const selectAttrs = computed( () =>
+	Object.fromEntries(
+		Object.entries( attrs ).filter( ( [ key ] ) => 'aria-label' !== key )
+	)
 );
 
 const emit = defineEmits< {
@@ -422,7 +441,12 @@ onBeforeUnmount( () => clearTimeout( searchTimer ) );
 </script>
 
 <template>
+	<label v-if="ariaLabel" :for="inputId" class="screen-reader-text">
+		{{ ariaLabel }}
+	</label>
 	<a-select
+		v-bind="selectAttrs"
+		:id="inputId"
 		:value="selectValue"
 		:mode="props.multiple ? 'multiple' : undefined"
 		:options="options"
