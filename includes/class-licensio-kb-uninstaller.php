@@ -13,9 +13,10 @@
  *   `delete_data_on_uninstall` setting. Deleting support history that a visitor
  *   wrote, on a plugin delete that may well be an upgrade or a migration, is not
  *   recoverable; keeping it is.
- * - Plugin state — options and the salt-rotation cron event — is always removed,
- *   on every site of the network. An autoloaded option and a scheduled hook that
- *   outlive the plugin that owns them are pure residue.
+ * - Plugin state — options, the salt-rotation cron event and per-user admin
+ *   preferences — is always removed, on every site of the network. An
+ *   autoloaded option, a scheduled hook or a user meta row that outlives the
+ *   plugin that owns it is pure residue.
  *
  * Consumed by: #9, #11, #12.
  *
@@ -26,7 +27,7 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Removes the plugin's tables, options and scheduled events.
+ * Removes the plugin's tables, options, user meta and scheduled events.
  *
  * @since 1.0.0
  */
@@ -46,6 +47,18 @@ class Licensio_KB_Uninstaller {
         'licensio_fulltext_supported',
         'licensio_flush_rewrite_rules',
         'licensio_search_reindex_state',
+    );
+
+    /**
+     * Every user meta key the plugin owns.
+     *
+     * User meta is stored once for the whole network, not per site.
+     *
+     * @since 1.0.0
+     * @var string[]
+     */
+    const USER_META = array(
+        Licensio_KB_Articles_REST_Controller::PREFERENCES_META,
     );
 
     /**
@@ -113,6 +126,14 @@ class Licensio_KB_Uninstaller {
         }
 
         wp_clear_scheduled_hook( Licensio_KB_Visitor::CRON_HOOK );
+
+        /*
+         * Delete the key for every user. The users table is shared by the
+         * network, so on multisite the later sites find nothing left to delete.
+         */
+        foreach ( self::USER_META as $meta_key ) {
+            delete_metadata( 'user', 0, $meta_key, '', true );
+        }
 
         /**
          * Fires while the plugin is being removed from a site.
