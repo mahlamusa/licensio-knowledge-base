@@ -2,8 +2,9 @@
  * The Categories app, end to end.
  *
  * Drag and drop with Cancel and Confirm, a keyboard move, the add drawer,
- * delete with reassignment, merge, the article order pane before the order
- * routes exist, and the phone-width layout. Every write must wait for its
+ * delete with reassignment, merge, the article order pane against the live
+ * order routes (a drag saved and shown on the category archive, and a saved
+ * first page of a long list), and the phone-width layout. Every write must wait for its
  * Popconfirm, and a cancelled one must send nothing.
  *
  * The suite needs a running WordPress with this plugin active and an
@@ -48,14 +49,18 @@ async function logIn( page: Page ): Promise< void > {
 }
 
 /**
- * Call a categories route with the page's own nonce.
+ * Call a REST route with the page's own nonce.
+ *
+ * The path may carry a query string; it is joined with `&` when the REST root
+ * is itself a query string (plain permalinks).
  *
  * @since 1.0.0
  *
- * @param {Page}    page   A page with the Categories app loaded.
- * @param {string}  method The HTTP method.
- * @param {string}  path   The route below the namespace.
- * @param {unknown} body   The JSON body, if any.
+ * @param {Page}    page      A page with the Categories app loaded.
+ * @param {string}  method    The HTTP method.
+ * @param {string}  path      The route below the namespace.
+ * @param {unknown} body      The JSON body, if any.
+ * @param {string}  namespace The namespace, the plugin's own by default.
  *
  * @return {Promise<unknown>} The decoded answer.
  */
@@ -63,7 +68,8 @@ async function api(
 	page: Page,
 	method: string,
 	path: string,
-	body?: unknown
+	body?: unknown,
+	namespace = 'licensio-kb/v1'
 ): Promise< unknown > {
 	return page.evaluate(
 		async ( args ) => {
@@ -72,7 +78,16 @@ async function api(
 					licensioKbCategories: { root: string; nonce: string };
 				}
 			 ).licensioKbCategories;
-			const base = config.root.replace( /\/+$/, '' ) + '/' + args.path;
+			const root = config.root
+				.replace( /\/+$/, '' )
+				.replace( 'licensio-kb/v1', args.namespace );
+			const [ route, query ] = args.path.split( '?' );
+			let base = root + '/' + route;
+
+			if ( query ) {
+				base += ( base.includes( '?' ) ? '&' : '?' ) + query;
+			}
+
 			const response = await fetch( base, {
 				method: args.method,
 				headers: {
@@ -84,8 +99,97 @@ async function api(
 
 			return response.json();
 		},
-		{ method, path, body }
+		{ method, path, body, namespace }
 	);
+}
+
+interface OrderPage {
+	items: Array< { id: number; title: string; order: number | null } >;
+	total: number;
+}
+
+/**
+ * Create published articles in a category, one REST call each.
+ *
+ * @since 1.0.0
+ *
+ * @param {Page}     page     The browser page.
+ * @param {number}   category The category.
+ * @param {string[]} titles   The article titles.
+ *
+ * @return {Promise<number[]>} The new article IDs, in the order of the titles.
+ */
+async function makeArticles(
+	page: Page,
+	category: number,
+	titles: string[]
+): Promise< number[] > {
+	const ids: number[] = [];
+
+	for ( let start = 0; start < titles.length; start += 20 ) {
+		const batch = await Promise.all(
+			titles.slice( start, start + 20 ).map(
+				( title ) =>
+					api(
+						page,
+						'POST',
+						'licensio_articles',
+						{ title, status: 'publish', licensio_categories: [ category ] },
+						'wp/v2'
+					) as Promise< { id: number } >
+			)
+		);
+
+		ids.push( ...batch.map( ( one ) => one.id ) );
+	}
+
+	return ids;
+}
+
+/**
+ * Delete every article these tests made, so each run starts clean.
+ *
+ * @since 1.0.0
+ *
+ * @param {Page} page A page with the Categories app loaded.
+ *
+ * @return {Promise<void>} Resolves once none is left.
+ */
+async function clearArticles( page: Page ): Promise< void > {
+	for ( ;; ) {
+		const found = ( await api(
+			page,
+			'GET',
+			'licensio_articles?search=E2E%20order&status=any&per_page=100&_fields=id',
+			undefined,
+			'wp/v2'
+		) ) as Array< { id: number } >;
+
+		if ( ! Array.isArray( found ) || 0 === found.length ) {
+			return;
+		}
+
+		await Promise.all(
+			found.map( ( one ) =>
+				api( page, 'DELETE', `licensio_articles/${ one.id }?force=true`, undefined, 'wp/v2' )
+			)
+		);
+	}
+}
+
+/**
+ * The titles in the article order pane, top first.
+ *
+ * @since 1.0.0
+ *
+ * @param {Page} page The browser page.
+ *
+ * @return {Promise<string[]>} The titles.
+ */
+async function paneTitles( page: Page ): Promise< string[] > {
+	return (
+		await page.locator( '.lkb-order__item .lkb-order__name > a' ).allTextContents()
+	).map( ( title ) => title.trim() );
 }
 
 /**
@@ -146,6 +250,27 @@ async function make( page: Page, name: string, parent = 0 ): Promise< number > {
 	} ) ) as Category;
 
 	return created.id;
+}
+
+/**
+ * The ID of a category, looked up by name.
+ *
+ * @since 1.0.0
+ *
+ * @param {Page}   page The browser page.
+ * @param {string} name The category name.
+ *
+ * @return {Promise<number>} The category ID.
+ */
+async function categoryId( page: Page, name: string ): Promise< number > {
+	const items = ( await api( page, 'GET', 'categories' ) ) as Category[];
+	const found = items.find( ( item ) => name === item.name );
+
+	if ( ! found ) {
+		throw new Error( `No category named ${ name }.` );
+	}
+
+	return found.id;
 }
 
 /**
@@ -238,6 +363,7 @@ test.describe( 'Categories app', () => {
 	test.beforeEach( async ( { page } ) => {
 		await logIn( page );
 		await openContentManager( page, 'categories' );
+		await clearArticles( page );
 		await clearCategories( page );
 		await make( page, 'Alpha' );
 		await make( page, 'Beta' );
@@ -405,57 +531,134 @@ test.describe( 'Categories app', () => {
 		).toBe( alpha?.id );
 	} );
 
-	test( 'the article order pane says when ordering is not available', async ( { page } ) => {
+	test( 'a dragged article order is saved, survives a reload and orders the archive', async ( { page } ) => {
+		const alpha = await categoryId( page, 'Alpha' );
+		const [ a, b, c, d ] = await makeArticles( page, alpha, [
+			'E2E order A',
+			'E2E order B',
+			'E2E order C',
+			'E2E order D',
+		] );
+
+		// C and A have positions; B and D have none, so they follow by title.
+		await api( page, 'PUT', `categories/${ alpha }/articles/order`, { ids: [ c, a ] } );
+
+		await page.reload();
 		await node( page, 'Alpha' ).locator( '.lkb-tree__name' ).click();
 
 		const pane = page.getByRole( 'region', { name: 'Article order' } );
-		const answer = await api( page, 'GET', 'categories/1/articles' );
+		const items = pane.locator( '.lkb-order__item' );
 
-		test.skip(
-			'licensio_kb_not_implemented' !== ( answer as { code?: string } ).code,
-			'The article order routes are implemented.'
-		);
+		await expect.poll( () => paneTitles( page ) ).toEqual( [
+			'E2E order C',
+			'E2E order A',
+			'E2E order B',
+			'E2E order D',
+		] );
 
-		await expect( pane ).toContainText( 'Article ordering is not available yet.' );
-	} );
+		await items.nth( 3 ).dragTo( items.nth( 0 ) );
 
-	test( 'the article order pane saves a reordered list after confirming', async ( { page } ) => {
-		const saved: unknown[] = [];
+		const expected = [ 'E2E order D', 'E2E order C', 'E2E order A', 'E2E order B' ];
 
-		// Answer the order contract here, so the pane is tested whatever state the routes are in.
-		await page.route( /categories(%2F|\/)\d+(%2F|\/)articles/, async ( route ) => {
-			const request = route.request();
+		expect( await paneTitles( page ) ).toEqual( expected );
 
-			if ( 'PUT' === request.method() ) {
-				saved.push( request.postDataJSON() );
-				await route.fulfill( { json: request.postDataJSON() } );
-				return;
-			}
+		const writes = recordWrites( page );
 
-			await route.fulfill( {
-				json: {
-					items: [
-						{ id: 11, title: 'First', status: 'publish', order: 10, edit_url: '' },
-						{ id: 12, title: 'Second', status: 'draft', order: 20, edit_url: '' },
-					],
-					total: 2,
-					pages: 1,
-				},
-			} );
-		} );
-
-		await node( page, 'Alpha' ).locator( '.lkb-tree__name' ).click();
-
-		const pane = page.getByRole( 'region', { name: 'Article order' } );
-
-		await pane.getByRole( 'button', { name: 'Move “Second” up' } ).click();
 		await pane.getByRole( 'button', { name: 'Save order' } ).click();
 		await cancelPopconfirm( page );
-		expect( saved ).toHaveLength( 0 );
+		expect( writes ).toHaveLength( 0 );
 
 		await pane.getByRole( 'button', { name: 'Save order' } ).click();
 		await confirmPopconfirm( page );
-		await expect.poll( () => saved ).toEqual( [ { ids: [ 12, 11 ] } ] );
+		await expect( page.locator( '.ant-message' ) ).toContainText( 'Article order saved.' );
+		expect( writes ).toHaveLength( 1 );
+		expect( writes[ 0 ].postDataJSON() ).toEqual( { ids: [ d, c, a, b ] } );
+
+		await page.reload();
+		await node( page, 'Alpha' ).locator( '.lkb-tree__name' ).click();
+		await expect.poll( () => paneTitles( page ) ).toEqual( expected );
+		await expect( pane ).not.toContainText( 'not available' );
+
+		const term = ( await api(
+			page,
+			'GET',
+			`licensio_categories/${ alpha }?_fields=link`,
+			undefined,
+			'wp/v2'
+		) ) as { link: string };
+
+		await page.goto( term.link );
+
+		const archive = (
+			await page
+				.locator( '.licensio-kb-card--article .licensio-kb-card__title' )
+				.allTextContents()
+		).map( ( title ) => title.trim() );
+
+		expect( archive ).toEqual( expected );
+	} );
+
+	test( 'saving the first page of a long list renumbers the rest after it', async ( { page } ) => {
+		test.setTimeout( 240_000 );
+
+		const alpha = await categoryId( page, 'Alpha' );
+		const titles = Array.from(
+			{ length: 207 },
+			( _, index ) => `E2E order ${ String( index + 1 ).padStart( 3, '0' ) }`
+		);
+		const ids = await makeArticles( page, alpha, titles );
+
+		// The first 205 get positions, last made first; the last two have none.
+		const positioned = ids.slice( 0, 205 ).reverse();
+
+		await api( page, 'PUT', `categories/${ alpha }/articles/order`, { ids: positioned } );
+
+		await page.reload();
+		await node( page, 'Alpha' ).locator( '.lkb-tree__name' ).click();
+
+		const pane = page.getByRole( 'region', { name: 'Article order' } );
+
+		await expect( pane ).toContainText( 'Only the first 200 of 207 articles are listed.' );
+		await expect.poll( () => paneTitles( page ).then( ( list ) => list.length ) ).toBe( 200 );
+
+		await pane.getByRole( 'button', { name: 'Move “E2E order 204” up' } ).click();
+		await pane.getByRole( 'button', { name: 'Save order' } ).click();
+		await confirmPopconfirm( page );
+		await expect( page.locator( '.ant-message' ) ).toContainText( 'Article order saved.' );
+
+		const firstPage = [ positioned[ 1 ], positioned[ 0 ], ...positioned.slice( 2, 200 ) ];
+		const one = ( await api(
+			page,
+			'GET',
+			`categories/${ alpha }/articles?page=1&per_page=200`
+		) ) as OrderPage;
+		const two = ( await api(
+			page,
+			'GET',
+			`categories/${ alpha }/articles?page=2&per_page=200`
+		) ) as OrderPage;
+
+		expect( one.total ).toBe( 207 );
+		expect( one.items.map( ( item ) => item.id ) ).toEqual( firstPage );
+		expect( one.items.map( ( item ) => item.order ) ).toEqual(
+			firstPage.map( ( _, index ) => ( index + 1 ) * 10 )
+		);
+
+		// The five positioned articles past the first page follow in their old order; the two without a position keep none.
+		expect( two.items.map( ( item ) => item.id ) ).toEqual( [
+			...positioned.slice( 200 ),
+			ids[ 205 ],
+			ids[ 206 ],
+		] );
+		expect( two.items.map( ( item ) => item.order ) ).toEqual( [
+			2010,
+			2020,
+			2030,
+			2040,
+			2050,
+			null,
+			null,
+		] );
 	} );
 
 	test( 'the panes stack at phone width', async ( { page } ) => {

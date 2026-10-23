@@ -10,8 +10,9 @@
  * @since 1.0.0
  */
 
-import { RestError, del, get, patch, post, put } from '../components/rest';
+import { del, get, patch, post, put } from '../components/rest';
 import {
+	CATEGORY_ORDER_MAX_IDS,
 	CATEGORY_ORDER_MAX_PER_PAGE,
 	categoryArticlesPath,
 	categoryOrderPath,
@@ -48,22 +49,6 @@ declare global {
 export function settings(): CategoriesConfig {
 	return (
 		window.licensioKbCategories ?? { root: '', nonce: '', settingsUrl: '' }
-	);
-}
-
-/**
- * Whether an error means the route is not built yet (HTTP 501).
- *
- * @since 1.0.0
- *
- * @param {unknown} error The caught error.
- *
- * @return {boolean} True for a "not implemented" answer.
- */
-export function isNotImplemented( error: unknown ): boolean {
-	return (
-		error instanceof RestError &&
-		( 501 === error.status || 'licensio_kb_not_implemented' === error.code )
 	);
 }
 
@@ -194,14 +179,9 @@ export function fetchCategoryArticles(
 }
 
 /**
- * The most article IDs one order save may send; the route refuses more.
- */
-const ARTICLE_ORDER_MAX_IDS = 1000;
-
-/**
  * Save a category's article order.
  *
- * At most the first 1000 IDs are sent. That is safe: the server places the
+ * At most the first `CATEGORY_ORDER_MAX_IDS` IDs are sent. That is safe: the server places the
  * category's other ordered articles after the ones listed.
  *
  * @since 1.0.0
@@ -216,6 +196,6 @@ export function saveArticleOrder(
 	ids: number[]
 ): Promise< CategoryOrderSaved > {
 	return put< CategoryOrderSaved >( categoryOrderPath( categoryId ), {
-		ids: ids.slice( 0, ARTICLE_ORDER_MAX_IDS ),
+		ids: ids.slice( 0, CATEGORY_ORDER_MAX_IDS ),
 	} );
 }

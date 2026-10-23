@@ -6,9 +6,6 @@
  * from the keyboard. Nothing is sent until the user confirms "Save order";
  * Reset puts the loaded order back.
  *
- * The article order routes may still answer 501 (not implemented); that is
- * shown as a note, not as an error.
- *
  * @since 1.0.0
  */
 
@@ -20,7 +17,6 @@ import type { CategoryOrderArticle } from '../../components/types/category-order
 import {
 	errorMessage,
 	fetchCategoryArticles,
-	isNotImplemented,
 	saveArticleOrder,
 } from '../api';
 import type { CategoryItem } from '../types';
@@ -36,7 +32,6 @@ const total = ref( 0 );
 const loading = ref( false );
 const saving = ref( false );
 const error = ref( '' );
-const unavailable = ref( false );
 const dragIndex = ref< number | null >( null );
 
 let latest = 0;
@@ -62,7 +57,6 @@ async function load(): Promise< void > {
 	loadedIds.value = [];
 	total.value = 0;
 	error.value = '';
-	unavailable.value = false;
 
 	if ( ! props.category ) {
 		return;
@@ -85,11 +79,7 @@ async function load(): Promise< void > {
 			return;
 		}
 
-		if ( isNotImplemented( caught ) ) {
-			unavailable.value = true;
-		} else {
-			error.value = errorMessage( caught );
-		}
+		error.value = errorMessage( caught );
 	} finally {
 		if ( ticket === latest ) {
 			loading.value = false;
@@ -216,11 +206,7 @@ async function save(): Promise< void > {
 			return;
 		}
 
-		if ( isNotImplemented( caught ) ) {
-			unavailable.value = true;
-		} else {
-			error.value = errorMessage( caught );
-		}
+		error.value = errorMessage( caught );
 	} finally {
 		saving.value = false;
 	}
@@ -254,15 +240,6 @@ async function save(): Promise< void > {
 		</p>
 
 		<a-skeleton v-else-if="loading" active :paragraph="{ rows: 4 }" />
-
-		<a-alert
-			v-else-if="unavailable"
-			type="info"
-			show-icon
-			:message="
-				__( 'Article ordering is not available yet.', 'licensio-knowledge-base' )
-			"
-		/>
 
 		<template v-else>
 			<a-alert
