@@ -5,7 +5,7 @@
  * Modified by Lindeni Mahlalela using {@see https://github.com/BrianHenryIE/strauss}.
  */
 
-// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Runs SQL its callers prepared; SAVEPOINT names use an integer counter; exceptions are never printed.
+// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Runs SQL its callers prepared; SAVEPOINT names use an integer counter; exception messages reach the browser only as JSON or escaped text.
 
 namespace Licensio_KB\StellarWP\DB;
 

@@ -109,8 +109,8 @@ class Licensio_KB_BetterDocs_Import_Driver extends Licensio_KB_Import_Driver {
         if ( Licensio_KB_Import_Source::table_exists( Licensio_KB_BetterDocs_Import_Schema::TABLE_ANALYTICS ) ) {
             $table = Licensio_KB_Import_Source::table( Licensio_KB_BetterDocs_Import_Schema::TABLE_ANALYTICS );
 
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- The table name is a class constant.
-            $row = $wpdb->get_row( "SELECT SUM(happy + normal + sad) AS reactions, SUM(impressions) AS views FROM `{$table}`", ARRAY_A );
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $row = $wpdb->get_row( $wpdb->prepare( 'SELECT SUM(happy + normal + sad) AS reactions, SUM(impressions) AS views FROM %i', $table ), ARRAY_A );
 
             $counts['reactions'] = isset( $row['reactions'] ) ? (int) $row['reactions'] : 0;
             $counts['views']     = isset( $row['views'] ) ? (int) $row['views'] : 0;
@@ -119,8 +119,8 @@ class Licensio_KB_BetterDocs_Import_Driver extends Licensio_KB_Import_Driver {
         if ( Licensio_KB_Import_Source::table_exists( Licensio_KB_BetterDocs_Import_Schema::TABLE_SEARCH_LOG ) ) {
             $table = Licensio_KB_Import_Source::table( Licensio_KB_BetterDocs_Import_Schema::TABLE_SEARCH_LOG );
 
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- The table name is a class constant.
-            $counts['searches'] = (int) $wpdb->get_var( "SELECT SUM(count + not_found_count) FROM `{$table}`" );
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $counts['searches'] = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT SUM(count + not_found_count) FROM %i', $table ) );
         }
 
         return $counts;

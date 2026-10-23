@@ -10,7 +10,7 @@
  * Plugin Check reports errors in. The library is a query builder: it runs the
  * SQL its callers have already prepared, interpolates only an integer depth
  * counter into SAVEPOINT names, and puts operator names in exception messages
- * that are never printed to a page. Strauss restores the upstream files on
+ * that reach the browser only as JSON or escaped text. Strauss restores the upstream files on
  * every run, so the annotations are re-applied here, and a run fails when a
  * listed file disappears or no longer declares a namespace.
  *
@@ -52,7 +52,7 @@ if ( 0 === $licensio_kb_status ) {
     $licensio_kb_annotations = array(
         'DB.php'                                 => array(
             'sniffs' => 'WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.Security.EscapeOutput.ExceptionNotEscaped',
-            'reason' => 'Runs SQL its callers prepared; SAVEPOINT names use an integer counter; exceptions are never printed.',
+            'reason' => 'Runs SQL its callers prepared; SAVEPOINT names use an integer counter; exception messages reach the browser only as JSON or escaped text.',
         ),
         'QueryBuilder/Clauses/Having.php'        => null,
         'QueryBuilder/Clauses/Join.php'          => null,
@@ -65,22 +65,22 @@ if ( 0 === $licensio_kb_status ) {
         if ( null === $licensio_kb_annotation ) {
             $licensio_kb_annotation = array(
                 'sniffs' => 'WordPress.Security.EscapeOutput.ExceptionNotEscaped',
-                'reason' => 'Exception messages name SQL operators and are never printed to a page.',
+                'reason' => 'Exception messages name SQL operators and reach the browser only as JSON or escaped text.',
             );
         }
 
         $licensio_kb_path = dirname( __DIR__ ) . '/libraries/stellarwp/db/src/DB/' . $licensio_kb_file;
         $licensio_kb_code = is_readable( $licensio_kb_path ) ? (string) file_get_contents( $licensio_kb_path ) : '';
 
-        if ( false !== strpos( $licensio_kb_code, '// phpcs:disable' ) ) {
+        $licensio_kb_line = '// phpcs:disable ' . $licensio_kb_annotation['sniffs'] . ' -- ' . $licensio_kb_annotation['reason'];
+
+        if ( false !== strpos( $licensio_kb_code, $licensio_kb_line ) ) {
             continue;
         }
-
-        $licensio_kb_line = '// phpcs:disable ' . $licensio_kb_annotation['sniffs'] . ' -- ' . $licensio_kb_annotation['reason'];
         $licensio_kb_code = preg_replace( '/^namespace /m', $licensio_kb_line . "\n\nnamespace ", $licensio_kb_code, 1, $licensio_kb_count );
 
         if ( 1 !== $licensio_kb_count ) {
-            echo 'Could not annotate libraries/stellarwp/db/src/DB/' . $licensio_kb_file . "; check the Plugin Check annotations in bin/run-strauss.php.\n";
+            fwrite( STDERR, 'Could not annotate libraries/stellarwp/db/src/DB/' . $licensio_kb_file . "; check the Plugin Check annotations in bin/run-strauss.php.\n" );
             exit( 1 );
         }
 

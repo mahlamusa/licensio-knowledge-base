@@ -339,10 +339,7 @@ class Licensio_KB_BetterDocs_Import_Data {
      * @return array<int, array<string, mixed>> The rows.
      */
     private function read( $phase, $table, $batch ) {
-        global $wpdb;
-
-        $where = $wpdb->prepare( 'created_at < %s', gmdate( 'Y-m-d' ) );
-        $rows  = $this->source->rows( $table, Licensio_KB_BetterDocs_Import_Schema::KEY_ID, $this->state->cursor( $phase ), $batch, $where );
+        $rows = $this->source->rows( $table, Licensio_KB_BetterDocs_Import_Schema::KEY_ID, $this->state->cursor( $phase ), $batch, gmdate( 'Y-m-d' ) );
 
         if ( empty( $rows ) ) {
             $this->state->complete( $phase );
@@ -369,11 +366,16 @@ class Licensio_KB_BetterDocs_Import_Data {
             return array();
         }
 
-        $table        = Licensio_KB_Import_Source::table( Licensio_KB_BetterDocs_Import_Schema::TABLE_SEARCH_KEYWORD );
-        $placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+        $table = Licensio_KB_Import_Source::table( Licensio_KB_BetterDocs_Import_Schema::TABLE_SEARCH_KEYWORD );
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Table name is a class constant; one generated %d per ID.
-        $rows = $wpdb->get_results( $wpdb->prepare( "SELECT id, keyword FROM `{$table}` WHERE id IN ({$placeholders})", $ids ), ARRAY_A );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                'SELECT id, keyword FROM %i WHERE id IN (' . implode( ',', array_fill( 0, count( $ids ), '%d' ) ) . ')',
+                array_merge( array( $table ), $ids )
+            ),
+            ARRAY_A
+        );
 
         $out = array();
 
@@ -435,10 +437,14 @@ class Licensio_KB_BetterDocs_Import_Data {
                 }
             }
 
-            $sql = 'INSERT INTO `' . $name . '` (`' . implode( '`, `', $columns ) . '`) VALUES ' . implode( ', ', array_fill( 0, count( $chunk ), $tuple ) );
-
-            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Table and columns are ours; every value is a generated placeholder.
-            $result = $wpdb->query( $wpdb->prepare( $sql, $values ) );
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- $tuple holds only the literal placeholders %d and %s.
+            $result = $wpdb->query(
+                // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- The one array holds every replacement.
+                $wpdb->prepare(
+                    'INSERT INTO %i (' . implode( ', ', array_fill( 0, count( $columns ), '%i' ) ) . ') VALUES ' . implode( ', ', array_fill( 0, count( $chunk ), $tuple ) ), // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $tuple is one generated %d or %s per column.
+                    array_merge( array( $name ), $columns, $values )
+                )
+            );
 
             if ( false === $result ) {
                 $error = (string) $wpdb->last_error;

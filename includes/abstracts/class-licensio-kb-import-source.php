@@ -542,10 +542,8 @@ abstract class Licensio_KB_Import_Source {
             return 0;
         }
 
-        $name = self::table( $table );
-
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- The identifier is a class constant; see rows().
-        return (int) $wpdb->get_var( "SELECT COUNT(*) FROM `{$name}`" );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        return (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', self::table( $table ) ) );
     }
 
     /**
@@ -553,39 +551,37 @@ abstract class Licensio_KB_Import_Source {
      *
      * @since 1.0.0
      *
-     * @param string $table The unprefixed table name; a class constant, never input.
-     * @param string $key   The primary key column; a class constant, never input.
-     * @param int    $after The key of the last row already processed.
-     * @param int    $limit The batch size.
-     * @param string $where An extra condition, already prepared by the caller, or ''.
+     * @param string $table          The unprefixed table name; a class constant, never input.
+     * @param string $key            The primary key column; a class constant, never input.
+     * @param int    $after          The key of the last row already processed.
+     * @param int    $limit          The batch size.
+     * @param string $created_before Only rows whose created_at is before this UTC date-time, or '' for all rows.
      *
      * @return array<int, array<string, mixed>> The rows, in key order.
      */
-    public function rows( $table, $key, $after = 0, $limit = self::DEFAULT_BATCH, $where = '' ) {
+    public function rows( $table, $key, $after = 0, $limit = self::DEFAULT_BATCH, $created_before = '' ) {
         global $wpdb;
 
         if ( ! self::table_exists( $table ) ) {
             return array();
         }
 
-        /*
-         * Identifiers cannot be bound as placeholders. Both come from class
-         * constants, never from input, and are still reduced to identifier
-         * characters so a future careless caller cannot inject through them.
-         */
-        $name   = self::table( $table );
-        $column = preg_replace( '/[^A-Za-z0-9_]/', '', (string) $key );
-        $extra  = '' === (string) $where ? '' : ' AND (' . $where . ')';
+        $name  = self::table( $table );
+        $limit = max( 1, (int) $limit );
 
-        $sql = $wpdb->prepare(
-            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Identifiers cannot be bound; see above. $extra is prepared by the caller.
-            "SELECT * FROM `{$name}` WHERE `{$column}` > %d{$extra} ORDER BY `{$column}` ASC LIMIT %d",
-            (int) $after,
-            max( 1, (int) $limit )
-        );
-
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $rows = $wpdb->get_results( $sql, ARRAY_A );
+        if ( '' === (string) $created_before ) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $rows = $wpdb->get_results(
+                $wpdb->prepare( 'SELECT * FROM %i WHERE %i > %d ORDER BY %i ASC LIMIT %d', $name, $key, (int) $after, $key, $limit ),
+                ARRAY_A
+            );
+        } else {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $rows = $wpdb->get_results(
+                $wpdb->prepare( 'SELECT * FROM %i WHERE %i > %d AND created_at < %s ORDER BY %i ASC LIMIT %d', $name, $key, (int) $after, (string) $created_before, $key, $limit ),
+                ARRAY_A
+            );
+        }
 
         return is_array( $rows ) ? $rows : array();
     }

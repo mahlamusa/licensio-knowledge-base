@@ -406,10 +406,11 @@ class Licensio_KB_Live_WPDB {
     /**
      * Interpolate a statement.
      *
-     * Reproduces the two `wpdb::prepare()` behaviours the vendored query builder
-     * relies on: `%s` is escaped and quoted as a value, while a `%s` carrying a
-     * width or format prefix such as `%1s` is interpolated raw, which is how the
-     * builder writes table names, column names and operators.
+     * Reproduces the `wpdb::prepare()` behaviours the plugin relies on: `%s`
+     * is escaped and quoted as a value, `%i` is quoted as an identifier with
+     * backticks, and a `%s` carrying a width or format prefix such as `%1s` is
+     * interpolated raw, which is how the vendored query builder writes table
+     * names, column names and operators.
      *
      * @since 1.0.0
      *
@@ -428,13 +429,17 @@ class Licensio_KB_Live_WPDB {
         $adapter  = $this;
 
         return (string) preg_replace_callback(
-            '/%([-+0-9]*)([sdfF])/',
+            '/%([-+0-9]*)([sdfFi])/',
             function ( $matches ) use ( &$position, $args, $adapter ) {
                 $value = array_key_exists( $position, $args ) ? $args[ $position ] : '';
                 ++$position;
 
                 if ( 'd' === $matches[2] ) {
                     return (string) (int) $value;
+                }
+
+                if ( 'i' === $matches[2] ) {
+                    return '`' . str_replace( '`', '``', (string) $value ) . '`';
                 }
 
                 if ( 'f' === $matches[2] || 'F' === $matches[2] ) {

@@ -133,15 +133,16 @@ class Licensio_KB_Duplicates {
     public function scan_posts() {
         global $wpdb;
 
-        $excluded = "'" . implode( "', '", self::EXCLUDED_POST_TYPES ) . "'";
-
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $rows = $wpdb->get_results(
-            "SELECT ID, post_type, post_title, post_name, post_date, post_status,
-                    LEFT( post_content, 1000 ) AS post_content
-             FROM {$wpdb->posts}
-             WHERE post_status NOT IN ( 'trash', 'auto-draft', 'inherit' )
-               AND post_type NOT IN ( {$excluded} )", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- The type list is a class constant, not caller input.
+            $wpdb->prepare(
+                "SELECT ID, post_type, post_title, post_name, post_date, post_status,
+                        LEFT( post_content, 1000 ) AS post_content
+                 FROM {$wpdb->posts}
+                 WHERE post_status NOT IN ( 'trash', 'auto-draft', 'inherit' )
+                   AND post_type NOT IN ( " . implode( ', ', array_fill( 0, count( self::EXCLUDED_POST_TYPES ), '%s' ) ) . ' )',
+                self::EXCLUDED_POST_TYPES
+            ),
             ARRAY_A
         );
 
@@ -167,14 +168,16 @@ class Licensio_KB_Duplicates {
     public function scan_terms() {
         global $wpdb;
 
-        $taxonomies = "'" . Licensio_KB_Post_Types::TAXONOMY_CATEGORY . "', '" . Licensio_KB_Post_Types::TAXONOMY_TAG . "'";
-
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $rows = $wpdb->get_results(
-            "SELECT t.term_id, t.name, t.slug, tt.description, tt.count, tt.taxonomy, tt.term_taxonomy_id
-             FROM {$wpdb->terms} AS t
-             INNER JOIN {$wpdb->term_taxonomy} AS tt ON tt.term_id = t.term_id
-             WHERE tt.taxonomy IN ( {$taxonomies} )", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- The taxonomy list is a class constant, not caller input.
+            $wpdb->prepare(
+                "SELECT t.term_id, t.name, t.slug, tt.description, tt.count, tt.taxonomy, tt.term_taxonomy_id
+                 FROM {$wpdb->terms} AS t
+                 INNER JOIN {$wpdb->term_taxonomy} AS tt ON tt.term_id = t.term_id
+                 WHERE tt.taxonomy IN ( %s, %s )",
+                Licensio_KB_Post_Types::TAXONOMY_CATEGORY,
+                Licensio_KB_Post_Types::TAXONOMY_TAG
+            ),
             ARRAY_A
         );
 
