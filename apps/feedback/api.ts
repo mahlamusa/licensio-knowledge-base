@@ -102,7 +102,10 @@ export async function fetchPage( query: ListQuery ): Promise< FeedbackPage > {
 		per_page: String( query.perPage ),
 	} );
 
-	return ( await request( '?' + params.toString() ) ) as FeedbackPage;
+	// With plain permalinks the root is `index.php?rest_route=...` and already has a query string.
+	const separator = settings().root.includes( '?' ) ? '&' : '?';
+
+	return ( await request( separator + params.toString() ) ) as FeedbackPage;
 }
 
 /**

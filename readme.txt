@@ -65,6 +65,8 @@ Articles are a post type of their own, with their own categories and tags, their
 * A migration log records every item: what it was, where it went, its categories, each meta field and whether it was carried over, and a plain-language reason for anything that failed.
 * The old plugin's data is only ever read, never changed, and no IP address from its analytics tables is imported.
 
+Heroic Knowledge Base and BetterDocs are trademarks of their respective owners. Licensio Knowledge Base is not affiliated with, endorsed by or sponsored by them; the names are used only to identify the plugins the import wizard reads from.
+
 = Tools for keeping it tidy =
 
 * **Duplicates**: finds articles and terms that exist twice, typically after a migration, and resolves each set: one article is kept and its twins go to the trash.
@@ -178,16 +180,16 @@ The admin applications are built with Vite and the blocks with `@wordpress/scrip
 
 Bundled into the compiled admin applications in `dist/`:
 
-* Vue 3.5.42, MIT License, https://github.com/vuejs/core
-* Pinia 2.3.1, MIT License, https://github.com/vuejs/pinia
+* Vue 3.5.44, MIT License, https://github.com/vuejs/core
+* Pinia 4.1.0, MIT License, https://github.com/vuejs/pinia
 * Ant Design Vue 4.2.6, MIT License, https://github.com/vueComponent/ant-design-vue
-* Chart.js 4.5.1, MIT License, https://github.com/chartjs/Chart.js
+* Chart.js 4.6.1, MIT License, https://github.com/chartjs/Chart.js
 
 These are installed together with the smaller packages they depend on, at the exact versions pinned in `package-lock.json`.
 
 Included as PHP source in `libraries/`:
 
-* StellarWP DB 1.3.0, GPL-2.0, https://github.com/stellarwp/db. The classes are prefixed with `Licensio_KB\` using Strauss so they cannot collide with another plugin's copy.
+* StellarWP DB 1.3.1, GPL-2.0, https://github.com/stellarwp/db. The classes are prefixed with `Licensio_KB\` using Strauss so they cannot collide with another plugin's copy.
 
 == Screenshots ==
 

@@ -5,6 +5,8 @@
  * Modified by Lindeni Mahlalela using {@see https://github.com/BrianHenryIE/strauss}.
  */
 
+// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Runs SQL its callers prepared; SAVEPOINT names use an integer counter; exceptions are never printed.
+
 namespace Licensio_KB\StellarWP\DB;
 
 use Closure;
@@ -90,6 +92,7 @@ class DB {
 	 * Runs the dbDelta function and returns a WP_Error with any errors that occurred during the process
 	 *
 	 * @since 1.0.0
+	 * @since 1.3.1 Loads wp-admin/includes/upgrade.php here instead of before every query.
 	 *
 	 * @param $delta
 	 *
@@ -101,6 +104,12 @@ class DB {
 	public static function delta( $delta ) {
 		return self::runQueryWithErrorChecking(
 			function () use ( $delta ) {
+				/*
+				 * Loaded only here: on multisite, upgrade.php pulls in wp-admin/includes/ms.php, and a later
+				 * plain require of ms.php by other code fatals with "Cannot redeclare check_upload_size()".
+				 */
+				require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
 				return dbDelta( $delta );
 			}
 		);
@@ -330,7 +339,6 @@ class DB {
 	 */
 	private static function runQueryWithErrorChecking( $queryCaller ) {
 		global $wpdb, $EZSQL_ERROR;
-		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
 		$errorCount    = is_array( $EZSQL_ERROR ) ? count( $EZSQL_ERROR ) : 0;
 		$hasShowErrors = $wpdb->hide_errors();
@@ -388,7 +396,7 @@ class DB {
 	/**
 	 * Get all the results from a query in batches.
 	 *
-	 * @since TBD
+	 * @since 1.1.1
 	 *
 	 * @param string  $query      The SQL query.
 	 * @param int     $batch_size The number of results to return in each batch.
@@ -457,7 +465,7 @@ class DB {
 	 *
 	 * This method should be used to run an unbounded query in batches.
 	 *
-	 * @since TBD
+	 * @since 1.1.1
 	 *
 	 * @param string|null $query      The SQL query.
 	 * @param string      $output     The required return type. One of OBJECT, ARRAY_A, ARRAY_N.
@@ -465,7 +473,7 @@ class DB {
 	 *
 	 * @return Generator<array|object|null> A generator to get all the results of the query.
 	 */
-	public static function generate_results( string $query = null, string $output = OBJECT, int $batch_size = 20 ): Generator {
+	public static function generate_results( ?string $query = null, string $output = OBJECT, int $batch_size = 20 ): Generator {
 		yield from self::run_batched_query( $query, $batch_size, static function ( string $run_query ) use ( $output ) {
 			return self::get_results( $run_query, $output );
 		} );
@@ -474,7 +482,7 @@ class DB {
 	/**
 	 * Get all the values in a column from a query in batches.
 	 *
-	 * @since TBD
+	 * @since 1.1.1
 	 *
 	 * @param string|null $query      The SQL query.
 	 * @param int         $x          The column number to return.
@@ -482,7 +490,7 @@ class DB {
 	 *
 	 * @return Generator<mixed> The values of the column.
 	 */
-	public function generate_col( string $query = null, int $x = 0, int $batch_size = 50 ): Generator {
+	public function generate_col( ?string $query = null, int $x = 0, int $batch_size = 50 ): Generator {
 		yield from self::run_batched_query( $query, $batch_size, static function ( string $run_query ) use ( $x ) {
 			return self::get_col( $run_query, $x );
 		} );

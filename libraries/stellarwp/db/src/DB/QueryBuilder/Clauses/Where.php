@@ -5,6 +5,8 @@
  * Modified by Lindeni Mahlalela using {@see https://github.com/BrianHenryIE/strauss}.
  */
 
+// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages name SQL operators and are never printed to a page.
+
 namespace Licensio_KB\StellarWP\DB\QueryBuilder\Clauses;
 
 use Licensio_KB\StellarWP\DB\QueryBuilder\Types\Operator;
