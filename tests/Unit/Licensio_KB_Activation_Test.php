@@ -531,6 +531,8 @@ class Licensio_KB_Activation_Test extends Licensio_KB_Test_Case {
         $this->assertInstanceOf( 'Licensio_KB_Assets', $plugin->assets() );
         $this->assertInstanceOf( 'Licensio_KB_Visitor', $plugin->visitor() );
         $this->assertInstanceOf( 'Licensio_KB_REST_API', $plugin->rest_api() );
+        $this->assertInstanceOf( 'Licensio_KB_Content_Manager', $plugin->content_manager() );
+        $this->assertInstanceOf( 'Licensio_KB_Term_Operations', $plugin->term_operations() );
     }
 
     /**

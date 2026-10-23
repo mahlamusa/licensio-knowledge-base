@@ -1,0 +1,491 @@
+<?php
+/**
+ * The content manager switch, hidden app pages and core screen redirects.
+ *
+ * The content manager replaces the core article list and the category and tag
+ * term screens with three Vue apps: Articles, Categories and Tags. This class
+ * is the one place that decides whether those apps have taken over, and it
+ * holds everything the takeover needs: the hidden page registration the apps
+ * use while they are being built, the map from a core screen URL to the
+ * matching app URL, and the list of core menu items the apps replace.
+ *
+ * It ships inert. `is_active()` returns false until the three apps are
+ * finished, so neither the redirects nor the menu removal are hooked and the
+ * admin looks exactly as it did before. The articles, categories and tags apps
+ * register their pages through `register_hidden_page()` in the meantime, and
+ * the switch-on work flips `is_active()`.
+ *
+ * Constructed on every request, not only in wp-admin, because the REST
+ * controllers it announces must be registered for REST requests too.
+ *
+ * Consumed by the articles, categories and tags apps and by the switch-on work.
+ *
+ * @package Licensio_KB
+ * @since   1.0.0
+ */
+
+defined( 'ABSPATH' ) || exit;
+
+/**
+ * Decides whether the Vue content manager replaces the core screens.
+ *
+ * @since 1.0.0
+ */
+class Licensio_KB_Content_Manager {
+
+    /**
+     * The Articles app page slug.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    const ARTICLES_SLUG = 'licensio-kb-articles';
+
+    /**
+     * The Categories app page slug.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    const CATEGORIES_SLUG = 'licensio-kb-categories';
+
+    /**
+     * The Tags app page slug.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    const TAGS_SLUG = 'licensio-kb-tags';
+
+    /**
+     * The parent a hidden page is registered under.
+     *
+     * `options.php` has no menu entry of its own, so a page registered under
+     * it is reachable at `admin.php?page={slug}` without appearing in any
+     * menu. An empty parent would also hide the page, but core then cannot
+     * find the page's title, and the browser tab and the admin header show an
+     * empty title.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    const HIDDEN_PARENT = 'options.php';
+
+    /**
+     * The setting that turns the content manager off.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    const CLASSIC_SCREENS_SETTING = 'classic_screens';
+
+    /**
+     * Query arguments that mean a core list request is an action, not a view.
+     *
+     * Core runs its bulk actions and "Empty Trash" through `edit.php` itself.
+     * A request carrying any of these is left alone so the core handler runs.
+     *
+     * @since 1.0.0
+     * @var string[]
+     */
+    const ACTION_ARGS = array( 'action', 'action2', 'delete_all', 'delete_all2' );
+
+    /**
+     * The settings store.
+     *
+     * @since 1.0.0
+     * @var Licensio_KB_Settings
+     */
+    private $settings;
+
+    /**
+     * Build the content manager.
+     *
+     * @since 1.0.0
+     *
+     * @param Licensio_KB_Settings $settings The settings store.
+     */
+    public function __construct( Licensio_KB_Settings $settings ) {
+        $this->settings = $settings;
+    }
+
+    /**
+     * Register the WordPress hooks.
+     *
+     * The REST controllers are announced on every request. The menu removal
+     * and the redirects are hooked only once the content manager is active;
+     * while it is inactive they are not hooked at all. Their callbacks check
+     * `enabled()` when they run rather than here, because the setting and the
+     * filter must be read at request time, not while plugins are loading.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function init_hooks() {
+        add_filter( 'licensio_rest_controllers', array( $this, 'register_rest_controllers' ) );
+
+        if ( ! static::is_active() ) {
+            return;
+        }
+
+        add_action( 'admin_menu', array( $this, 'remove_core_menu_items' ), 999 );
+        add_action( 'load-edit.php', array( $this, 'maybe_redirect' ) );
+        add_action( 'load-edit-tags.php', array( $this, 'maybe_redirect' ) );
+        add_action( 'load-term.php', array( $this, 'maybe_redirect' ) );
+    }
+
+    /**
+     * Whether the content manager has been switched on in this build.
+     *
+     * Returns false until the articles, categories and tags apps are finished.
+     * The switch-on work changes this to true.
+     *
+     * @since 1.0.0
+     *
+     * @return bool True once the content manager ships.
+     */
+    public static function is_active() {
+        return false;
+    }
+
+    /**
+     * Whether the Vue apps replace the core screens on this request.
+     *
+     * True only when the content manager is active, the classic screens
+     * setting is off, and the `licensio_kb_use_content_manager` filter agrees.
+     *
+     * @since 1.0.0
+     *
+     * @return bool True when the core screens should redirect to the apps.
+     */
+    public function enabled() {
+        if ( ! static::is_active() ) {
+            return false;
+        }
+
+        if ( $this->settings->get( self::CLASSIC_SCREENS_SETTING, false ) ) {
+            return false;
+        }
+
+        /**
+         * Filter whether the content manager replaces the core screens.
+         *
+         * Return false to keep the core article, category and tag screens.
+         * The Vue apps stay reachable by URL either way.
+         *
+         * @since 1.0.0
+         *
+         * @param bool $use_content_manager Whether to use the content manager. Default true.
+         */
+        return (bool) apply_filters( 'licensio_kb_use_content_manager', true );
+    }
+
+    /**
+     * Add the content manager's REST controllers to the registrar's list.
+     *
+     * @since 1.0.0
+     *
+     * @param string[]|mixed $controllers The registered controller class names.
+     *
+     * @return string[] The list, with the content manager controllers added.
+     */
+    public function register_rest_controllers( $controllers ) {
+        $controllers   = is_array( $controllers ) ? $controllers : array();
+        $controllers[] = 'Licensio_KB_Terms_REST_Controller';
+        $controllers[] = 'Licensio_KB_Category_Order_REST_Controller';
+
+        return $controllers;
+    }
+
+    /**
+     * Register an admin page that has no menu entry.
+     *
+     * The apps use this while they are being built: the page is reachable at
+     * `admin.php?page={menu_slug}` (see `page_url()`) but nothing in the menu
+     * links to it. Call it from an `admin_menu` callback.
+     *
+     * The definition takes the same keys as a `licensio_admin_menu_pages`
+     * entry, so moving a page into the menu later means handing the same array
+     * to that filter instead. Unlike the menu, which registers through the
+     * filter, this calls `add_submenu_page()` directly: a hidden page has no
+     * menu position to share.
+     *
+     * The returned hook suffix is `admin_page_{menu_slug}`. Compare it with
+     * the `$hook_suffix` passed to `admin_enqueue_scripts` to load assets on
+     * this page only.
+     *
+     * @since 1.0.0
+     *
+     * @param array<string, mixed> $page {
+     *     The page definition.
+     *
+     *     @type string   $menu_slug  Required. The page slug, `[a-z0-9_-]` only.
+     *     @type callable $callback   Required. Renders the page.
+     *     @type string   $page_title The browser title. Defaults to the slug.
+     *     @type string   $capability Defaults to `manage_licensio_kb`.
+     * }
+     *
+     * @return string The hook suffix, or an empty string when the page was not registered.
+     */
+    public static function register_hidden_page( array $page ) {
+        if ( empty( $page['menu_slug'] ) || empty( $page['callback'] ) ) {
+            return '';
+        }
+
+        $slug = (string) $page['menu_slug'];
+
+        if ( ! preg_match( '/^[a-z0-9_-]+$/', $slug ) || ! is_callable( $page['callback'] ) ) {
+            return '';
+        }
+
+        $title = isset( $page['page_title'] ) ? (string) $page['page_title'] : $slug;
+
+        $hook_suffix = add_submenu_page(
+            self::HIDDEN_PARENT,
+            $title,
+            $title,
+            isset( $page['capability'] ) ? (string) $page['capability'] : Licensio_KB_Capabilities::CAPABILITY,
+            $slug,
+            $page['callback']
+        );
+
+        return is_string( $hook_suffix ) ? $hook_suffix : '';
+    }
+
+    /**
+     * The admin URL of a content manager page.
+     *
+     * The `admin.php?page=` form works whether the page is hidden or in the
+     * menu, so links built with it survive the switch-on.
+     *
+     * @since 1.0.0
+     *
+     * @param string               $menu_slug The page slug.
+     * @param array<string, mixed> $args      Optional query arguments to add.
+     *
+     * @return string The absolute admin URL.
+     */
+    public static function page_url( $menu_slug, array $args = array() ) {
+        $url = admin_url( 'admin.php?page=' . rawurlencode( (string) $menu_slug ) );
+
+        if ( empty( $args ) ) {
+            return $url;
+        }
+
+        return add_query_arg( array_map( 'rawurlencode', array_map( 'strval', $args ) ), $url );
+    }
+
+    /**
+     * The core submenu items the apps replace.
+     *
+     * Spelled exactly as core registers them, including the `&amp;` in the
+     * taxonomy items, because `remove_submenu_page()` compares slugs as-is.
+     * Add New stays in the menu.
+     *
+     * @since 1.0.0
+     *
+     * @return string[] The submenu slugs under the Knowledge Base menu.
+     */
+    public function core_menu_items() {
+        $post_type = Licensio_KB_Post_Types::POST_TYPE;
+
+        return array(
+            'edit.php?post_type=' . $post_type,
+            'edit-tags.php?taxonomy=' . Licensio_KB_Post_Types::TAXONOMY_CATEGORY . '&amp;post_type=' . $post_type,
+            'edit-tags.php?taxonomy=' . Licensio_KB_Post_Types::TAXONOMY_TAG . '&amp;post_type=' . $post_type,
+        );
+    }
+
+    /**
+     * Remove the core list and term screens from the Knowledge Base menu.
+     *
+     * Hooked to `admin_menu` only once the content manager is active.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function remove_core_menu_items() {
+        if ( ! $this->enabled() ) {
+            return;
+        }
+
+        foreach ( $this->core_menu_items() as $item ) {
+            remove_submenu_page( Licensio_KB_Admin_Menu::PARENT_SLUG, $item );
+        }
+    }
+
+    /**
+     * Send a core list or term screen request to the matching app.
+     *
+     * Hooked to `load-edit.php`, `load-edit-tags.php` and `load-term.php`
+     * only once the content manager is active.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function maybe_redirect() {
+        global $pagenow;
+
+        if ( ! $this->enabled() ) {
+            return;
+        }
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only: the query only chooses where to send a screen view.
+        $query  = wp_unslash( $_GET );
+        $target = $this->redirect_url( is_string( $pagenow ) ? $pagenow : '', (array) $query );
+
+        if ( '' === $target ) {
+            return;
+        }
+
+        wp_safe_redirect( $target );
+        exit;
+    }
+
+    /**
+     * The app URL a core screen request should be sent to.
+     *
+     * - `edit.php` for the article post type, without an action, goes to the
+     *   Articles app. `post_status`, `s`, `licensio_category` and
+     *   `licensio_tag` become `status`, `search`, `category` and `tag`; a
+     *   category or tag given by slug (as core's own links do) becomes its ID.
+     * - `edit-tags.php` for either plugin taxonomy goes to the Categories or
+     *   Tags app, with `s` as `search`.
+     * - `term.php` for either plugin taxonomy goes to the same app with the
+     *   term's ID as `term`, so the app opens that term.
+     *
+     * Only these known arguments are carried over. Everything else returns an
+     * empty string, meaning no redirect.
+     *
+     * @since 1.0.0
+     *
+     * @param string               $screen The admin file being loaded, e.g. `edit.php`.
+     * @param array<string, mixed> $query  The request's query arguments, unslashed.
+     *
+     * @return string The absolute app URL, or an empty string when the request is not redirected.
+     */
+    public function redirect_url( $screen, array $query ) {
+        if ( 'edit.php' === $screen ) {
+            return $this->article_list_redirect( $query );
+        }
+
+        if ( 'edit-tags.php' !== $screen && 'term.php' !== $screen ) {
+            return '';
+        }
+
+        $taxonomy = self::arg( $query, 'taxonomy' );
+        $slugs    = array(
+            Licensio_KB_Post_Types::TAXONOMY_CATEGORY => self::CATEGORIES_SLUG,
+            Licensio_KB_Post_Types::TAXONOMY_TAG      => self::TAGS_SLUG,
+        );
+
+        if ( ! isset( $slugs[ $taxonomy ] ) ) {
+            return '';
+        }
+
+        $args = array();
+
+        if ( 'term.php' === $screen ) {
+            $term_id = absint( self::arg( $query, 'tag_ID' ) );
+
+            if ( $term_id > 0 ) {
+                $args['term'] = $term_id;
+            }
+        } elseif ( '' !== trim( self::arg( $query, 's' ) ) ) {
+            $args['search'] = sanitize_text_field( self::arg( $query, 's' ) );
+        }
+
+        return self::page_url( $slugs[ $taxonomy ], $args );
+    }
+
+    /**
+     * The Articles app URL for a core article list request.
+     *
+     * @since 1.0.0
+     *
+     * @param array<string, mixed> $query The request's query arguments, unslashed.
+     *
+     * @return string The absolute app URL, or an empty string when the request is not redirected.
+     */
+    private function article_list_redirect( array $query ) {
+        if ( Licensio_KB_Post_Types::POST_TYPE !== self::arg( $query, 'post_type' ) ) {
+            return '';
+        }
+
+        foreach ( self::ACTION_ARGS as $action ) {
+            if ( isset( $query[ $action ] ) && '' !== $query[ $action ] && '-1' !== $query[ $action ] ) {
+                return '';
+            }
+        }
+
+        $args   = array();
+        $status = sanitize_key( self::arg( $query, 'post_status' ) );
+
+        if ( '' !== $status ) {
+            $args['status'] = $status;
+        }
+
+        if ( '' !== trim( self::arg( $query, 's' ) ) ) {
+            $args['search'] = sanitize_text_field( self::arg( $query, 's' ) );
+        }
+
+        $filters = array(
+            'category' => Licensio_KB_Post_Types::TAXONOMY_CATEGORY,
+            'tag'      => Licensio_KB_Post_Types::TAXONOMY_TAG,
+        );
+
+        foreach ( $filters as $arg => $taxonomy ) {
+            $term_id = $this->term_id( self::arg( $query, $taxonomy ), $taxonomy );
+
+            if ( $term_id > 0 ) {
+                $args[ $arg ] = $term_id;
+            }
+        }
+
+        return self::page_url( self::ARTICLES_SLUG, $args );
+    }
+
+    /**
+     * One query argument as a string.
+     *
+     * An argument sent as an array (`?s[]=x`) reads as empty rather than as
+     * the string "Array".
+     *
+     * @since 1.0.0
+     *
+     * @param array<string, mixed> $query The query arguments.
+     * @param string               $key   The argument name.
+     *
+     * @return string The value, or an empty string when it is missing or not scalar.
+     */
+    private static function arg( array $query, $key ) {
+        return isset( $query[ $key ] ) && is_scalar( $query[ $key ] ) ? (string) $query[ $key ] : '';
+    }
+
+    /**
+     * Resolve a term given by ID or slug to its ID.
+     *
+     * @since 1.0.0
+     *
+     * @param string $value    A term ID or slug.
+     * @param string $taxonomy The taxonomy.
+     *
+     * @return int The term ID, or 0 when no such term exists.
+     */
+    private function term_id( $value, $taxonomy ) {
+        if ( '' === $value ) {
+            return 0;
+        }
+
+        if ( ctype_digit( $value ) ) {
+            return absint( $value );
+        }
+
+        $term = get_term_by( 'slug', sanitize_title( $value ), $taxonomy );
+
+        return $term instanceof WP_Term ? (int) $term->term_id : 0;
+    }
+}

@@ -174,6 +174,22 @@ final class Licensio_KB {
     private $importer = null;
 
     /**
+     * The content manager switch and its REST controllers.
+     *
+     * @since 1.0.0
+     * @var Licensio_KB_Content_Manager|null
+     */
+    private $content_manager = null;
+
+    /**
+     * Shared term move and merge operations.
+     *
+     * @since 1.0.0
+     * @var Licensio_KB_Term_Operations|null
+     */
+    private $term_operations = null;
+
+    /**
      * Return the single instance of the plugin.
      *
      * @since 1.0.0
@@ -239,6 +255,14 @@ final class Licensio_KB {
         $this->toc          = new Licensio_KB_TOC();
 
         /*
+         * Built on every request, not only in wp-admin: their REST routes and
+         * the category delete hook must work for REST and WP-CLI requests too.
+         * The content manager stays inert until it is switched on.
+         */
+        $this->content_manager = new Licensio_KB_Content_Manager( $this->settings );
+        $this->term_operations = new Licensio_KB_Term_Operations();
+
+        /*
          * Permalinks first. It adds a key to the settings registry, and
          * Licensio_KB_Settings memoizes the resolved settings on first read, so
          * a registry filter attached after something has read a setting would be
@@ -260,6 +284,8 @@ final class Licensio_KB {
         $this->analytics_privacy->init_hooks();
         $this->settings_api->init_hooks();
         $this->toc->init_hooks();
+        $this->content_manager->init_hooks();
+        $this->term_operations->init_hooks();
         Licensio_KB_Sidebar::init_hooks();
 
         if ( ! is_admin() ) {
@@ -612,6 +638,39 @@ final class Licensio_KB {
         }
 
         return $this->toc;
+    }
+
+    /**
+     * Get the content manager.
+     *
+     * @since 1.0.0
+     *
+     * @return Licensio_KB_Content_Manager
+     */
+    public function content_manager() {
+        if ( ! $this->content_manager instanceof Licensio_KB_Content_Manager ) {
+            $this->content_manager = new Licensio_KB_Content_Manager( $this->settings() );
+        }
+
+        return $this->content_manager;
+    }
+
+    /**
+     * Get the shared term operations.
+     *
+     * Use this instance rather than constructing another, so the delete hook
+     * is only registered once.
+     *
+     * @since 1.0.0
+     *
+     * @return Licensio_KB_Term_Operations
+     */
+    public function term_operations() {
+        if ( ! $this->term_operations instanceof Licensio_KB_Term_Operations ) {
+            $this->term_operations = new Licensio_KB_Term_Operations();
+        }
+
+        return $this->term_operations;
     }
 
     /**

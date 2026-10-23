@@ -616,6 +616,7 @@ class Licensio_KB_Settings_Test extends Licensio_KB_Test_Case {
         $this->assertSame( '', $defaults['support_url'] );
         $this->assertFalse( $defaults['show_subcategories'] );
         $this->assertTrue( $defaults['show_article_counts'] );
+        $this->assertFalse( $defaults['classic_screens'] );
         $this->assertTrue( $defaults['sticky_sidebar'] );
         $this->assertSame( 'right', $defaults['archive_sidebar_position'] );
         $this->assertSame( 'right', $defaults['article_sidebar_position'] );
