@@ -12,7 +12,9 @@
  * `search`, `include[]`, `exclude[]` and `per_page` (1 to 100, default 20).
  * Answers an array of `{ id, name, slug, parent, count, path }`, where `path`
  * lists the names of the term's ancestors, top first, so a picker can label a
- * subcategory "Parent › Child". It is always empty for tags.
+ * subcategory "Parent › Child". It is always empty for tags. Names are plain
+ * text: core stores `&` as `&amp;`, so they are decoded here for the apps,
+ * which render them as text.
  *
  * Consumed by the articles, categories and tags apps.
  *
@@ -164,7 +166,7 @@ class Licensio_KB_Terms_REST_Controller extends Licensio_KB_REST_Controller {
 
             $items[] = array(
                 'id'     => (int) $term->term_id,
-                'name'   => $term->name,
+                'name'   => self::plain_name( $term->name ),
                 'slug'   => $term->slug,
                 'parent' => (int) $term->parent,
                 'count'  => (int) $term->count,
@@ -225,7 +227,7 @@ class Licensio_KB_Terms_REST_Controller extends Licensio_KB_REST_Controller {
         foreach ( $all as $term ) {
             if ( $term instanceof WP_Term ) {
                 $parents[ (int) $term->term_id ] = (int) $term->parent;
-                $names[ (int) $term->term_id ]   = $term->name;
+                $names[ (int) $term->term_id ]   = self::plain_name( $term->name );
             }
         }
 
@@ -247,5 +249,22 @@ class Licensio_KB_Terms_REST_Controller extends Licensio_KB_REST_Controller {
         }
 
         return $paths;
+    }
+
+    /**
+     * A term name as plain text.
+     *
+     * Core saves term names with HTML special characters encoded, so
+     * "Billing & invoices" is stored as "Billing &amp; invoices". The apps
+     * show names as text, never as HTML, so they need the decoded form.
+     *
+     * @since 1.0.0
+     *
+     * @param string $name The stored term name.
+     *
+     * @return string The name with HTML entities decoded.
+     */
+    private static function plain_name( $name ) {
+        return html_entity_decode( (string) $name, ENT_QUOTES, 'UTF-8' );
     }
 }

@@ -258,4 +258,26 @@ class Licensio_KB_Terms_REST_Test extends Licensio_KB_Test_Case {
 
         $this->assertInstanceOf( 'WP_Error', $result );
     }
+
+    /**
+     * Names and ancestor paths come back as plain text, not HTML.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_names_are_decoded_to_plain_text() {
+        Functions\when( 'get_terms' )->justReturn(
+            array(
+                $this->term( 1, 'Billing &amp; invoices', 0 ),
+                $this->term( 2, 'Tom&#039;s &quot;tips&quot;', 1 ),
+            )
+        );
+
+        $items = $this->search( array( 'taxonomy' => 'licensio_category' ) );
+
+        $this->assertSame( 'Billing & invoices', $items[0]['name'] );
+        $this->assertSame( 'Tom\'s "tips"', $items[1]['name'] );
+        $this->assertSame( array( 'Billing & invoices' ), $items[1]['path'] );
+    }
 }
