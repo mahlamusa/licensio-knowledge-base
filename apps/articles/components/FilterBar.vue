@@ -73,7 +73,7 @@ const attentionHelp = sprintf(
 	<a-popover trigger="click" placement="bottomLeft">
 		<template #content>
 			<div class="lkb-filters">
-				<label class="lkb-filters__field">
+				<div class="lkb-filters__field">
 					<span>{{ __( 'Category', 'licensio-knowledge-base' ) }}</span>
 					<TermSelect
 						:model-value="store.query.category || null"
@@ -82,9 +82,9 @@ const attentionHelp = sprintf(
 						:placeholder="__( 'Any category', 'licensio-knowledge-base' )"
 						@update:model-value="( value ) => store.setFilters( { category: termId( value ) } )"
 					/>
-				</label>
+				</div>
 
-				<label class="lkb-filters__field">
+				<div class="lkb-filters__field">
 					<span>{{ __( 'Tag', 'licensio-knowledge-base' ) }}</span>
 					<TermSelect
 						:model-value="store.query.tag || null"
@@ -93,7 +93,7 @@ const attentionHelp = sprintf(
 						:placeholder="__( 'Any tag', 'licensio-knowledge-base' )"
 						@update:model-value="( value ) => store.setFilters( { tag: termId( value ) } )"
 					/>
-				</label>
+				</div>
 
 				<label class="lkb-filters__field">
 					<span>{{ __( 'Author', 'licensio-knowledge-base' ) }}</span>

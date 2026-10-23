@@ -292,6 +292,10 @@ final class Licensio_KB {
         $articles_admin = new Licensio_KB_Articles_Admin();
         $articles_admin->init_hooks();
 
+        // On every request: it announces the categories REST controller too.
+        $categories_admin = new Licensio_KB_Categories_Admin( $this->assets );
+        $categories_admin->init_hooks();
+
         $article_order = new Licensio_KB_Article_Order();
         $article_order->init_hooks();
 
