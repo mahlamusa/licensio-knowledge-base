@@ -292,6 +292,9 @@ final class Licensio_KB {
         $articles_admin = new Licensio_KB_Articles_Admin();
         $articles_admin->init_hooks();
 
+        $article_order = new Licensio_KB_Article_Order();
+        $article_order->init_hooks();
+
         if ( ! is_admin() ) {
             $import_redirects = new Licensio_KB_Import_Redirect_Server();
             $import_redirects->init_hooks();

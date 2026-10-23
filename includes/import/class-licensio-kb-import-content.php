@@ -99,6 +99,16 @@ class Licensio_KB_Import_Content {
     private $claim_keys = array();
 
     /**
+     * Per target category, the offset each source category's positions get.
+     *
+     * Filled on first use in a request; see `position_offsets()`.
+     *
+     * @since 1.0.0
+     * @var array<int, array<int, int>>
+     */
+    private $position_offsets = array();
+
+    /**
      * Constructor.
      *
      * @since 1.0.0
@@ -495,22 +505,6 @@ class Licensio_KB_Import_Content {
         $warnings = array();
         $order    = $this->source->article_order( $source_id );
 
-        if ( $order['ambiguous'] ) {
-            $this->report->count( 'articles_order_collapsed' );
-
-            $warning = sprintf(
-                '%1$s article %2$d had different positions in different categories; kept %3$d from category %4$d.',
-                $label,
-                $source_id,
-                $order['order'],
-                $order['source_term_id']
-            );
-
-            $this->report->note( 'article_order', $warning );
-
-            $warnings[] = $warning;
-        }
-
         $adopt = '' !== $slug ? $this->find_unclaimed_article_by_slug( $slug ) : 0;
 
         $details = array(
@@ -520,7 +514,7 @@ class Licensio_KB_Import_Content {
             'date'        => isset( $row['post_date'] ) ? (string) $row['post_date'] : '',
             'order'       => array(
                 'value'     => (int) $order['order'],
-                'ambiguous' => (bool) $order['ambiguous'],
+                'positions' => $order['positions'],
             ),
             'meta'        => $this->describe_post_meta( $source_id ),
             'attachments' => $this->source->attachments( $source_id ),
@@ -585,6 +579,7 @@ class Licensio_KB_Import_Content {
 
         $terms                     = $this->assign_terms( $source_id, $article_id );
         $details                   = array_merge( $details, $terms['details'] );
+        $details['order']['saved'] = $this->migrate_positions( $article_id, $order['positions'], $terms['details']['categories'] );
         $warnings                  = array_merge( $warnings, $terms['warnings'] );
         $details['thumbnail_id']   = $this->migrate_thumbnail( $source_id, $article_id );
         $details['slug']['actual'] = (string) get_post_field( 'post_name', $article_id );
@@ -620,7 +615,7 @@ class Licensio_KB_Import_Content {
      * @since 1.0.0
      *
      * @param array<string, mixed> $row        The source post row.
-     * @param int                  $menu_order The collapsed per-category position.
+     * @param int                  $menu_order The fallback position, for listings not limited to one category.
      * @param string               $slug       The source slug.
      *
      * @return array<string, mixed> The post fields.
@@ -642,6 +637,140 @@ class Licensio_KB_Import_Content {
             'ping_status'       => isset( $row['ping_status'] ) ? (string) $row['ping_status'] : 'closed',
             'menu_order'        => $menu_order,
         );
+    }
+
+    /**
+     * Write an imported article's position in each imported category.
+     *
+     * Each source category's position is stored as `licensio_order_{term_id}`
+     * against the category it was imported as. A category that was not
+     * imported has no key to write.
+     *
+     * The imported positions follow any the category already held before the
+     * run, so importing into an ordered category, or importing again after
+     * the order was curated, never interleaves with it. When several source
+     * categories were imported into one category, their orders are merged
+     * rather than overwritten: the first source's positions come first and
+     * each later source's follow them, shifted past the earlier sources (see
+     * `position_offsets()`). An article listed in more than one of them keeps
+     * its place from the first.
+     *
+     * @since 1.0.0
+     *
+     * @param int                              $article_id The target article ID.
+     * @param array<int, int>                  $positions  Source category term ID to the article's position in it.
+     * @param array<int, array<string, mixed>> $categories The category assignments `assign_terms()` reported.
+     *
+     * @return array<int, int> Target category term ID to the position written.
+     */
+    private function migrate_positions( $article_id, array $positions, array $categories ) {
+        $saved = array();
+        $ranks = array();
+
+        foreach ( $categories as $category ) {
+            $source = isset( $category['source_id'] ) ? (int) $category['source_id'] : 0;
+            $target = isset( $category['target_id'] ) ? (int) $category['target_id'] : 0;
+
+            if ( $target <= 0 || ! isset( $positions[ $source ] ) ) {
+                continue;
+            }
+
+            $offsets = $this->position_offsets( $target );
+            $rank    = array_search( $source, array_keys( $offsets ), true );
+            $rank    = false === $rank ? count( $offsets ) : (int) $rank;
+
+            if ( isset( $ranks[ $target ] ) && $ranks[ $target ] <= $rank ) {
+                continue;
+            }
+
+            $ranks[ $target ] = $rank;
+            $saved[ $target ] = (int) $positions[ $source ] + ( isset( $offsets[ $source ] ) ? $offsets[ $source ] : (int) $this->state->position_base( $target ) + 1 );
+        }
+
+        foreach ( $saved as $target => $position ) {
+            update_post_meta( $article_id, Licensio_KB_Article_Order::meta_key( $target ), $position );
+        }
+
+        return $saved;
+    }
+
+    /**
+     * The offset each source category's positions get in one target category.
+     *
+     * The sources are the target's provenance, in the order they were imported.
+     * The first source starts one past the highest position the target held
+     * before this run, or at 0 when it held none; each later source starts one
+     * past the highest position of the sources before it. The target's
+     * highest position is recorded in the run state the first time the run
+     * reaches the target, and the sources' highest positions are read from the
+     * source, so the result is the same in every batch of the run and in a
+     * resumed run. If the run state is lost part-way, the next batch records
+     * the target again, after the positions earlier batches wrote: later
+     * articles still follow the existing order, only further down.
+     *
+     * @since 1.0.0
+     *
+     * @param int $target The target category term ID.
+     *
+     * @return array<int, int> Source category term ID to offset, first source first.
+     */
+    private function position_offsets( $target ) {
+        if ( isset( $this->position_offsets[ $target ] ) ) {
+            return $this->position_offsets[ $target ];
+        }
+
+        $sources = array_values( array_unique( array_map( 'intval', (array) get_term_meta( $target, $this->source->provenance_term_key(), false ) ) ) );
+        $offsets = array();
+        $base    = $this->state->position_base( $target );
+        $last    = count( $sources ) - 1;
+
+        if ( null === $base ) {
+            $base = $this->highest_position( $target );
+
+            $this->state->set_position_base( $target, $base );
+        }
+
+        $next = $base + 1;
+
+        foreach ( $sources as $index => $source ) {
+            $offsets[ $source ] = $next;
+
+            // The last source's size shifts nothing, so it is not read.
+            if ( $index < $last ) {
+                $next += max( -1, $this->source->last_position( $source ) ) + 1;
+            }
+        }
+
+        $this->position_offsets[ $target ] = $offsets;
+
+        return $offsets;
+    }
+
+    /**
+     * The highest position a target category holds.
+     *
+     * Read over every article holding the category's key, trashed ones
+     * included, as a category merge does.
+     *
+     * @since 1.0.0
+     *
+     * @param int $target The target category term ID.
+     *
+     * @return int The highest position, or -1 when the category has none.
+     */
+    private function highest_position( $target ) {
+        global $wpdb;
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $highest = $wpdb->get_var(
+            $wpdb->prepare(
+                'SELECT MAX(CAST(meta_value AS SIGNED)) FROM %i WHERE meta_key = %s',
+                $wpdb->postmeta,
+                Licensio_KB_Article_Order::meta_key( $target )
+            )
+        );
+
+        return null === $highest ? -1 : (int) $highest;
     }
 
     /**

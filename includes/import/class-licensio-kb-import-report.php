@@ -5,8 +5,8 @@
  * A counter bag with one rule behind it: nothing is allowed to be lossy in
  * silence. Every mapping an importer cannot make faithfully increments a named
  * counter and, where the detail matters, records a line the operator can act
- * on. A run that discards a category icon or collapses three article positions
- * into one says so on the way out, with numbers.
+ * on. A run that discards a category icon says so on the way out, with
+ * numbers.
  *
  * The wizard runs one AJAX batch at a time, so the report is kept in an option
  * and reloaded on every batch: counters accumulate across requests, and the

@@ -497,4 +497,33 @@ class Licensio_KB_Heroic_Import_State_Test extends Licensio_KB_Test_Case {
         $this->assertFalse( $state->has_run() );
         $this->assertSame( array(), $state->category_map() );
     }
+
+    /**
+     * A category's recorded highest position survives a reload and is cleared by a restart.
+     *
+     * Kept for the whole run so every batch places imported positions after
+     * the same existing ones; a new run records it again, after whatever the
+     * last run wrote and anyone curated since.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_position_base_lasts_the_run_and_a_restart_clears_it() {
+        $state = $this->new_state();
+
+        $this->assertNull( $state->position_base( 12 ) );
+
+        $state->set_position_base( 12, 30 );
+        $state->set_position_base( 13, -1 );
+
+        $this->assertSame( 30, $this->new_state()->position_base( 12 ) );
+        $this->assertSame( -1, $this->new_state()->position_base( 13 ) );
+
+        $state->finish();
+        $state->restart( array( 'terms', 'articles' ) );
+
+        $this->assertNull( $state->position_base( 12 ) );
+        $this->assertNull( $this->new_state()->position_base( 13 ) );
+    }
 }

@@ -537,28 +537,15 @@ class Licensio_KB_Heroic_Import_Map_Test extends Licensio_KB_Test_Case {
         );
 
         $this->assertSame( 9, $result['order'], 'The kept position must come from category 12, the lowest term ID.' );
-        $this->assertSame( 12, $result['source_term_id'] );
-        $this->assertTrue( $result['ambiguous'] );
-    }
-
-    /**
-     * An article ordered identically everywhere loses nothing, and says so.
-     *
-     * @since 1.0.0
-     *
-     * @return void
-     */
-    public function test_article_order_is_not_ambiguous_when_the_source_agrees() {
-        $result = Licensio_KB_Heroic_Import_Map::article_order(
+        $this->assertSame(
             array(
-                31 => '3',
-                12 => '3',
-            )
+                12 => 9,
+                31 => 5,
+                44 => 1,
+            ),
+            $result['positions'],
+            'Every category keeps its own position.'
         );
-
-        $this->assertSame( 3, $result['order'] );
-        $this->assertSame( 12, $result['source_term_id'] );
-        $this->assertFalse( $result['ambiguous'] );
     }
 
     /**
@@ -572,8 +559,7 @@ class Licensio_KB_Heroic_Import_Map_Test extends Licensio_KB_Test_Case {
         $result = Licensio_KB_Heroic_Import_Map::article_order( array() );
 
         $this->assertSame( 0, $result['order'] );
-        $this->assertSame( 0, $result['source_term_id'] );
-        $this->assertFalse( $result['ambiguous'] );
+        $this->assertSame( array(), $result['positions'] );
     }
 
     /**
@@ -592,7 +578,7 @@ class Licensio_KB_Heroic_Import_Map_Test extends Licensio_KB_Test_Case {
         );
 
         $this->assertSame( 6, $result['order'], 'An empty stored position must not win by having the lowest term ID.' );
-        $this->assertSame( 31, $result['source_term_id'] );
+        $this->assertSame( array( 31 => 6 ), $result['positions'] );
     }
 
     /**
