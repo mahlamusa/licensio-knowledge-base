@@ -288,6 +288,10 @@ final class Licensio_KB {
         $this->term_operations->init_hooks();
         Licensio_KB_Sidebar::init_hooks();
 
+        // The Articles app; built on every request so its REST routes register.
+        $articles_admin = new Licensio_KB_Articles_Admin();
+        $articles_admin->init_hooks();
+
         // On every request: it announces the categories REST controller too.
         $categories_admin = new Licensio_KB_Categories_Admin( $this->assets );
         $categories_admin->init_hooks();

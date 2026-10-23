@@ -86,6 +86,24 @@ export interface ListQuery {
 }
 
 /**
+ * The article the inbox is filtered to.
+ *
+ * The Articles app links here with `article_id` in the page URL to show one
+ * article's feedback.
+ *
+ * @since 1.0.0
+ *
+ * @return {number} The article ID, or 0 for every article.
+ */
+export function articleFilter(): number {
+	const id = Number(
+		new URLSearchParams( window.location.search ).get( 'article_id' )
+	);
+
+	return id > 0 ? id : 0;
+}
+
+/**
  * Fetch one page of feedback.
  *
  * @since 1.0.0
@@ -101,6 +119,12 @@ export async function fetchPage( query: ListQuery ): Promise< FeedbackPage > {
 		page: String( query.page ),
 		per_page: String( query.perPage ),
 	} );
+
+	const articleId = articleFilter();
+
+	if ( articleId > 0 ) {
+		params.set( 'article_id', String( articleId ) );
+	}
 
 	// With plain permalinks the root is `index.php?rest_route=...` and already has a query string.
 	const separator = settings().root.includes( '?' ) ? '&' : '?';

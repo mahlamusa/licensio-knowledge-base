@@ -104,6 +104,22 @@ if ( ! class_exists( 'WP_Post' ) ) {
         public $post_date_gmt = '0000-00-00 00:00:00';
 
         /**
+         * The post slug.
+         *
+         * @since 1.0.0
+         * @var string
+         */
+        public $post_name = '';
+
+        /**
+         * The local last-modified date.
+         *
+         * @since 1.0.0
+         * @var string
+         */
+        public $post_modified = '0000-00-00 00:00:00';
+
+        /**
          * Whether comments are open.
          *
          * @since 1.0.0

@@ -72,6 +72,14 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
     private $cron_cleared = array();
 
     /**
+     * The delete_metadata() calls made, as argument lists.
+     *
+     * @since 1.0.0
+     * @var array<int, array<int, mixed>>
+     */
+    private $meta_deleted = array();
+
+    /**
      * Stub the multisite and cron surface.
      *
      * @since 1.0.0
@@ -84,6 +92,7 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
         $this->blogs        = array();
         $this->current_blog = 0;
         $this->cron_cleared = array();
+        $this->meta_deleted = array();
 
         $GLOBALS['wpdb'] = new Licensio_KB_Test_WPDB(); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 
@@ -114,6 +123,14 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
                 $this->cron_cleared[] = $this->current_blog;
 
                 return 1;
+            }
+        );
+
+        Functions\when( 'delete_metadata' )->alias(
+            function ( ...$args ) {
+                $this->meta_deleted[] = $args;
+
+                return true;
             }
         );
     }
@@ -368,5 +385,52 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
         }
 
         $this->assertNotEmpty( $this->cron_cleared, 'The cron event must still be cleared.' );
+    }
+
+    /**
+     * The article list preferences are deleted for every user.
+     *
+     * They are admin screen state, not visitor content, so they go whatever
+     * the data retention setting says. The fifth argument deletes the key
+     * from every user rather than from user 0.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_article_list_preferences_are_deleted_for_every_user() {
+        $this->seed_site( false );
+
+        Licensio_KB_Uninstaller::uninstall_site();
+
+        $this->assertContains( 'licensio_kb_article_list_prefs', Licensio_KB_Uninstaller::USER_META );
+        $this->assertSame(
+            array( array( 'user', 0, 'licensio_kb_article_list_prefs', '', true ) ),
+            $this->meta_deleted
+        );
+    }
+
+    /**
+     * On multisite the shared user meta is still deleted.
+     *
+     * Users belong to the network, so the first site's pass removes the key
+     * and the later passes find nothing. What matters is that it is never
+     * skipped.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_article_list_preferences_are_deleted_on_a_network() {
+        Functions\when( 'is_multisite' )->justReturn( true );
+        Functions\when( 'get_sites' )->justReturn( array( 1, 2 ) );
+
+        Licensio_KB_Uninstaller::run();
+
+        $this->assertNotEmpty( $this->meta_deleted );
+
+        foreach ( $this->meta_deleted as $call ) {
+            $this->assertSame( array( 'user', 0, 'licensio_kb_article_list_prefs', '', true ), $call );
+        }
     }
 }
