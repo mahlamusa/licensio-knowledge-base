@@ -353,9 +353,10 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
                 'minimum'  => 1,
                 'required' => true,
             ),
+            // Not sanitised here: wp_update_post() applies core's title filters,
+            // which strip markup only for users without unfiltered_html.
             'title'          => array(
-                'type'              => 'string',
-                'sanitize_callback' => 'sanitize_text_field',
+                'type' => 'string',
             ),
             'slug'           => array(
                 'type'              => 'string',
@@ -558,6 +559,9 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
     /**
      * Validate a tag list: term IDs, or `{ name }` for a tag to create.
      *
+     * A new name is checked as it will be saved, so a name that is only
+     * markup is refused here rather than failing when the tag is created.
+     *
      * @since 1.0.0
      *
      * @param mixed $value The value.
@@ -571,7 +575,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
 
         foreach ( $value as $tag ) {
             $is_id   = ( is_int( $tag ) && $tag > 0 ) || ( is_string( $tag ) && ctype_digit( $tag ) && (int) $tag > 0 );
-            $is_name = is_array( $tag ) && isset( $tag['name'] ) && is_string( $tag['name'] ) && '' !== trim( $tag['name'] );
+            $is_name = is_array( $tag ) && isset( $tag['name'] ) && is_string( $tag['name'] ) && '' !== sanitize_text_field( $tag['name'] );
 
             if ( ! $is_id && ! $is_name ) {
                 return new WP_Error( 'rest_invalid_param', __( 'Each tag must be a tag ID or a new tag name.', 'licensio-knowledge-base' ), array( 'status' => 400 ) );
@@ -943,34 +947,35 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
         $holder = $lock_user > 0 ? get_userdata( $lock_user ) : false;
 
         return array(
-            'id'             => $id,
-            'title'          => self::plain_text( $post->post_title ),
-            'slug'           => (string) $post->post_name,
-            'status'         => (string) $post->post_status,
-            'date'           => self::iso_local( $post->post_date ),
-            'modified'       => self::iso_local( $post->post_modified ),
-            'author'         => array(
+            'id'              => $id,
+            'title'           => self::plain_text( $post->post_title ),
+            'slug'            => (string) $post->post_name,
+            'status'          => (string) $post->post_status,
+            'date'            => self::iso_local( $post->post_date ),
+            'modified'        => self::iso_local( $post->post_modified ),
+            'author'          => array(
                 'id'   => (int) $post->post_author,
                 'name' => $author ? self::plain_text( $author->display_name ) : '',
             ),
-            'categories'     => self::term_refs( $post, Licensio_KB_Post_Types::TAXONOMY_CATEGORY ),
-            'tags'           => self::term_refs( $post, Licensio_KB_Post_Types::TAXONOMY_TAG ),
-            'attachments'    => (int) $attachments,
-            'reading_time'   => Licensio_KB_Admin_Columns::reading_time( $id ),
-            'views'          => (int) $figures['views'],
-            'rating'         => array(
+            'categories'      => self::term_refs( $post, Licensio_KB_Post_Types::TAXONOMY_CATEGORY ),
+            'tags'            => self::term_refs( $post, Licensio_KB_Post_Types::TAXONOMY_TAG ),
+            'attachments'     => (int) $attachments,
+            'reading_time'    => Licensio_KB_Admin_Columns::reading_time( $id ),
+            'views'           => (int) $figures['views'],
+            'rating'          => array(
                 'up'    => (int) $figures['up'],
                 'down'  => (int) $figures['down'],
                 'share' => null === $figures['share'] ? null : (int) $figures['share'],
             ),
-            'comment_status' => (string) $post->comment_status,
-            'has_password'   => '' !== (string) $post->post_password,
-            'lock'           => $lock_user > 0 ? array(
+            'needs_attention' => $this->metrics->needs_attention( $figures ),
+            'comment_status'  => (string) $post->comment_status,
+            'has_password'    => '' !== (string) $post->post_password,
+            'lock'            => $lock_user > 0 ? array(
                 'user_id' => $lock_user,
                 'name'    => $holder ? self::plain_text( $holder->display_name ) : '',
             ) : null,
-            'edit_url'       => (string) get_edit_post_link( $id, 'raw' ),
-            'view_url'       => (string) ( 'publish' === $post->post_status ? get_permalink( $post ) : get_preview_post_link( $post ) ),
+            'edit_url'        => (string) get_edit_post_link( $id, 'raw' ),
+            'view_url'        => (string) ( 'publish' === $post->post_status ? get_permalink( $post ) : get_preview_post_link( $post ) ),
         );
     }
 
@@ -1010,7 +1015,9 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      *
      * Every field is checked before anything is written; field errors come
      * back together as a 400 with `data.params`, so the app can show each one
-     * beside its field. A slug that collides is made unique by core.
+     * beside its field. New tags are created before the article is written,
+     * so a tag that cannot be created leaves the article untouched. A slug
+     * that collides is made unique by core.
      *
      * @since 1.0.0
      *
@@ -1045,6 +1052,18 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
 
         list( $postarr, $terms ) = $changes;
 
+        $term_ids = array();
+
+        foreach ( $terms as $taxonomy => $term_values ) {
+            $resolved = $this->resolve_terms( $taxonomy, $term_values );
+
+            if ( is_wp_error( $resolved ) ) {
+                return $resolved;
+            }
+
+            $term_ids[ $taxonomy ] = $resolved;
+        }
+
         if ( count( $postarr ) > 1 ) {
             // wp_update_post() expects slashed data, as core's own callers send it.
             $updated = wp_update_post( wp_slash( $postarr ), true );
@@ -1054,14 +1073,8 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
             }
         }
 
-        foreach ( $terms as $taxonomy => $term_values ) {
-            $term_ids = $this->resolve_terms( $taxonomy, $term_values );
-
-            if ( is_wp_error( $term_ids ) ) {
-                return $term_ids;
-            }
-
-            $set = wp_set_object_terms( $id, $term_ids, $taxonomy, false );
+        foreach ( $term_ids as $taxonomy => $ids ) {
+            $set = wp_set_object_terms( $id, $ids, $taxonomy, false );
 
             if ( is_wp_error( $set ) ) {
                 return $set;

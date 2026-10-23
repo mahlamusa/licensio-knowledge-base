@@ -4,7 +4,8 @@
  * Opens the app through its hidden admin page and checks what only a real
  * WordPress can answer: the pills match the database, a Popconfirm stands
  * before every write and Cancel sends nothing, a quick edit is saved only
- * once confirmed, and the list state lives in the URL.
+ * once confirmed, and the list state lives in the URL, with back and forward
+ * stepping through it.
  *
  * Needs a running WordPress with this plugin active, an administrator
  * account and at least one article, so it is skipped unless
@@ -152,5 +153,28 @@ test.describe( 'Articles app', () => {
 			'Published'
 		);
 		await expect( page ).toHaveURL( /window=7/ );
+	} );
+
+	test( 'back and forward step through status and window changes', async ( {
+		page,
+	} ) => {
+		const app = await openContentManager( page, 'articles' );
+		const active = app.locator( '.lkb-pill.is-active' );
+
+		await app.locator( '.lkb-pill', { hasText: 'Drafts' } ).click();
+		await expect( page ).toHaveURL( /status=draft/ );
+		await app.getByText( '7 days', { exact: true } ).click();
+		await expect( page ).toHaveURL( /window=7/ );
+
+		await page.goBack();
+		await expect( page ).not.toHaveURL( /window=7/ );
+		await expect( active ).toContainText( 'Drafts' );
+
+		await page.goBack();
+		await expect( page ).not.toHaveURL( /status=draft/ );
+		await expect( active ).toContainText( 'All' );
+
+		await page.goForward();
+		await expect( active ).toContainText( 'Drafts' );
 	} );
 } );

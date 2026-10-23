@@ -13,9 +13,12 @@
  * hooks that keep the search index and caches in step still fire.
  *
  * Trash, restore, status and term changes return a snapshot of what each
- * article was before, which `revert()` puts back. Revert accepts only those
- * fields, only from a snapshot taken by this user in the last 15 minutes, and
- * checks every article's permission and lock again. Author and comment
+ * article was before, which `revert()` puts back. The snapshot comes with a
+ * token: a keyed hash of the snapshot itself, the time it was taken and the
+ * user who took it. Revert accepts only those fields, only with a token that
+ * matches that exact snapshot for this user, only in the last 15 minutes, only
+ * terms that exist in their taxonomy, and checks every article's permission
+ * and lock again. Author and comment
  * changes are deliberately not undoable: their earlier values are rarely
  * wanted and would widen what revert has to trust.
  *
@@ -129,7 +132,7 @@ class Licensio_KB_Article_Bulk {
             'failed'      => array(),
             'previous'    => array(),
             'snapshot_at' => $snapshot_at,
-            'token'       => self::snapshot_token( $snapshot_at ),
+            'token'       => '',
         );
 
         foreach ( self::clean_ids( $ids ) as $id ) {
@@ -161,6 +164,9 @@ class Licensio_KB_Article_Bulk {
                 $result['previous'][ $id ] = $snapshot;
             }
         }
+
+        // Minted last, so the token covers the snapshot that goes back.
+        $result['token'] = self::snapshot_token( $snapshot_at, $result['previous'] );
 
         return $result;
     }
@@ -389,9 +395,11 @@ class Licensio_KB_Article_Bulk {
     /**
      * Check a snapshot before anything is reverted.
      *
-     * The snapshot must hold at most `MAX_IDS` articles, only the revertible
-     * fields with well-formed values, and carry a token minted for this user
-     * no more than 15 minutes ago.
+     * The snapshot must hold at most `MAX_IDS` articles and only the
+     * revertible fields with well-formed values. Its token must match this
+     * exact snapshot, its time and the current user, so a changed snapshot or
+     * one taken by someone else is refused. It must be no more than 15
+     * minutes old, and every term in it must exist in its taxonomy.
      *
      * @since 1.0.0
      *
@@ -404,16 +412,6 @@ class Licensio_KB_Article_Bulk {
     public static function validate_snapshot( array $previous, $snapshot_at, $token ) {
         if ( empty( $previous ) || count( $previous ) > self::MAX_IDS ) {
             return self::invalid( 'previous', __( 'Send between 1 and 100 articles to undo.', 'licensio-knowledge-base' ) );
-        }
-
-        if ( ! hash_equals( self::snapshot_token( (int) $snapshot_at ), (string) $token ) ) {
-            return new WP_Error( 'licensio_kb_snapshot_invalid', __( 'This undo is not valid for your account.', 'licensio-knowledge-base' ), array( 'status' => 400 ) );
-        }
-
-        $age = time() - (int) $snapshot_at;
-
-        if ( $age < -60 || $age > self::SNAPSHOT_TTL ) {
-            return new WP_Error( 'licensio_kb_snapshot_expired', __( 'This change is too old to undo.', 'licensio-knowledge-base' ), array( 'status' => 400 ) );
         }
 
         foreach ( $previous as $id => $snapshot ) {
@@ -437,6 +435,43 @@ class Licensio_KB_Article_Bulk {
 
             if ( isset( $snapshot['terms'] ) && ! self::valid_terms( $snapshot['terms'] ) ) {
                 return self::invalid( 'previous', __( 'The terms to undo to are not valid.', 'licensio-knowledge-base' ) );
+            }
+        }
+
+        if ( ! hash_equals( self::snapshot_token( (int) $snapshot_at, $previous ), (string) $token ) ) {
+            return new WP_Error( 'licensio_kb_snapshot_invalid', __( 'This undo is not valid for your account.', 'licensio-knowledge-base' ), array( 'status' => 400 ) );
+        }
+
+        $age = time() - (int) $snapshot_at;
+
+        if ( $age < -60 || $age > self::SNAPSHOT_TTL ) {
+            return new WP_Error( 'licensio_kb_snapshot_expired', __( 'This change is too old to undo.', 'licensio-knowledge-base' ), array( 'status' => 400 ) );
+        }
+
+        foreach ( $previous as $snapshot ) {
+            if ( isset( $snapshot['terms'] ) && ! self::terms_exist( $snapshot['terms'] ) ) {
+                return self::invalid( 'previous', __( 'The terms to undo to are not valid.', 'licensio-knowledge-base' ) );
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Whether every term in a well-formed snapshot exists in its taxonomy.
+     *
+     * @since 1.0.0
+     *
+     * @param array<string, array<int|string>> $terms Taxonomy to term IDs.
+     *
+     * @return bool True when every term belongs to the taxonomy it is listed under.
+     */
+    private static function terms_exist( array $terms ) {
+        foreach ( $terms as $taxonomy => $term_ids ) {
+            foreach ( $term_ids as $term_id ) {
+                if ( ! term_exists( (int) $term_id, (string) $taxonomy ) ) {
+                    return false;
+                }
             }
         }
 
@@ -720,16 +755,65 @@ class Licensio_KB_Article_Bulk {
     }
 
     /**
-     * The token that ties a snapshot to its time and to the current user.
+     * The token that ties a snapshot to its content, its time and the current user.
+     *
+     * A keyed hash (`wp_hash()` with the nonce salt) over the time, the user
+     * ID and a hash of the snapshot in canonical form, so the same snapshot
+     * gives the same token however its keys and term IDs arrive.
      *
      * @since 1.0.0
      *
-     * @param int $snapshot_at When the snapshot was taken, as a Unix time.
+     * @param int                      $snapshot_at When the snapshot was taken, as a Unix time.
+     * @param array<int|string, mixed> $previous    Article ID to its snapshot.
      *
      * @return string The token.
      */
-    public static function snapshot_token( $snapshot_at ) {
-        return wp_hash( 'licensio_kb_revert|' . (int) $snapshot_at . '|' . get_current_user_id(), 'nonce' );
+    public static function snapshot_token( $snapshot_at, array $previous ) {
+        $content = hash( 'sha256', (string) wp_json_encode( self::canonical_snapshot( $previous ) ) );
+
+        return wp_hash( 'licensio_kb_revert|' . (int) $snapshot_at . '|' . get_current_user_id() . '|' . $content, 'nonce' );
+    }
+
+    /**
+     * A snapshot in canonical form: sorted by article ID, field and taxonomy,
+     * with term IDs as sorted integers.
+     *
+     * @since 1.0.0
+     *
+     * @param array<int|string, mixed> $previous Article ID to its snapshot.
+     *
+     * @return array<int, array<int, mixed>> The canonical snapshot, as lists so key order cannot matter.
+     */
+    private static function canonical_snapshot( array $previous ) {
+        $canonical = array();
+
+        foreach ( $previous as $id => $snapshot ) {
+            $fields = array();
+
+            foreach ( (array) $snapshot as $field => $value ) {
+                if ( 'terms' === $field ) {
+                    $terms = array();
+
+                    foreach ( (array) $value as $taxonomy => $term_ids ) {
+                        $term_ids = array_map( 'intval', (array) $term_ids );
+                        sort( $term_ids );
+                        $terms[] = array( (string) $taxonomy, $term_ids );
+                    }
+
+                    sort( $terms );
+                    $value = $terms;
+                }
+
+                $fields[] = array( (string) $field, $value );
+            }
+
+            sort( $fields );
+            $canonical[] = array( (int) $id, $fields );
+        }
+
+        sort( $canonical );
+
+        return $canonical;
     }
 
     /**

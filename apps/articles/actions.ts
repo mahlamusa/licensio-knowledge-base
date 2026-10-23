@@ -9,8 +9,7 @@
  */
 
 import { message } from 'ant-design-vue';
-import { __, sprintf } from '../components/i18n';
-import { _n } from './plural';
+import { __, _n, sprintf } from '../components/i18n';
 import { showUndoToast } from './components/UndoToast';
 import { messageOf, useArticlesStore as articlesStore } from './store';
 import type { BulkAction, BulkArgs, SkipReason } from './types';
@@ -284,19 +283,50 @@ export async function performAction(
 	showUndoToast( text, async () => {
 		try {
 			const reverted = await store.undo( results );
+			const count = reverted.done.length;
 
-			message.success(
-				sprintf(
-					/* translators: %d: number of articles. */
-					_n(
-						'%d article put back.',
-						'%d articles put back.',
-						reverted,
-						'licensio-knowledge-base'
+			if ( count > 0 ) {
+				message.success(
+					sprintf(
+						/* translators: %d: number of articles. */
+						_n(
+							'%d article put back.',
+							'%d articles put back.',
+							count,
+							'licensio-knowledge-base'
+						),
+						count
+					)
+				);
+			}
+
+			const missed = reverted.skipped.length + reverted.failed.length;
+
+			if ( missed > 0 ) {
+				const reasons = [
+					...new Set( [
+						...reverted.skipped.map( ( { reason } ) =>
+							reasonLabel( reason )
+						),
+						...reverted.failed.map( ( { message: why } ) => why ),
+					] ),
+				].join( '; ' );
+
+				message.warning(
+					sprintf(
+						/* translators: 1: number of articles, 2: the reasons. */
+						_n(
+							'%1$d article could not be put back: %2$s',
+							'%1$d articles could not be put back: %2$s',
+							missed,
+							'licensio-knowledge-base'
+						),
+						missed,
+						reasons
 					),
-					reverted
-				)
-			);
+					8
+				);
+			}
 		} catch ( error ) {
 			message.error( messageOf( error ) );
 		}

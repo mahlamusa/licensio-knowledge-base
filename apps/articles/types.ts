@@ -82,6 +82,8 @@ export interface ArticleItem {
 	views: number;
 	/** Votes in the selected window; share is a 0-100 percentage, null with no votes. */
 	rating: { up: number; down: number; share: number | null };
+	/** Below the low rating threshold with enough votes, by the server's exact rule. */
+	needs_attention: boolean;
 	comment_status: 'open' | 'closed';
 	has_password: boolean;
 	/** Another user is editing; null when free. */

@@ -113,6 +113,9 @@ const inTrash = computed( () => 'trash' === store.query.status );
 /**
  * Whether an article's rating marks it as needing attention.
  *
+ * The server decides with the same exact rule as the Needs attention
+ * filter, so the badge and the filter always agree.
+ *
  * @since 1.0.0
  *
  * @param {ArticleItem} item The article.
@@ -120,13 +123,7 @@ const inTrash = computed( () => 'trash' === store.query.status );
  * @return {boolean} True below the threshold with enough votes.
  */
 function needsAttention( item: ArticleItem ): boolean {
-	const votes = item.rating.up + item.rating.down;
-
-	return (
-		null !== item.rating.share &&
-		item.rating.share < settings.lowRating.threshold &&
-		votes >= settings.lowRating.minVotes
-	);
+	return item.needs_attention;
 }
 
 /**

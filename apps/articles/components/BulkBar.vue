@@ -13,9 +13,8 @@
 import { computed, ref, watch } from 'vue';
 import ConfirmButton from '../../components/ConfirmButton.vue';
 import TermSelect from '../../components/TermSelect.vue';
-import { __, sprintf } from '../../components/i18n';
+import { __, _n, sprintf } from '../../components/i18n';
 import { confirmTitle, performAction } from '../actions';
-import { _n } from '../plural';
 import { useArticlesStore } from '../store';
 import AuthorSelect from './AuthorSelect.vue';
 import type { TermValue } from '../../components/types/terms';

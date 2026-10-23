@@ -3,8 +3,9 @@
  *
  * Holds the view (filters, sort, page, window), the loaded page, the
  * selection and the state of a running bulk action, and is the only place
- * that talks to the API. The view is mirrored into the URL: filter changes
- * replace the history entry, page and sort changes push a new one.
+ * that talks to the API. The view is mirrored into the URL: every filter,
+ * status, window, page and sort change pushes a history entry, so back and
+ * forward step through them; a typed search replaces the entry instead.
  *
  * @since 1.0.0
  */
@@ -30,6 +31,7 @@ import type {
 	BulkResult,
 	ListPreferences,
 	PerPage,
+	RevertResult,
 	SkipReason,
 	StatusCounts,
 } from './types';
@@ -78,6 +80,7 @@ interface State {
 
 let preferencesTimer: ReturnType< typeof setTimeout > | undefined;
 let latestLoad = 0;
+let latestSelect = 0;
 
 /**
  * An empty bulk run.
@@ -318,16 +321,18 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 		 * @since 1.0.0
 		 *
 		 * @param {Partial<ArticleFilters>} filters The filters to change.
+		 * @param {boolean}                 push    Push a history entry; false replaces it, for typed search.
 		 *
 		 * @return {Promise<void>} Resolves once loaded.
 		 */
 		async setFilters(
-			filters: Partial< ArticleFilters >
+			filters: Partial< ArticleFilters >,
+			push = true
 		): Promise< void > {
 			this.query = { ...this.query, ...filters, page: 1 };
 			this.clearSelection();
 			this.quickEditId = 0;
-			this.syncUrl( false );
+			this.syncUrl( push );
 
 			await this.load();
 		},
@@ -443,7 +448,11 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 		},
 
 		/**
-		 * Replace the selection with rows on this page.
+		 * Replace the selection from the table's checkboxes.
+		 *
+		 * After "Select all matching", unticking rows keeps the rest of the
+		 * matching selection across pages. Anything else is a selection of
+		 * rows on this page.
 		 *
 		 * @since 1.0.0
 		 *
@@ -452,6 +461,17 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 		 * @return {void}
 		 */
 		select( ids: number[] ): void {
+			latestSelect++;
+
+			if ( this.allMatching && ids.length > 0 ) {
+				const current = new Set( this.selected );
+
+				if ( ids.every( ( id ) => current.has( id ) ) ) {
+					this.selected = ids;
+					return;
+				}
+			}
+
 			this.selected = ids;
 			this.allMatching = false;
 			this.truncated = false;
@@ -460,24 +480,38 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 		/**
 		 * Select every article matching the filters, across pages.
 		 *
+		 * The answer is dropped when the filters or the selection changed
+		 * while it was on its way, so it can never select articles from a
+		 * view the user has left.
+		 *
 		 * @since 1.0.0
 		 *
 		 * @return {Promise<void>} Resolves once the IDs are selected.
 		 */
 		async selectAllMatching(): Promise< void > {
+			const ticket = ++latestSelect;
+
 			this.selecting = true;
 			this.error = '';
 
 			try {
 				const result = await fetchIds( this.filters );
 
+				if ( ticket !== latestSelect ) {
+					return;
+				}
+
 				this.selected = result.ids;
 				this.allMatching = true;
 				this.truncated = result.truncated;
 			} catch ( error ) {
-				this.error = messageOf( error );
+				if ( ticket === latestSelect ) {
+					this.error = messageOf( error );
+				}
 			} finally {
-				this.selecting = false;
+				if ( ticket === latestSelect ) {
+					this.selecting = false;
+				}
 			}
 		},
 
@@ -489,6 +523,8 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 		 * @return {void}
 		 */
 		clearSelection(): void {
+			latestSelect++;
+			this.selecting = false;
 			this.selected = [];
 			this.allMatching = false;
 			this.truncated = false;
@@ -578,10 +614,14 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 		 *
 		 * @param {BulkResult[]} results The batches to undo.
 		 *
-		 * @return {Promise<number>} How many articles were reverted.
+		 * @return {Promise<RevertResult>} What was put back, skipped or failed, over every batch.
 		 */
-		async undo( results: BulkResult[] ): Promise< number > {
-			let reverted = 0;
+		async undo( results: BulkResult[] ): Promise< RevertResult > {
+			const reverted: RevertResult = {
+				done: [],
+				skipped: [],
+				failed: [],
+			};
 
 			try {
 				for ( const result of results ) {
@@ -595,7 +635,9 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 						token: result.token,
 					} );
 
-					reverted += answer.done.length;
+					reverted.done.push( ...answer.done );
+					reverted.skipped.push( ...answer.skipped );
+					reverted.failed.push( ...answer.failed );
 				}
 			} finally {
 				await this.load();

@@ -144,6 +144,11 @@ class Licensio_KB_Article_Bulk_Test extends Licensio_KB_Test_Case {
             }
         );
         Functions\when( 'wp_get_object_terms' )->justReturn( array( '4', '6' ) );
+        Functions\when( 'term_exists' )->alias(
+            function ( $term, $taxonomy ) {
+                return (int) $term < 100 && in_array( $taxonomy, array( 'licensio_category', 'licensio_tag' ), true ) ? array( 'term_id' => (int) $term ) : null;
+            }
+        );
     }
 
     /**
@@ -358,7 +363,8 @@ class Licensio_KB_Article_Bulk_Test extends Licensio_KB_Test_Case {
         $this->assertSame( array( 1 => array( 'status' => 'pending' ) ), $status['previous'] );
         $this->assertSame( array( 1 => array( 'terms' => array( 'licensio_tag' => array( 4, 6 ) ) ) ), $terms['previous'] );
         $this->assertSame( array(), $author['previous'] );
-        $this->assertSame( Licensio_KB_Article_Bulk::snapshot_token( $status['snapshot_at'] ), $status['token'] );
+        $this->assertSame( Licensio_KB_Article_Bulk::snapshot_token( $status['snapshot_at'], $status['previous'] ), $status['token'] );
+        $this->assertTrue( Licensio_KB_Article_Bulk::validate_snapshot( $terms['previous'], $terms['snapshot_at'], $terms['token'] ), 'A snapshot is valid with its own token.' );
     }
 
     /**
@@ -396,11 +402,11 @@ class Licensio_KB_Article_Bulk_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     public function test_revert_accepts_only_the_allow_listed_fields() {
-        $now   = time();
-        $token = Licensio_KB_Article_Bulk::snapshot_token( $now );
+        $now = time();
 
         foreach ( array( 'author', 'comment_status', 'post_content', 'post_title' ) as $field ) {
-            $result = Licensio_KB_Article_Bulk::validate_snapshot( array( 1 => array( $field => 'x' ) ), $now, $token );
+            $previous = array( 1 => array( $field => 'x' ) );
+            $result   = Licensio_KB_Article_Bulk::validate_snapshot( $previous, $now, Licensio_KB_Article_Bulk::snapshot_token( $now, $previous ) );
 
             $this->assertInstanceOf( 'WP_Error', $result, $field . ' must not be revertible.' );
             $this->assertSame( 'rest_invalid_param', $result->get_error_code() );
@@ -416,23 +422,94 @@ class Licensio_KB_Article_Bulk_Test extends Licensio_KB_Test_Case {
         );
 
         foreach ( $bad as $previous ) {
-            $this->assertInstanceOf( 'WP_Error', Licensio_KB_Article_Bulk::validate_snapshot( $previous, $now, $token ) );
+            $this->assertInstanceOf( 'WP_Error', Licensio_KB_Article_Bulk::validate_snapshot( $previous, $now, Licensio_KB_Article_Bulk::snapshot_token( $now, $previous ) ) );
         }
 
-        $this->assertTrue(
-            Licensio_KB_Article_Bulk::validate_snapshot(
-                array(
-                    1 => array( 'status' => 'trash' ),
-                    2 => array( 'terms' => array( 'licensio_category' => array( 3, '4' ) ) ),
-                ),
-                $now,
-                $token
-            )
+        $good = array(
+            1 => array( 'status' => 'trash' ),
+            2 => array( 'terms' => array( 'licensio_category' => array( 3, '4' ) ) ),
         );
+
+        $this->assertTrue( Licensio_KB_Article_Bulk::validate_snapshot( $good, $now, Licensio_KB_Article_Bulk::snapshot_token( $now, $good ) ) );
     }
 
     /**
-     * Revert refuses a snapshot older than 15 minutes or minted for someone else.
+     * The token is bound to the snapshot: any change to it is refused.
+     *
+     * The same snapshot sent back with its keys in another order and its term
+     * IDs as strings, as JSON delivers it, still matches.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_revert_refuses_a_tampered_snapshot() {
+        $now      = time();
+        $previous = array(
+            1 => array( 'status' => 'draft' ),
+            2 => array( 'terms' => array( 'licensio_tag' => array( 4, 6 ) ) ),
+        );
+        $token    = Licensio_KB_Article_Bulk::snapshot_token( $now, $previous );
+
+        $same = array(
+            '2' => array( 'terms' => array( 'licensio_tag' => array( '6', '4' ) ) ),
+            '1' => array( 'status' => 'draft' ),
+        );
+        $this->assertTrue( Licensio_KB_Article_Bulk::validate_snapshot( $same, $now, $token ) );
+
+        $tampered = array(
+            'another status'    => array(
+                1 => array( 'status' => 'publish' ),
+                2 => array( 'terms' => array( 'licensio_tag' => array( 4, 6 ) ) ),
+            ),
+            'another term'      => array(
+                1 => array( 'status' => 'draft' ),
+                2 => array( 'terms' => array( 'licensio_tag' => array( 4, 7 ) ) ),
+            ),
+            'another taxonomy'  => array(
+                1 => array( 'status' => 'draft' ),
+                2 => array( 'terms' => array( 'licensio_category' => array( 4, 6 ) ) ),
+            ),
+            'another article'   => array(
+                1 => array( 'status' => 'draft' ),
+                3 => array( 'terms' => array( 'licensio_tag' => array( 4, 6 ) ) ),
+            ),
+            'an extra article'  => array(
+                1 => array( 'status' => 'draft' ),
+                2 => array( 'terms' => array( 'licensio_tag' => array( 4, 6 ) ) ),
+                9 => array( 'status' => 'draft' ),
+            ),
+            'a dropped article' => array(
+                1 => array( 'status' => 'draft' ),
+            ),
+        );
+
+        foreach ( $tampered as $label => $changed ) {
+            $result = Licensio_KB_Article_Bulk::validate_snapshot( $changed, $now, $token );
+
+            $this->assertInstanceOf( 'WP_Error', $result, $label );
+            $this->assertSame( 'licensio_kb_snapshot_invalid', $result->get_error_code(), $label );
+        }
+    }
+
+    /**
+     * Revert refuses term IDs that are not terms of the taxonomy they are listed under.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_revert_refuses_terms_from_another_taxonomy() {
+        $now      = time();
+        $previous = array( 1 => array( 'terms' => array( 'licensio_tag' => array( 4, 150 ) ) ) );
+        $result   = Licensio_KB_Article_Bulk::validate_snapshot( $previous, $now, Licensio_KB_Article_Bulk::snapshot_token( $now, $previous ) );
+
+        $this->assertInstanceOf( 'WP_Error', $result );
+        $this->assertSame( 'rest_invalid_param', $result->get_error_code() );
+    }
+
+    /**
+     * Revert refuses a snapshot older than 15 minutes or taken by someone else.
      *
      * @since 1.0.0
      *
@@ -442,17 +519,17 @@ class Licensio_KB_Article_Bulk_Test extends Licensio_KB_Test_Case {
         $previous = array( 1 => array( 'status' => 'draft' ) );
 
         $fresh = time() - 14 * MINUTE_IN_SECONDS;
-        $this->assertTrue( Licensio_KB_Article_Bulk::validate_snapshot( $previous, $fresh, Licensio_KB_Article_Bulk::snapshot_token( $fresh ) ) );
+        $this->assertTrue( Licensio_KB_Article_Bulk::validate_snapshot( $previous, $fresh, Licensio_KB_Article_Bulk::snapshot_token( $fresh, $previous ) ) );
 
         $old    = time() - 16 * MINUTE_IN_SECONDS;
-        $result = Licensio_KB_Article_Bulk::validate_snapshot( $previous, $old, Licensio_KB_Article_Bulk::snapshot_token( $old ) );
+        $result = Licensio_KB_Article_Bulk::validate_snapshot( $previous, $old, Licensio_KB_Article_Bulk::snapshot_token( $old, $previous ) );
         $this->assertSame( 'licensio_kb_snapshot_expired', $result->get_error_code() );
 
         // A newer time with the old token: the age cannot be forged.
-        $result = Licensio_KB_Article_Bulk::validate_snapshot( $previous, time(), Licensio_KB_Article_Bulk::snapshot_token( $old ) );
+        $result = Licensio_KB_Article_Bulk::validate_snapshot( $previous, time(), Licensio_KB_Article_Bulk::snapshot_token( $old, $previous ) );
         $this->assertSame( 'licensio_kb_snapshot_invalid', $result->get_error_code() );
 
-        $token = Licensio_KB_Article_Bulk::snapshot_token( $fresh );
+        $token = Licensio_KB_Article_Bulk::snapshot_token( $fresh, $previous );
         Functions\when( 'get_current_user_id' )->justReturn( 4 );
         $result = Licensio_KB_Article_Bulk::validate_snapshot( $previous, $fresh, $token );
         $this->assertSame( 'licensio_kb_snapshot_invalid', $result->get_error_code() );
@@ -476,16 +553,13 @@ class Licensio_KB_Article_Bulk_Test extends Licensio_KB_Test_Case {
 
         $this->denied = array( 'publish_posts' );
 
-        $result = $bulk->revert(
-            array(
-                1 => array( 'status' => 'publish' ),
-                2 => array( 'status' => 'draft' ),
-                3 => array( 'terms' => array( 'licensio_tag' => array( 4 ) ) ),
-                5 => array( 'status' => 'draft' ),
-            ),
-            $now,
-            Licensio_KB_Article_Bulk::snapshot_token( $now )
+        $previous = array(
+            1 => array( 'status' => 'publish' ),
+            2 => array( 'status' => 'draft' ),
+            3 => array( 'terms' => array( 'licensio_tag' => array( 4 ) ) ),
+            5 => array( 'status' => 'draft' ),
         );
+        $result   = $bulk->revert( $previous, $now, Licensio_KB_Article_Bulk::snapshot_token( $now, $previous ) );
 
         $this->assertSame( array( 3 ), $result['done'] );
         $this->assertSame(
@@ -519,16 +593,13 @@ class Licensio_KB_Article_Bulk_Test extends Licensio_KB_Test_Case {
             }
         );
 
-        $now    = time();
-        $result = ( new Licensio_KB_Article_Bulk() )->revert(
-            array(
-                1 => array( 'status' => 'publish' ),
-                2 => array( 'status' => 'trash' ),
-                3 => array( 'status' => 'pending' ),
-            ),
-            $now,
-            Licensio_KB_Article_Bulk::snapshot_token( $now )
+        $now      = time();
+        $previous = array(
+            1 => array( 'status' => 'publish' ),
+            2 => array( 'status' => 'trash' ),
+            3 => array( 'status' => 'pending' ),
         );
+        $result   = ( new Licensio_KB_Article_Bulk() )->revert( $previous, $now, Licensio_KB_Article_Bulk::snapshot_token( $now, $previous ) );
 
         $this->assertSame( array( 1, 2, 3 ), $result['done'] );
         $this->assertSame( 'publish', call_user_func( $filter, 'draft' ) );

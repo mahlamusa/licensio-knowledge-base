@@ -234,7 +234,7 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
     public function test_tag_values_are_ids_or_new_names() {
         $this->assertTrue( Licensio_KB_Articles_REST_Controller::validate_tag_values( array( 4, '5', array( 'name' => 'New' ) ) ) );
 
-        foreach ( array( 'x', array( 0 ), array( -2 ), array( array( 'name' => ' ' ) ), array( array( 'slug' => 'a' ) ), array( 1.5 ) ) as $bad ) {
+        foreach ( array( 'x', array( 0 ), array( -2 ), array( array( 'name' => ' ' ) ), array( array( 'name' => '<b></b>' ) ), array( array( 'slug' => 'a' ) ), array( 1.5 ) ) as $bad ) {
             $this->assertInstanceOf( 'WP_Error', Licensio_KB_Articles_REST_Controller::validate_tag_values( $bad ) );
         }
     }
@@ -368,6 +368,79 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
             ),
             $args['orderby']
         );
+    }
+
+    /**
+     * Each filter on its own maps onto the query, and a date range may be open on one side.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_each_filter_maps_onto_the_query_on_its_own() {
+        $single = array(
+            'category'      => array(
+                'taxonomy'         => 'licensio_category',
+                'field'            => 'term_id',
+                'terms'            => array( 3 ),
+                'include_children' => true,
+            ),
+            'tag'           => array(
+                'taxonomy'         => 'licensio_tag',
+                'field'            => 'term_id',
+                'terms'            => array( 3 ),
+                'include_children' => false,
+            ),
+            'uncategorised' => array(
+                'taxonomy' => 'licensio_category',
+                'operator' => 'NOT EXISTS',
+            ),
+            'untagged'      => array(
+                'taxonomy' => 'licensio_tag',
+                'operator' => 'NOT EXISTS',
+            ),
+        );
+
+        foreach ( $single as $filter => $clause ) {
+            $args = $this->controller->query_args( array( $filter => in_array( $filter, array( 'category', 'tag' ), true ) ? 3 : true ) );
+
+            $this->assertSame(
+                array(
+                    'relation' => 'AND',
+                    $clause,
+                ),
+                $args['tax_query'],
+                $filter
+            );
+            $this->assertArrayNotHasKey( 'date_query', $args, $filter );
+            $this->assertArrayNotHasKey( 'author', $args, $filter );
+        }
+
+        $after = $this->controller->query_args( array( 'after' => '2026-01-05' ) );
+        $this->assertSame(
+            array(
+                'after'     => array(
+                    'year'  => 2026,
+                    'month' => 1,
+                    'day'   => 5,
+                ),
+                'column'    => 'post_date',
+                'inclusive' => true,
+            ),
+            $after['date_query'][0]
+        );
+
+        $before = $this->controller->query_args( array( 'before' => '2026-02-28' ) );
+        $this->assertArrayNotHasKey( 'after', $before['date_query'][0] );
+        $this->assertSame( 28, $before['date_query'][0]['before']['day'] );
+
+        $this->assertArrayNotHasKey( 'date_query', $this->controller->query_args( array( 'after' => '2026-13-40' ) ), 'An impossible day is ignored.' );
+        $this->assertSame( 5, $this->controller->query_args( array( 'author' => 5 ) )['author'] );
+        $this->assertArrayNotHasKey( 'tax_query', $this->controller->query_args( array( 'author' => 5 ) ) );
+
+        $attention = $this->controller->query_args( array( 'needs_attention' => true ) );
+        $this->assertTrue( $attention[ Licensio_KB_Article_Metrics::QUERY_VAR ]['needs_attention'] );
+        $this->assertArrayNotHasKey( 'tax_query', $attention );
     }
 
     /**
@@ -703,6 +776,48 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
             ),
             $result[1]
         );
+    }
+
+    /**
+     * The title reaches core as typed, so core's own title filters decide.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_title_is_passed_to_core_unsanitised() {
+        $this->assertArrayNotHasKey( 'sanitize_callback', $this->controller->get_update_args()['title'] );
+
+        $result = $this->controller->collect_changes( $this->patch( array( 'title' => 'Use a < b in <code>WP_Query</code>' ) ), $this->post() );
+
+        $this->assertSame( 'Use a < b in <code>WP_Query</code>', $result[0]['post_title'] );
+    }
+
+    /**
+     * A tag that cannot be created stops the quick edit before the article is written.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_failed_new_tag_writes_nothing() {
+        Functions\when( 'get_post' )->justReturn( $this->post() );
+        Functions\when( 'wp_slash' )->returnArg();
+        Functions\when( 'wp_insert_term' )->justReturn( new WP_Error( 'term_exists', 'No.' ) );
+        Functions\expect( 'wp_update_post' )->never();
+        Functions\expect( 'wp_set_object_terms' )->never();
+
+        $result = $this->controller->update_item(
+            $this->patch(
+                array(
+                    'title' => 'Renamed',
+                    'tags'  => array( array( 'name' => 'Fresh' ) ),
+                )
+            )
+        );
+
+        $this->assertInstanceOf( 'WP_Error', $result );
+        $this->assertSame( 'term_exists', $result->get_error_code() );
     }
 
     /**

@@ -15,7 +15,7 @@ import { lkbTheme } from '../styles/theme';
  * @since 1.0.0
  */
 
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { settings } from './api';
 import { useFeedbackStore } from './store';
 import AppHeader from '../components/AppHeader.vue';
@@ -79,6 +79,45 @@ function isHelpful( item: FeedbackItem ): boolean {
 	return item.vote > 0;
 }
 
+/**
+ * The article the inbox is filtered to, from the `article_id` the Articles
+ * app links here with. 0 when it shows every article.
+ */
+const articleId = ref(
+	Math.max(
+		0,
+		Number(
+			new URLSearchParams( window.location.search ).get( 'article_id' )
+		) || 0
+	)
+);
+
+/** The filtered article's title, once a row of it has loaded. */
+const articleName = computed(
+	() =>
+		store.items.find( ( item ) => item.articleId === articleId.value )
+			?.articleName ?? ''
+);
+
+/**
+ * Show every article's feedback again.
+ *
+ * Drops `article_id` from the URL, which is where the list request reads it.
+ *
+ * @since 1.0.0
+ *
+ * @return {Promise<void>} Resolves once the first page is loaded.
+ */
+async function clearArticle(): Promise< void > {
+	const url = new URL( window.location.href );
+
+	url.searchParams.delete( 'article_id' );
+	window.history.replaceState( null, '', url.toString() );
+	articleId.value = 0;
+
+	await store.filter( {} );
+}
+
 onMounted( () => {
 	store.load();
 } );
@@ -101,6 +140,22 @@ onMounted( () => {
 					:message="store.error"
 					class="licensio-kb-inbox__error"
 				/>
+
+				<a-alert
+					v-if="articleId > 0"
+					type="info"
+					show-icon
+					closable
+					:message="articleName ? `Filtered to article: ${ articleName }` : `Filtered to article #${ articleId }`"
+					class="licensio-kb-inbox__article"
+					@close="clearArticle"
+				>
+					<template #action>
+						<a-button size="small" @click="clearArticle">
+							Show all articles
+						</a-button>
+					</template>
+				</a-alert>
 
 				<div class="lkb-toolbar">
 					<div class="lkb-pills" role="group" aria-label="Filter by status">
@@ -228,7 +283,8 @@ onMounted( () => {
 </template>
 
 <style scoped>
-.licensio-kb-inbox__error {
+.licensio-kb-inbox__error,
+.licensio-kb-inbox__article {
 	margin-bottom: var(--lkb-gap);
 }
 

@@ -73,7 +73,7 @@ function onSearch( value: string ): void {
 	clearTimeout( searchTimer );
 	searchTimer = setTimeout( () => {
 		if ( search.value.trim() !== store.query.search.trim() ) {
-			store.setFilters( { search: search.value.trim() } );
+			store.setFilters( { search: search.value.trim() }, false );
 		}
 	}, SEARCH_DELAY );
 }
