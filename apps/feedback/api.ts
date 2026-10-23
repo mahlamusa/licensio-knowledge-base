@@ -102,6 +102,15 @@ export async function fetchPage( query: ListQuery ): Promise< FeedbackPage > {
 		per_page: String( query.perPage ),
 	} );
 
+	// The Articles app links here with `article_id` to show one article's feedback.
+	const articleId = Number(
+		new URLSearchParams( window.location.search ).get( 'article_id' )
+	);
+
+	if ( articleId > 0 ) {
+		params.set( 'article_id', String( articleId ) );
+	}
+
 	// With plain permalinks the root is `index.php?rest_route=...` and already has a query string.
 	const separator = settings().root.includes( '?' ) ? '&' : '?';
 
