@@ -14,7 +14,7 @@ import { computed, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import ConfirmButton from '../../components/ConfirmButton.vue';
 import TermSelect from '../../components/TermSelect.vue';
-import { __, sprintf } from '../../components/i18n';
+import { __, _n, sprintf } from '../../components/i18n';
 import type { TermValue } from '../../components/types/terms';
 import { errorMessage } from '../api';
 import { descendantIds, useCategoriesStore } from '../store';
@@ -63,7 +63,12 @@ const targetName = computed( () =>
 const confirmTitle = computed( () =>
 	sprintf(
 		/* translators: 1: number of categories, 2: target category name. */
-		__( 'Merge %1$d categories into “%2$s”?', 'licensio-knowledge-base' ),
+		_n(
+			'Merge %1$d category into “%2$s”?',
+			'Merge %1$d categories into “%2$s”?',
+			sources.value.length,
+			'licensio-knowledge-base'
+		),
 		sources.value.length,
 		targetName.value
 	)

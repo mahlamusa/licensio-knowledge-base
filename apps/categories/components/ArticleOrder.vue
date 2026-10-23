@@ -97,7 +97,11 @@ async function load(): Promise< void > {
 	}
 }
 
-watch( () => props.category?.id, load, { immediate: true } );
+// The count changes when a delete or a merge moves articles into the
+// selected category; the list is stale then, so it is loaded again.
+watch( [ () => props.category?.id, () => props.category?.count ], load, {
+	immediate: true,
+} );
 
 /**
  * Move an article from one position to another.
@@ -175,6 +179,10 @@ function reset(): void {
 /**
  * Save the order, after the user confirmed.
  *
+ * The answer is applied only if the pane still shows the list that was
+ * saved: when another category was selected (or the list reloaded) while the
+ * request was out, its answer would otherwise filter the new list.
+ *
  * @since 1.0.0
  *
  * @return {Promise<void>} Resolves once saved or failed.
@@ -183,6 +191,8 @@ async function save(): Promise< void > {
 	if ( ! props.category ) {
 		return;
 	}
+
+	const ticket = latest;
 
 	saving.value = true;
 	error.value = '';
@@ -193,10 +203,19 @@ async function save(): Promise< void > {
 			items.value.map( ( item ) => item.id )
 		);
 
+		message.success( __( 'Article order saved.', 'licensio-knowledge-base' ) );
+
+		if ( ticket !== latest ) {
+			return;
+		}
+
 		loadedIds.value = saved.ids;
 		reset();
-		message.success( __( 'Article order saved.', 'licensio-knowledge-base' ) );
 	} catch ( caught ) {
+		if ( ticket !== latest ) {
+			return;
+		}
+
 		if ( isNotImplemented( caught ) ) {
 			unavailable.value = true;
 		} else {

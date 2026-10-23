@@ -5,7 +5,8 @@
  * order, and the tree is derived from it: children keep the order they have
  * in the list. A move is applied to the list locally first (so the tree shows
  * it while the user is asked to confirm), and the snapshot taken before it is
- * put back when the user cancels or the server refuses.
+ * put back when the user cancels. When the server refuses, the list is loaded
+ * again, since part of the move may have been applied.
  *
  * The category writes go through here; they throw on failure so the dialog
  * that asked can show the error where the user is looking.
@@ -135,6 +136,13 @@ export function applyMove(
 	return rest;
 }
 
+/**
+ * Bumped by every load and by every write that replaces the list, so only
+ * the latest answer is kept: a load that started before a move was saved
+ * must not put the old tree back when it resolves last.
+ */
+let listTicket = 0;
+
 interface State {
 	items: CategoryItem[];
 	loading: boolean;
@@ -227,21 +235,34 @@ export const useCategoriesStore = defineStore( 'licensioKBCategories', {
 		/**
 		 * Load every category.
 		 *
+		 * An answer that arrives after a later load started, or after a saved
+		 * order replaced the list, is dropped.
+		 *
 		 * @since 1.0.0
 		 *
 		 * @return {Promise<void>} Resolves once the list is in state.
 		 */
 		async load(): Promise< void > {
+			const ticket = ++listTicket;
+
 			this.loading = true;
 			this.error = '';
 
 			try {
-				this.setItems( await fetchCategories() );
-				this.loaded = true;
+				const items = await fetchCategories();
+
+				if ( ticket === listTicket ) {
+					this.setItems( items );
+					this.loaded = true;
+				}
 			} catch ( error ) {
-				this.error = errorMessage( error );
+				if ( ticket === listTicket ) {
+					this.error = errorMessage( error );
+				}
 			} finally {
-				this.loading = false;
+				if ( ticket === listTicket ) {
+					this.loading = false;
+				}
 			}
 		},
 
@@ -353,7 +374,12 @@ export const useCategoriesStore = defineStore( 'licensioKBCategories', {
 		 * @return {Promise<void>} Resolves once the list is replaced.
 		 */
 		async saveOrder( input: CategoryOrderInput ): Promise< void > {
-			this.setItems( await saveCategoryOrder( input ) );
+			const items = await saveCategoryOrder( input );
+
+			// Newer than any load still out, so those are dropped.
+			++listTicket;
+			this.loading = false;
+			this.setItems( items );
 		},
 	},
 } );

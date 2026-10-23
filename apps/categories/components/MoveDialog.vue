@@ -125,6 +125,8 @@ async function moveCategory(): Promise< void > {
 		emit( 'close' );
 	} catch ( caught ) {
 		error.value = errorMessage( caught );
+		// The server may have applied part of the move; show what it holds.
+		store.load();
 	} finally {
 		saving.value = false;
 	}

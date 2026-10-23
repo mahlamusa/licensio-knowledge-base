@@ -6,8 +6,8 @@
  * down and Move to… actions from the keyboard. A drag or a Move up/down is
  * shown in the tree at once, then a Popconfirm on the tree asks to confirm:
  * Confirm sends the destination parent's complete child order, Cancel (or
- * Escape, or a click elsewhere) puts the tree back and sends nothing. A
- * refused move is put back too.
+ * Escape, or a click elsewhere) puts the tree back and sends nothing. After
+ * a refused move the tree is loaded again from the server.
  *
  * The other actions (edit, add child, move to, merge, delete) are handed to
  * the app, which owns the drawer and dialogs.
@@ -415,8 +415,10 @@ function confirmMove(): void {
 			message.success( __( 'Category moved.', 'licensio-knowledge-base' ) );
 		} )
 		.catch( ( error: unknown ) => {
-			store.items = move.snapshot;
+			// The server may have applied part of the move, so the tree is
+			// read again rather than put back from the snapshot.
 			message.error( errorMessage( error ) );
+			store.load();
 		} )
 		.finally( () => {
 			saving.value = false;

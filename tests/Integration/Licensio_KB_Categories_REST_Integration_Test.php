@@ -59,7 +59,7 @@ class Licensio_KB_Categories_REST_Integration_Test extends Licensio_KB_Analytics
         parent::setUp();
 
         $this->install_content_schemas();
-        $this->stub_term_api();
+        $this->stub_category_term_api();
 
         $this->ids = $this->make_category_tree(
             array(
@@ -448,5 +448,112 @@ class Licensio_KB_Categories_REST_Integration_Test extends Licensio_KB_Analytics
         $this->assertSame( 0, $updated['parent'] );
         $this->assertSame( 'Keeping accounts safe', $updated['description'] );
         $this->assertSame( 'dashicons-lock', $updated['icon'], 'Fields not sent are left alone.' );
+    }
+
+    /**
+     * A name with `&` is stored encoded, as core does, and answered as plain text.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_name_with_an_ampersand_round_trips_as_plain_text() {
+        $created = $this->controller->create_item( $this->request( array( 'name' => 'Tips & tricks' ) ) );
+
+        $this->assertSame( 201, $created->get_status() );
+
+        $id   = $created->get_data()['id'];
+        $rows = $this->live_rows( 'SELECT name, slug FROM ' . $this->table( 'terms' ) . ' WHERE term_id = ' . (int) $id );
+
+        $this->assertSame( 'Tips &amp; tricks', $rows[0]['name'], 'Stored encoded.' );
+        $this->assertSame( 'tips-tricks', $rows[0]['slug'] );
+        $this->assertSame( 'Tips & tricks', $created->get_data()['name'], 'Answered as plain text.' );
+
+        $updated = $this->controller->update_item(
+            $this->request(
+                array(
+                    'id'   => $id,
+                    'name' => 'Tips & more tricks',
+                    'slug' => '',
+                )
+            )
+        );
+
+        $this->assertSame( 'Tips & more tricks', $updated['name'] );
+        $this->assertSame( 'tips-more-tricks', $updated['slug'], 'An empty slug is made from the name.' );
+    }
+
+    /**
+     * A name a sibling already has is refused with a 400; a cousin may share it.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_duplicate_sibling_name_is_refused() {
+        $result = $this->controller->create_item(
+            $this->request(
+                array(
+                    'name'   => 'Install',
+                    'parent' => $this->ids['Getting started'],
+                )
+            )
+        );
+
+        $this->assertInstanceOf( 'WP_Error', $result );
+        $this->assertSame( 'term_exists', $result->get_error_code() );
+        $this->assertSame( array( 'status' => 400 ), $result->get_error_data() );
+
+        $elsewhere = $this->controller->create_item(
+            $this->request(
+                array(
+                    'name'   => 'Install',
+                    'parent' => $this->ids['Billing'],
+                )
+            )
+        );
+
+        $this->assertSame( 201, $elsewhere->get_status() );
+        $this->assertSame( 'install-billing', $elsewhere->get_data()['slug'], 'A taken slug is made unique with the parent slug.' );
+    }
+
+    /**
+     * An order listing only some children puts the rest after them, in their old order.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_partial_order_renumbers_the_rest_after_it() {
+        $this->live_update_term_meta( $this->ids['Billing'], 'licensio_order', 10 );
+        $this->live_update_term_meta( $this->ids['Getting started'], 'licensio_order', 20 );
+
+        $late = $this->make_term( 'Added by someone else', 'licensio_category' );
+
+        $items = $this->tree(
+            $this->controller->update_order(
+                $this->request(
+                    array(
+                        'parent' => 0,
+                        'ids'    => array( $this->ids['Getting started'] ),
+                    )
+                )
+            )
+        );
+
+        $this->assertSame( '10', $this->live_get_term_meta( $this->ids['Getting started'], 'licensio_order' ) );
+        $this->assertSame( '20', $this->live_get_term_meta( $late, 'licensio_order' ), 'An unpositioned sibling no longer jumps to the top.' );
+        $this->assertSame( '30', $this->live_get_term_meta( $this->ids['Billing'], 'licensio_order' ) );
+
+        $top = array_values(
+            array_filter(
+                $items,
+                function ( $item ) {
+                    return 0 === $item['parent'];
+                }
+            )
+        );
+
+        $this->assertSame( array( 'Getting started', 'Added by someone else', 'Billing' ), array_column( $top, 'name' ) );
     }
 }

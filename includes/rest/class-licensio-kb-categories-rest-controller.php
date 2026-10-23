@@ -13,9 +13,11 @@
  * - `DELETE /categories/{id}` takes `reassign_articles` (`parent`, `none` or a
  *   category ID) and `reassign_children` (`parent` or a category ID), moves
  *   the articles and the child categories, then deletes the category.
- * - `POST /categories/order` takes `{ parent, ids }`: the complete, ordered
- *   children of `parent`. Each one is moved under `parent` and given its
- *   `licensio_order`. Answers the whole list, as the GET route does.
+ * - `POST /categories/order` takes `{ parent, ids }`: the ordered children of
+ *   `parent`. Each one is moved under `parent` and given its
+ *   `licensio_order`; children of `parent` left out of `ids` are renumbered
+ *   after them, keeping their relative order. Answers the whole list, as the
+ *   GET route does.
  * - `POST /categories/merge` takes `{ sources, target }`. Child categories of
  *   the sources are moved under the target first, then
  *   Licensio_KB_Term_Operations::merge_terms() moves the articles and deletes
@@ -236,7 +238,7 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
             'icon_id'     => array(
                 'type'              => 'integer',
                 'minimum'           => 0,
-                'sanitize_callback' => array( 'Licensio_KB_Term_Meta', 'sanitize_attachment_id' ),
+                'sanitize_callback' => array( __CLASS__, 'sanitize_image_arg' ),
                 'description'       => __( 'The attachment ID of an uploaded icon, 0 for none.', 'licensio-knowledge-base' ),
             ),
             'icon_svg'    => array(
@@ -247,7 +249,7 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
             'image_id'    => array(
                 'type'              => 'integer',
                 'minimum'           => 0,
-                'sanitize_callback' => array( 'Licensio_KB_Term_Meta', 'sanitize_attachment_id' ),
+                'sanitize_callback' => array( __CLASS__, 'sanitize_image_arg' ),
                 'description'       => __( 'The attachment ID of the category image, 0 for none.', 'licensio-knowledge-base' ),
             ),
         );
@@ -269,6 +271,40 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      */
     public static function sanitize_slug_arg( $value ) {
         return is_scalar( $value ) ? sanitize_title( (string) $value ) : '';
+    }
+
+    /**
+     * Check an icon or image argument names an image the user may see.
+     *
+     * The ID must be an attachment with an `image/` MIME type (uploaded SVG
+     * icons included) that the current user can read, so the route cannot be
+     * used to find the file URL of a private post's attachment. Done here,
+     * not in the term meta sanitiser, because importers run that one with no
+     * user. A bad ID is refused rather than stored as 0, so a picked icon
+     * never vanishes without a message.
+     *
+     * @since 1.0.0
+     *
+     * @param mixed $value The raw attachment ID.
+     *
+     * @return int|WP_Error The attachment ID, 0 for none, or an error the REST server answers as a 400.
+     */
+    public static function sanitize_image_arg( $value ) {
+        $id = is_scalar( $value ) ? absint( $value ) : 0;
+
+        if ( 0 === $id ) {
+            return 0;
+        }
+
+        if ( 'attachment' !== get_post_type( $id ) || 0 !== strpos( (string) get_post_mime_type( $id ), 'image/' ) || ! current_user_can( 'read_post', $id ) ) {
+            return new WP_Error(
+                'licensio_kb_invalid_image',
+                __( 'Choose an image from the media library.', 'licensio-knowledge-base' ),
+                array( 'status' => 400 )
+            );
+        }
+
+        return $id;
     }
 
     /**
@@ -326,7 +362,7 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
                     'type'    => 'integer',
                     'minimum' => 1,
                 ),
-                'description' => __( 'Every child of the parent, in the new order, first first.', 'licensio-knowledge-base' ),
+                'description' => __( 'The children of the parent, in the new order, first first. Children left out follow them in their current order.', 'licensio-knowledge-base' ),
             ),
         );
     }
@@ -406,6 +442,9 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
     /**
      * Whether the current user may delete this category.
      *
+     * Also needs `edit_term` on every category the delete writes to: a chosen
+     * category for the articles or the children, and each child that moves.
+     *
      * @since 1.0.0
      *
      * @param WP_REST_Request $request The request.
@@ -413,11 +452,36 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      * @return true|WP_Error True when allowed.
      */
     public function delete_item_permissions_check( $request ) {
-        return $this->term_permission( $request, 'delete_terms', 'delete_term', array( absint( $request->get_param( 'id' ) ) ) );
+        $id      = absint( $request->get_param( 'id' ) );
+        $allowed = $this->term_permission( $request, 'delete_terms', 'delete_term', array( $id ) );
+
+        if ( true !== $allowed ) {
+            return $allowed;
+        }
+
+        $parents = $this->parent_map();
+
+        if ( is_wp_error( $parents ) ) {
+            return $parents;
+        }
+
+        $edited = self::children_of( $id, $parents );
+
+        foreach ( array( 'reassign_articles', 'reassign_children' ) as $param ) {
+            $target = $request->get_param( $param );
+
+            if ( is_numeric( $target ) ) {
+                $edited[] = absint( $target );
+            }
+        }
+
+        return self::can_edit_existing( $edited, $parents );
     }
 
     /**
      * Whether the current user may move every category in an order request.
+     *
+     * Also needs `edit_term` on the parent they are placed under.
      *
      * @since 1.0.0
      *
@@ -426,11 +490,32 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      * @return true|WP_Error True when allowed.
      */
     public function update_order_permissions_check( $request ) {
-        return $this->term_permission( $request, 'edit_terms', 'edit_term', self::id_list( $request->get_param( 'ids' ) ) );
+        $allowed = $this->term_permission( $request, 'edit_terms', 'edit_term', self::id_list( $request->get_param( 'ids' ) ) );
+
+        if ( true !== $allowed ) {
+            return $allowed;
+        }
+
+        $parent = absint( $request->get_param( 'parent' ) );
+
+        if ( 0 === $parent ) {
+            return true;
+        }
+
+        $parents = $this->parent_map();
+
+        if ( is_wp_error( $parents ) ) {
+            return $parents;
+        }
+
+        return self::can_edit_existing( array( $parent ), $parents );
     }
 
     /**
      * Whether the current user may delete the sources and edit the target.
+     *
+     * Also needs `edit_term` on each child of a source, since the merge moves
+     * it under the target.
      *
      * @since 1.0.0
      *
@@ -439,13 +524,49 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      * @return true|WP_Error True when allowed.
      */
     public function merge_permissions_check( $request ) {
-        $allowed = $this->term_permission( $request, 'delete_terms', 'delete_term', self::id_list( $request->get_param( 'sources' ) ) );
+        $sources = self::id_list( $request->get_param( 'sources' ) );
+        $allowed = $this->term_permission( $request, 'delete_terms', 'delete_term', $sources );
 
         if ( true !== $allowed ) {
             return $allowed;
         }
 
-        return $this->term_permission( $request, 'edit_terms', 'edit_term', array( absint( $request->get_param( 'target' ) ) ) );
+        $allowed = $this->term_permission( $request, 'edit_terms', 'edit_term', array( absint( $request->get_param( 'target' ) ) ) );
+
+        if ( true !== $allowed ) {
+            return $allowed;
+        }
+
+        $parents = $this->parent_map();
+
+        if ( is_wp_error( $parents ) ) {
+            return $parents;
+        }
+
+        return self::can_edit_existing( self::children_to_reparent( $sources, $parents ), $parents );
+    }
+
+    /**
+     * Check `edit_term` on each category that exists.
+     *
+     * A category that does not exist is skipped here: the handler refuses it
+     * with a 400 that names the problem.
+     *
+     * @since 1.0.0
+     *
+     * @param int[]           $ids     The categories the request writes to.
+     * @param array<int, int> $parents Every category ID to its parent ID.
+     *
+     * @return true|WP_Error True when allowed.
+     */
+    private static function can_edit_existing( array $ids, array $parents ) {
+        foreach ( array_unique( $ids ) as $id ) {
+            if ( isset( $parents[ $id ] ) && ! current_user_can( 'edit_term', $id ) ) {
+                return self::forbidden();
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -750,8 +871,15 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      * Place categories under one parent, in order.
      *
      * Every category named is moved under `parent` if it is not there already
-     * and given `licensio_order` 10, 20, 30… in the order sent. Categories of
-     * the parent left out of the list keep their order.
+     * and given `licensio_order` 10, 20, 30… in the order sent. Children of
+     * the parent left out of the list are renumbered after them, keeping the
+     * order the tree shows them in, so a partial or stale list never ties
+     * with or jumps ahead of the categories it names. This matches how the
+     * per-category article order treats a partial list.
+     *
+     * Everything is checked first. All the parent changes are written before
+     * any position; if one fails, the ones already made are put back and no
+     * position is written.
      *
      * @since 1.0.0
      *
@@ -774,19 +902,62 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
             return $checked;
         }
 
-        foreach ( $ids as $index => $id ) {
-            if ( $parents[ $id ] !== $parent ) {
-                $result = wp_update_term( $id, Licensio_KB_Post_Types::TAXONOMY_CATEGORY, array( 'parent' => $parent ) );
+        $ordered = array_merge( $ids, $this->unlisted_children( $parent, $ids, $parents ) );
+        $moved   = array();
 
-                if ( is_wp_error( $result ) ) {
-                    return self::bad_request( $result );
-                }
+        foreach ( $ids as $id ) {
+            if ( $parents[ $id ] === $parent ) {
+                continue;
             }
 
+            $result = wp_update_term( $id, Licensio_KB_Post_Types::TAXONOMY_CATEGORY, array( 'parent' => $parent ) );
+
+            if ( is_wp_error( $result ) ) {
+                foreach ( $moved as $undo ) {
+                    wp_update_term( $undo, Licensio_KB_Post_Types::TAXONOMY_CATEGORY, array( 'parent' => $parents[ $undo ] ) );
+                }
+
+                return self::bad_request( $result );
+            }
+
+            $moved[] = $id;
+        }
+
+        foreach ( $ordered as $index => $id ) {
             update_term_meta( $id, Licensio_KB_Term_Meta::META_ORDER, ( $index + 1 ) * self::ORDER_STEP );
         }
 
         return $this->get_items( $request );
+    }
+
+    /**
+     * The children of a parent an order request left out, in tree order.
+     *
+     * @since 1.0.0
+     *
+     * @param int             $parent_id The parent, 0 for the top level.
+     * @param int[]           $ids       The categories the request lists.
+     * @param array<int, int> $parents   Every category ID to its parent ID.
+     *
+     * @return int[] The unlisted children, by manual order, then name, then ID.
+     */
+    private function unlisted_children( $parent_id, array $ids, array $parents ) {
+        $rest = array();
+
+        foreach ( self::children_of( $parent_id, $parents ) as $id ) {
+            if ( in_array( $id, $ids, true ) ) {
+                continue;
+            }
+
+            $term   = $this->get_category( $id );
+            $rest[] = array(
+                'id'    => $id,
+                'order' => Licensio_KB_Term_Meta::get_order( $id ),
+                'name'  => $term instanceof WP_Term ? self::plain_text( $term->name ) : '',
+            );
+        }
+
+        return array_map( 'intval', array_column( self::sort_items( $rest ), 'id' ) );
     }
 
     /**
@@ -851,15 +1022,7 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
             return $checked;
         }
 
-        $children = array();
-
-        foreach ( $parents as $term_id => $parent_id ) {
-            if ( in_array( $parent_id, $sources, true ) && ! in_array( $term_id, $sources, true ) ) {
-                $children[] = $term_id;
-            }
-        }
-
-        $reparented = $this->reparent( $children, $target );
+        $reparented = $this->reparent( self::children_to_reparent( $sources, $parents ), $target );
 
         if ( is_wp_error( $reparented ) ) {
             return $reparented;
@@ -878,6 +1041,28 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
                 'reparented' => $reparented,
             )
         );
+    }
+
+    /**
+     * The children of merge sources that are not sources themselves.
+     *
+     * @since 1.0.0
+     *
+     * @param int[]           $sources The categories to merge away.
+     * @param array<int, int> $parents Every category ID to its parent ID.
+     *
+     * @return int[] The categories the merge moves under the target.
+     */
+    private static function children_to_reparent( array $sources, array $parents ) {
+        $children = array();
+
+        foreach ( $parents as $term_id => $parent_id ) {
+            if ( in_array( $parent_id, $sources, true ) && ! in_array( $term_id, $sources, true ) ) {
+                $children[] = $term_id;
+            }
+        }
+
+        return $children;
     }
 
     /**

@@ -475,7 +475,8 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
         $this->assertSame( 1, $route[1]['args']['name']['minLength'] );
         $this->assertSame( 0, $route[1]['args']['parent']['minimum'] );
         $this->assertSame( array( 'Licensio_KB_SVG_Sanitizer', 'sanitize' ), $route[1]['args']['icon_svg']['sanitize_callback'] );
-        $this->assertSame( array( 'Licensio_KB_Term_Meta', 'sanitize_attachment_id' ), $route[1]['args']['image_id']['sanitize_callback'] );
+        $this->assertSame( array( 'Licensio_KB_Categories_REST_Controller', 'sanitize_image_arg' ), $route[1]['args']['image_id']['sanitize_callback'] );
+        $this->assertSame( array( 'Licensio_KB_Categories_REST_Controller', 'sanitize_image_arg' ), $route[1]['args']['icon_id']['sanitize_callback'] );
     }
 
     /**
@@ -1422,13 +1423,13 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
         $this->assertSame(
             array(
                 'update 5 parent=1',
-                'meta 5 licensio_order=10',
                 'update 3 parent=1',
+                'meta 5 licensio_order=10',
                 'meta 3 licensio_order=20',
                 'meta 2 licensio_order=30',
             ),
             $this->events,
-            'A category already under the parent is not rewritten.'
+            'Every parent change is written before any position, and a category already under the parent is not rewritten.'
         );
         $this->assertCount( 5, $items, 'The whole list is answered.' );
         $this->assertSame( array( 4, 1, 5, 3, 2 ), array_column( $items, 'id' ) );
@@ -1572,5 +1573,221 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
         $this->assertSame( '', call_user_func( $callback, '', $request, 'slug' ) );
         $this->assertSame( 'getting-started', call_user_func( $callback, 'Getting Started', $request, 'slug' ) );
         $this->assertSame( '', call_user_func( $callback, array( 'x' ), $request, 'slug' ) );
+    }
+
+    /**
+     * Children of the parent left out of an order follow the listed ones, in tree order.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_order_renumbers_the_unlisted_children_after_the_listed_ones() {
+        $this->terms[6] = $this->fields( 'Accounts', 0 );
+        $this->terms[7] = $this->fields( 'Zebra', 0 );
+        $this->meta[7]  = array( 'licensio_order' => '5' );
+        $this->meta[1]  = array( 'licensio_order' => '40' );
+
+        $items = $this->as_list(
+            $this->controller->update_order(
+                $this->request(
+                    array(
+                        'parent' => 0,
+                        'ids'    => array( 4 ),
+                    )
+                )
+            )
+        );
+
+        $this->assertSame(
+            array(
+                'meta 4 licensio_order=10',
+                'meta 6 licensio_order=20',
+                'meta 7 licensio_order=30',
+                'meta 1 licensio_order=40',
+            ),
+            $this->events,
+            'Unlisted siblings keep their relative order (order, then name) after the listed one.'
+        );
+        $this->assertSame(
+            array( 4, 6, 7, 1 ),
+            array_values(
+                array_column(
+                    array_filter(
+                        $items,
+                        function ( $item ) {
+                            return 0 === $item['parent'];
+                        }
+                    ),
+                    'id'
+                )
+            )
+        );
+    }
+
+    /**
+     * A failed parent change puts back the moves already made and writes no position.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_failed_order_undoes_its_parent_changes() {
+        Functions\when( 'wp_update_term' )->alias(
+            function ( $term_id, $taxonomy, $args ) {
+                unset( $taxonomy );
+
+                if ( 3 === (int) $term_id && 1 === $args['parent'] ) {
+                    return new WP_Error( 'db_update_error', 'Could not update the term.' );
+                }
+
+                $this->terms[ (int) $term_id ]['parent'] = $args['parent'];
+                $this->events[]                          = 'update ' . $term_id . ' parent=' . $args['parent'];
+
+                return array(
+                    'term_id'          => (int) $term_id,
+                    'term_taxonomy_id' => (int) $term_id,
+                );
+            }
+        );
+        Functions\expect( 'update_term_meta' )->never();
+
+        $result = $this->controller->update_order(
+            $this->request(
+                array(
+                    'parent' => 1,
+                    'ids'    => array( 5, 3, 2 ),
+                )
+            )
+        );
+
+        $this->assert_error( 'db_update_error', 400, $result );
+        $this->assertSame( array( 'update 5 parent=1', 'update 5 parent=4' ), $this->events );
+        $this->assertSame( 4, $this->terms[5]['parent'] );
+    }
+
+    /**
+     * Ordering needs edit rights on the parent the categories go under.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_order_checks_the_parent() {
+        $request = $this->request(
+            array(
+                'parent' => 4,
+                'ids'    => array( 2 ),
+            )
+        );
+
+        $this->assertTrue( $this->controller->update_order_permissions_check( $request ) );
+        $this->assertContains( array( 'edit_term', 4 ), $this->cap_calls );
+
+        $this->denied = array( 'edit_term:4' );
+        $this->assert_error( 'licensio_kb_category_forbidden', 403, $this->controller->update_order_permissions_check( $request ) );
+
+        $this->denied = array();
+        $request->set_param( 'parent', 99 );
+        $this->assertTrue( $this->controller->update_order_permissions_check( $request ), 'A missing parent is left to the handler, which answers 400.' );
+    }
+
+    /**
+     * A delete needs edit rights on the chosen targets and on each child that moves.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_delete_checks_its_targets_and_children() {
+        $request = $this->request(
+            array(
+                'id'                => 4,
+                'reassign_articles' => '3',
+                'reassign_children' => '1',
+            )
+        );
+
+        $this->assertTrue( $this->controller->delete_item_permissions_check( $request ) );
+        $this->assertContains( array( 'edit_term', 3 ), $this->cap_calls );
+        $this->assertContains( array( 'edit_term', 1 ), $this->cap_calls );
+        $this->assertContains( array( 'edit_term', 5 ), $this->cap_calls );
+
+        foreach ( array( 'edit_term:3', 'edit_term:1', 'edit_term:5' ) as $denied ) {
+            $this->denied = array( $denied );
+            $this->assert_error( 'licensio_kb_category_forbidden', 403, $this->controller->delete_item_permissions_check( $request ) );
+        }
+
+        $this->denied = array();
+        $request->set_param( 'reassign_articles', '99' );
+        $this->assertTrue( $this->controller->delete_item_permissions_check( $request ), 'A missing target is left to the handler, which answers 400.' );
+    }
+
+    /**
+     * A merge needs edit rights on each child of a source it moves.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_merge_checks_the_children_it_moves() {
+        $request = $this->request(
+            array(
+                'sources' => array( 2 ),
+                'target'  => 4,
+            )
+        );
+
+        $this->assertTrue( $this->controller->merge_permissions_check( $request ) );
+        $this->assertContains( array( 'edit_term', 3 ), $this->cap_calls );
+
+        $this->denied = array( 'edit_term:3' );
+        $this->assert_error( 'licensio_kb_category_forbidden', 403, $this->controller->merge_permissions_check( $request ) );
+    }
+
+    /**
+     * The icon and image must be readable image attachments.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_image_sanitiser_needs_a_readable_image() {
+        $types = array(
+            7  => 'attachment',
+            8  => 'attachment',
+            9  => 'attachment',
+            10 => 'post',
+            11 => 'attachment',
+        );
+        $mimes = array(
+            7  => 'image/png',
+            8  => 'image/svg+xml',
+            9  => 'application/pdf',
+            10 => '',
+            11 => 'image/jpeg',
+        );
+
+        Functions\when( 'get_post_type' )->alias(
+            function ( $id ) use ( $types ) {
+                return isset( $types[ $id ] ) ? $types[ $id ] : false;
+            }
+        );
+        Functions\when( 'get_post_mime_type' )->alias(
+            function ( $id ) use ( $mimes ) {
+                return isset( $mimes[ $id ] ) ? $mimes[ $id ] : false;
+            }
+        );
+        $this->denied = array( 'read_post:11' );
+
+        $this->assertSame( 0, Licensio_KB_Categories_REST_Controller::sanitize_image_arg( 0 ) );
+        $this->assertSame( 0, Licensio_KB_Categories_REST_Controller::sanitize_image_arg( array( 7 ) ) );
+        $this->assertSame( 7, Licensio_KB_Categories_REST_Controller::sanitize_image_arg( '7' ) );
+        $this->assertSame( 8, Licensio_KB_Categories_REST_Controller::sanitize_image_arg( 8 ), 'An uploaded SVG icon is an image.' );
+        $this->assertContains( array( 'read_post', 7 ), $this->cap_calls );
+
+        foreach ( array( 9, 10, 11, 404 ) as $id ) {
+            $this->assert_error( 'licensio_kb_invalid_image', 400, Licensio_KB_Categories_REST_Controller::sanitize_image_arg( $id ) );
+        }
     }
 }
