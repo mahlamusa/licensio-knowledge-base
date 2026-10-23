@@ -15,12 +15,7 @@
 
 import { onMounted, onUnmounted, ref } from 'vue';
 import { Button as AButton, Tooltip as ATooltip } from 'ant-design-vue';
-import {
-	BookOutlined,
-	BulbOutlined,
-	QuestionCircleOutlined,
-	SettingOutlined,
-} from '@ant-design/icons-vue';
+import { SettingOutlined } from '@ant-design/icons-vue';
 
 /**
  * The settings screen this header links to.
@@ -88,49 +83,10 @@ onUnmounted( () => {
 					/>
 				</svg>
 
-				<span class="lkb-header__wordmark">Licensio</span>
+				<span class="lkb-header__wordmark">Licensio Knowledge Base</span>
 			</span>
 
 			<div class="lkb-header__actions">
-				<ATooltip title="Request a feature" placement="bottom">
-					<AButton
-						type="text"
-						class="lkb-header__btn"
-						href="https://licenseserver.io/feature-requests"
-						target="_blank"
-						rel="noreferrer noopener"
-						aria-label="Request a feature"
-					>
-						<template #icon><BulbOutlined /></template>
-					</AButton>
-				</ATooltip>
-
-				<ATooltip title="Documentation" placement="bottom">
-					<AButton
-						type="text"
-						class="lkb-header__btn"
-						href="https://licenseserver.io/documentation"
-						target="_blank"
-						rel="noreferrer noopener"
-						aria-label="Documentation"
-					>
-						<template #icon><BookOutlined /></template>
-					</AButton>
-				</ATooltip>
-
-				<ATooltip title="Support" placement="bottom">
-					<AButton
-						type="text"
-						class="lkb-header__btn"
-						href="https://licenseserver.io/support"
-						target="_blank"
-						rel="noreferrer noopener"
-						aria-label="Support"
-					>
-						<template #icon><QuestionCircleOutlined /></template>
-					</AButton>
-				</ATooltip>
-
 				<ATooltip v-if="props.settingsUrl" title="Knowledge base settings" placement="bottom">
 					<AButton
 						type="text"
