@@ -39,3 +39,7 @@ Thumbs.db
 # Agent worktrees and local Claude state
 /.claude/
 .sandbox/
+
+# Local specs (spec-interview / spec-loop)
+/specs/
+/.spec-status

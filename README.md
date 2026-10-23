@@ -2,7 +2,7 @@
 
 A fully standalone WordPress documentation and self-service support plugin. It requires no other plugin: neither SLSWC nor WooCommerce need be installed.
 
-`SPEC.md` is the authoritative technical specification. This file documents the **scaffold contracts** that every sub-issue builds on, so nothing has to be reverse-engineered from the code.
+This file documents the **scaffold contracts** that every sub-issue builds on, so nothing has to be reverse-engineered from the code.
 
 ---
 
@@ -467,7 +467,7 @@ add_filter( 'licensio_import_drivers', function ( $drivers ) {
 
 ## Privacy
 
-No IP address is written to any table. Visitor identity is a rotating salted hash, the salt is not exposed to the frontend, and analytics retention defaults to 90 days. See `SPEC.md` for the full privacy layer.
+No IP address is written to any table. Visitor identity is a rotating salted hash, the salt is not exposed to the frontend, and analytics retention defaults to 90 days.
 
 ## Dependency note: the esbuild override
 

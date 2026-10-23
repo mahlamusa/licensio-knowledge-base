@@ -37,8 +37,7 @@
  * The term description is deliberately not duplicated here. Core already gives
  * every term a description, edits it on both term forms and exposes it in
  * REST; a second description meta would be two fields that mean the same thing
- * and disagree. See SPEC.md, which lists the category term meta as
- * "icon, image, order".
+ * and disagree.
  *
  * Consumed by: #5, #6, #10.
  *
