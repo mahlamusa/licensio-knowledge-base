@@ -90,6 +90,23 @@ export function descendantIds( items: CategoryItem[], id: number ): number[] {
 }
 
 /**
+ * A category's ID followed by the IDs of every category below it.
+ *
+ * @since 1.0.0
+ *
+ * @param {CategoryItem[]} items Every category.
+ * @param {number}         id    The category.
+ *
+ * @return {number[]} The category and its descendant IDs.
+ */
+export function selfAndDescendantIds(
+	items: CategoryItem[],
+	id: number
+): number[] {
+	return [ id, ...descendantIds( items, id ) ];
+}
+
+/**
  * The list with one category moved under a parent at a position.
  *
  * @since 1.0.0
@@ -220,6 +237,25 @@ export const useCategoriesStore = defineStore( 'licensioKBCategories', {
 
 	actions: {
 		/**
+		 * Wait for a write, then reload the tree.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @template T
+		 *
+		 * @param {Promise<T>} write The write request.
+		 *
+		 * @return {Promise<T>} The write's answer, once the tree is reloaded.
+		 */
+		async reloadAfter< T >( write: Promise< T > ): Promise< T > {
+			const result = await write;
+
+			await this.load();
+
+			return result;
+		},
+
+		/**
 		 * One category by ID.
 		 *
 		 * @since 1.0.0
@@ -295,12 +331,8 @@ export const useCategoriesStore = defineStore( 'licensioKBCategories', {
 		 *
 		 * @return {Promise<CategoryItem>} The created category.
 		 */
-		async create( input: CategoryInput ): Promise< CategoryItem > {
-			const created = await createCategory( input );
-
-			await this.load();
-
-			return created;
+		create( input: CategoryInput ): Promise< CategoryItem > {
+			return this.reloadAfter( createCategory( input ) );
 		},
 
 		/**
@@ -313,15 +345,8 @@ export const useCategoriesStore = defineStore( 'licensioKBCategories', {
 		 *
 		 * @return {Promise<CategoryItem>} The updated category.
 		 */
-		async update(
-			id: number,
-			input: CategoryInput
-		): Promise< CategoryItem > {
-			const updated = await updateCategory( id, input );
-
-			await this.load();
-
-			return updated;
+		update( id: number, input: CategoryInput ): Promise< CategoryItem > {
+			return this.reloadAfter( updateCategory( id, input ) );
 		},
 
 		/**
@@ -335,16 +360,12 @@ export const useCategoriesStore = defineStore( 'licensioKBCategories', {
 		 *
 		 * @return {Promise<CategoryDeleted>} What was deleted and moved.
 		 */
-		async remove(
+		remove(
 			id: number,
 			articles: ArticleReassignment,
 			children: ChildReassignment
 		): Promise< CategoryDeleted > {
-			const result = await deleteCategory( id, articles, children );
-
-			await this.load();
-
-			return result;
+			return this.reloadAfter( deleteCategory( id, articles, children ) );
 		},
 
 		/**
@@ -356,12 +377,8 @@ export const useCategoriesStore = defineStore( 'licensioKBCategories', {
 		 *
 		 * @return {Promise<CategoryMerged>} What was moved and deleted.
 		 */
-		async merge( input: CategoryMergeInput ): Promise< CategoryMerged > {
-			const result = await mergeCategories( input );
-
-			await this.load();
-
-			return result;
+		merge( input: CategoryMergeInput ): Promise< CategoryMerged > {
+			return this.reloadAfter( mergeCategories( input ) );
 		},
 
 		/**

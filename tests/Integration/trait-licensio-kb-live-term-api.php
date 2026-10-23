@@ -63,6 +63,8 @@ trait Licensio_KB_Live_Term_API {
         Functions\when( 'rest_ensure_response' )->returnArg();
         Functions\when( 'wp_get_attachment_image_url' )->justReturn( false );
         Functions\when( 'wp_get_attachment_url' )->justReturn( false );
+        Functions\when( '_prime_post_caches' )->justReturn( null );
+        Functions\when( '_prime_term_caches' )->justReturn( null );
 
         Functions\when( 'get_terms' )->alias( array( $this, 'live_get_terms' ) );
         Functions\when( 'get_term' )->alias( array( $this, 'live_get_term' ) );

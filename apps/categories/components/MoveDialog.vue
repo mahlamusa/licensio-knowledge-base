@@ -15,7 +15,7 @@ import TermSelect from '../../components/TermSelect.vue';
 import { __, sprintf } from '../../components/i18n';
 import type { TermValue } from '../../components/types/terms';
 import { errorMessage } from '../api';
-import { childIds, descendantIds, useCategoriesStore } from '../store';
+import { childIds, selfAndDescendantIds, useCategoriesStore } from '../store';
 import type { CategoryItem } from '../types';
 
 const props = defineProps< {
@@ -38,12 +38,7 @@ const saving = ref( false );
 const error = ref( '' );
 
 const exclude = computed( () =>
-	props.category
-		? [
-				props.category.id,
-				...descendantIds( store.items, props.category.id ),
-		  ]
-		: []
+	props.category ? selfAndDescendantIds( store.items, props.category.id ) : []
 );
 
 const destination = computed( () =>

@@ -856,7 +856,7 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
                 return self::invalid_category();
             }
 
-            if ( $children === $id || in_array( $children, self::descendants_of( $id, $parents ), true ) ) {
+            if ( self::would_cycle( $id, $children, $parents ) ) {
                 return self::cycle();
             }
         }
@@ -942,13 +942,13 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      * @return int[] The unlisted children, by manual order, then name, then ID.
      */
     private function unlisted_children( $parent_id, array $ids, array $parents ) {
-        $rest = array();
+        $unlisted = array_values( array_diff( self::children_of( $parent_id, $parents ), $ids ) );
+        $rest     = array();
 
-        foreach ( self::children_of( $parent_id, $parents ) as $id ) {
-            if ( in_array( $id, $ids, true ) ) {
-                continue;
-            }
+        // Load the terms and their meta in one go rather than one query each.
+        _prime_term_caches( $unlisted );
 
+        foreach ( $unlisted as $id ) {
             $term   = $this->get_category( $id );
             $rest[] = array(
                 'id'    => $id,
@@ -1092,7 +1092,7 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
         }
 
         foreach ( $sources as $source ) {
-            if ( in_array( $target, self::descendants_of( $source, $parents ), true ) ) {
+            if ( self::would_cycle( $source, $target, $parents ) ) {
                 return self::cycle();
             }
         }
@@ -1129,8 +1129,8 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
     /**
      * Every category, prepared and sorted.
      *
-     * One term query; term meta is primed by it, so reading each category's
-     * meta costs no further queries.
+     * One term query primes the term meta, and one more primes the icon and
+     * image attachments, so preparing each category costs no further queries.
      *
      * @since 1.0.0
      *
@@ -1149,13 +1149,25 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
             return $terms;
         }
 
-        $items = array();
+        $categories  = array();
+        $attachments = array();
 
         foreach ( (array) $terms as $term ) {
             if ( $term instanceof WP_Term ) {
-                $items[] = $this->prepare_category( $term );
+                $categories[]  = $term;
+                $attachments[] = Licensio_KB_Term_Meta::get_icon_id( (int) $term->term_id );
+                $attachments[] = Licensio_KB_Term_Meta::get_image_id( (int) $term->term_id );
             }
         }
+
+        // Load every icon and image attachment in one query rather than one each.
+        $attachments = array_unique( array_filter( $attachments ) );
+
+        if ( ! empty( $attachments ) ) {
+            _prime_post_caches( $attachments, false, true );
+        }
+
+        $items = array_map( array( $this, 'prepare_category' ), $categories );
 
         return self::sort_items( $items );
     }

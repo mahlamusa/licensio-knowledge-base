@@ -17,7 +17,7 @@ import { RestError } from '../../components/rest';
 import { __, sprintf } from '../../components/i18n';
 import type { TermValue } from '../../components/types/terms';
 import { errorMessage } from '../api';
-import { descendantIds, useCategoriesStore } from '../store';
+import { selfAndDescendantIds, useCategoriesStore } from '../store';
 import type { CategoryInput, CategoryItem } from '../types';
 import IconField from './IconField.vue';
 import MediaField from './MediaField.vue';
@@ -66,12 +66,7 @@ const title = computed( () =>
 );
 
 const exclude = computed( () =>
-	props.category
-		? [
-				props.category.id,
-				...descendantIds( store.items, props.category.id ),
-		  ]
-		: []
+	props.category ? selfAndDescendantIds( store.items, props.category.id ) : []
 );
 
 const nameMissing = computed( () => '' === form.name.trim() );

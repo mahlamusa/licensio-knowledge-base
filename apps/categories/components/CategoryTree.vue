@@ -94,10 +94,9 @@ const treeData = computed( () =>
 );
 
 const expandedKeys = computed( () => {
+	const withChildren = new Set( store.items.map( ( item ) => item.parent ) );
 	const parents = store.items
-		.filter( ( item ) =>
-			store.items.some( ( child ) => child.parent === item.id )
-		)
+		.filter( ( item ) => withChildren.has( item.id ) )
 		.map( ( item ) => item.id );
 
 	return searching.value

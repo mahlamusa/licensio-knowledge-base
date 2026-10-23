@@ -17,7 +17,7 @@ import TermSelect from '../../components/TermSelect.vue';
 import { __, sprintf } from '../../components/i18n';
 import type { TermValue } from '../../components/types/terms';
 import { errorMessage } from '../api';
-import { childIds, descendantIds, useCategoriesStore } from '../store';
+import { childIds, selfAndDescendantIds, useCategoriesStore } from '../store';
 import type {
 	ArticleReassignment,
 	CategoryItem,
@@ -53,8 +53,8 @@ const hasChildren = computed(
 		childIds( store.items, props.category.id ).length > 0
 );
 
-const descendants = computed( () =>
-	props.category ? descendantIds( store.items, props.category.id ) : []
+const childExclude = computed( () =>
+	props.category ? selfAndDescendantIds( store.items, props.category.id ) : []
 );
 
 const incomplete = computed(
@@ -228,9 +228,7 @@ async function remove(): Promise< void > {
 				v-if="'other' === childChoice"
 				:model-value="childTarget"
 				taxonomy="licensio_category"
-				:exclude="
-					props.category ? [ props.category.id, ...descendants ] : []
-				"
+				:exclude="childExclude"
 				:aria-label="
 					__(
 						'Category to move the child categories under',

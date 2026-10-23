@@ -258,6 +258,8 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
                 return isset( $this->file_urls[ $attachment_id ] ) ? $this->file_urls[ $attachment_id ] : false;
             }
         );
+        Functions\when( '_prime_post_caches' )->justReturn( null );
+        Functions\when( '_prime_term_caches' )->justReturn( null );
         Functions\when( 'wp_insert_term' )->alias(
             function ( $name, $taxonomy, $args ) {
                 $this->assertSame( 'licensio_category', $taxonomy );

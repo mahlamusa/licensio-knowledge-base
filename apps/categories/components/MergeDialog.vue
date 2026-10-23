@@ -17,7 +17,7 @@ import TermSelect from '../../components/TermSelect.vue';
 import { __, _n, sprintf } from '../../components/i18n';
 import type { TermValue } from '../../components/types/terms';
 import { errorMessage } from '../api';
-import { descendantIds, useCategoriesStore } from '../store';
+import { selfAndDescendantIds, useCategoriesStore } from '../store';
 import type { CategoryItem } from '../types';
 
 const MAX_SOURCES = 50;
@@ -43,18 +43,13 @@ const error = ref( '' );
 
 const tooMany = computed( () => sources.value.length > MAX_SOURCES );
 
-const targetExclude = computed( () => {
-	const excluded = new Set< number >();
-
-	sources.value.forEach( ( id ) => {
-		excluded.add( id );
-		descendantIds( store.items, id ).forEach( ( child ) =>
-			excluded.add( child )
-		);
-	} );
-
-	return [ ...excluded ];
-} );
+const targetExclude = computed( () => [
+	...new Set(
+		sources.value.flatMap( ( id ) =>
+			selfAndDescendantIds( store.items, id )
+		)
+	),
+] );
 
 const targetName = computed( () =>
 	target.value ? store.find( target.value )?.name ?? '' : ''
