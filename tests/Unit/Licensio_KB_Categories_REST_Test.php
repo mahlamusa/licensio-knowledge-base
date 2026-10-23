@@ -1669,6 +1669,96 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * Make wp_update_term() fail when it moves one category under one parent.
+     *
+     * Moves back to an old parent still succeed, so the undo can be checked.
+     *
+     * @since 1.0.0
+     *
+     * @param int $failing_id     The category whose move fails.
+     * @param int $failing_parent The parent that move is refused for.
+     *
+     * @return void
+     */
+    private function fail_parent_change( $failing_id, $failing_parent ) {
+        Functions\when( 'wp_update_term' )->alias(
+            function ( $term_id, $taxonomy, $args ) use ( $failing_id, $failing_parent ) {
+                unset( $taxonomy );
+
+                if ( $failing_id === (int) $term_id && $failing_parent === $args['parent'] ) {
+                    return new WP_Error( 'db_update_error', 'Could not update the term.' );
+                }
+
+                $this->terms[ (int) $term_id ]['parent'] = $args['parent'];
+                $this->events[]                          = 'update ' . $term_id . ' parent=' . $args['parent'];
+
+                return array(
+                    'term_id'          => (int) $term_id,
+                    'term_taxonomy_id' => (int) $term_id,
+                );
+            }
+        );
+    }
+
+    /**
+     * A delete whose child move fails puts back the children already moved and keeps the category.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_failed_delete_undoes_its_child_moves() {
+        $this->terms[6]   = $this->fields( 'Updates', 1 );
+        $this->objects[6] = array();
+        $this->fail_parent_change( 6, 4 );
+        Functions\expect( 'wp_delete_term' )->never();
+
+        $result = $this->controller->delete_item(
+            $this->request(
+                array(
+                    'id'                => 1,
+                    'reassign_articles' => 'none',
+                    'reassign_children' => '4',
+                )
+            )
+        );
+
+        $this->assert_error( 'db_update_error', 400, $result );
+        $this->assertSame( array( 'update 2 parent=4', 'update 2 parent=1' ), $this->events );
+        $this->assertSame( 1, $this->terms[2]['parent'] );
+        $this->assertSame( 1, $this->terms[6]['parent'] );
+    }
+
+    /**
+     * A merge whose child move fails puts back the children already moved and merges nothing.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_failed_merge_undoes_its_child_moves() {
+        $this->fail_parent_change( 5, 1 );
+        Actions\expectDone( 'licensio_kb_terms_merged' )->never();
+        Functions\expect( 'wp_set_object_terms' )->never();
+        Functions\expect( 'wp_remove_object_terms' )->never();
+        Functions\expect( 'wp_delete_term' )->never();
+
+        $result = $this->controller->merge(
+            $this->request(
+                array(
+                    'sources' => array( 2, 4 ),
+                    'target'  => 1,
+                )
+            )
+        );
+
+        $this->assert_error( 'db_update_error', 400, $result );
+        $this->assertSame( array( 'update 3 parent=1', 'update 3 parent=2' ), $this->events );
+        $this->assertSame( 2, $this->terms[3]['parent'] );
+        $this->assertSame( 4, $this->terms[5]['parent'] );
+    }
+
+    /**
      * Ordering needs edit rights on the parent the categories go under.
      *
      * @since 1.0.0

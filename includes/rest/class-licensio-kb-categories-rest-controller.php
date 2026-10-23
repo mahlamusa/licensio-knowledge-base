@@ -735,7 +735,9 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      *
      * Every target is checked before anything is written. `reassign_articles`
      * of `parent` is refused for a top-level category, which has no parent to
-     * move them to; `none` leaves the articles without this category.
+     * move them to; `none` leaves the articles without this category. If a
+     * child category cannot be moved, the children already moved are put back
+     * and the category is not deleted.
      *
      * @since 1.0.0
      *
@@ -780,7 +782,7 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
             }
         }
 
-        $reparented = $this->reparent( self::children_of( $id, $parents ), $plan['children'] );
+        $reparented = $this->reparent( self::children_of( $id, $parents ), $plan['children'], $parents );
 
         if ( is_wp_error( $reparented ) ) {
             return $reparented;
@@ -903,24 +905,16 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
         }
 
         $ordered = array_merge( $ids, $this->unlisted_children( $parent, $ids, $parents ) );
-        $moved   = array();
-
-        foreach ( $ids as $id ) {
-            if ( $parents[ $id ] === $parent ) {
-                continue;
+        $movers  = array_filter(
+            $ids,
+            function ( $id ) use ( $parent, $parents ) {
+                return $parents[ $id ] !== $parent;
             }
+        );
+        $moved   = $this->reparent( $movers, $parent, $parents );
 
-            $result = wp_update_term( $id, Licensio_KB_Post_Types::TAXONOMY_CATEGORY, array( 'parent' => $parent ) );
-
-            if ( is_wp_error( $result ) ) {
-                foreach ( $moved as $undo ) {
-                    wp_update_term( $undo, Licensio_KB_Post_Types::TAXONOMY_CATEGORY, array( 'parent' => $parents[ $undo ] ) );
-                }
-
-                return self::bad_request( $result );
-            }
-
-            $moved[] = $id;
+        if ( is_wp_error( $moved ) ) {
+            return $moved;
         }
 
         foreach ( $ordered as $index => $id ) {
@@ -998,8 +992,10 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      *
      * Child categories of the sources that are not sources themselves move
      * under the target first, because core would otherwise move them to each
-     * source's own parent as it deletes it. Then the articles move and the
-     * sources are deleted through Licensio_KB_Term_Operations::merge_terms().
+     * source's own parent as it deletes it. If one cannot be moved, the
+     * children already moved are put back and nothing is merged. Then the
+     * articles move and the sources are deleted through
+     * Licensio_KB_Term_Operations::merge_terms().
      *
      * @since 1.0.0
      *
@@ -1022,7 +1018,7 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
             return $checked;
         }
 
-        $reparented = $this->reparent( self::children_to_reparent( $sources, $parents ), $target );
+        $reparented = $this->reparent( self::children_to_reparent( $sources, $parents ), $target, $parents );
 
         if ( is_wp_error( $reparented ) ) {
             return $reparented;
@@ -1103,20 +1099,28 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
     /**
      * Move categories under a new parent.
      *
+     * If one move fails, the categories already moved are put back under
+     * their old parents, so a failed request leaves the tree as it was.
+     *
      * @since 1.0.0
      *
-     * @param int[] $ids       The categories to move.
-     * @param int   $parent_id The new parent, 0 for the top level.
+     * @param int[]           $ids       The categories to move.
+     * @param int             $parent_id The new parent, 0 for the top level.
+     * @param array<int, int> $parents   Every category ID to its parent ID before the move.
      *
      * @return int[]|WP_Error The categories moved, or the first error.
      */
-    private function reparent( array $ids, $parent_id ) {
+    private function reparent( array $ids, $parent_id, array $parents ) {
         $moved = array();
 
         foreach ( $ids as $id ) {
             $result = wp_update_term( $id, Licensio_KB_Post_Types::TAXONOMY_CATEGORY, array( 'parent' => $parent_id ) );
 
             if ( is_wp_error( $result ) ) {
+                foreach ( $moved as $undo ) {
+                    wp_update_term( $undo, Licensio_KB_Post_Types::TAXONOMY_CATEGORY, array( 'parent' => $parents[ $undo ] ) );
+                }
+
                 return self::bad_request( $result );
             }
 
