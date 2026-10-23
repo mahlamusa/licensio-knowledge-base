@@ -175,10 +175,19 @@ async function save(): Promise< void > {
 		parent: form.parent ?? 0,
 		description: form.description,
 		icon: form.icon.trim(),
-		icon_id: form.iconId,
 		icon_svg: form.iconSvg,
-		image_id: form.imageId,
 	};
+
+	// An unchanged icon or image is not sent again: if its file was deleted
+	// from the media library since, the server would refuse it and block
+	// every other change to the category.
+	if ( form.iconId !== props.category?.icon_id ) {
+		input.icon_id = form.iconId;
+	}
+
+	if ( form.imageId !== props.category?.image_id ) {
+		input.image_id = form.imageId;
+	}
 
 	// An empty slug is left out, so the server keeps or derives one.
 	if ( '' !== form.slug.trim() ) {

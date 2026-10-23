@@ -62,6 +62,7 @@ const store = useCategoriesStore();
 const pending = ref< PendingMove | null >( null );
 const saving = ref( false );
 const collapsed = ref< number[] >( [] );
+const menuFor = ref< number | null >( null );
 
 const searching = computed( () => '' !== store.search.trim() );
 
@@ -93,15 +94,15 @@ const treeData = computed( () =>
 		: store.tree
 );
 
+// Every category counts as expanded unless the user collapsed it, leaves
+// included: dropping a parent from this list in the same update that removes
+// its last child makes the tree animate a node that no longer exists.
 const expandedKeys = computed( () => {
-	const withChildren = new Set( store.items.map( ( item ) => item.parent ) );
-	const parents = store.items
-		.filter( ( item ) => withChildren.has( item.id ) )
-		.map( ( item ) => item.id );
+	const ids = store.items.map( ( item ) => item.id );
 
 	return searching.value
-		? parents
-		: parents.filter( ( id ) => ! collapsed.value.includes( id ) );
+		? ids
+		: ids.filter( ( id ) => ! collapsed.value.includes( id ) );
 } );
 
 const selectedKeys = computed( () =>
@@ -449,6 +450,86 @@ function onOpenChange( open: boolean ): void {
 }
 
 /**
+ * The enabled items of the open actions menu.
+ *
+ * @since 1.0.0
+ *
+ * @return {HTMLElement[]} The menu items, in order.
+ */
+function menuItems(): HTMLElement[] {
+	return [
+		...document.querySelectorAll< HTMLElement >(
+			'.lkb-node-menu:not(.ant-dropdown-hidden) .ant-dropdown-menu-item:not(.ant-dropdown-menu-item-disabled)'
+		),
+	];
+}
+
+/**
+ * Open or close a category's actions menu.
+ *
+ * Ant Design's menu does not move focus itself, so on opening the first
+ * item gets focus, which lets a keyboard user reach the actions.
+ *
+ * @since 1.0.0
+ *
+ * @param {number}  id   The category.
+ * @param {boolean} open Whether the menu wants to be open.
+ *
+ * @return {void}
+ */
+function onMenuOpen( id: number, open: boolean ): void {
+	if ( ! open ) {
+		if ( menuFor.value === id ) {
+			menuFor.value = null;
+		}
+
+		return;
+	}
+
+	menuFor.value = id;
+
+	nextTick( () => {
+		window.setTimeout( () => menuItems()[ 0 ]?.focus(), 0 );
+	} );
+}
+
+/**
+ * Move through the open actions menu from the keyboard.
+ *
+ * Up and Down (and Home and End) move between the items, Enter runs one,
+ * and Escape or Tab closes the menu and puts focus back on its button.
+ *
+ * @since 1.0.0
+ *
+ * @param {KeyboardEvent} event The key press.
+ * @param {number}        id    The category whose menu is open.
+ *
+ * @return {void}
+ */
+function onMenuKey( event: KeyboardEvent, id: number ): void {
+	if ( 'Escape' === event.key || 'Tab' === event.key ) {
+		event.preventDefault();
+		menuFor.value = null;
+		returnFocus( id );
+		return;
+	}
+
+	const items = menuItems();
+	const at = items.indexOf( document.activeElement as HTMLElement );
+	const next: Record< string, number > = {
+		ArrowDown: ( at + 1 ) % items.length,
+		ArrowUp: ( at - 1 + items.length ) % items.length,
+		Home: 0,
+		End: items.length - 1,
+	};
+
+	if ( items.length && event.key in next ) {
+		event.preventDefault();
+		items[ next[ event.key ] ]?.focus();
+	}
+}
+
+/**
  * Run an item from a category's actions menu.
  *
  * @since 1.0.0
@@ -459,6 +540,8 @@ function onOpenChange( open: boolean ): void {
  * @return {void}
  */
 function onMenu( item: CategoryItem, key: string ): void {
+	menuFor.value = null;
+
 	if ( 'up' === key ) {
 		step( item, -1 );
 		return;
@@ -540,11 +623,20 @@ function onMenu( item: CategoryItem, key: string ): void {
 								}}
 							</span>
 
-							<a-dropdown :trigger="[ 'click' ]">
+							<a-dropdown
+								:trigger="[ 'click' ]"
+								:open="menuFor === itemOf( node ).id"
+								overlay-class-name="lkb-node-menu"
+								@open-change="
+									( open: boolean ) => onMenuOpen( itemOf( node ).id, open )
+								"
+							>
 								<a-button
 									type="text"
 									size="small"
 									class="lkb-tree__actions"
+									aria-haspopup="menu"
+									:aria-expanded="menuFor === itemOf( node ).id"
 									:data-lkb-actions="itemOf( node ).id"
 									:aria-label="
 										sprintf(
@@ -562,6 +654,10 @@ function onMenu( item: CategoryItem, key: string ): void {
 										@click="
 											( { key }: { key: string | number } ) =>
 												onMenu( itemOf( node ), String( key ) )
+										"
+										@keydown="
+											( event: KeyboardEvent ) =>
+												onMenuKey( event, itemOf( node ).id )
 										"
 									>
 										<a-menu-item key="edit">

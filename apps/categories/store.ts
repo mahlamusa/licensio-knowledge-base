@@ -239,6 +239,9 @@ export const useCategoriesStore = defineStore( 'licensioKBCategories', {
 		/**
 		 * Wait for a write, then reload the tree.
 		 *
+		 * The tree is reloaded after a failed write too: a delete or merge
+		 * may have moved articles before it failed.
+		 *
 		 * @since 1.0.0
 		 *
 		 * @template T
@@ -248,11 +251,11 @@ export const useCategoriesStore = defineStore( 'licensioKBCategories', {
 		 * @return {Promise<T>} The write's answer, once the tree is reloaded.
 		 */
 		async reloadAfter< T >( write: Promise< T > ): Promise< T > {
-			const result = await write;
-
-			await this.load();
-
-			return result;
+			try {
+				return await write;
+			} finally {
+				await this.load();
+			}
 		},
 
 		/**

@@ -302,6 +302,33 @@ test.describe( 'Categories app', () => {
 		expect( writes ).toHaveLength( 1 );
 	} );
 
+	test( 'the actions menu works from the keyboard alone', async ( { page } ) => {
+		const writes = recordWrites( page );
+		const trigger = page.getByRole( 'button', { name: 'Actions for Alpha', exact: true } );
+		const edit = page.getByRole( 'menuitem', { name: 'Edit' } ).locator( 'visible=true' );
+
+		// Escape closes the menu and puts focus back on its button.
+		await trigger.focus();
+		await page.keyboard.press( 'Enter' );
+		await expect( edit ).toBeFocused();
+		await page.keyboard.press( 'Escape' );
+		await expect( trigger ).toBeFocused();
+		await expect( trigger ).toHaveAttribute( 'aria-expanded', 'false' );
+
+		// Edit, Add child, then Move down (Move up is disabled for the first category).
+		await page.keyboard.press( 'Enter' );
+		await expect( edit ).toBeFocused();
+		await page.keyboard.press( 'ArrowDown' );
+		await page.keyboard.press( 'ArrowDown' );
+		await expect( page.getByRole( 'menuitem', { name: 'Move down' } ).locator( 'visible=true' ) ).toBeFocused();
+		await page.keyboard.press( 'Enter' );
+
+		await expect( page.locator( '.lkb-move-confirm .ant-popconfirm-buttons .ant-btn-primary' ) ).toBeFocused();
+		await page.keyboard.press( 'Enter' );
+		await expect.poll( () => topLevel( page ) ).toEqual( [ 'Beta', 'Alpha', 'Gamma' ] );
+		expect( writes ).toHaveLength( 1 );
+	} );
+
 	test( 'the drawer adds a category with a Dashicon and an SVG icon', async ( { page } ) => {
 		await page.getByRole( 'button', { name: 'Add category' } ).first().click();
 

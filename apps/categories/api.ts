@@ -194,7 +194,15 @@ export function fetchCategoryArticles(
 }
 
 /**
+ * The most article IDs one order save may send; the route refuses more.
+ */
+const ARTICLE_ORDER_MAX_IDS = 1000;
+
+/**
  * Save a category's article order.
+ *
+ * At most the first 1000 IDs are sent. That is safe: the server places the
+ * category's other ordered articles after the ones listed.
  *
  * @since 1.0.0
  *
@@ -208,6 +216,6 @@ export function saveArticleOrder(
 	ids: number[]
 ): Promise< CategoryOrderSaved > {
 	return put< CategoryOrderSaved >( categoryOrderPath( categoryId ), {
-		ids,
+		ids: ids.slice( 0, ARTICLE_ORDER_MAX_IDS ),
 	} );
 }
