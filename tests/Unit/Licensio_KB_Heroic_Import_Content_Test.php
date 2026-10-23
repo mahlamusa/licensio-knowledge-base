@@ -902,67 +902,93 @@ class Licensio_KB_Heroic_Import_Content_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * The kept position comes from the lowest category, and the loss is reported.
+     * Each category position is kept, and menu_order falls back to the lowest category.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_the_article_position_is_collapsed_and_the_loss_is_reported() {
+    public function test_each_category_position_is_written_against_the_imported_category() {
+        $this->wpdb->target_terms[ Licensio_KB_Post_Types::TAXONOMY_CATEGORY . ':31' ] = 501;
+        $this->wpdb->target_terms[ Licensio_KB_Post_Types::TAXONOMY_CATEGORY . ':12' ] = 502;
+
         $source = $this->source(
             array(
-                'articles' => array(
+                'articles'   => array(
                     array(
                         'ID'        => 11,
                         'post_name' => 'install',
                     ),
                 ),
-                'orders'   => array(
+                'orders'     => array(
                     11 => array(
                         31 => '5',
                         12 => '9',
                     ),
                 ),
+                'post_terms' => array(
+                    '11:' . Licensio_KB_Heroic_Import_Schema::TAXONOMY_CATEGORY => array( 31, 12 ),
+                ),
             )
         );
 
         $this->migrator( $source )->migrate_articles_batch( 10 );
 
-        $this->assertSame( 9, $this->inserted_posts[0]['menu_order'], 'The position must come from category 12.' );
-        $this->assertSame( 1, $this->report->get( 'articles_order_collapsed' ) );
-        $this->assertStringContainsString( 'kept 9 from category 12', $this->report->notes( 'article_order' )[0] );
+        $this->assertSame( 9, $this->inserted_posts[0]['menu_order'], 'The fallback position must come from category 12.' );
+        $this->assertSame( 5, $this->post_meta[901]['licensio_order_501'] );
+        $this->assertSame( 9, $this->post_meta[901]['licensio_order_502'] );
+        $this->assertSame( 0, $this->report->get( 'articles_order_collapsed' ) );
+        $this->assertSame( array(), $this->report->notes( 'article_order' ) );
     }
 
     /**
-     * An article ordered consistently is not reported as a lossy collapse.
+     * The log says the Heroic order keys become per-category positions.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_a_consistent_position_is_not_reported_as_a_collapse() {
+    public function test_the_order_keys_are_classified_as_per_category_positions() {
+        $class = $this->source( array() )->classify_post_meta( '_ht_article_order_12' );
+
+        $this->assertSame( 'migrated', $class['action'] );
+        $this->assertSame( 'licensio_order_{term} (per category)', $class['target'] );
+    }
+
+    /**
+     * A position in a category that was not imported has nowhere to go.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_position_in_an_unimported_category_is_not_written() {
+        $this->wpdb->target_terms[ Licensio_KB_Post_Types::TAXONOMY_CATEGORY . ':31' ] = 501;
+
         $source = $this->source(
             array(
-                'articles' => array(
+                'articles'   => array(
                     array(
                         'ID'        => 11,
                         'post_name' => 'install',
                     ),
                 ),
-                'orders'   => array(
+                'orders'     => array(
                     11 => array(
                         31 => '3',
-                        12 => '3',
+                        12 => '7',
                     ),
+                ),
+                'post_terms' => array(
+                    '11:' . Licensio_KB_Heroic_Import_Schema::TAXONOMY_CATEGORY => array( 31, 12 ),
                 ),
             )
         );
 
         $this->migrator( $source )->migrate_articles_batch( 10 );
 
-        $this->assertSame( 3, $this->inserted_posts[0]['menu_order'] );
-        $this->assertSame( 0, $this->report->get( 'articles_order_collapsed' ) );
-        $this->assertSame( array(), $this->report->notes( 'article_order' ) );
+        $this->assertSame( 3, $this->post_meta[901]['licensio_order_501'] );
+        $this->assertSame( array( 'licensio_order_501' ), array_values( preg_grep( '/^licensio_order_/', array_keys( $this->post_meta[901] ) ) ) );
     }
 
     /**

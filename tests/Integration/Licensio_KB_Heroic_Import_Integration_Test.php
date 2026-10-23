@@ -857,4 +857,45 @@ class Licensio_KB_Heroic_Import_Integration_Test extends Licensio_KB_Heroic_Impo
         $this->assertSame( 3, $source->count_table( Licensio_KB_Heroic_Import_Schema::TABLE_SEARCHES ) );
         $this->assertSame( 1, $source->count_table( Licensio_KB_Heroic_Import_Schema::TABLE_EXITS ) );
     }
+
+    /**
+     * The reader returns each Heroic category position from the real postmeta rows.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_reader_returns_every_category_position() {
+        $this->seed(
+            'postmeta',
+            array(
+                array(
+                    'post_id'    => 11,
+                    'meta_key'   => '_ht_article_order_31', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+                    'meta_value' => '5', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+                ),
+                array(
+                    'post_id'    => 11,
+                    'meta_key'   => '_ht_article_order_12', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+                    'meta_value' => '9', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+                ),
+                array(
+                    'post_id'    => 12,
+                    'meta_key'   => '_ht_article_order_31', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+                    'meta_value' => '1', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+                ),
+            )
+        );
+
+        $order = ( new Licensio_KB_Heroic_Import_Source() )->article_order( 11 );
+
+        $this->assertSame(
+            array(
+                12 => 9,
+                31 => 5,
+            ),
+            $order['positions']
+        );
+        $this->assertSame( 9, $order['order'], 'menu_order still falls back to the lowest category.' );
+    }
 }

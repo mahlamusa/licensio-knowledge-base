@@ -14,10 +14,12 @@
  *   Body: `{ ids: int[] }`, first comes first. Answers `{ ids: int[] }`, the
  *   order as saved.
  *
- * Both currently answer `501 licensio_kb_not_implemented`. The per-category
- * article order work replaces the two callbacks and keeps the routes, the
- * argument schema and the response shapes above unchanged; the TypeScript
- * types in `apps/components/types/category-order.ts` describe the same shapes.
+ * Both answer 404 `licensio_kb_invalid_term` for an ID that is not a
+ * knowledge base category. The save answers 400 `licensio_kb_not_in_category`
+ * when an ID is not an article filed directly in the category, and 403
+ * `licensio_kb_cannot_edit` when the user may not edit one of the articles.
+ * Nothing is written unless every ID passes. The TypeScript types in
+ * `apps/components/types/category-order.ts` describe the same shapes.
  *
  * Consumed by the categories app and the per-category article order.
  *
@@ -153,50 +155,200 @@ class Licensio_KB_Category_Order_REST_Controller extends Licensio_KB_REST_Contro
         );
     }
 
+
     /**
      * List a category's articles in their per-category order.
+     *
+     * Every status except trash (and auto-draft), filed directly in the
+     * category; articles of sub-categories are not listed. Ordered articles
+     * come first, then unordered ones by title.
      *
      * @since 1.0.0
      *
      * @param WP_REST_Request $request The request.
      *
-     * @return WP_Error A 501 error until the per-category article order is built.
+     * @return WP_REST_Response|WP_Error The page of articles, or an error for an unknown category.
      */
     public function get_items( $request ) {
-        return $this->not_built( $request );
+        $term_id = $this->category_id( $request );
+
+        if ( is_wp_error( $term_id ) ) {
+            return $term_id;
+        }
+
+        $per_page = min( self::MAX_PER_PAGE, max( 1, (int) $request->get_param( 'per_page' ) ) );
+        $page     = max( 1, (int) $request->get_param( 'page' ) );
+
+        $query = $this->query(
+            array(
+                'post_type'              => Licensio_KB_Post_Types::POST_TYPE,
+                'post_status'            => 'any',
+                'posts_per_page'         => $per_page,
+                'paged'                  => $page,
+                'orderby'                => Licensio_KB_Article_Order::ORDERBY,
+                'ignore_sticky_posts'    => true,
+                'update_post_term_cache' => false,
+                // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
+                'tax_query'              => $this->category_clause( $term_id ),
+            )
+        );
+
+        $key   = Licensio_KB_Article_Order::meta_key( $term_id );
+        $items = array();
+
+        foreach ( $query->posts as $post ) {
+            if ( ! $post instanceof WP_Post ) {
+                continue;
+            }
+
+            $order = get_post_meta( (int) $post->ID, $key, true );
+            $link  = get_edit_post_link( (int) $post->ID, 'raw' );
+
+            $items[] = array(
+                'id'       => (int) $post->ID,
+                'title'    => html_entity_decode( (string) $post->post_title, ENT_QUOTES, 'UTF-8' ),
+                'status'   => (string) $post->post_status,
+                'order'    => is_numeric( $order ) ? (int) $order : null,
+                'edit_url' => is_string( $link ) ? $link : '',
+            );
+        }
+
+        $total = (int) $query->found_posts;
+
+        return rest_ensure_response(
+            array(
+                'items' => $items,
+                'total' => $total,
+                'pages' => (int) ceil( $total / $per_page ),
+            )
+        );
     }
 
     /**
      * Save a category's article order.
      *
+     * Every ID must be an article filed directly in the category, in any
+     * status except trash, that the current user may edit. The articles are
+     * written as 10, 20, 30… in the order given. Articles of the category that
+     * are not listed keep their positions.
+     *
      * @since 1.0.0
      *
      * @param WP_REST_Request $request The request.
      *
-     * @return WP_Error A 501 error until the per-category article order is built.
+     * @return WP_REST_Response|WP_Error The order as saved, or an error naming the first problem.
      */
     public function update_order( $request ) {
-        return $this->not_built( $request );
+        $term_id = $this->category_id( $request );
+
+        if ( is_wp_error( $term_id ) ) {
+            return $term_id;
+        }
+
+        $ids = array_values( array_unique( array_filter( array_map( 'absint', (array) $request->get_param( 'ids' ) ) ) ) );
+
+        if ( ! empty( $ids ) ) {
+            $found = get_posts(
+                array(
+                    'post_type'              => Licensio_KB_Post_Types::POST_TYPE,
+                    'post_status'            => 'any',
+                    'post__in'               => $ids,
+                    'posts_per_page'         => count( $ids ),
+                    'fields'                 => 'ids',
+                    'no_found_rows'          => true,
+                    'update_post_term_cache' => false,
+                    'update_post_meta_cache' => false,
+                    // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
+                    'tax_query'              => $this->category_clause( $term_id ),
+                )
+            );
+
+            $strays = array_values( array_diff( $ids, array_map( 'intval', is_array( $found ) ? $found : array() ) ) );
+
+            if ( ! empty( $strays ) ) {
+                return new WP_Error(
+                    'licensio_kb_not_in_category',
+                    __( 'Some of these articles are not in this category.', 'licensio-knowledge-base' ),
+                    array(
+                        'status' => 400,
+                        'ids'    => $strays,
+                    )
+                );
+            }
+
+            foreach ( $ids as $id ) {
+                if ( ! current_user_can( 'edit_post', $id ) ) {
+                    return new WP_Error(
+                        'licensio_kb_cannot_edit',
+                        __( 'You are not allowed to reorder one of these articles.', 'licensio-knowledge-base' ),
+                        array(
+                            'status' => rest_authorization_required_code(),
+                            'ids'    => array( $id ),
+                        )
+                    );
+                }
+            }
+        }
+
+        return rest_ensure_response( array( 'ids' => Licensio_KB_Article_Order::save( $term_id, $ids ) ) );
     }
 
     /**
-     * The answer from a route whose handler is not built yet.
+     * The category a request names, checked.
      *
      * @since 1.0.0
      *
      * @param WP_REST_Request $request The request.
      *
-     * @return WP_Error A 501 error naming the route.
+     * @return int|WP_Error The category term ID, or a 404 error when it is not a knowledge base category.
      */
-    private function not_built( $request ) {
-        return new WP_Error(
-            'licensio_kb_not_implemented',
-            sprintf(
-                /* translators: %s: REST route path */
-                __( 'The %s endpoint is registered but not yet implemented.', 'licensio-knowledge-base' ),
-                $request->get_route()
+    private function category_id( $request ) {
+        $term_id = absint( $request->get_param( 'id' ) );
+        $term    = $term_id > 0 ? get_term( $term_id, Licensio_KB_Post_Types::TAXONOMY_CATEGORY ) : null;
+
+        if ( ! $term instanceof WP_Term ) {
+            return new WP_Error(
+                'licensio_kb_invalid_term',
+                __( 'That category does not exist.', 'licensio-knowledge-base' ),
+                array( 'status' => 404 )
+            );
+        }
+
+        return (int) $term->term_id;
+    }
+
+    /**
+     * The tax query limiting a query to one category, without its children.
+     *
+     * @since 1.0.0
+     *
+     * @param int $term_id The category term ID.
+     *
+     * @return array<int, array<string, mixed>> The tax query.
+     */
+    private function category_clause( $term_id ) {
+        return array(
+            array(
+                'taxonomy'         => Licensio_KB_Post_Types::TAXONOMY_CATEGORY,
+                'field'            => 'term_id',
+                'terms'            => (int) $term_id,
+                'include_children' => false,
             ),
-            array( 'status' => 501 )
         );
+    }
+
+    /**
+     * Run a post query.
+     *
+     * A seam for the unit tests, which have no database to query.
+     *
+     * @since 1.0.0
+     *
+     * @param array<string, mixed> $args The query arguments.
+     *
+     * @return WP_Query The query, already run.
+     */
+    protected function query( array $args ) {
+        return new WP_Query( $args );
     }
 }

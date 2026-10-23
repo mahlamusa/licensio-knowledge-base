@@ -489,6 +489,10 @@ class Licensio_KB_BetterDocs_Import_Source_Test extends Licensio_KB_Test_Case {
                 'order'          => 2,
                 'ambiguous'      => true,
                 'source_term_id' => 4,
+                'positions'      => array(
+                    4 => 2,
+                    5 => 0,
+                ),
             ),
             $source->article_order( 30 )
         );
@@ -512,6 +516,7 @@ class Licensio_KB_BetterDocs_Import_Source_Test extends Licensio_KB_Test_Case {
                 'order'          => 0,
                 'ambiguous'      => false,
                 'source_term_id' => 0,
+                'positions'      => array(),
             ),
             $source->article_order( 30 )
         );
@@ -548,6 +553,7 @@ class Licensio_KB_BetterDocs_Import_Source_Test extends Licensio_KB_Test_Case {
         }
 
         $this->assertSame( Licensio_KB_Term_Meta::META_ORDER, $source->classify_term_meta( 'kb_order' )['target'] );
+        $this->assertSame( 'licensio_order_{term} (per category)', $source->classify_term_meta( '_docs_order' )['target'] );
         $this->assertSame( 'not_migrated', $source->classify_term_meta( 'anything_else' )['action'] );
     }
 

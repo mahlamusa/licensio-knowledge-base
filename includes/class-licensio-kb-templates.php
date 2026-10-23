@@ -571,12 +571,16 @@ class Licensio_KB_Templates {
      * counts them: a parent category that only groups its children would list
      * nothing at all while advertising a count in the dozens.
      *
+     * The articles follow the category's own article order. Articles without
+     * a position in it, including those filed only in a descendant, follow by
+     * title.
+     *
      * @since 1.0.0
      *
      * @param WP_Term|int $term  The category, or its term ID.
      * @param int         $limit How many articles to return at most.
      *
-     * @return WP_Post[] The articles, by title. Empty when the category is unknown or the limit is not positive.
+     * @return WP_Post[] The articles, in the per-category order. Empty when the category is unknown or the limit is not positive.
      */
     public static function category_articles( $term, $limit ) {
         $term  = get_term( $term, Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
@@ -591,8 +595,7 @@ class Licensio_KB_Templates {
                 'post_type'              => Licensio_KB_Post_Types::POST_TYPE,
                 'post_status'            => 'publish',
                 'posts_per_page'         => $limit,
-                'orderby'                => 'title',
-                'order'                  => 'ASC',
+                'orderby'                => Licensio_KB_Article_Order::ORDERBY,
                 'ignore_sticky_posts'    => true,
                 'no_found_rows'          => true,
                 'update_post_term_cache' => false,

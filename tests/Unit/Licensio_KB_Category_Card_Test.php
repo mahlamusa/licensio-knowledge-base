@@ -486,6 +486,21 @@ class Licensio_KB_Category_Card_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * The list follows the category's own article order.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_article_list_follows_the_per_category_order() {
+        $this->articles = array( $this->article( 11, 'One' ) );
+
+        $this->render_card();
+
+        $this->assertSame( Licensio_KB_Article_Order::ORDERBY, $this->query_args['orderby'] );
+    }
+
+    /**
      * A card told not to list articles does not query for them at all.
      *
      * A category grid is a page of cards, so a query per card that nothing

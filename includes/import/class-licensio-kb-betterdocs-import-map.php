@@ -70,7 +70,7 @@ class Licensio_KB_BetterDocs_Import_Map {
      *   is `licensio_image_id`.
      *
      * The knowledge-base membership and the article order are carried by the
-     * import itself (the category's parent and the articles' menu order), so
+     * import itself (the category's parent and the articles' per-category order), so
      * they are not reported as unmapped. Anything else with a value is.
      *
      * @since 1.0.0

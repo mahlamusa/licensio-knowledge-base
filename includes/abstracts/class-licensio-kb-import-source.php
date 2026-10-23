@@ -107,16 +107,15 @@ abstract class Licensio_KB_Import_Source {
     abstract public function map_category_meta( array $meta );
 
     /**
-     * The menu order an article should get.
+     * An article's per-category positions, and the menu order to fall back on.
      *
      * @since 1.0.0
      *
      * @param int $post_id The source post ID.
      *
-     * @return array{order: int, ambiguous: bool, source_term_id: int} The kept position, whether
-     *                                                                 the source disagreed with
-     *                                                                 itself, and the category it
-     *                                                                 was taken from.
+     * @return array{order: int, ambiguous: bool, source_term_id: int, positions: array<int, int>} The
+     *               fallback position, whether the categories disagreed, the category it was taken
+     *               from, and the article's position in each source category, keyed by source term ID.
      */
     abstract public function article_order( $post_id );
 

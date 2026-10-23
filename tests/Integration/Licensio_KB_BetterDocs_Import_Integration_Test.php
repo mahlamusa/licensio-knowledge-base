@@ -801,6 +801,7 @@ class Licensio_KB_BetterDocs_Import_Integration_Test extends Licensio_KB_BetterD
                 'order'          => 1,
                 'ambiguous'      => false,
                 'source_term_id' => 1,
+                'positions'      => array( 1 => 1 ),
             ),
             $source->article_order( 11 )
         );
@@ -839,5 +840,34 @@ class Licensio_KB_BetterDocs_Import_Integration_Test extends Licensio_KB_BetterD
         $this->assertFalse( $source->article_exists( 900 ), 'A target article is not a BetterDocs article.' );
         $this->assertTrue( Licensio_KB_Import_Source::table_exists( 'betterdocs_analytics' ) );
         $this->assertFalse( Licensio_KB_Import_Source::table_exists( 'betterdocs_analytics_feedback' ) );
+    }
+
+    /**
+     * The reader returns the article's place in every category list that names it.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_reader_returns_every_category_position() {
+        $this->seed_source_article( 11, 'install-a-licence' );
+        $this->seed_term( 1, 'doc_category', 'Billing', 0, array( '_docs_order' => '5,11,6' ) );
+        $this->seed_term( 2, 'doc_category', 'Install', 0, array( '_docs_order' => '11' ) );
+        $this->seed_term( 3, 'doc_category', 'Unlisted' );
+        $this->file_under( 11, 1 );
+        $this->file_under( 11, 2 );
+        $this->file_under( 11, 3 );
+
+        $order = ( new Licensio_KB_BetterDocs_Import_Source() )->article_order( 11 );
+
+        $this->assertSame(
+            array(
+                1 => 1,
+                2 => 0,
+            ),
+            $order['positions'],
+            'A category whose list does not name the article has no position.'
+        );
+        $this->assertSame( 1, $order['order'] );
     }
 }

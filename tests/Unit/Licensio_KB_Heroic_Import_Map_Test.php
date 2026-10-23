@@ -539,6 +539,15 @@ class Licensio_KB_Heroic_Import_Map_Test extends Licensio_KB_Test_Case {
         $this->assertSame( 9, $result['order'], 'The kept position must come from category 12, the lowest term ID.' );
         $this->assertSame( 12, $result['source_term_id'] );
         $this->assertTrue( $result['ambiguous'] );
+        $this->assertSame(
+            array(
+                12 => 9,
+                31 => 5,
+                44 => 1,
+            ),
+            $result['positions'],
+            'Every category keeps its own position.'
+        );
     }
 
     /**

@@ -495,22 +495,6 @@ class Licensio_KB_Import_Content {
         $warnings = array();
         $order    = $this->source->article_order( $source_id );
 
-        if ( $order['ambiguous'] ) {
-            $this->report->count( 'articles_order_collapsed' );
-
-            $warning = sprintf(
-                '%1$s article %2$d had different positions in different categories; kept %3$d from category %4$d.',
-                $label,
-                $source_id,
-                $order['order'],
-                $order['source_term_id']
-            );
-
-            $this->report->note( 'article_order', $warning );
-
-            $warnings[] = $warning;
-        }
-
         $adopt = '' !== $slug ? $this->find_unclaimed_article_by_slug( $slug ) : 0;
 
         $details = array(
@@ -520,7 +504,7 @@ class Licensio_KB_Import_Content {
             'date'        => isset( $row['post_date'] ) ? (string) $row['post_date'] : '',
             'order'       => array(
                 'value'     => (int) $order['order'],
-                'ambiguous' => (bool) $order['ambiguous'],
+                'positions' => $order['positions'],
             ),
             'meta'        => $this->describe_post_meta( $source_id ),
             'attachments' => $this->source->attachments( $source_id ),
@@ -585,6 +569,7 @@ class Licensio_KB_Import_Content {
 
         $terms                     = $this->assign_terms( $source_id, $article_id );
         $details                   = array_merge( $details, $terms['details'] );
+        $details['order']['saved'] = $this->migrate_positions( $article_id, $order['positions'], $terms['details']['categories'] );
         $warnings                  = array_merge( $warnings, $terms['warnings'] );
         $details['thumbnail_id']   = $this->migrate_thumbnail( $source_id, $article_id );
         $details['slug']['actual'] = (string) get_post_field( 'post_name', $article_id );
@@ -620,7 +605,7 @@ class Licensio_KB_Import_Content {
      * @since 1.0.0
      *
      * @param array<string, mixed> $row        The source post row.
-     * @param int                  $menu_order The collapsed per-category position.
+     * @param int                  $menu_order The fallback position, for listings not limited to one category.
      * @param string               $slug       The source slug.
      *
      * @return array<string, mixed> The post fields.
@@ -642,6 +627,40 @@ class Licensio_KB_Import_Content {
             'ping_status'       => isset( $row['ping_status'] ) ? (string) $row['ping_status'] : 'closed',
             'menu_order'        => $menu_order,
         );
+    }
+
+    /**
+     * Write an imported article's position in each imported category.
+     *
+     * Each source category's position is stored as `licensio_order_{term_id}`
+     * against the category it was imported as. A category that was not
+     * imported has no key to write.
+     *
+     * @since 1.0.0
+     *
+     * @param int                              $article_id The target article ID.
+     * @param array<int, int>                  $positions  Source category term ID to the article's position in it.
+     * @param array<int, array<string, mixed>> $categories The category assignments `assign_terms()` reported.
+     *
+     * @return array<int, int> Target category term ID to the position written.
+     */
+    private function migrate_positions( $article_id, array $positions, array $categories ) {
+        $saved = array();
+
+        foreach ( $categories as $category ) {
+            $source = isset( $category['source_id'] ) ? (int) $category['source_id'] : 0;
+            $target = isset( $category['target_id'] ) ? (int) $category['target_id'] : 0;
+
+            if ( $target <= 0 || ! isset( $positions[ $source ] ) ) {
+                continue;
+            }
+
+            update_post_meta( $article_id, Licensio_KB_Article_Order::meta_key( $target ), (int) $positions[ $source ] );
+
+            $saved[ $target ] = (int) $positions[ $source ];
+        }
+
+        return $saved;
     }
 
     /**

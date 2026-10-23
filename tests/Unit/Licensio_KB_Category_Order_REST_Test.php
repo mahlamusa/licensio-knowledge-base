@@ -2,10 +2,10 @@
 /**
  * The per-category article order routes.
  *
- * The routes ship as stubs. What these tests pin is the contract the
- * categories app and the per-category article order build against: the two
- * paths, their methods, their argument schema, the permission check and the
- * not-implemented answer.
+ * Pins the contract the categories app builds against: the two paths, their
+ * methods, their argument schema and the permission check. Then the handlers:
+ * the category check, the listing shape and the validation the save runs
+ * before it writes anything.
  *
  * @package Licensio_KB
  * @since   1.0.0
@@ -51,6 +51,17 @@ class Licensio_KB_Category_Order_REST_Test extends Licensio_KB_Test_Case {
         );
 
         Functions\when( 'rest_authorization_required_code' )->justReturn( 403 );
+        Functions\when( 'rest_ensure_response' )->returnArg();
+        Functions\when( 'absint' )->alias(
+            function ( $value ) {
+                return abs( (int) $value );
+            }
+        );
+        Functions\when( 'is_wp_error' )->alias(
+            function ( $thing ) {
+                return $thing instanceof WP_Error;
+            }
+        );
 
         ( new Licensio_KB_Category_Order_REST_Controller() )->register_routes();
     }
@@ -123,19 +134,315 @@ class Licensio_KB_Category_Order_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * Both routes answer 501 until they are built.
+     * Both routes answer 404 for an ID that is not a knowledge base category.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_both_routes_answer_not_implemented() {
+    public function test_both_routes_reject_an_unknown_category() {
+        Functions\when( 'get_term' )->justReturn( null );
+        Functions\expect( 'update_post_meta' )->never();
+
         foreach ( $this->routes as $route => $handlers ) {
-            $result = call_user_func( $handlers[0]['callback'], new WP_REST_Request( array(), '/licensio-kb/v1/categories/5/articles' ) );
+            $result = call_user_func( $handlers[0]['callback'], $this->request( 5, array( 1, 2 ) ) );
 
             $this->assertInstanceOf( 'WP_Error', $result, $route );
-            $this->assertSame( 'licensio_kb_not_implemented', $result->get_error_code() );
-            $this->assertSame( array( 'status' => 501 ), $result->get_error_data() );
+            $this->assertSame( 'licensio_kb_invalid_term', $result->get_error_code() );
+            $this->assertSame( 404, $result->get_error_data()['status'] );
         }
+    }
+
+    /**
+     * The list answers items in query order with their position, or null.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_list_answers_items_with_their_positions() {
+        $this->stub_category( 5 );
+
+        $query              = new WP_Query();
+        $query->found_posts = 3;
+        $query->posts       = array(
+            new WP_Post(
+                array(
+                    'ID'          => 11,
+                    'post_title'  => 'Fish &amp; chips',
+                    'post_status' => 'publish',
+                )
+            ),
+            new WP_Post(
+                array(
+                    'ID'          => 12,
+                    'post_title'  => 'Billing',
+                    'post_status' => 'draft',
+                )
+            ),
+        );
+
+        $meta = array(
+            11 => '0',
+            12 => '',
+        );
+
+        Functions\when( 'get_post_meta' )->alias(
+            function ( $id, $key ) use ( $meta ) {
+                $this->assertSame( 'licensio_order_5', $key );
+
+                return $meta[ $id ];
+            }
+        );
+        Functions\when( 'get_edit_post_link' )->alias(
+            function ( $id ) {
+                return 11 === $id ? 'https://example.test/wp-admin/post.php?post=11&action=edit' : null;
+            }
+        );
+
+        $controller = new Licensio_KB_Category_Order_REST_Controller_Double( $query );
+        $result     = $controller->get_items( $this->request( 5, array(), array( 'per_page' => 2 ) ) );
+
+        $this->assertSame( 'licensio_order', $controller->args['orderby'] );
+        $this->assertSame( 'any', $controller->args['post_status'] );
+        $this->assertSame( 2, $controller->args['posts_per_page'] );
+        $this->assertFalse( $controller->args['tax_query'][0]['include_children'] );
+        $this->assertSame( 5, $controller->args['tax_query'][0]['terms'] );
+        $this->assertSame(
+            array(
+                'items' => array(
+                    array(
+                        'id'       => 11,
+                        'title'    => 'Fish & chips',
+                        'status'   => 'publish',
+                        'order'    => 0,
+                        'edit_url' => 'https://example.test/wp-admin/post.php?post=11&action=edit',
+                    ),
+                    array(
+                        'id'       => 12,
+                        'title'    => 'Billing',
+                        'status'   => 'draft',
+                        'order'    => null,
+                        'edit_url' => '',
+                    ),
+                ),
+                'total' => 3,
+                'pages' => 2,
+            ),
+            $result
+        );
+    }
+
+    /**
+     * An ID outside the category stops the save before anything is written.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_save_rejects_an_article_outside_the_category() {
+        $this->stub_category( 5 );
+
+        Functions\when( 'get_posts' )->justReturn( array( 11 ) );
+        Functions\when( 'current_user_can' )->justReturn( true );
+        Functions\expect( 'update_post_meta' )->never();
+
+        $result = ( new Licensio_KB_Category_Order_REST_Controller() )->update_order( $this->request( 5, array( 11, 99 ) ) );
+
+        $this->assertInstanceOf( 'WP_Error', $result );
+        $this->assertSame( 'licensio_kb_not_in_category', $result->get_error_code() );
+        $this->assertSame( 400, $result->get_error_data()['status'] );
+        $this->assertSame( array( 99 ), $result->get_error_data()['ids'] );
+    }
+
+    /**
+     * An article the user may not edit stops the save before anything is written.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_save_requires_edit_rights_on_every_article() {
+        $this->stub_category( 5 );
+
+        Functions\when( 'get_posts' )->justReturn( array( 11, 12 ) );
+        Functions\when( 'current_user_can' )->alias(
+            function ( $cap, $id = 0 ) {
+                return 'edit_post' === $cap && 11 === $id;
+            }
+        );
+        Functions\expect( 'update_post_meta' )->never();
+
+        $result = ( new Licensio_KB_Category_Order_REST_Controller() )->update_order( $this->request( 5, array( 11, 12 ) ) );
+
+        $this->assertInstanceOf( 'WP_Error', $result );
+        $this->assertSame( 'licensio_kb_cannot_edit', $result->get_error_code() );
+        $this->assertSame( 403, $result->get_error_data()['status'] );
+    }
+
+    /**
+     * A valid save writes 10, 20, 30 in the order given and answers it.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_save_writes_positions_in_steps_of_ten() {
+        $this->stub_category( 5 );
+
+        $checked = array();
+        $written = array();
+
+        Functions\when( 'get_posts' )->alias(
+            function ( $args ) use ( &$checked ) {
+                $checked = $args;
+
+                return array( 13, 11, 12 );
+            }
+        );
+        Functions\when( 'current_user_can' )->justReturn( true );
+        Functions\when( 'update_post_meta' )->alias(
+            function ( $id, $key, $value ) use ( &$written ) {
+                $written[] = array( $id, $key, $value );
+
+                return true;
+            }
+        );
+
+        $result = ( new Licensio_KB_Category_Order_REST_Controller() )->update_order( $this->request( 5, array( 12, 11, 13 ) ) );
+
+        $this->assertSame( array( 'ids' => array( 12, 11, 13 ) ), $result );
+        $this->assertSame( array( 12, 11, 13 ), $checked['post__in'] );
+        $this->assertFalse( $checked['tax_query'][0]['include_children'] );
+        $this->assertSame( 'any', $checked['post_status'] );
+        $this->assertSame(
+            array(
+                array( 12, 'licensio_order_5', 10 ),
+                array( 11, 'licensio_order_5', 20 ),
+                array( 13, 'licensio_order_5', 30 ),
+            ),
+            $written
+        );
+    }
+
+    /**
+     * An empty list writes nothing and answers an empty order.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_empty_save_writes_nothing() {
+        $this->stub_category( 5 );
+
+        Functions\expect( 'get_posts' )->never();
+        Functions\expect( 'update_post_meta' )->never();
+
+        $result = ( new Licensio_KB_Category_Order_REST_Controller() )->update_order( $this->request( 5, array() ) );
+
+        $this->assertSame( array( 'ids' => array() ), $result );
+    }
+
+    /**
+     * Make `get_term()` find one knowledge base category.
+     *
+     * @since 1.0.0
+     *
+     * @param int $term_id The category term ID.
+     *
+     * @return void
+     */
+    private function stub_category( $term_id ) {
+        Functions\when( 'get_term' )->alias(
+            function ( $id, $taxonomy ) use ( $term_id ) {
+                if ( (int) $id !== $term_id || Licensio_KB_Post_Types::TAXONOMY_CATEGORY !== $taxonomy ) {
+                    return null;
+                }
+
+                return new WP_Term(
+                    array(
+                        'term_id'  => $term_id,
+                        'taxonomy' => $taxonomy,
+                    )
+                );
+            }
+        );
+    }
+
+    /**
+     * A request for a category, with an ID list and extra parameters.
+     *
+     * @since 1.0.0
+     *
+     * @param int                  $term_id The category term ID.
+     * @param int[]                $ids     The article IDs.
+     * @param array<string, mixed> $extra   More parameters.
+     *
+     * @return WP_REST_Request The request.
+     */
+    private function request( $term_id, array $ids, array $extra = array() ) {
+        return new WP_REST_Request(
+            array(),
+            '/licensio-kb/v1/categories/' . $term_id . '/articles',
+            array_merge(
+                array(
+                    'id'       => $term_id,
+                    'ids'      => $ids,
+                    'page'     => 1,
+                    'per_page' => 200,
+                ),
+                $extra
+            )
+        );
+    }
+}
+
+/**
+ * The order controller with its post query replaced.
+ *
+ * @since 1.0.0
+ */
+class Licensio_KB_Category_Order_REST_Controller_Double extends Licensio_KB_Category_Order_REST_Controller {
+
+    /**
+     * The query the controller gets back.
+     *
+     * @since 1.0.0
+     * @var WP_Query
+     */
+    private $result;
+
+    /**
+     * The arguments the controller queried with.
+     *
+     * @since 1.0.0
+     * @var array<string, mixed>
+     */
+    public $args = array();
+
+    /**
+     * Constructor.
+     *
+     * @since 1.0.0
+     *
+     * @param WP_Query $result The query to answer with.
+     */
+    public function __construct( WP_Query $result ) {
+        $this->result = $result;
+    }
+
+    /**
+     * Record the arguments and answer the prepared query.
+     *
+     * @since 1.0.0
+     *
+     * @param array<string, mixed> $args The query arguments.
+     *
+     * @return WP_Query The prepared query.
+     */
+    protected function query( array $args ) {
+        $this->args = $args;
+
+        return $this->result;
     }
 }

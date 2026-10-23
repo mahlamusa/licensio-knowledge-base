@@ -1035,6 +1035,47 @@ class Licensio_KB_Blocks_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * Menu order within one category becomes that category's article order.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_menu_order_in_one_category_uses_the_per_category_order() {
+        $this->stub_articles( array() );
+
+        $this->render_callback( 'licensio-kb/article-list' )(
+            array(
+                'category' => 'billing',
+                'orderBy'  => 'menu_order',
+            ),
+            '',
+            null
+        );
+
+        $this->assertSame( Licensio_KB_Article_Order::ORDERBY, $this->query_args['orderby'] );
+    }
+
+    /**
+     * Menu order across every category stays menu order.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_menu_order_without_a_category_stays_menu_order() {
+        $this->stub_articles( array() );
+
+        $this->render_callback( 'licensio-kb/article-list' )(
+            array( 'orderBy' => 'menu_order' ),
+            '',
+            null
+        );
+
+        $this->assertSame( 'menu_order', $this->query_args['orderby'] );
+    }
+
+    /**
      * An article list with no category filter does not constrain the taxonomy.
      *
      * @since 1.0.0
