@@ -194,16 +194,18 @@ class Licensio_KB_BetterDocs_Import_Source extends Licensio_KB_Import_Source {
     }
 
     /**
-     * The menu order a BetterDocs article should get.
+     * The per-category positions of a BetterDocs article, and its fallback menu order.
      *
-     * The same rule as the Heroic import: the position in the lowest-ID
-     * category that lists the article wins, and a disagreement is reported.
+     * The position is the article's 0-based place in each category's
+     * `_docs_order` list. The fallback `menu_order` follows the Heroic rule:
+     * the position in the lowest-ID category that lists the article.
      *
      * @since 1.0.0
      *
      * @param int $post_id The BetterDocs post ID.
      *
-     * @return array{order: int, ambiguous: bool, source_term_id: int} The kept position.
+     * @return array{order: int, positions: array<int, int>} The fallback position, and every
+     *               per-category position keyed by source term ID.
      */
     public function article_order( $post_id ) {
         $orders = array();
@@ -213,6 +215,24 @@ class Licensio_KB_BetterDocs_Import_Source extends Licensio_KB_Import_Source {
         }
 
         return Licensio_KB_Heroic_Import_Map::article_order( Licensio_KB_BetterDocs_Import_Map::positions( $post_id, $orders ) );
+    }
+
+    /**
+     * The highest position any article holds in one BetterDocs category.
+     *
+     * Positions are 0-based places in the category's `_docs_order` list, so
+     * the highest is one less than the number of listed articles.
+     *
+     * @since 1.0.0
+     *
+     * @param int $term_id The BetterDocs category term ID.
+     *
+     * @return int The highest position, or -1 when the list is empty.
+     */
+    public function last_position( $term_id ) {
+        $list = $this->term_meta_value( (int) $term_id, Licensio_KB_BetterDocs_Import_Schema::META_DOCS_ORDER );
+
+        return count( Licensio_KB_BetterDocs_Import_Map::doc_ids( $list ) ) - 1;
     }
 
     /**
@@ -270,7 +290,7 @@ class Licensio_KB_BetterDocs_Import_Source extends Licensio_KB_Import_Source {
             Licensio_KB_BetterDocs_Import_Schema::META_CATEGORY_IMAGE => Licensio_KB_Term_Meta::META_ICON_ID,
             'doc_category_thumb-id' => Licensio_KB_Term_Meta::META_IMAGE_ID,
             Licensio_KB_BetterDocs_Import_Schema::META_CATEGORY_KNOWLEDGE_BASE => 'the parent category (one per knowledge base)',
-            Licensio_KB_BetterDocs_Import_Schema::META_DOCS_ORDER => 'the articles\' menu order',
+            Licensio_KB_BetterDocs_Import_Schema::META_DOCS_ORDER => 'licensio_order_{term} (per category)',
         );
 
         if ( isset( $targets[ (string) $key ] ) ) {

@@ -115,6 +115,12 @@ class Licensio_KB_Article_List_Block extends Licensio_KB_Block {
     /**
      * The block's inner markup.
      *
+     * With one category and `orderBy: menu_order`, the articles follow that
+     * category's own article order first, and `menu_order` breaks ties and
+     * orders the articles without a position. The `order` setting still
+     * applies: descending reverses that order, `menu_order` included, and
+     * articles without a position in the category come last either way.
+     *
      * @since 1.0.0
      *
      * @param array<string, bool|int|string> $attributes The normalised attributes.
@@ -122,9 +128,15 @@ class Licensio_KB_Article_List_Block extends Licensio_KB_Block {
      * @return string The markup.
      */
     public function content( array $attributes ) {
+        $orderby = (string) $attributes['orderBy'];
+
+        if ( 'menu_order' === $orderby && '' !== (string) $attributes['category'] ) {
+            $orderby = Licensio_KB_Article_Order::ORDERBY;
+        }
+
         $posts = $this->query_articles(
             (string) $attributes['category'],
-            (string) $attributes['orderBy'],
+            $orderby,
             (string) $attributes['order'],
             (int) $attributes['count']
         );

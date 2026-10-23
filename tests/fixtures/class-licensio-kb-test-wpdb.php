@@ -44,6 +44,22 @@ class Licensio_KB_Test_WPDB {
     public $usermeta = 'wptests_usermeta';
 
     /**
+     * The posts table name.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    public $posts = 'wptests_posts';
+
+    /**
+     * The post meta table name.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    public $postmeta = 'wptests_postmeta';
+
+    /**
      * The last SQL error, always empty in the double.
      *
      * @since 1.0.0
@@ -287,6 +303,9 @@ class Licensio_KB_Test_WPDB {
     /**
      * Interpolate a statement.
      *
+     * `%s` is quoted as a value and `%i` with backticks as an identifier,
+     * as `wpdb::prepare()` does.
+     *
      * @since 1.0.0
      *
      * @param string $query The statement.
@@ -295,6 +314,6 @@ class Licensio_KB_Test_WPDB {
      * @return string The interpolated statement.
      */
     public function prepare( $query, ...$args ) {
-        return vsprintf( str_replace( array( '%s', '%d' ), array( "'%s'", '%d' ), $query ), $args );
+        return vsprintf( str_replace( array( '%s', '%d', '%i' ), array( "'%s'", '%d', '`%s`' ), $query ), $args );
     }
 }

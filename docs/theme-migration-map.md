@@ -94,9 +94,10 @@ the theme reads all of them. Our registry has twelve keys and none of these.
    Heroic's importer bakes the colour into the markup and keeps that key as a
    record of the choice, and an icon drawn with `currentColor` takes the
    knowledge base colour from the card with nothing stored per category.
-2. **Per-category article ordering cannot cross.** Heroic stores
-   `_ht_article_order_{term_id}`, one position per category; we have one
-   `menu_order`.
+2. **Per-category article ordering cannot cross this migrator.** Heroic stores
+   `_ht_article_order_{term_id}`, one position per category; this migrator
+   collapses them into one `menu_order`. The plugin's built-in Heroic import
+   keeps them, as `licensio_order_{term_id}`.
 
 ## Recommended sequencing
 
