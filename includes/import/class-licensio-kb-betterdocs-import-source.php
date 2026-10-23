@@ -230,10 +230,9 @@ class Licensio_KB_BetterDocs_Import_Source extends Licensio_KB_Import_Source {
      * @return int The highest position, or -1 when the list is empty.
      */
     public function last_position( $term_id ) {
-        $list = (string) $this->term_meta_value( (int) $term_id, Licensio_KB_BetterDocs_Import_Schema::META_DOCS_ORDER );
-        $ids  = array_filter( array_map( 'trim', explode( ',', $list ) ), array( 'Licensio_KB_BetterDocs_Import_Map', 'is_filled' ) );
+        $list = $this->term_meta_value( (int) $term_id, Licensio_KB_BetterDocs_Import_Schema::META_DOCS_ORDER );
 
-        return count( $ids ) - 1;
+        return count( Licensio_KB_BetterDocs_Import_Map::doc_ids( $list ) ) - 1;
     }
 
     /**

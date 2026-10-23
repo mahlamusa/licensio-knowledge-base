@@ -636,7 +636,7 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * A renumbered article already at its place is not written again.
+     * An article already at its place, listed or renumbered, is not written again.
      *
      * @since 1.0.0
      *
@@ -662,7 +662,7 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
 
         Licensio_KB_Article_Order::save( 7, array( 1 ) );
 
-        $this->assertSame( array( 1 ), $writes );
+        $this->assertSame( array(), $writes );
     }
 
     /**

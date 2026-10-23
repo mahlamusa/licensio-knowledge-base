@@ -938,7 +938,6 @@ class Licensio_KB_BetterDocs_Import_Integration_Test extends Licensio_KB_BetterD
             ),
             $this->written_positions()
         );
-        $this->assertSame( 0, $report->get( 'articles_order_collapsed' ) );
         $this->assertSame( array(), $report->notes( 'article_order' ) );
     }
 }

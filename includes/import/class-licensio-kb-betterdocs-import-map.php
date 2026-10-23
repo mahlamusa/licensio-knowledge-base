@@ -150,7 +150,7 @@ class Licensio_KB_BetterDocs_Import_Map {
         $positions = array();
 
         foreach ( $orders as $term_id => $list ) {
-            $ids = array_values( array_map( 'intval', array_filter( array_map( 'trim', explode( ',', (string) $list ) ), array( __CLASS__, 'is_filled' ) ) ) );
+            $ids = array_map( 'intval', self::doc_ids( $list ) );
             $at  = array_search( (int) $post_id, $ids, true );
 
             if ( false !== $at ) {
@@ -159,6 +159,19 @@ class Licensio_KB_BetterDocs_Import_Map {
         }
 
         return $positions;
+    }
+
+    /**
+     * The article IDs listed in a category's `_docs_order` value.
+     *
+     * @since 1.0.0
+     *
+     * @param mixed $value The stored `_docs_order` value: comma-separated article IDs.
+     *
+     * @return string[] The non-empty IDs, in listed order.
+     */
+    public static function doc_ids( $value ) {
+        return array_values( array_filter( array_map( 'trim', explode( ',', (string) $value ) ), array( __CLASS__, 'is_filled' ) ) );
     }
 
     /**

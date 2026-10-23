@@ -458,23 +458,26 @@ class Licensio_KB_Article_Order {
         $key      = self::meta_key( $term_id );
         $ids      = array_values( array_map( 'intval', $ids ) );
         $previous = self::positions( $term_id );
+        $listed   = array_flip( $ids );
         $position = 0;
 
         foreach ( $ids as $id ) {
             $position += self::STEP;
 
-            update_post_meta( $id, $key, $position );
+            if ( ! isset( $previous[ $id ] ) || $previous[ $id ] !== $position ) {
+                update_post_meta( $id, $key, $position );
+            }
         }
 
         foreach ( $previous as $id => $old ) {
-            if ( in_array( (int) $id, $ids, true ) ) {
+            if ( isset( $listed[ $id ] ) ) {
                 continue;
             }
 
             $position += self::STEP;
 
-            if ( (int) $old !== $position ) {
-                update_post_meta( (int) $id, $key, $position );
+            if ( $old !== $position ) {
+                update_post_meta( $id, $key, $position );
             }
         }
 

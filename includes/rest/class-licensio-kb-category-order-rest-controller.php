@@ -171,7 +171,6 @@ class Licensio_KB_Category_Order_REST_Controller extends Licensio_KB_REST_Contro
         );
     }
 
-
     /**
      * List a category's articles in their per-category order.
      *
