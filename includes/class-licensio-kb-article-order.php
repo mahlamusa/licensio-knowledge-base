@@ -13,15 +13,17 @@
  *
  * - `orderby => licensio_order` on a post query limited to exactly one
  *   `licensio_category` sorts by that category's positions. Articles with a
- *   position come first, lowest first; articles without one follow, by title.
+ *   position come first, lowest first; articles without one follow. Ties,
+ *   and the articles without a position, are ordered by `menu_order` (the
+ *   Order an editor can set on the article), then title, then ID.
  *   `posts_clauses` adds one LEFT JOIN on the post meta table, limited to the
  *   category's key in its ON clause, and writes the ORDER BY. Nothing is
  *   filtered out, and no GROUP BY is needed: every writer uses
  *   `update_post_meta()`, so an article holds at most one row per key. Core
  *   cannot express "missing last" through `orderby` alone, since a missing
  *   position sorts as NULL, which MySQL puts first.
- * - `order => DESC` reverses the order; articles without a position still
- *   come last. Note that `get_posts()` defaults `order` to DESC, so a
+ * - `order => DESC` reverses the order, the `menu_order`, title and ID
+ *   tie-breaks included; articles without a position still come last. Note that `get_posts()` defaults `order` to DESC, so a
  *   `get_posts()` caller that wants the curated order passes `ASC`.
  * - Any other query asking for `licensio_order` falls back to `menu_order`,
  *   then title.
@@ -270,8 +272,10 @@ class Licensio_KB_Article_Order {
      * The ORDER BY expression for the per-category order.
      *
      * Ordered articles first, by position; then unordered ones; each group by
-     * title, then ID, so pages never shuffle. Descending reverses the
-     * positions and the tie-breaks; unordered articles still come last.
+     * `menu_order`, then title, then ID, so an Order set on the article still
+     * counts and pages never shuffle. Descending reverses the positions and
+     * every tie-break, `menu_order` included, so the whole list reads in
+     * reverse; unordered articles still come last.
      *
      * @since 1.0.0
      *
@@ -285,9 +289,10 @@ class Licensio_KB_Article_Order {
         $direction = 'DESC' === $direction ? 'DESC' : 'ASC';
 
         return $wpdb->prepare(
-            "%i.meta_value IS NULL ASC, CAST(%i.meta_value AS SIGNED) {$direction}, %i.post_title {$direction}, %i.ID {$direction}", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- The direction is one of two literals.
+            "%i.meta_value IS NULL ASC, CAST(%i.meta_value AS SIGNED) {$direction}, %i.menu_order {$direction}, %i.post_title {$direction}, %i.ID {$direction}", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- The direction is one of two literals.
             self::ALIAS,
             self::ALIAS,
+            $wpdb->posts,
             $wpdb->posts,
             $wpdb->posts
         );

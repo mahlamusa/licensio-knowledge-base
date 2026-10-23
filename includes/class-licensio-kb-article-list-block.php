@@ -116,9 +116,10 @@ class Licensio_KB_Article_List_Block extends Licensio_KB_Block {
      * The block's inner markup.
      *
      * With one category and `orderBy: menu_order`, the articles follow that
-     * category's own article order instead of `menu_order`. The `order`
-     * setting still applies: descending reverses that order, and articles
-     * without a position in the category come last either way.
+     * category's own article order first, and `menu_order` breaks ties and
+     * orders the articles without a position. The `order` setting still
+     * applies: descending reverses that order, `menu_order` included, and
+     * articles without a position in the category come last either way.
      *
      * @since 1.0.0
      *

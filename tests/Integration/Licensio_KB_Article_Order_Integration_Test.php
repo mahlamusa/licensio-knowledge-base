@@ -365,6 +365,58 @@ class Licensio_KB_Article_Order_Integration_Test extends Licensio_KB_Analytics_D
     }
 
     /**
+     * The Order set on an article breaks ties and orders the unpositioned ones.
+     *
+     * Two articles share a position, and the unordered ones carry Order values
+     * that disagree with their titles: `menu_order` wins over the title in
+     * both cases. Descending reverses it too, while the unordered articles
+     * stay last.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_menu_order_breaks_ties_before_the_title() {
+        $cat = $this->make_term( 'Billing', Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
+        $key = Licensio_KB_Article_Order::meta_key( $cat );
+
+        $tied_a = $this->make_article(
+            array(
+                'title'      => 'Alpha tied',
+                'categories' => array( $cat ),
+                'menu_order' => 2,
+            )
+        );
+        $tied_b = $this->make_article(
+            array(
+                'title'      => 'Bravo tied',
+                'categories' => array( $cat ),
+                'menu_order' => 1,
+            )
+        );
+        $this->make_article(
+            array(
+                'title'      => 'Charlie unordered',
+                'categories' => array( $cat ),
+                'menu_order' => 5,
+            )
+        );
+        $this->make_article(
+            array(
+                'title'      => 'Delta unordered',
+                'categories' => array( $cat ),
+                'menu_order' => 3,
+            )
+        );
+
+        $this->set_order_row( $tied_a, $key, '10' );
+        $this->set_order_row( $tied_b, $key, '10' );
+
+        $this->assertSame( array( 'Bravo tied', 'Alpha tied', 'Delta unordered', 'Charlie unordered' ), $this->listed( $cat ) );
+        $this->assertSame( array( 'Alpha tied', 'Bravo tied', 'Charlie unordered', 'Delta unordered' ), $this->listed( $cat, false, 'DESC' ) );
+    }
+
+    /**
      * An article from another category, or in the trash, stops the save.
      *
      * @since 1.0.0

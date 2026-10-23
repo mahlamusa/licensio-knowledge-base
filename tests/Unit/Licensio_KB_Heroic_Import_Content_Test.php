@@ -113,6 +113,16 @@ class Licensio_KB_Heroic_Import_Content_WPDB {
     public $target_terms = array();
 
     /**
+     * The highest position the target category lookup should report.
+     *
+     * Null, as MySQL answers, when the category holds no positions.
+     *
+     * @since 1.0.0
+     * @var string|null
+     */
+    public $highest_position = null;
+
+    /**
      * Every statement the migrator ran.
      *
      * @since 1.0.0
@@ -143,10 +153,14 @@ class Licensio_KB_Heroic_Import_Content_WPDB {
      *
      * @param string $query The statement.
      *
-     * @return int The looked-up ID, or 0.
+     * @return int|string|null The looked-up ID, or 0; for the highest position lookup, the queued value.
      */
     public function get_var( $query ) {
         $this->queries[] = $query;
+
+        if ( false !== strpos( $query, 'MAX(CAST(meta_value AS SIGNED))' ) ) {
+            return $this->highest_position;
+        }
 
         if ( false !== strpos( $query, 'post_name =' ) ) {
             preg_match( "/post_name = '([^']*)'/", $query, $matches );
@@ -989,6 +1003,60 @@ class Licensio_KB_Heroic_Import_Content_Test extends Licensio_KB_Test_Case {
 
         $this->assertSame( 3, $this->post_meta[901]['licensio_order_501'] );
         $this->assertSame( array( 'licensio_order_501' ), array_values( preg_grep( '/^licensio_order_/', array_keys( $this->post_meta[901] ) ) ) );
+    }
+
+    /**
+     * Imported positions follow the category's existing ones, measured once per run.
+     *
+     * The category already holds positions up to 30. The first batch writes
+     * after them; by the second batch the category's highest position is the
+     * one the first batch wrote, but the run keeps the measure it took first,
+     * so the second batch's positions keep their source spacing instead of
+     * jumping past the first batch's.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_imported_positions_follow_the_existing_ones_in_every_batch() {
+        $this->wpdb->target_terms[ Licensio_KB_Post_Types::TAXONOMY_CATEGORY . ':31' ] = 501;
+        $this->wpdb->highest_position = '30';
+        $this->term_meta[501][ $this->source( array() )->provenance_term_key() ] = 31;
+
+        $state = new Licensio_KB_Import_State( 'heroic', array( 'terms', 'articles', 'feedback', 'views', 'searches' ), false );
+        $batch = function ( $id, $position ) use ( $state ) {
+            $source = $this->source(
+                array(
+                    'articles'   => array(
+                        array(
+                            'ID'        => $id,
+                            'post_name' => 'article-' . $id,
+                        ),
+                    ),
+                    'orders'     => array( $id => array( 31 => (string) $position ) ),
+                    'post_terms' => array(
+                        $id . ':' . Licensio_KB_Heroic_Import_Schema::TAXONOMY_CATEGORY => array( 31 ),
+                    ),
+                )
+            );
+
+            ( new Licensio_KB_Import_Content(
+                $source,
+                $state,
+                new Licensio_KB_Import_Redirects( 'heroic', sys_get_temp_dir() . '/licensio-kb-unused', true ),
+                $this->report
+            ) )->migrate_articles_batch( 10 );
+        };
+
+        $batch( 11, 0 );
+
+        $this->wpdb->highest_position = '31';
+
+        $batch( 12, 3 );
+
+        $this->assertSame( 31, $this->post_meta[901]['licensio_order_501'] );
+        $this->assertSame( 34, $this->post_meta[902]['licensio_order_501'] );
+        $this->assertSame( 30, $state->position_base( 501 ) );
     }
 
     /**

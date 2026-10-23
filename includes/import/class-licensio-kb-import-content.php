@@ -646,11 +646,14 @@ class Licensio_KB_Import_Content {
      * against the category it was imported as. A category that was not
      * imported has no key to write.
      *
-     * When several source categories were imported into one category, their
-     * orders are merged rather than overwritten: the first source's positions
-     * stay as they are and each later source's follow them, shifted past the
-     * earlier sources (see `position_offsets()`). An article listed in more
-     * than one of them keeps its place from the first.
+     * The imported positions follow any the category already held before the
+     * run, so importing into an ordered category, or importing again after
+     * the order was curated, never interleaves with it. When several source
+     * categories were imported into one category, their orders are merged
+     * rather than overwritten: the first source's positions come first and
+     * each later source's follow them, shifted past the earlier sources (see
+     * `position_offsets()`). An article listed in more than one of them keeps
+     * its place from the first.
      *
      * @since 1.0.0
      *
@@ -681,7 +684,7 @@ class Licensio_KB_Import_Content {
             }
 
             $ranks[ $target ] = $rank;
-            $saved[ $target ] = (int) $positions[ $source ] + ( isset( $offsets[ $source ] ) ? $offsets[ $source ] : 0 );
+            $saved[ $target ] = (int) $positions[ $source ] + ( isset( $offsets[ $source ] ) ? $offsets[ $source ] : (int) $this->state->position_base( $target ) + 1 );
         }
 
         foreach ( $saved as $target => $position ) {
@@ -695,9 +698,15 @@ class Licensio_KB_Import_Content {
      * The offset each source category's positions get in one target category.
      *
      * The sources are the target's provenance, in the order they were imported.
-     * The first source's offset is 0; each later source starts one past the
-     * highest position of the sources before it. The highest position is read
-     * from the source, so the result is the same in every batch of the run.
+     * The first source starts one past the highest position the target held
+     * before this run, or at 0 when it held none; each later source starts one
+     * past the highest position of the sources before it. The target's
+     * highest position is recorded in the run state the first time the run
+     * reaches the target, and the sources' highest positions are read from the
+     * source, so the result is the same in every batch of the run and in a
+     * resumed run. If the run state is lost part-way, the next batch records
+     * the target again, after the positions earlier batches wrote: later
+     * articles still follow the existing order, only further down.
      *
      * @since 1.0.0
      *
@@ -712,8 +721,16 @@ class Licensio_KB_Import_Content {
 
         $sources = array_values( array_unique( array_map( 'intval', (array) get_term_meta( $target, $this->source->provenance_term_key(), false ) ) ) );
         $offsets = array();
-        $next    = 0;
+        $base    = $this->state->position_base( $target );
         $last    = count( $sources ) - 1;
+
+        if ( null === $base ) {
+            $base = $this->highest_position( $target );
+
+            $this->state->set_position_base( $target, $base );
+        }
+
+        $next = $base + 1;
 
         foreach ( $sources as $index => $source ) {
             $offsets[ $source ] = $next;
@@ -727,6 +744,33 @@ class Licensio_KB_Import_Content {
         $this->position_offsets[ $target ] = $offsets;
 
         return $offsets;
+    }
+
+    /**
+     * The highest position a target category holds.
+     *
+     * Read over every article holding the category's key, trashed ones
+     * included, as a category merge does.
+     *
+     * @since 1.0.0
+     *
+     * @param int $target The target category term ID.
+     *
+     * @return int The highest position, or -1 when the category has none.
+     */
+    private function highest_position( $target ) {
+        global $wpdb;
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $highest = $wpdb->get_var(
+            $wpdb->prepare(
+                'SELECT MAX(CAST(meta_value AS SIGNED)) FROM %i WHERE meta_key = %s',
+                $wpdb->postmeta,
+                Licensio_KB_Article_Order::meta_key( $target )
+            )
+        );
+
+        return null === $highest ? -1 : (int) $highest;
     }
 
     /**

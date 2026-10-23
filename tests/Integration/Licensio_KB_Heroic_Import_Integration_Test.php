@@ -1031,4 +1031,152 @@ class Licensio_KB_Heroic_Import_Integration_Test extends Licensio_KB_Heroic_Impo
         );
         $this->assertSame( array(), $report->notes( 'article_order' ) );
     }
+
+    /**
+     * Importing into an already ordered category appends after its order, run after run.
+     *
+     * Category 31 is imported into 601, which already holds two curated
+     * articles at 10 and 20. The imported articles come after 20, keeping
+     * their source spacing, and the curated ones are untouched. A second run
+     * that finds a new source article places it after everything the first
+     * run wrote, instead of between them.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_import_into_an_ordered_category_comes_after_its_order() {
+        $this->install_term_tables();
+        $this->stub_article_writes();
+        Brain\Monkey\Functions\when( 'home_url' )->alias(
+            function ( $path = '' ) {
+                return 'https://example.test' . $path;
+            }
+        );
+
+        $this->seed(
+            'terms',
+            array(
+                array(
+                    'term_id' => 31,
+                    'name'    => 'Category 31',
+                    'slug'    => 'category-31',
+                ),
+            )
+        );
+        $this->seed(
+            'term_taxonomy',
+            array(
+                array(
+                    'term_taxonomy_id' => 31,
+                    'term_id'          => 31,
+                    'taxonomy'         => Licensio_KB_Heroic_Import_Schema::TAXONOMY_CATEGORY,
+                    'description'      => '',
+                ),
+            )
+        );
+
+        $source = new Licensio_KB_Heroic_Import_Source();
+
+        $this->seed_target_category( 601, $source->provenance_term_key(), array( 31 ) );
+
+        foreach ( array(
+            'Curated A' => 20,
+            'Curated B' => 10,
+        ) as $title => $position ) {
+            $this->seed(
+                'posts',
+                array(
+                    array(
+                        'post_title'  => $title,
+                        'post_name'   => strtolower( str_replace( ' ', '-', $title ) ),
+                        'post_type'   => Licensio_KB_Post_Types::POST_TYPE,
+                        'post_status' => 'publish',
+                    ),
+                )
+            );
+            $this->seed(
+                'postmeta',
+                array(
+                    array(
+                        'post_id'    => (int) $this->db->insert_id,
+                        'meta_key'   => Licensio_KB_Article_Order::meta_key( 601 ), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+                        'meta_value' => (string) $position, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+                    ),
+                )
+            );
+        }
+
+        $seed_article = function ( $post_id, $position ) {
+            $this->seed(
+                'posts',
+                array(
+                    array(
+                        'ID'          => $post_id,
+                        'post_title'  => 'Heroic ' . $post_id,
+                        'post_name'   => 'heroic-' . $post_id,
+                        'post_type'   => Licensio_KB_Heroic_Import_Schema::POST_TYPE,
+                        'post_status' => 'publish',
+                    ),
+                )
+            );
+            $this->seed(
+                'term_relationships',
+                array(
+                    array(
+                        'object_id'        => $post_id,
+                        'term_taxonomy_id' => 31,
+                    ),
+                )
+            );
+            $this->seed(
+                'postmeta',
+                array(
+                    array(
+                        'post_id'    => $post_id,
+                        'meta_key'   => Licensio_KB_Heroic_Import_Schema::META_ARTICLE_ORDER_PREFIX . '31', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+                        'meta_value' => (string) $position, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+                    ),
+                )
+            );
+        };
+
+        $run = function () use ( $source ) {
+            $content = new Licensio_KB_Import_Content(
+                $source,
+                $this->new_state( false ),
+                new Licensio_KB_Import_Redirects( 'heroic', sys_get_temp_dir() . '/licensio-kb-migration-unused', true ),
+                $this->new_report()
+            );
+
+            while ( $content->migrate_articles_batch( 1 ) > 0 ) {
+                continue;
+            }
+        };
+
+        $seed_article( 21, 3 );
+        $seed_article( 22, 0 );
+
+        $run();
+
+        $this->assertSame(
+            array(
+                'Curated A' => array( 'licensio_order_601' => 20 ),
+                'Curated B' => array( 'licensio_order_601' => 10 ),
+                'Heroic 21' => array( 'licensio_order_601' => 24 ),
+                'Heroic 22' => array( 'licensio_order_601' => 21 ),
+            ),
+            $this->written_positions()
+        );
+
+        // A free ID below the imported ones, so the new source article fits between the existing rows.
+        $seed_article( 5, 1 );
+
+        $run();
+
+        $positions = $this->written_positions();
+
+        $this->assertSame( 26, $positions['Heroic 5']['licensio_order_601'], 'A second run must not drop a new article into the first run\'s positions.' );
+        $this->assertSame( 24, $positions['Heroic 21']['licensio_order_601'] );
+    }
 }

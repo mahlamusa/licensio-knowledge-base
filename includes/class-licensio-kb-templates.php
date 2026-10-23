@@ -573,7 +573,7 @@ class Licensio_KB_Templates {
      *
      * The articles follow the category's own article order. Articles without
      * a position in it, including those filed only in a descendant, follow by
-     * title. The order is written in a `posts_clauses` filter, so this query
+     * menu order, then title. The order is written in a `posts_clauses` filter, so this query
      * runs with `suppress_filters` off and other plugins' `posts_*` filters
      * apply to it too.
      *

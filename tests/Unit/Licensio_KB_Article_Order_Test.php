@@ -491,7 +491,7 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
         $clauses = $this->prepared_clauses( array() );
 
         $this->assertSame( "J LEFT JOIN `wptests_postmeta` AS `licensio_order_meta` ON ( `wptests_posts`.ID = `licensio_order_meta`.post_id AND `licensio_order_meta`.meta_key = 'licensio_order_7' )", $clauses['join'] );
-        $this->assertSame( '`licensio_order_meta`.meta_value IS NULL ASC, CAST(`licensio_order_meta`.meta_value AS SIGNED) ASC, `wptests_posts`.post_title ASC, `wptests_posts`.ID ASC', $clauses['orderby'] );
+        $this->assertSame( '`licensio_order_meta`.meta_value IS NULL ASC, CAST(`licensio_order_meta`.meta_value AS SIGNED) ASC, `wptests_posts`.menu_order ASC, `wptests_posts`.post_title ASC, `wptests_posts`.ID ASC', $clauses['orderby'] );
         $this->assertSame( 'W', $clauses['where'], 'Nothing is filtered out.' );
         $this->assertSame( '', $clauses['groupby'] );
     }
@@ -506,7 +506,7 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
     public function test_desc_reverses_the_positions_with_unordered_still_last() {
         $clauses = $this->prepared_clauses( array( 'order' => 'DESC' ) );
 
-        $this->assertSame( '`licensio_order_meta`.meta_value IS NULL ASC, CAST(`licensio_order_meta`.meta_value AS SIGNED) DESC, `wptests_posts`.post_title DESC, `wptests_posts`.ID DESC', $clauses['orderby'] );
+        $this->assertSame( '`licensio_order_meta`.meta_value IS NULL ASC, CAST(`licensio_order_meta`.meta_value AS SIGNED) DESC, `wptests_posts`.menu_order DESC, `wptests_posts`.post_title DESC, `wptests_posts`.ID DESC', $clauses['orderby'] );
     }
 
     /**
