@@ -372,27 +372,59 @@ class Licensio_KB_Category_Order_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * An empty list in a category with no positions writes nothing.
+     * An empty list skips the article checks and closes the gaps in the existing positions.
+     *
+     * Nothing is listed first, so the positioned articles are renumbered
+     * 10, 20… in their previous order; an article already at its new
+     * position is not written again.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_an_empty_save_writes_nothing() {
+    public function test_an_empty_save_renumbers_the_existing_positions() {
         $this->stub_category( 5 );
+
+        $written = array();
 
         Functions\when( 'get_posts' )->alias(
             function ( $args ) {
                 $this->assertArrayHasKey( 'meta_key', $args, 'Only the positions are read; there is nothing to check.' );
 
-                return array();
+                return array( 21, 22, 23 );
             }
         );
-        Functions\expect( 'update_post_meta' )->never();
+        Functions\when( 'update_meta_cache' )->justReturn( array() );
+        Functions\when( 'get_post_meta' )->alias(
+            function ( $id ) {
+                $positions = array(
+                    21 => 10,
+                    22 => 40,
+                    23 => 70,
+                );
+
+                return $positions[ $id ];
+            }
+        );
+        Functions\expect( 'current_user_can' )->never();
+        Functions\when( 'update_post_meta' )->alias(
+            function ( $id, $key, $value ) use ( &$written ) {
+                $written[] = array( $id, $key, $value );
+
+                return true;
+            }
+        );
 
         $result = ( new Licensio_KB_Category_Order_REST_Controller() )->update_order( $this->request( 5, array() ) );
 
         $this->assertSame( array( 'ids' => array() ), $result );
+        $this->assertSame(
+            array(
+                array( 22, 'licensio_order_5', 20 ),
+                array( 23, 'licensio_order_5', 30 ),
+            ),
+            $written
+        );
     }
 
     /**
