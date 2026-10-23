@@ -99,6 +99,16 @@ class Licensio_KB_Import_Content {
     private $claim_keys = array();
 
     /**
+     * Per target category, the offset each source category's positions get.
+     *
+     * Filled on first use in a request; see `position_offsets()`.
+     *
+     * @since 1.0.0
+     * @var array<int, array<int, int>>
+     */
+    private $position_offsets = array();
+
+    /**
      * Constructor.
      *
      * @since 1.0.0
@@ -636,6 +646,12 @@ class Licensio_KB_Import_Content {
      * against the category it was imported as. A category that was not
      * imported has no key to write.
      *
+     * When several source categories were imported into one category, their
+     * orders are merged rather than overwritten: the first source's positions
+     * stay as they are and each later source's follow them, shifted past the
+     * earlier sources (see `position_offsets()`). An article listed in more
+     * than one of them keeps its place from the first.
+     *
      * @since 1.0.0
      *
      * @param int                              $article_id The target article ID.
@@ -646,6 +662,7 @@ class Licensio_KB_Import_Content {
      */
     private function migrate_positions( $article_id, array $positions, array $categories ) {
         $saved = array();
+        $ranks = array();
 
         foreach ( $categories as $category ) {
             $source = isset( $category['source_id'] ) ? (int) $category['source_id'] : 0;
@@ -655,12 +672,61 @@ class Licensio_KB_Import_Content {
                 continue;
             }
 
-            update_post_meta( $article_id, Licensio_KB_Article_Order::meta_key( $target ), (int) $positions[ $source ] );
+            $offsets = $this->position_offsets( $target );
+            $rank    = array_search( $source, array_keys( $offsets ), true );
+            $rank    = false === $rank ? count( $offsets ) : (int) $rank;
 
-            $saved[ $target ] = (int) $positions[ $source ];
+            if ( isset( $ranks[ $target ] ) && $ranks[ $target ] <= $rank ) {
+                continue;
+            }
+
+            $ranks[ $target ] = $rank;
+            $saved[ $target ] = (int) $positions[ $source ] + ( isset( $offsets[ $source ] ) ? $offsets[ $source ] : 0 );
+        }
+
+        foreach ( $saved as $target => $position ) {
+            update_post_meta( $article_id, Licensio_KB_Article_Order::meta_key( $target ), $position );
         }
 
         return $saved;
+    }
+
+    /**
+     * The offset each source category's positions get in one target category.
+     *
+     * The sources are the target's provenance, in the order they were imported.
+     * The first source's offset is 0; each later source starts one past the
+     * highest position of the sources before it. The highest position is read
+     * from the source, so the result is the same in every batch of the run.
+     *
+     * @since 1.0.0
+     *
+     * @param int $target The target category term ID.
+     *
+     * @return array<int, int> Source category term ID to offset, first source first.
+     */
+    private function position_offsets( $target ) {
+        if ( isset( $this->position_offsets[ $target ] ) ) {
+            return $this->position_offsets[ $target ];
+        }
+
+        $sources = array_values( array_unique( array_map( 'intval', (array) get_term_meta( $target, $this->source->provenance_term_key(), false ) ) ) );
+        $offsets = array();
+        $next    = 0;
+        $last    = count( $sources ) - 1;
+
+        foreach ( $sources as $index => $source ) {
+            $offsets[ $source ] = $next;
+
+            // The last source's size shifts nothing, so it is not read.
+            if ( $index < $last ) {
+                $next += max( -1, $this->source->last_position( $source ) ) + 1;
+            }
+        }
+
+        $this->position_offsets[ $target ] = $offsets;
+
+        return $offsets;
     }
 
     /**

@@ -1057,6 +1057,35 @@ class Licensio_KB_Blocks_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * The block's order setting is passed on, so descending reverses the category order.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_order_setting_applies_to_the_per_category_order() {
+        foreach ( array(
+            'desc' => 'DESC',
+            'asc'  => 'ASC',
+        ) as $order => $expected ) {
+            $this->stub_articles( array() );
+
+            $this->render_callback( 'licensio-kb/article-list' )(
+                array(
+                    'category' => 'billing',
+                    'orderBy'  => 'menu_order',
+                    'order'    => $order,
+                ),
+                '',
+                null
+            );
+
+            $this->assertSame( Licensio_KB_Article_Order::ORDERBY, $this->query_args['orderby'] );
+            $this->assertSame( $expected, $this->query_args['order'] );
+        }
+    }
+
+    /**
      * Menu order across every category stays menu order.
      *
      * @since 1.0.0

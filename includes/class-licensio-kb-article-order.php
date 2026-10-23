@@ -14,18 +14,23 @@
  * - `orderby => licensio_order` on a post query limited to exactly one
  *   `licensio_category` sorts by that category's positions. Articles with a
  *   position come first, lowest first; articles without one follow, by title.
- *   The query gets a named `meta_query` (`relation OR`, `EXISTS` and
- *   `NOT EXISTS`) so unordered articles are not dropped, and the ORDER BY is
- *   written in `posts_clauses`. Core cannot express "missing last" through
- *   `orderby` alone: ordering by either clause sorts a missing position as
- *   NULL, which MySQL puts first, and the `EXISTS` clause's join is not
- *   limited to the key, so it reads an unrelated meta value for an unordered
- *   article.
+ *   `posts_clauses` adds one LEFT JOIN on the post meta table, limited to the
+ *   category's key in its ON clause, and writes the ORDER BY. Nothing is
+ *   filtered out, and no GROUP BY is needed: every writer uses
+ *   `update_post_meta()`, so an article holds at most one row per key. Core
+ *   cannot express "missing last" through `orderby` alone, since a missing
+ *   position sorts as NULL, which MySQL puts first.
+ * - `order => DESC` reverses the order; articles without a position still
+ *   come last. Note that `get_posts()` defaults `order` to DESC, so a
+ *   `get_posts()` caller that wants the curated order passes `ASC`.
  * - Any other query asking for `licensio_order` falls back to `menu_order`,
  *   then title.
  * - The main query of a category archive on the front end uses the order
- *   unless something else already chose an `orderby`.
+ *   unless something else already chose an `orderby`. Searches and feeds
+ *   keep their own order.
  * - A category merge appends each source category's order to the target's.
+ * - The keys are protected meta, so they never show in the Custom Fields
+ *   panel, where an author could otherwise move their own article.
  * - Deleting a category deletes its order keys.
  *
  * @package Licensio_KB
@@ -58,20 +63,14 @@ class Licensio_KB_Article_Order {
     const META_PREFIX = 'licensio_order_';
 
     /**
-     * The name of the meta query clause matching ordered articles.
+     * The alias of the post meta table joined on the category's key.
+     *
+     * Not one of core's `mt1`, `mt2`… meta query aliases, so it never collides.
      *
      * @since 1.0.0
      * @var string
      */
-    const CLAUSE_ORDERED = 'licensio_order_ordered';
-
-    /**
-     * The name of the meta query clause matching unordered articles.
-     *
-     * @since 1.0.0
-     * @var string
-     */
-    const CLAUSE_UNORDERED = 'licensio_order_unordered';
+    const ALIAS = 'licensio_order_meta';
 
     /**
      * The query variable holding the category a query is ordered by.
@@ -80,6 +79,17 @@ class Licensio_KB_Article_Order {
      * @var string
      */
     const QUERY_VAR = 'licensio_order_term';
+
+    /**
+     * The query variable recording that the order is reversed.
+     *
+     * Read in `pre_get_posts`, because by `posts_clauses` core has turned an
+     * empty `order` into DESC.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    const DESC_VAR = 'licensio_order_desc';
 
     /**
      * The gap between two saved positions.
@@ -99,6 +109,7 @@ class Licensio_KB_Article_Order {
     public function init_hooks() {
         add_action( 'pre_get_posts', array( $this, 'prepare_query' ) );
         add_filter( 'posts_clauses', array( $this, 'order_clauses' ), 10, 2 );
+        add_filter( 'is_protected_meta', array( $this, 'protect_meta' ), 10, 3 );
         add_action( 'licensio_kb_terms_merged', array( $this, 'append_merged_order' ), 10, 3 );
         add_action( 'licensio_kb_term_removed', array( $this, 'delete_term_order' ), 10, 2 );
     }
@@ -117,18 +128,46 @@ class Licensio_KB_Article_Order {
     }
 
     /**
+     * Hide the order keys from the Custom Fields panel.
+     *
+     * Hooked to `is_protected_meta`. Positions are a manager's decision, saved
+     * through the order route; without this an author could give their own
+     * article any position through the Custom Fields panel. Protection only
+     * affects that panel and core REST, so the plugin's own writes still work.
+     *
+     * @since 1.0.0
+     *
+     * @param bool   $is_protected Whether the key is protected.
+     * @param string $meta_key     The meta key.
+     * @param string $meta_type    The object type.
+     *
+     * @return bool True for a post's order key, otherwise unchanged.
+     */
+    public function protect_meta( $is_protected, $meta_key, $meta_type = '' ) {
+        if ( 'post' === $meta_type && 0 === strpos( (string) $meta_key, self::META_PREFIX ) ) {
+            return true;
+        }
+
+        return $is_protected;
+    }
+
+    /**
      * Translate `orderby => licensio_order` into query variables.
      *
      * Hooked to `pre_get_posts`. A front-end category archive's main query
      * with no `orderby` of its own is switched to the per-category order
-     * first.
+     * first; a search or a feed on the archive is not.
      *
-     * For a query limited to exactly one category, this adds the named meta
-     * query, records the category in `licensio_order_term`, and turns
-     * `suppress_filters` off: the ORDER BY is written in `posts_clauses`, which
-     * `get_posts()` would otherwise skip. The order is always ascending; the
-     * `order` variable does not reverse it. Any other query falls back to
-     * `menu_order`, then title.
+     * For a query limited to exactly one category, this records the category
+     * in `licensio_order_term` and leaves `orderby` as `licensio_order`, which
+     * is how `order_clauses()` knows nothing changed it since. An `order` of
+     * DESC is recorded in `licensio_order_desc`; anything else, including no
+     * `order` at all, is ascending. It also turns
+     * `suppress_filters` off. That is strictly required: the JOIN and ORDER BY
+     * are written in `posts_clauses`, and `get_posts()` sets
+     * `suppress_filters`, which skips every `posts_*` filter. As a result, the
+     * other plugins' `posts_*` filters run on these queries too. Any other
+     * query falls back to `menu_order`, then title.
      *
      * @since 1.0.0
      *
@@ -141,7 +180,7 @@ class Licensio_KB_Article_Order {
             return;
         }
 
-        if ( $this->is_category_archive( $query ) && '' === (string) $query->get( 'orderby' ) ) {
+        if ( $this->is_category_archive( $query ) && empty( $query->get( 'orderby' ) ) ) {
             $query->set( 'orderby', self::ORDERBY );
         }
 
@@ -163,90 +202,95 @@ class Licensio_KB_Article_Order {
             return;
         }
 
-        $key   = self::meta_key( $term_id );
-        $group = array(
-            'relation'             => 'OR',
-            self::CLAUSE_ORDERED   => array(
-                'key'     => $key,
-                'compare' => 'EXISTS',
-                'type'    => 'NUMERIC',
-            ),
-            self::CLAUSE_UNORDERED => array(
-                'key'     => $key,
-                'compare' => 'NOT EXISTS',
-            ),
-        );
-
-        $existing = $query->get( 'meta_query' );
-
-        $query->set( 'meta_query', is_array( $existing ) && ! empty( $existing ) ? array( $existing, $group ) : $group );
-        $query->set(
-            'orderby',
-            array(
-                self::CLAUSE_ORDERED => 'ASC',
-                'title'              => 'ASC',
-            )
-        );
-        $query->set( 'order', 'ASC' );
         $query->set( self::QUERY_VAR, $term_id );
+        $query->set( self::DESC_VAR, 'DESC' === strtoupper( (string) $query->get( 'order' ) ) );
         $query->set( 'suppress_filters', false );
     }
 
     /**
-     * Write the ORDER BY for a query prepared by `prepare_query()`.
+     * Write the JOIN and ORDER BY for a query prepared by `prepare_query()`.
      *
-     * Hooked to `posts_clauses`. The `NOT EXISTS` clause is a LEFT JOIN on
-     * the category's own key, so its `meta_value` is the position, or NULL for
-     * an unordered article.
+     * Hooked to `posts_clauses`. Does nothing unless `orderby` is still
+     * `licensio_order`, so a later `pre_get_posts` callback that chose another
+     * order, such as the search ranking by `post__in`, wins.
      *
      * @since 1.0.0
      *
      * @param array<string, string> $clauses The query clauses.
      * @param WP_Query              $query   The query.
      *
-     * @return array<string, string> The clauses, with the ORDER BY replaced when the query is ordered per category.
+     * @return array<string, string> The clauses, with the JOIN added and the ORDER BY replaced when the query is ordered per category.
      */
     public function order_clauses( $clauses, $query ) {
-        if ( ! is_array( $clauses ) || ! $query instanceof WP_Query || (int) $query->get( self::QUERY_VAR ) <= 0 ) {
+        if ( ! is_array( $clauses ) || ! $query instanceof WP_Query ) {
             return $clauses;
         }
 
-        $meta_query = isset( $query->meta_query ) ? $query->meta_query : null;
+        $term_id = (int) $query->get( self::QUERY_VAR );
 
-        if ( ! $meta_query instanceof WP_Meta_Query ) {
+        if ( $term_id <= 0 || self::ORDERBY !== $query->get( 'orderby' ) ) {
             return $clauses;
         }
 
-        $named = $meta_query->get_clauses();
+        $join = isset( $clauses['join'] ) ? (string) $clauses['join'] : '';
 
-        if ( empty( $named[ self::CLAUSE_UNORDERED ]['alias'] ) ) {
-            return $clauses;
-        }
-
-        $clauses['orderby'] = self::orderby_sql( (string) $named[ self::CLAUSE_UNORDERED ]['alias'] );
+        $clauses['join']    = $join . ' ' . self::join_sql( $term_id );
+        $clauses['orderby'] = self::orderby_sql( $query->get( self::DESC_VAR ) ? 'DESC' : 'ASC' );
 
         return $clauses;
+    }
+
+    /**
+     * The LEFT JOIN on one category's key.
+     *
+     * The key is in the ON clause, so every article keeps exactly one row:
+     * its position, or NULL when it has none.
+     *
+     * @since 1.0.0
+     *
+     * @param int $term_id The category term ID.
+     *
+     * @return string The JOIN clause.
+     */
+    public static function join_sql( $term_id ) {
+        global $wpdb;
+
+        return $wpdb->prepare(
+            'LEFT JOIN %i AS %i ON ( %i.ID = %i.post_id AND %i.meta_key = %s )',
+            $wpdb->postmeta,
+            self::ALIAS,
+            $wpdb->posts,
+            self::ALIAS,
+            self::ALIAS,
+            self::meta_key( $term_id )
+        );
     }
 
     /**
      * The ORDER BY expression for the per-category order.
      *
      * Ordered articles first, by position; then unordered ones; each group by
-     * title, then ID, so pages never shuffle.
+     * title, then ID, so pages never shuffle. Descending reverses the
+     * positions and the tie-breaks; unordered articles still come last.
      *
      * @since 1.0.0
      *
-     * @param string $alias The alias of the meta table joined on the category's key.
+     * @param string $direction `ASC` or `DESC`.
      *
      * @return string The ORDER BY expression, without the keyword.
      */
-    public static function orderby_sql( $alias ) {
+    public static function orderby_sql( $direction = 'ASC' ) {
         global $wpdb;
 
-        $alias = preg_replace( '/[^A-Za-z0-9_]/', '', (string) $alias );
-        $posts = $wpdb->posts;
+        $direction = 'DESC' === $direction ? 'DESC' : 'ASC';
 
-        return "{$alias}.meta_value IS NULL ASC, CAST({$alias}.meta_value AS SIGNED) ASC, {$posts}.post_title ASC, {$posts}.ID ASC";
+        return $wpdb->prepare(
+            "%i.meta_value IS NULL ASC, CAST(%i.meta_value AS SIGNED) {$direction}, %i.post_title {$direction}, %i.ID {$direction}", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- The direction is one of two literals.
+            self::ALIAS,
+            self::ALIAS,
+            $wpdb->posts,
+            $wpdb->posts
+        );
     }
 
     /**
@@ -335,12 +379,14 @@ class Licensio_KB_Article_Order {
      *
      * @param WP_Query $query The query.
      *
-     * @return bool True for the main query of a `licensio_category` archive outside the admin.
+     * @return bool True for the main query of a `licensio_category` archive outside the admin, unless it is a search or a feed.
      */
     private function is_category_archive( $query ) {
         // On the main query the global conditional reads this same query.
         return ! is_admin()
             && $query->is_main_query()
+            && ! $query->is_search()
+            && ! $query->is_feed()
             && is_tax( Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
     }
 
@@ -348,7 +394,8 @@ class Licensio_KB_Article_Order {
      * The positions stored for one category.
      *
      * One query for the IDs and one for their meta, however many articles
-     * the category holds. Trashed articles are left out.
+     * the category holds. Trashed articles are included, so a merge or a
+     * save keeps their place for when they are restored.
      *
      * @since 1.0.0
      *
@@ -361,7 +408,7 @@ class Licensio_KB_Article_Order {
         $ids = get_posts(
             array(
                 'post_type'              => Licensio_KB_Post_Types::POST_TYPE,
-                'post_status'            => 'any',
+                'post_status'            => array( 'any', 'trash' ),
                 'posts_per_page'         => -1,
                 'fields'                 => 'ids',
                 'meta_key'               => $key, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
@@ -394,27 +441,44 @@ class Licensio_KB_Article_Order {
     /**
      * Save a category's order.
      *
-     * The articles get 10, 20, 30… in the order given. Articles of the
-     * category that are not listed keep whatever position they had.
+     * The listed articles get 10, 20, 30… in the order given. Every other
+     * article that already has a position in the category, trashed ones
+     * included, is renumbered after them, keeping its previous relative
+     * order, so the positions stay dense and a partial list never interleaves
+     * with the rest. Articles without a position stay without one.
      *
      * @since 1.0.0
      *
      * @param int   $term_id The category term ID.
      * @param int[] $ids     The article IDs, first first.
      *
-     * @return int[] The article IDs as saved.
+     * @return int[] The listed article IDs as saved.
      */
     public static function save( $term_id, array $ids ) {
-        $key   = self::meta_key( $term_id );
-        $saved = array();
+        $key      = self::meta_key( $term_id );
+        $ids      = array_values( array_map( 'intval', $ids ) );
+        $previous = self::positions( $term_id );
+        $position = 0;
 
-        foreach ( array_values( $ids ) as $index => $id ) {
-            update_post_meta( (int) $id, $key, ( $index + 1 ) * self::STEP );
+        foreach ( $ids as $id ) {
+            $position += self::STEP;
 
-            $saved[] = (int) $id;
+            update_post_meta( $id, $key, $position );
         }
 
-        return $saved;
+        foreach ( $previous as $id => $old ) {
+            if ( in_array( (int) $id, $ids, true ) ) {
+                continue;
+            }
+
+            $position += self::STEP;
+
+            if ( (int) $old !== $position ) {
+                update_post_meta( (int) $id, $key, $position );
+            }
+        }
+
+        return $ids;
     }
 
     /**
@@ -424,8 +488,9 @@ class Licensio_KB_Article_Order {
      * moved and before the sources are deleted, so the source keys are still
      * there. Each source's ordered articles follow the target's last position,
      * one source after another in the order given, keeping their relative
-     * order. An article that already has a position in the target keeps it.
-     * The source keys are cleaned up by the delete that follows.
+     * order. Trashed articles are carried too, so they keep a place if they
+     * are restored. An article that already has a position in the target
+     * keeps it. The source keys are cleaned up by the delete that follows.
      *
      * @since 1.0.0
      *

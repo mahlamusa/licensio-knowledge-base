@@ -3,8 +3,8 @@
  * Per-category article order.
  *
  * The query rules are asserted on the variables `prepare_query()` leaves on a
- * query and the ORDER BY `order_clauses()` writes; the SQL itself runs against
- * a live server in the integration suite. The merge and delete listeners are
+ * query and the JOIN and ORDER BY `order_clauses()` writes; the SQL itself
+ * runs against a live server in the integration suite. The merge and delete listeners are
  * driven through an in-memory meta store.
  *
  * @package Licensio_KB
@@ -12,75 +12,6 @@
  */
 
 use Brain\Monkey\Functions;
-
-if ( ! class_exists( 'WP_Tax_Query', false ) ) {
-    /**
-     * Stand-in for a parsed tax query.
-     *
-     * @since 1.0.0
-     */
-    class WP_Tax_Query {
-
-        /**
-         * The parsed clauses.
-         *
-         * @since 1.0.0
-         * @var array<int|string, mixed>
-         */
-        public $queries = array();
-
-        /**
-         * Constructor.
-         *
-         * @since 1.0.0
-         *
-         * @param array<int|string, mixed> $queries The parsed clauses.
-         */
-        public function __construct( array $queries = array() ) {
-            $this->queries = $queries;
-        }
-    }
-}
-
-if ( ! class_exists( 'WP_Meta_Query', false ) ) {
-    /**
-     * Stand-in for a meta query whose SQL was built.
-     *
-     * @since 1.0.0
-     */
-    class WP_Meta_Query {
-
-        /**
-         * The named first-order clauses.
-         *
-         * @since 1.0.0
-         * @var array<string, array<string, mixed>>
-         */
-        private $clauses = array();
-
-        /**
-         * Constructor.
-         *
-         * @since 1.0.0
-         *
-         * @param array<string, array<string, mixed>> $clauses The named clauses.
-         */
-        public function __construct( array $clauses = array() ) {
-            $this->clauses = $clauses;
-        }
-
-        /**
-         * The named clauses with their table aliases.
-         *
-         * @since 1.0.0
-         *
-         * @return array<string, array<string, mixed>> The clauses.
-         */
-        public function get_clauses() {
-            return $this->clauses;
-        }
-    }
-}
 
 /**
  * A query double that can be the main query of a category archive.
@@ -98,20 +29,28 @@ class Licensio_KB_Article_Order_Query extends WP_Query {
     public $tax_query = null;
 
     /**
-     * The meta query, once its SQL is built.
-     *
-     * @since 1.0.0
-     * @var WP_Meta_Query|null
-     */
-    public $meta_query = null;
-
-    /**
      * Whether this is the main query of a category archive.
      *
      * @since 1.0.0
      * @var bool
      */
     public $archive = false;
+
+    /**
+     * Whether this is a search.
+     *
+     * @since 1.0.0
+     * @var bool
+     */
+    public $search = false;
+
+    /**
+     * Whether this is a feed.
+     *
+     * @since 1.0.0
+     * @var bool
+     */
+    public $feed = false;
 
     /**
      * Whether this is the main query.
@@ -122,6 +61,28 @@ class Licensio_KB_Article_Order_Query extends WP_Query {
      */
     public function is_main_query() {
         return $this->archive;
+    }
+
+    /**
+     * Whether this is a search.
+     *
+     * @since 1.0.0
+     *
+     * @return bool The search flag.
+     */
+    public function is_search() {
+        return $this->search;
+    }
+
+    /**
+     * Whether this is a feed.
+     *
+     * @since 1.0.0
+     *
+     * @return bool The feed flag.
+     */
+    public function is_feed() {
+        return $this->feed;
     }
 }
 
@@ -258,47 +219,50 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
 
         $this->assertNotFalse( has_action( 'pre_get_posts', array( $order, 'prepare_query' ) ) );
         $this->assertNotFalse( has_filter( 'posts_clauses', array( $order, 'order_clauses' ) ) );
+        $this->assertNotFalse( has_filter( 'is_protected_meta', array( $order, 'protect_meta' ) ) );
         $this->assertNotFalse( has_action( 'licensio_kb_terms_merged', array( $order, 'append_merged_order' ) ) );
         $this->assertNotFalse( has_action( 'licensio_kb_term_removed', array( $order, 'delete_term_order' ) ) );
     }
 
     /**
-     * One category gets the named OR meta query, ascending, with filters on.
+     * One category is recorded, ascending, with filters on, and nothing else changes.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_one_category_gets_the_named_meta_query() {
-        $query = $this->query( array( $this->clause( 7 ) ), array( 'order' => 'DESC' ) );
+    public function test_one_category_is_recorded_with_filters_on() {
+        $query = $this->query( array( $this->clause( 7 ) ) );
 
         ( new Licensio_KB_Article_Order() )->prepare_query( $query );
 
-        $this->assertSame(
-            array(
-                'relation'                 => 'OR',
-                'licensio_order_ordered'   => array(
-                    'key'     => 'licensio_order_7',
-                    'compare' => 'EXISTS',
-                    'type'    => 'NUMERIC',
-                ),
-                'licensio_order_unordered' => array(
-                    'key'     => 'licensio_order_7',
-                    'compare' => 'NOT EXISTS',
-                ),
-            ),
-            $query->get( 'meta_query' )
-        );
-        $this->assertSame(
-            array(
-                'licensio_order_ordered' => 'ASC',
-                'title'                  => 'ASC',
-            ),
-            $query->get( 'orderby' )
-        );
-        $this->assertSame( 'ASC', $query->get( 'order' ), 'The per-category order is never reversed.' );
+        $this->assertSame( 'licensio_order', $query->get( 'orderby' ), 'The orderby stays as the marker the clauses filter checks.' );
         $this->assertSame( 7, $query->get( 'licensio_order_term' ) );
-        $this->assertFalse( $query->get( 'suppress_filters' ), 'get_posts() would otherwise skip the ORDER BY.' );
+        $this->assertFalse( $query->get( 'licensio_order_desc' ), 'No order means ascending.' );
+        $this->assertFalse( $query->get( 'suppress_filters' ), 'get_posts() would otherwise skip the JOIN and ORDER BY.' );
+        $this->assertNull( $query->get( 'meta_query' ), 'No meta query is added.' );
+    }
+
+    /**
+     * Only an explicit DESC reverses the order.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_only_an_explicit_desc_reverses_the_order() {
+        foreach ( array(
+            'DESC' => true,
+            'desc' => true,
+            'ASC'  => false,
+            ''     => false,
+        ) as $order => $reversed ) {
+            $query = $this->query( array( $this->clause( 7 ) ), array( 'order' => $order ) );
+
+            ( new Licensio_KB_Article_Order() )->prepare_query( $query );
+
+            $this->assertSame( $reversed, $query->get( 'licensio_order_desc' ), 'order: ' . $order );
+        }
     }
 
     /**
@@ -317,7 +281,7 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * An existing meta query is kept beside the order clauses.
+     * An existing meta query is left as it is.
      *
      * @since 1.0.0
      *
@@ -334,10 +298,8 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
 
         ( new Licensio_KB_Article_Order() )->prepare_query( $query );
 
-        $meta_query = $query->get( 'meta_query' );
-
-        $this->assertSame( $existing, $meta_query[0] );
-        $this->assertSame( 'OR', $meta_query[1]['relation'] );
+        $this->assertSame( $existing, $query->get( 'meta_query' ) );
+        $this->assertSame( 7, $query->get( 'licensio_order_term' ) );
     }
 
     /**
@@ -463,6 +425,44 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * A search or a feed on the category archive keeps its own order.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_search_or_feed_on_the_archive_keeps_its_order() {
+        foreach ( array( 'search', 'feed' ) as $flag ) {
+            $query          = $this->query( array( $this->clause( 7 ) ), array( 'orderby' => '' ) );
+            $query->archive = true;
+            $query->{$flag} = true;
+
+            ( new Licensio_KB_Article_Order() )->prepare_query( $query );
+
+            $this->assertSame( '', $query->get( 'orderby' ), $flag );
+            $this->assertNull( $query->get( 'licensio_order_term' ), $flag );
+        }
+    }
+
+    /**
+     * An array orderby on the archive is kept, without a conversion warning.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_category_archive_keeps_an_array_ordering() {
+        $orderby        = array( 'date' => 'DESC' );
+        $query          = $this->query( array( $this->clause( 7 ) ), array( 'orderby' => $orderby ) );
+        $query->archive = true;
+
+        ( new Licensio_KB_Article_Order() )->prepare_query( $query );
+
+        $this->assertSame( $orderby, $query->get( 'orderby' ) );
+        $this->assertNull( $query->get( 'licensio_order_term' ) );
+    }
+
+    /**
      * The admin list of a category is not reordered.
      *
      * @since 1.0.0
@@ -481,38 +481,54 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * The ORDER BY puts positions first, then unordered articles by title.
+     * The clauses gain one LEFT JOIN on the key and the ORDER BY, ascending.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_the_order_by_reads_the_unordered_clause_alias() {
-        $GLOBALS['wpdb'] = (object) array( 'posts' => 'wp_posts' ); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+    public function test_the_clauses_join_the_key_and_order_by_it() {
+        $clauses = $this->prepared_clauses( array() );
 
-        $query             = $this->query( array( $this->clause( 7 ) ) );
-        $query->meta_query = new WP_Meta_Query(
-            array(
-                'licensio_order_ordered'   => array( 'alias' => 'wp_postmeta' ),
-                'licensio_order_unordered' => array( 'alias' => 'mt1' ),
-            )
+        $this->assertSame( "J LEFT JOIN `wptests_postmeta` AS `licensio_order_meta` ON ( `wptests_posts`.ID = `licensio_order_meta`.post_id AND `licensio_order_meta`.meta_key = 'licensio_order_7' )", $clauses['join'] );
+        $this->assertSame( '`licensio_order_meta`.meta_value IS NULL ASC, CAST(`licensio_order_meta`.meta_value AS SIGNED) ASC, `wptests_posts`.post_title ASC, `wptests_posts`.ID ASC', $clauses['orderby'] );
+        $this->assertSame( 'W', $clauses['where'], 'Nothing is filtered out.' );
+        $this->assertSame( '', $clauses['groupby'] );
+    }
+
+    /**
+     * DESC reverses the positions, and unordered articles still come last.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_desc_reverses_the_positions_with_unordered_still_last() {
+        $clauses = $this->prepared_clauses( array( 'order' => 'DESC' ) );
+
+        $this->assertSame( '`licensio_order_meta`.meta_value IS NULL ASC, CAST(`licensio_order_meta`.meta_value AS SIGNED) DESC, `wptests_posts`.post_title DESC, `wptests_posts`.ID DESC', $clauses['orderby'] );
+    }
+
+    /**
+     * A later pre_get_posts that changed the orderby wins, as the search ranking does.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_later_orderby_change_wins() {
+        $query = $this->query( array( $this->clause( 7 ) ) );
+
+        ( new Licensio_KB_Article_Order() )->prepare_query( $query );
+
+        $query->set( 'orderby', 'post__in' );
+
+        $clauses = array(
+            'join'    => 'J',
+            'orderby' => 'FIELD( wptests_posts.ID, 3, 1 )',
         );
 
-        $order = new Licensio_KB_Article_Order();
-        $order->prepare_query( $query );
-
-        $clauses = $order->order_clauses(
-            array(
-                'orderby' => 'CAST(wp_postmeta.meta_value AS SIGNED) ASC',
-                'join'    => 'J',
-            ),
-            $query
-        );
-
-        unset( $GLOBALS['wpdb'] );
-
-        $this->assertSame( 'mt1.meta_value IS NULL ASC, CAST(mt1.meta_value AS SIGNED) ASC, wp_posts.post_title ASC, wp_posts.ID ASC', $clauses['orderby'] );
-        $this->assertSame( 'J', $clauses['join'] );
+        $this->assertSame( $clauses, ( new Licensio_KB_Article_Order() )->order_clauses( $clauses, $query ) );
     }
 
     /**
@@ -523,12 +539,58 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     public function test_an_unprepared_query_keeps_its_clauses() {
-        $query             = $this->query( array( $this->clause( 7 ) ), array( 'orderby' => 'date' ) );
-        $query->meta_query = new WP_Meta_Query( array( 'licensio_order_unordered' => array( 'alias' => 'mt1' ) ) );
+        $query = $this->query( array( $this->clause( 7 ) ), array( 'orderby' => 'date' ) );
 
         $clauses = ( new Licensio_KB_Article_Order() )->order_clauses( array( 'orderby' => 'post_date DESC' ), $query );
 
         $this->assertSame( array( 'orderby' => 'post_date DESC' ), $clauses );
+    }
+
+    /**
+     * The order keys are protected post meta; other keys are left alone.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_order_keys_are_protected() {
+        $order = new Licensio_KB_Article_Order();
+
+        $this->assertTrue( $order->protect_meta( false, 'licensio_order_7', 'post' ) );
+        $this->assertFalse( $order->protect_meta( false, 'licensio_order_7', 'term' ) );
+        $this->assertFalse( $order->protect_meta( false, 'featured', 'post' ) );
+        $this->assertTrue( $order->protect_meta( true, 'featured', 'post' ) );
+    }
+
+    /**
+     * The clauses `order_clauses()` writes for a prepared one-category query.
+     *
+     * @since 1.0.0
+     *
+     * @param array<string, mixed> $vars The query variables.
+     *
+     * @return array<string, string> The clauses.
+     */
+    private function prepared_clauses( array $vars ) {
+        $GLOBALS['wpdb'] = new Licensio_KB_Test_WPDB(); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+
+        $query = $this->query( array( $this->clause( 7 ) ), $vars );
+        $order = new Licensio_KB_Article_Order();
+        $order->prepare_query( $query );
+
+        $clauses = $order->order_clauses(
+            array(
+                'join'    => 'J',
+                'where'   => 'W',
+                'groupby' => '',
+                'orderby' => 'wptests_posts.post_date DESC',
+            ),
+            $query
+        );
+
+        unset( $GLOBALS['wpdb'] );
+
+        return $clauses;
     }
 
     /**
@@ -544,6 +606,63 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
         $this->assertSame( 10, $this->stored( 3, 'licensio_order_7' ) );
         $this->assertSame( 20, $this->stored( 1, 'licensio_order_7' ) );
         $this->assertSame( 30, $this->stored( 2, 'licensio_order_7' ) );
+    }
+
+    /**
+     * A partial save renumbers the other ordered articles after the listed ones.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_partial_save_renumbers_the_rest_after_the_listed_ones() {
+        $this->meta = array(
+            1 => array( 'licensio_order_7' => '0' ),
+            2 => array( 'licensio_order_7' => '1' ),
+            3 => array( 'licensio_order_7' => '2' ),
+            4 => array( 'licensio_order_7' => '150' ),
+            5 => array( 'licensio_order_8' => '5' ),
+            6 => array(),
+        );
+
+        $this->assertSame( array( 3, 1 ), Licensio_KB_Article_Order::save( 7, array( 3, 1 ) ) );
+
+        $this->assertSame( 10, $this->stored( 3, 'licensio_order_7' ) );
+        $this->assertSame( 20, $this->stored( 1, 'licensio_order_7' ) );
+        $this->assertSame( 30, $this->stored( 2, 'licensio_order_7' ), 'The rest keep their relative order.' );
+        $this->assertSame( 40, $this->stored( 4, 'licensio_order_7' ), 'A far position no longer interleaves.' );
+        $this->assertSame( '', $this->stored( 5, 'licensio_order_7' ), 'An article without a position stays without one.' );
+        $this->assertSame( '', $this->stored( 6, 'licensio_order_7' ) );
+    }
+
+    /**
+     * A renumbered article already at its place is not written again.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_article_already_in_place_is_not_rewritten() {
+        $this->meta = array(
+            1 => array( 'licensio_order_7' => '10' ),
+            2 => array( 'licensio_order_7' => '20' ),
+        );
+
+        $writes = array();
+
+        Functions\when( 'update_post_meta' )->alias(
+            function ( $id, $key, $value ) use ( &$writes ) {
+                $writes[] = $id;
+
+                $this->meta[ $id ][ $key ] = $value;
+
+                return true;
+            }
+        );
+
+        Licensio_KB_Article_Order::save( 7, array( 1 ) );
+
+        $this->assertSame( array( 1 ), $writes );
     }
 
     /**

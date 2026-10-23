@@ -5,14 +5,21 @@
  * Registers the two routes the per-category article order is read and saved
  * through, with their full argument schema and permission check:
  *
- * - `GET /licensio-kb/v1/categories/{id}/articles` lists the category's
- *   articles in their per-category order. Query: `page` (default 1) and
- *   `per_page` (1 to 200, default 200). Answers
+ * - `GET /licensio-kb/v1/categories/{id}/articles` lists the articles filed
+ *   directly in the category, in their per-category order. Articles filed
+ *   only in a sub-category are not listed, although the archive and the
+ *   category cards show them after the ordered ones, by title. Query: `page`
+ *   (default 1) and `per_page` (1 to 200, default 200). Answers
  *   `{ items: [ { id, title, status, order, edit_url } ], total, pages }`,
  *   where `order` is the article's position or null when it has none.
  * - `PUT /licensio-kb/v1/categories/{id}/articles/order` saves a new order.
- *   Body: `{ ids: int[] }`, first comes first. Answers `{ ids: int[] }`, the
- *   order as saved.
+ *   Body: `{ ids: int[] }`, first comes first, at most 1000 IDs. Answers
+ *   `{ ids: int[] }`, the listed IDs as saved. The listed articles get
+ *   positions 10, 20, 30… in the order given. Every other article that
+ *   already has a position in the category is renumbered after them,
+ *   keeping its previous relative order. Articles without a position stay
+ *   without one. So saving the first page of a long list moves those
+ *   articles to the top and keeps the rest in their order below them.
  *
  * Both answer 404 `licensio_kb_invalid_term` for an ID that is not a
  * knowledge base category. The save answers 400 `licensio_kb_not_in_category`
@@ -51,6 +58,14 @@ class Licensio_KB_Category_Order_REST_Controller extends Licensio_KB_REST_Contro
      * @var int
      */
     const MAX_PER_PAGE = 200;
+
+    /**
+     * The most article IDs one save accepts.
+     *
+     * @since 1.0.0
+     * @var int
+     */
+    const MAX_IDS = 1000;
 
     /**
      * Register the order routes.
@@ -146,6 +161,7 @@ class Licensio_KB_Category_Order_REST_Controller extends Licensio_KB_REST_Contro
                 'required'    => true,
                 'type'        => 'array',
                 'uniqueItems' => true,
+                'maxItems'    => self::MAX_IDS,
                 'items'       => array(
                     'type'    => 'integer',
                     'minimum' => 1,
@@ -186,6 +202,7 @@ class Licensio_KB_Category_Order_REST_Controller extends Licensio_KB_REST_Contro
                 'posts_per_page'         => $per_page,
                 'paged'                  => $page,
                 'orderby'                => Licensio_KB_Article_Order::ORDERBY,
+                'order'                  => 'ASC',
                 'ignore_sticky_posts'    => true,
                 'update_post_term_cache' => false,
                 // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
@@ -229,8 +246,10 @@ class Licensio_KB_Category_Order_REST_Controller extends Licensio_KB_REST_Contro
      *
      * Every ID must be an article filed directly in the category, in any
      * status except trash, that the current user may edit. The articles are
-     * written as 10, 20, 30… in the order given. Articles of the category that
-     * are not listed keep their positions.
+     * written as 10, 20, 30… in the order given. Every other article with a
+     * position in the category, trashed ones included, is renumbered after
+     * them in its previous relative order; articles without a position stay
+     * without one.
      *
      * @since 1.0.0
      *

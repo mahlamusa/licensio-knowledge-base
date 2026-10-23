@@ -353,9 +353,8 @@ class Licensio_KB_Heroic_Import_Map {
      *
      * @param array<int, mixed> $orders The per-category positions, keyed by source term ID.
      *
-     * @return array{order: int, ambiguous: bool, source_term_id: int, positions: array<int, int>} The
-     *               fallback position, whether the categories disagreed, the category it was taken
-     *               from, and every numeric position keyed by source term ID, lowest term ID first.
+     * @return array{order: int, positions: array<int, int>} The fallback position, and every
+     *               numeric position keyed by source term ID, lowest term ID first.
      */
     public static function article_order( array $orders ) {
         $values = array();
@@ -368,10 +367,8 @@ class Licensio_KB_Heroic_Import_Map {
 
         if ( empty( $values ) ) {
             return array(
-                'order'          => 0,
-                'ambiguous'      => false,
-                'source_term_id' => 0,
-                'positions'      => array(),
+                'order'     => 0,
+                'positions' => array(),
             );
         }
 
@@ -381,10 +378,8 @@ class Licensio_KB_Heroic_Import_Map {
         $chosen   = $term_ids[0];
 
         return array(
-            'order'          => $values[ $chosen ],
-            'ambiguous'      => count( array_unique( $values ) ) > 1,
-            'source_term_id' => $chosen,
-            'positions'      => $values,
+            'order'     => $values[ $chosen ],
+            'positions' => $values,
         );
     }
 

@@ -107,6 +107,7 @@ class Licensio_KB_Category_Order_REST_Test extends Licensio_KB_Test_Case {
         $this->assertTrue( $ids['required'] );
         $this->assertSame( 'array', $ids['type'] );
         $this->assertTrue( $ids['uniqueItems'] );
+        $this->assertSame( 1000, $ids['maxItems'] );
         $this->assertSame( 'integer', $ids['items']['type'] );
         $this->assertSame( 1, $ids['items']['minimum'] );
     }
@@ -204,6 +205,7 @@ class Licensio_KB_Category_Order_REST_Test extends Licensio_KB_Test_Case {
         $result     = $controller->get_items( $this->request( 5, array(), array( 'per_page' => 2 ) ) );
 
         $this->assertSame( 'licensio_order', $controller->args['orderby'] );
+        $this->assertSame( 'ASC', $controller->args['order'] );
         $this->assertSame( 'any', $controller->args['post_status'] );
         $this->assertSame( 2, $controller->args['posts_per_page'] );
         $this->assertFalse( $controller->args['tax_query'][0]['include_children'] );
@@ -295,6 +297,10 @@ class Licensio_KB_Category_Order_REST_Test extends Licensio_KB_Test_Case {
 
         Functions\when( 'get_posts' )->alias(
             function ( $args ) use ( &$checked ) {
+                if ( isset( $args['meta_key'] ) ) {
+                    return array();
+                }
+
                 $checked = $args;
 
                 return array( 13, 11, 12 );
@@ -326,7 +332,7 @@ class Licensio_KB_Category_Order_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * An empty list writes nothing and answers an empty order.
+     * An empty list in a category with no positions writes nothing.
      *
      * @since 1.0.0
      *
@@ -335,7 +341,13 @@ class Licensio_KB_Category_Order_REST_Test extends Licensio_KB_Test_Case {
     public function test_an_empty_save_writes_nothing() {
         $this->stub_category( 5 );
 
-        Functions\expect( 'get_posts' )->never();
+        Functions\when( 'get_posts' )->alias(
+            function ( $args ) {
+                $this->assertArrayHasKey( 'meta_key', $args, 'Only the positions are read; there is nothing to check.' );
+
+                return array();
+            }
+        );
         Functions\expect( 'update_post_meta' )->never();
 
         $result = ( new Licensio_KB_Category_Order_REST_Controller() )->update_order( $this->request( 5, array() ) );

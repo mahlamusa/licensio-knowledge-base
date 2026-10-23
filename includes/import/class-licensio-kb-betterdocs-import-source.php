@@ -204,8 +204,8 @@ class Licensio_KB_BetterDocs_Import_Source extends Licensio_KB_Import_Source {
      *
      * @param int $post_id The BetterDocs post ID.
      *
-     * @return array{order: int, ambiguous: bool, source_term_id: int, positions: array<int, int>} The
-     *               fallback position, and every per-category position keyed by source term ID.
+     * @return array{order: int, positions: array<int, int>} The fallback position, and every
+     *               per-category position keyed by source term ID.
      */
     public function article_order( $post_id ) {
         $orders = array();
@@ -215,6 +215,25 @@ class Licensio_KB_BetterDocs_Import_Source extends Licensio_KB_Import_Source {
         }
 
         return Licensio_KB_Heroic_Import_Map::article_order( Licensio_KB_BetterDocs_Import_Map::positions( $post_id, $orders ) );
+    }
+
+    /**
+     * The highest position any article holds in one BetterDocs category.
+     *
+     * Positions are 0-based places in the category's `_docs_order` list, so
+     * the highest is one less than the number of listed articles.
+     *
+     * @since 1.0.0
+     *
+     * @param int $term_id The BetterDocs category term ID.
+     *
+     * @return int The highest position, or -1 when the list is empty.
+     */
+    public function last_position( $term_id ) {
+        $list = (string) $this->term_meta_value( (int) $term_id, Licensio_KB_BetterDocs_Import_Schema::META_DOCS_ORDER );
+        $ids  = array_filter( array_map( 'trim', explode( ',', $list ) ), array( 'Licensio_KB_BetterDocs_Import_Map', 'is_filled' ) );
+
+        return count( $ids ) - 1;
     }
 
     /**

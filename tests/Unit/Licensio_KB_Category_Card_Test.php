@@ -498,6 +498,7 @@ class Licensio_KB_Category_Card_Test extends Licensio_KB_Test_Case {
         $this->render_card();
 
         $this->assertSame( Licensio_KB_Article_Order::ORDERBY, $this->query_args['orderby'] );
+        $this->assertSame( 'ASC', $this->query_args['order'], 'get_posts() would otherwise default to DESC.' );
     }
 
     /**

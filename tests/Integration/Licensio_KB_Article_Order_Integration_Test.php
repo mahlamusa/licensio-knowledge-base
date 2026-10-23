@@ -4,11 +4,11 @@
  *
  * No WordPress is loaded in this suite, so `WP_Query` cannot run. What runs
  * here instead is the SQL WordPress builds for a query prepared by
- * `Licensio_KB_Article_Order`: the joins and WHERE core emits for the named
- * `EXISTS` / `NOT EXISTS` meta query, copied from a real request, with the
- * ORDER BY the class writes. That is the part a double could get wrong, and it
- * is what every listing (category archive, category cards, Article List block
- * and the order route) sorts by.
+ * `Licensio_KB_Article_Order`: core's tax query join and WHERE, copied from a
+ * real request, with the JOIN and ORDER BY the class itself writes in
+ * `posts_clauses`. That is the part a double could get wrong, and it is what
+ * every listing (category archive, category cards, Article List block and the
+ * order route) sorts by.
  *
  * The writes go through the class and the REST controller as in production;
  * the post meta and term functions they call are backed by plain SQL on the
@@ -106,8 +106,8 @@ class Licensio_KB_Article_Order_Integration_Test extends Licensio_KB_Analytics_D
      *
      * Two shapes are used: the positions of one category (`meta_key`, sorted
      * numerically) and the save's membership check (`post__in` within one
-     * category, children excluded). Trash is left out of both, as
-     * `post_status => any` does.
+     * category, children excluded). Trash is left out unless the status list
+     * names it beside `any`, as core does.
      *
      * @since 1.0.0
      *
@@ -116,17 +116,18 @@ class Licensio_KB_Article_Order_Integration_Test extends Licensio_KB_Analytics_D
      * @return int[] The post IDs.
      */
     public function get_posts( $args ) {
-        $posts = $this->table( 'posts' );
+        $posts  = $this->table( 'posts' );
+        $status = in_array( 'trash', (array) $args['post_status'], true ) ? '1=1' : "p.post_status <> 'trash'";
 
         if ( isset( $args['meta_key'] ) ) {
             $sql = "SELECT p.ID FROM {$posts} p INNER JOIN " . $this->table( 'postmeta' ) . ' m ON (p.ID = m.post_id AND m.meta_key = ' . $this->quote( $args['meta_key'] ) . ")
-                WHERE p.post_status <> 'trash' ORDER BY CAST(m.meta_value AS SIGNED) ASC, p.ID ASC";
+                WHERE {$status} ORDER BY CAST(m.meta_value AS SIGNED) ASC, p.ID ASC";
         } else {
             $term = (int) $args['tax_query'][0]['terms'];
             $sql  = "SELECT p.ID FROM {$posts} p
                 INNER JOIN " . $this->table( 'term_relationships' ) . ' r ON (p.ID = r.object_id)
                 INNER JOIN ' . $this->table( 'term_taxonomy' ) . " t ON (r.term_taxonomy_id = t.term_taxonomy_id AND t.term_id = {$term})
-                WHERE p.post_status <> 'trash' AND p.ID IN (" . implode( ',', array_map( 'intval', $args['post__in'] ) ) . ')';
+                WHERE {$status} AND p.ID IN (" . implode( ',', array_map( 'intval', $args['post__in'] ) ) . ')';
         }
 
         return array_map( 'intval', array_column( $this->rows( $sql ), 0 ) );
@@ -135,34 +136,31 @@ class Licensio_KB_Article_Order_Integration_Test extends Licensio_KB_Analytics_D
     /**
      * The article titles a per-category listing returns, in order.
      *
-     * The FROM, JOIN, WHERE and GROUP BY are the ones core emits for the
-     * meta query `prepare_query()` adds; the ORDER BY is the class's own.
+     * The FROM, tax query JOIN, WHERE and GROUP BY are the ones core emits for
+     * a one-category query; the order JOIN and ORDER BY are the class's own.
      *
      * @since 1.0.0
      *
-     * @param int  $term_id          The category.
-     * @param bool $include_children Whether articles of sub-categories are listed too.
+     * @param int    $term_id          The category.
+     * @param bool   $include_children Whether articles of sub-categories are listed too.
+     * @param string $direction        `ASC` or `DESC`.
      *
      * @return string[] The titles.
      */
-    private function listed( $term_id, $include_children = false ) {
+    private function listed( $term_id, $include_children = false, $direction = 'ASC' ) {
         $posts = $this->table( 'posts' );
-        $meta  = $this->table( 'postmeta' );
-        $key   = $this->quote( Licensio_KB_Article_Order::meta_key( $term_id ) );
         $terms = $include_children
             ? '(t.term_id = ' . (int) $term_id . ' OR t.parent = ' . (int) $term_id . ')'
             : 't.term_id = ' . (int) $term_id;
 
         $sql = "SELECT {$posts}.post_title FROM {$posts}
             LEFT JOIN " . $this->table( 'term_relationships' ) . " r ON ({$posts}.ID = r.object_id)
-            LEFT JOIN " . $this->table( 'term_taxonomy' ) . " t ON (r.term_taxonomy_id = t.term_taxonomy_id)
-            LEFT JOIN {$meta} ON ( {$posts}.ID = {$meta}.post_id )
-            LEFT JOIN {$meta} AS mt1 ON ( {$posts}.ID = mt1.post_id AND mt1.meta_key = {$key} )
+            LEFT JOIN " . $this->table( 'term_taxonomy' ) . ' t ON (r.term_taxonomy_id = t.term_taxonomy_id)
+            ' . Licensio_KB_Article_Order::join_sql( $term_id ) . "
             WHERE 1=1 AND {$terms}
-              AND ( {$meta}.meta_key = {$key} OR mt1.post_id IS NULL )
               AND {$posts}.post_type = 'licensio_article' AND {$posts}.post_status <> 'trash'
             GROUP BY {$posts}.ID
-            ORDER BY " . Licensio_KB_Article_Order::orderby_sql( 'mt1' );
+            ORDER BY " . Licensio_KB_Article_Order::orderby_sql( $direction );
 
         return array_column( $this->rows( $sql ), 0 );
     }
@@ -273,7 +271,97 @@ class Licensio_KB_Article_Order_Integration_Test extends Licensio_KB_Analytics_D
 
         ( new Licensio_KB_Category_Order_REST_Controller() )->update_order( $this->request( $cat, array( $a, $c ) ) );
 
-        $this->assertSame( array( 'Alpha', 'Charlie', 'Bravo', 'Zulu' ), $this->listed( $cat ), 'A partial save leaves unlisted positions alone.' );
+        $this->assertSame( array( 'Alpha', 'Charlie', 'Bravo', 'Zulu' ), $this->listed( $cat ), 'A partial save puts the rest after it, in their order.' );
+        $this->assertSame( '30', $this->meta_value( $b, $cat ) );
+    }
+
+    /**
+     * Saving the first page of a long list never interleaves the rest.
+     *
+     * Imported positions are often small and dense (0, 1, 2…) while a saved
+     * order uses steps of ten, so without renumbering an unlisted article at
+     * position 15 would land between the first and second listed ones.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_partial_save_never_interleaves_the_rest() {
+        $cat = $this->make_term( 'Billing', Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
+        $key = Licensio_KB_Article_Order::meta_key( $cat );
+        $ids = array();
+
+        foreach ( array( 'A', 'B', 'C', 'D', 'E' ) as $index => $title ) {
+            $ids[ $title ] = $this->make_article(
+                array(
+                    'title'      => $title,
+                    'categories' => array( $cat ),
+                )
+            );
+
+            $this->set_order_row( $ids[ $title ], $key, (string) ( $index * 15 ) );
+        }
+
+        $binned = $this->make_article(
+            array(
+                'title'      => 'Binned',
+                'categories' => array( $cat ),
+                'status'     => 'trash',
+            )
+        );
+        $this->set_order_row( $binned, $key, '20' );
+
+        $this->make_article(
+            array(
+                'title'      => 'Unordered',
+                'categories' => array( $cat ),
+            )
+        );
+
+        ( new Licensio_KB_Category_Order_REST_Controller() )->update_order( $this->request( $cat, array( $ids['D'], $ids['B'] ) ) );
+
+        $this->assertSame( array( 'D', 'B', 'A', 'C', 'E', 'Unordered' ), $this->listed( $cat ) );
+        $this->assertSame( '10', $this->meta_value( $ids['D'], $cat ) );
+        $this->assertSame( '20', $this->meta_value( $ids['B'], $cat ) );
+        $this->assertSame( '30', $this->meta_value( $ids['A'], $cat ) );
+        $this->assertSame( '40', $this->meta_value( $binned, $cat ), 'A trashed article keeps its relative place.' );
+        $this->assertSame( '50', $this->meta_value( $ids['C'], $cat ) );
+        $this->assertSame( '60', $this->meta_value( $ids['E'], $cat ) );
+    }
+
+    /**
+     * Descending reverses the positions, and unordered articles still come last.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_descending_reverses_the_positions_with_unordered_last() {
+        $cat = $this->make_term( 'Billing', Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
+
+        $first  = $this->make_article(
+            array(
+                'title'      => 'First',
+                'categories' => array( $cat ),
+            )
+        );
+        $second = $this->make_article(
+            array(
+                'title'      => 'Second',
+                'categories' => array( $cat ),
+            )
+        );
+        $this->make_article(
+            array(
+                'title'      => 'Alpha unordered',
+                'categories' => array( $cat ),
+            )
+        );
+
+        Licensio_KB_Article_Order::save( $cat, array( $first, $second ) );
+
+        $this->assertSame( array( 'First', 'Second', 'Alpha unordered' ), $this->listed( $cat ) );
+        $this->assertSame( array( 'Second', 'First', 'Alpha unordered' ), $this->listed( $cat, false, 'DESC' ) );
     }
 
     /**
@@ -404,8 +492,17 @@ class Licensio_KB_Article_Order_Integration_Test extends Licensio_KB_Analytics_D
             )
         );
 
+        $binned = $this->make_article(
+            array(
+                'title'      => 'Binned',
+                'categories' => array( $target ),
+                'status'     => 'trash',
+            )
+        );
+
         Licensio_KB_Article_Order::save( $target, array( $t2, $t1 ) );
         Licensio_KB_Article_Order::save( $source, array( $s2, $t1, $s1 ) );
+        $this->set_order_row( $binned, Licensio_KB_Article_Order::meta_key( $source ), '35' );
 
         $order = new Licensio_KB_Article_Order();
         $order->append_merged_order( array( $source ), $target, Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
@@ -413,6 +510,7 @@ class Licensio_KB_Article_Order_Integration_Test extends Licensio_KB_Analytics_D
 
         $this->assertSame( '30', $this->meta_value( $s2, $target ) );
         $this->assertSame( '40', $this->meta_value( $s1, $target ) );
+        $this->assertSame( '50', $this->meta_value( $binned, $target ), 'A trashed article keeps a place for when it is restored.' );
         $this->assertSame( '20', $this->meta_value( $t1, $target ), 'An article already ordered in the target keeps its place.' );
         $this->assertSame( array( 'T2', 'T1', 'S2', 'S1' ), $this->listed( $target ) );
     }

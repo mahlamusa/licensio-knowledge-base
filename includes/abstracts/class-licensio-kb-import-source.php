@@ -113,11 +113,24 @@ abstract class Licensio_KB_Import_Source {
      *
      * @param int $post_id The source post ID.
      *
-     * @return array{order: int, ambiguous: bool, source_term_id: int, positions: array<int, int>} The
-     *               fallback position, whether the categories disagreed, the category it was taken
-     *               from, and the article's position in each source category, keyed by source term ID.
+     * @return array{order: int, positions: array<int, int>} The fallback position, and the
+     *               article's position in each source category, keyed by source term ID.
      */
     abstract public function article_order( $post_id );
+
+    /**
+     * The highest position any article holds in one source category.
+     *
+     * Used when several source categories are imported into one category: each
+     * later source's positions are shifted past the earlier ones.
+     *
+     * @since 1.0.0
+     *
+     * @param int $term_id The source category term ID.
+     *
+     * @return int The highest position, or -1 when the category orders no article.
+     */
+    abstract public function last_position( $term_id );
 
     /**
      * What becomes of one source post meta key, for the log.

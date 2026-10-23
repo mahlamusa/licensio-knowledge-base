@@ -7,7 +7,9 @@
  * and imported by the importer's real code through the plugin's real gateway.
  *
  * Not covered, because the harness has no WordPress: the content phases (terms
- * and articles are seeded as the content phase would leave them), the score
+ * and articles are seeded as the content phase would leave them; only the
+ * per-category order an article import writes is driven, with the core write
+ * functions backed by SQL), the score
  * recompute that closes the feedback phase, `run_batch()` and the redirect
  * map, and the driver's closing notes.
  *
@@ -18,6 +20,7 @@
 // phpcs:disable WordPress.DB.RestrictedClasses, WordPress.DB.RestrictedFunctions, WordPress.DB.DirectDatabaseQuery
 
 require_once __DIR__ . '/Licensio_KB_BetterDocs_Import_DB_Test_Case.php';
+require_once __DIR__ . '/trait-licensio-kb-article-import-stubs.php';
 
 /**
  * What actually lands in the target tables.
@@ -25,6 +28,8 @@ require_once __DIR__ . '/Licensio_KB_BetterDocs_Import_DB_Test_Case.php';
  * @since 1.0.0
  */
 class Licensio_KB_BetterDocs_Import_Integration_Test extends Licensio_KB_BetterDocs_Import_DB_Test_Case {
+
+    use Licensio_KB_Article_Import_Stubs;
 
     /**
      * Seed a small BetterDocs site.
@@ -798,10 +803,8 @@ class Licensio_KB_BetterDocs_Import_Integration_Test extends Licensio_KB_BetterD
         $this->assertSame( array( 1 ), $source->post_terms( 11, 'doc_category' ) );
         $this->assertSame(
             array(
-                'order'          => 1,
-                'ambiguous'      => false,
-                'source_term_id' => 1,
-                'positions'      => array( 1 => 1 ),
+                'order'     => 1,
+                'positions' => array( 1 => 1 ),
             ),
             $source->article_order( 11 )
         );
@@ -869,5 +872,73 @@ class Licensio_KB_BetterDocs_Import_Integration_Test extends Licensio_KB_BetterD
             'A category whose list does not name the article has no position.'
         );
         $this->assertSame( 1, $order['order'] );
+    }
+
+    /**
+     * The article import writes each article's place in every imported category.
+     *
+     * Category 1 is imported as 501. Categories 2 and 3 are both imported as
+     * 502, so their orders are merged: 2's positions as they are, then 3's
+     * after them. Article 14 is listed in both and keeps its place from 2.
+     * Category 4 was not imported, so its position has nowhere to go.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_article_import_writes_the_per_category_order() {
+        $this->stub_article_writes();
+
+        foreach ( array( 11, 12, 13, 14 ) as $post_id ) {
+            $this->seed_source_article( $post_id, 'doc-' . $post_id );
+        }
+
+        $this->seed_term( 1, 'doc_category', 'Billing', 0, array( '_docs_order' => '12,11' ) );
+        $this->seed_term( 2, 'doc_category', 'Install', 0, array( '_docs_order' => '11,14' ) );
+        $this->seed_term( 3, 'doc_category', 'Extra', 0, array( '_docs_order' => '13,14' ) );
+        $this->seed_term( 4, 'doc_category', 'Unmapped', 0, array( '_docs_order' => '11' ) );
+
+        foreach ( array(
+            11 => array( 1, 2, 4 ),
+            12 => array( 1 ),
+            13 => array( 3 ),
+            14 => array( 2, 3 ),
+        ) as $post_id => $terms ) {
+            foreach ( $terms as $term_id ) {
+                $this->file_under( $post_id, $term_id );
+            }
+        }
+
+        $source = new Licensio_KB_BetterDocs_Import_Source();
+
+        $this->seed_target_category( 501, $source->provenance_term_key(), array( 1 ) );
+        $this->seed_target_category( 502, $source->provenance_term_key(), array( 2, 3 ) );
+
+        $report  = $this->new_report();
+        $content = new Licensio_KB_Import_Content(
+            $source,
+            $this->new_state(),
+            new Licensio_KB_Import_Redirects( 'betterdocs', sys_get_temp_dir() . '/licensio-kb-betterdocs-unused', true ),
+            $report
+        );
+
+        while ( $content->migrate_articles_batch( 2 ) > 0 ) {
+            continue;
+        }
+
+        $this->assertSame(
+            array(
+                'Doc 11' => array(
+                    'licensio_order_501' => 1,
+                    'licensio_order_502' => 0,
+                ),
+                'Doc 12' => array( 'licensio_order_501' => 0 ),
+                'Doc 13' => array( 'licensio_order_502' => 2 ),
+                'Doc 14' => array( 'licensio_order_502' => 1 ),
+            ),
+            $this->written_positions()
+        );
+        $this->assertSame( 0, $report->get( 'articles_order_collapsed' ) );
+        $this->assertSame( array(), $report->notes( 'article_order' ) );
     }
 }

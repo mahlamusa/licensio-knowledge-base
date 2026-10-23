@@ -573,7 +573,9 @@ class Licensio_KB_Templates {
      *
      * The articles follow the category's own article order. Articles without
      * a position in it, including those filed only in a descendant, follow by
-     * title.
+     * title. The order is written in a `posts_clauses` filter, so this query
+     * runs with `suppress_filters` off and other plugins' `posts_*` filters
+     * apply to it too.
      *
      * @since 1.0.0
      *
@@ -596,6 +598,7 @@ class Licensio_KB_Templates {
                 'post_status'            => 'publish',
                 'posts_per_page'         => $limit,
                 'orderby'                => Licensio_KB_Article_Order::ORDERBY,
+                'order'                  => 'ASC',
                 'ignore_sticky_posts'    => true,
                 'no_found_rows'          => true,
                 'update_post_term_cache' => false,

@@ -5,6 +5,8 @@
  * Everything here runs against a live server. The Heroic tables are created
  * with Heroic's own DDL, seeded with rows carrying real IP addresses, and
  * migrated by the migrator's real code through the plugin's real gateway.
+ * The article import's per-category order is driven too, with the core write
+ * functions backed by SQL.
  *
  * @package Licensio_KB
  * @since   1.0.0
@@ -13,6 +15,7 @@
 // phpcs:disable WordPress.DB.RestrictedClasses, WordPress.DB.RestrictedFunctions, WordPress.DB.DirectDatabaseQuery
 
 require_once __DIR__ . '/Licensio_KB_Heroic_Import_DB_Test_Case.php';
+require_once __DIR__ . '/trait-licensio-kb-article-import-stubs.php';
 
 /**
  * What actually lands in the target tables.
@@ -20,6 +23,8 @@ require_once __DIR__ . '/Licensio_KB_Heroic_Import_DB_Test_Case.php';
  * @since 1.0.0
  */
 class Licensio_KB_Heroic_Import_Integration_Test extends Licensio_KB_Heroic_Import_DB_Test_Case {
+
+    use Licensio_KB_Article_Import_Stubs;
 
     /**
      * Addresses seeded into the Heroic tables.
@@ -897,5 +902,134 @@ class Licensio_KB_Heroic_Import_Integration_Test extends Licensio_KB_Heroic_Impo
             $order['positions']
         );
         $this->assertSame( 9, $order['order'], 'menu_order still falls back to the lowest category.' );
+    }
+
+    /**
+     * The article import writes each article's place in every imported category.
+     *
+     * Category 31 is imported as 601. Categories 12 and 44 are both imported
+     * as 602, so their orders are merged: 12's positions as they are, then
+     * 44's after 12's highest. Article 24 is in both and keeps its place from
+     * 12. Category 77 was not imported, so its position has nowhere to go.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_article_import_writes_the_per_category_order() {
+        $this->install_term_tables();
+        $this->stub_article_writes();
+        Brain\Monkey\Functions\when( 'home_url' )->alias(
+            function ( $path = '' ) {
+                return 'https://example.test' . $path;
+            }
+        );
+
+        foreach ( array( 12, 31, 44, 77 ) as $term_id ) {
+            $this->seed(
+                'terms',
+                array(
+                    array(
+                        'term_id' => $term_id,
+                        'name'    => 'Category ' . $term_id,
+                        'slug'    => 'category-' . $term_id,
+                    ),
+                )
+            );
+            $this->seed(
+                'term_taxonomy',
+                array(
+                    array(
+                        'term_taxonomy_id' => $term_id,
+                        'term_id'          => $term_id,
+                        'taxonomy'         => Licensio_KB_Heroic_Import_Schema::TAXONOMY_CATEGORY,
+                        'description'      => '',
+                    ),
+                )
+            );
+        }
+
+        $articles = array(
+            21 => array(
+                31 => 3,
+                12 => 0,
+                77 => 5,
+            ),
+            22 => array( 12 => 1 ),
+            23 => array( 44 => 0 ),
+            24 => array(
+                44 => 2,
+                12 => 2,
+            ),
+        );
+
+        foreach ( $articles as $post_id => $orders ) {
+            $this->seed(
+                'posts',
+                array(
+                    array(
+                        'ID'          => $post_id,
+                        'post_title'  => 'Heroic ' . $post_id,
+                        'post_name'   => 'heroic-' . $post_id,
+                        'post_type'   => Licensio_KB_Heroic_Import_Schema::POST_TYPE,
+                        'post_status' => 'publish',
+                    ),
+                )
+            );
+
+            foreach ( $orders as $term_id => $order ) {
+                $this->seed(
+                    'term_relationships',
+                    array(
+                        array(
+                            'object_id'        => $post_id,
+                            'term_taxonomy_id' => $term_id,
+                        ),
+                    )
+                );
+                $this->seed(
+                    'postmeta',
+                    array(
+                        array(
+                            'post_id'    => $post_id,
+                            'meta_key'   => Licensio_KB_Heroic_Import_Schema::META_ARTICLE_ORDER_PREFIX . $term_id, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+                            'meta_value' => (string) $order, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+                        ),
+                    )
+                );
+            }
+        }
+
+        $source = new Licensio_KB_Heroic_Import_Source();
+
+        $this->seed_target_category( 601, $source->provenance_term_key(), array( 31 ) );
+        $this->seed_target_category( 602, $source->provenance_term_key(), array( 12, 44 ) );
+
+        $report  = $this->new_report();
+        $content = new Licensio_KB_Import_Content(
+            $source,
+            $this->new_state( false ),
+            new Licensio_KB_Import_Redirects( 'heroic', sys_get_temp_dir() . '/licensio-kb-migration-unused', true ),
+            $report
+        );
+
+        while ( $content->migrate_articles_batch( 2 ) > 0 ) {
+            continue;
+        }
+
+        $this->assertSame(
+            array(
+                'Heroic 21' => array(
+                    'licensio_order_601' => 3,
+                    'licensio_order_602' => 0,
+                ),
+                'Heroic 22' => array( 'licensio_order_602' => 1 ),
+                'Heroic 23' => array( 'licensio_order_602' => 3 ),
+                'Heroic 24' => array( 'licensio_order_602' => 2 ),
+            ),
+            $this->written_positions()
+        );
+        $this->assertSame( 0, $report->get( 'articles_order_collapsed' ) );
+        $this->assertSame( array(), $report->notes( 'article_order' ) );
     }
 }
