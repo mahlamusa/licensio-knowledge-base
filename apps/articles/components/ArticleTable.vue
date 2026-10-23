@@ -218,6 +218,7 @@ const expandedKeys = computed( () =>
 				preserveSelectedRowKeys: store.allMatching,
 				onChange: ( keys: Array<string | number> ) => store.select( keys.map( Number ) ),
 				getCheckboxProps: ( record: ArticleItem ) => ( {
+					/* translators: %s: article title. */
 					'aria-label': sprintf( __( 'Select “%s”', 'licensio-knowledge-base' ), record.title ),
 				} ),
 			}"
@@ -267,11 +268,11 @@ const expandedKeys = computed( () =>
 
 						<a-tooltip
 							v-if="record.lock"
-							:title="sprintf( __( '%s is editing', 'licensio-knowledge-base' ), record.lock.name )"
+							:title="/* translators: %s: name of the user editing the article. */ sprintf( __( '%s is editing', 'licensio-knowledge-base' ), record.lock.name )"
 						>
 							<span class="lkb-title__lock" tabindex="0">
 								<LockOutlined aria-hidden="true" />
-								{{ sprintf( __( '%s is editing', 'licensio-knowledge-base' ), record.lock.name ) }}
+								{{ /* translators: %s: name of the user editing the article. */ sprintf( __( '%s is editing', 'licensio-knowledge-base' ), record.lock.name ) }}
 							</span>
 						</a-tooltip>
 					</div>
@@ -348,7 +349,7 @@ const expandedKeys = computed( () =>
 					<span
 						v-else
 						:class="{ 'lkb-rating--low': record.needs_attention }"
-						:title="sprintf( __( '%1$d helpful, %2$d not helpful', 'licensio-knowledge-base' ), record.rating.up, record.rating.down )"
+						:title="/* translators: 1: helpful votes, 2: not helpful votes. */ sprintf( __( '%1$d helpful, %2$d not helpful', 'licensio-knowledge-base' ), record.rating.up, record.rating.down )"
 					>
 						{{ record.rating.share }}%
 						<span class="lkb-muted">({{ record.rating.up }}/{{ record.rating.down }})</span>
@@ -356,7 +357,7 @@ const expandedKeys = computed( () =>
 				</template>
 
 				<template v-else-if="'reading_time' === col.key">
-					{{ record.reading_time ? sprintf( __( '%d min', 'licensio-knowledge-base' ), record.reading_time ) : '—' }}
+					{{ /* translators: %d: reading time in minutes. */ record.reading_time ? sprintf( __( '%d min', 'licensio-knowledge-base' ), record.reading_time ) : '—' }}
 				</template>
 
 				<template v-else-if="'date' === col.key || 'modified' === col.key">

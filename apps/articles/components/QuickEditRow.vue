@@ -261,7 +261,7 @@ function statusOf( field: string ): 'error' | undefined {
 			v-if="savedSlug"
 			type="success"
 			show-icon
-			:message="sprintf( __( 'Saved. The slug is now “%s”.', 'licensio-knowledge-base' ), savedSlug )"
+			:message="/* translators: %s: the new slug. */ sprintf( __( 'Saved. The slug is now “%s”.', 'licensio-knowledge-base' ), savedSlug )"
 			class="lkb-quickedit__alert"
 		/>
 
@@ -396,7 +396,7 @@ function statusOf( field: string ): 'error' | undefined {
 			</a-button>
 			<ConfirmButton
 				type="primary"
-				:title="sprintf( __( 'Save the changes to “%s”?', 'licensio-knowledge-base' ), props.item.title || __( '(no title)', 'licensio-knowledge-base' ) )"
+				:title="/* translators: %s: article title. */ sprintf( __( 'Save the changes to “%s”?', 'licensio-knowledge-base' ), props.item.title || __( '(no title)', 'licensio-knowledge-base' ) )"
 				:ok-text="__( 'Save', 'licensio-knowledge-base' )"
 				:loading="saving"
 				:disabled="passwordMissing || !! props.item.lock"

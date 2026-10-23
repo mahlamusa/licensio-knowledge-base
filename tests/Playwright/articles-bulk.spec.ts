@@ -312,6 +312,10 @@ test.describe( 'Articles bulk actions', () => {
 			'The locked article is untouched.'
 		).toBe( 'publish' );
 
+		await expect(
+			page.locator( '.ant-notification-notice' ),
+			'The Undo countdown waits for the modal to close.'
+		).toHaveCount( 0 );
 		await modal.locator( '.ant-modal-close' ).click();
 
 		const toast = page.locator( '.ant-notification-notice' ).last();

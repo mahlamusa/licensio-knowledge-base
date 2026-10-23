@@ -305,7 +305,14 @@ class Licensio_KB_Article_Bulk {
                 return self::outcome( wp_delete_post( $id, true ) );
 
             case 'status':
-                return self::update( $id, array( 'post_status' => (string) $args['status'] ) );
+                $fields = array( 'post_status' => (string) $args['status'] );
+
+                // A private article cannot also have a password, as in quick edit and core.
+                if ( 'private' === $fields['post_status'] ) {
+                    $fields['post_password'] = '';
+                }
+
+                return self::update( $id, $fields );
 
             case 'author':
                 return self::update( $id, array( 'post_author' => (int) $args['author'] ) );

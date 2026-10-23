@@ -339,6 +339,30 @@ class Licensio_KB_Article_Bulk_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * Making articles private clears their password; other statuses keep it.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_private_status_clears_the_password() {
+        $this->article( 1, 'publish' );
+
+        $bulk = new Licensio_KB_Article_Bulk();
+
+        $bulk->run( array( 1 ), 'status', array( 'status' => 'private' ) );
+        $bulk->run( array( 1 ), 'status', array( 'status' => 'draft' ) );
+
+        $this->assertSame(
+            array(
+                'wp_update_post:1:{"post_status":"private","post_password":""}',
+                'wp_update_post:1:{"post_status":"draft"}',
+            ),
+            $this->core_writes
+        );
+    }
+
+    /**
      * Undoable actions return what each article was; the rest return nothing.
      *
      * @since 1.0.0

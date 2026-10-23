@@ -117,6 +117,7 @@ test.describe( 'Articles app', () => {
 		await row.getByRole( 'button', { name: 'Quick edit' } ).click();
 
 		const form = app.locator( '.ant-table-expanded-row' ).first();
+		const original = await form.getByLabel( 'Title' ).inputValue();
 
 		await form.getByLabel( 'Title' ).fill( title );
 		await form.getByRole( 'button', { name: /Save/ } ).click();
@@ -124,13 +125,34 @@ test.describe( 'Articles app', () => {
 		expect( writes ).toHaveLength( 0 );
 
 		await confirmPopconfirm( page );
-		await expect( app.getByText( title ) ).toBeVisible();
 
-		expect( writes ).toHaveLength( 1 );
-		expect( writes[ 0 ].method() ).toBe( 'PATCH' );
-		expect( JSON.parse( writes[ 0 ].postData() ?? '{}' ) ).toEqual( {
-			title,
-		} );
+		try {
+			await expect( app.getByText( title ) ).toBeVisible();
+
+			expect( writes ).toHaveLength( 1 );
+			expect( writes[ 0 ].method() ).toBe( 'PATCH' );
+			expect( JSON.parse( writes[ 0 ].postData() ?? '{}' ) ).toEqual( {
+				title,
+			} );
+		} finally {
+			// Put the article's title back so the site is left as found.
+			if ( writes.length > 0 ) {
+				const nonce = await page.evaluate(
+					() =>
+						(
+							window as unknown as {
+								licensioKbArticles?: { nonce?: string };
+							}
+						 ).licensioKbArticles?.nonce ?? ''
+				);
+
+				await page.request.fetch( writes[ 0 ].url(), {
+					method: 'PATCH',
+					headers: { 'X-WP-Nonce': nonce },
+					data: { title: original },
+				} );
+			}
+		}
 	} );
 
 	test( 'the view is restored from the URL', async ( { page } ) => {

@@ -8,6 +8,7 @@
  * @since 1.0.0
  */
 
+import { watch } from 'vue';
 import { message } from 'ant-design-vue';
 import { __, _n, sprintf } from '../components/i18n';
 import { showUndoToast } from './components/UndoToast';
@@ -246,10 +247,40 @@ function doneText( action: BulkAction, count: number ): string {
 }
 
 /**
+ * Run a callback once the progress modal is closed.
+ *
+ * @since 1.0.0
+ *
+ * @param {() => void} callback Runs now if the modal is closed, else when it closes.
+ *
+ * @return {void}
+ */
+function afterProgressCloses( callback: () => void ): void {
+	const store = articlesStore();
+
+	if ( ! store.bulk.open ) {
+		callback();
+		return;
+	}
+
+	const stop = watch(
+		() => store.bulk.open,
+		( open ) => {
+			if ( ! open ) {
+				stop();
+				callback();
+			}
+		}
+	);
+}
+
+/**
  * Run an action, then report it and offer Undo when it can be undone.
  *
  * The progress modal shows when there is more than one batch, or when the
- * run stopped or skipped anything, so a single-row action stays quiet.
+ * run stopped or skipped anything, so a single-row action stays quiet. The
+ * Undo toast waits until that modal is closed, so its countdown is not spent
+ * while the user reads the outcome.
  *
  * @since 1.0.0
  *
@@ -289,55 +320,59 @@ export async function performAction(
 
 	const results = run.results;
 
-	showUndoToast( text, async () => {
-		try {
-			const reverted = await store.undo( results );
-			const count = reverted.done.length;
+	afterProgressCloses( () =>
+		showUndoToast( text, async () => {
+			try {
+				const reverted = await store.undo( results );
+				const count = reverted.done.length;
 
-			if ( count > 0 ) {
-				message.success(
-					sprintf(
-						/* translators: %d: number of articles. */
-						_n(
-							'%d article put back.',
-							'%d articles put back.',
-							count,
-							'licensio-knowledge-base'
-						),
-						count
-					)
-				);
-			}
+				if ( count > 0 ) {
+					message.success(
+						sprintf(
+							/* translators: %d: number of articles. */
+							_n(
+								'%d article put back.',
+								'%d articles put back.',
+								count,
+								'licensio-knowledge-base'
+							),
+							count
+						)
+					);
+				}
 
-			const missed = reverted.skipped.length + reverted.failed.length;
+				const missed = reverted.skipped.length + reverted.failed.length;
 
-			if ( missed > 0 ) {
-				const reasons = [
-					...new Set( [
-						...reverted.skipped.map( ( { reason } ) =>
-							reasonLabel( reason )
-						),
-						...reverted.failed.map( ( { message: why } ) => why ),
-					] ),
-				].join( '; ' );
+				if ( missed > 0 ) {
+					const reasons = [
+						...new Set( [
+							...reverted.skipped.map( ( { reason } ) =>
+								reasonLabel( reason )
+							),
+							...reverted.failed.map(
+								( { message: why } ) => why
+							),
+						] ),
+					].join( '; ' );
 
-				message.warning(
-					sprintf(
-						/* translators: 1: number of articles, 2: the reasons. */
-						_n(
-							'%1$d article could not be put back: %2$s',
-							'%1$d articles could not be put back: %2$s',
+					message.warning(
+						sprintf(
+							/* translators: 1: number of articles, 2: the reasons. */
+							_n(
+								'%1$d article could not be put back: %2$s',
+								'%1$d articles could not be put back: %2$s',
+								missed,
+								'licensio-knowledge-base'
+							),
 							missed,
-							'licensio-knowledge-base'
+							reasons
 						),
-						missed,
-						reasons
-					),
-					8
-				);
+						8
+					);
+				}
+			} catch ( error ) {
+				message.error( messageOf( error ) );
 			}
-		} catch ( error ) {
-			message.error( messageOf( error ) );
-		}
-	} );
+		} )
+	);
 }
