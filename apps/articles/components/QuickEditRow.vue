@@ -11,7 +11,7 @@
  * @since 1.0.0
  */
 
-import { computed, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import ConfirmButton from '../../components/ConfirmButton.vue';
 import TermSelect from '../../components/TermSelect.vue';
 import { RestError } from '../../components/rest';
@@ -73,6 +73,10 @@ const errors = ref< Record< string, string > >( {} );
 const error = ref( '' );
 const saving = ref( false );
 const savedSlug = ref( '' );
+const formEl = ref< HTMLFormElement | null >( null );
+
+// Move focus into the form as it opens, so keyboard users land on the title.
+onMounted( () => formEl.value?.querySelector< HTMLInputElement >( 'input' )?.focus() );
 
 const statusOptions = computed( () => {
 	const options = [
@@ -244,7 +248,7 @@ function statusOf( field: string ): 'error' | undefined {
 </script>
 
 <template>
-	<form class="lkb-quickedit" @submit.prevent>
+	<form ref="formEl" class="lkb-quickedit" @submit.prevent>
 		<a-alert
 			v-if="error"
 			type="error"

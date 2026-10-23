@@ -19,6 +19,7 @@ import { computed, onMounted, ref } from 'vue';
 import { articleFilter, settings } from './api';
 import { useFeedbackStore } from './store';
 import AppHeader from '../components/AppHeader.vue';
+import { __, sprintf } from '../components/i18n';
 import type { FeedbackItem, FeedbackStatus } from './types';
 
 const store = useFeedbackStore();
@@ -92,6 +93,21 @@ const articleName = computed(
 			?.articleName ?? ''
 );
 
+/** The notice naming the article the inbox is filtered to. */
+const articleNotice = computed( () =>
+	articleName.value
+		? sprintf(
+				/* translators: %s: article title. */
+				__( 'Filtered to article: %s', 'licensio-knowledge-base' ),
+				articleName.value
+		  )
+		: sprintf(
+				/* translators: %d: article ID. */
+				__( 'Filtered to article #%d', 'licensio-knowledge-base' ),
+				articleId.value
+		  )
+);
+
 /**
  * Show every article's feedback again.
  *
@@ -139,13 +155,13 @@ onMounted( () => {
 					type="info"
 					show-icon
 					closable
-					:message="articleName ? `Filtered to article: ${ articleName }` : `Filtered to article #${ articleId }`"
+					:message="articleNotice"
 					class="licensio-kb-inbox__article"
 					@close="clearArticle"
 				>
 					<template #action>
 						<a-button size="small" @click="clearArticle">
-							Show all articles
+							{{ __( 'Show all articles', 'licensio-knowledge-base' ) }}
 						</a-button>
 					</template>
 				</a-alert>

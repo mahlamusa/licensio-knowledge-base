@@ -11,7 +11,7 @@
  * @since 1.0.0
  */
 
-import { computed } from 'vue';
+import { computed, nextTick } from 'vue';
 import { LockOutlined } from '@ant-design/icons-vue';
 import ConfirmButton from '../../components/ConfirmButton.vue';
 import { __, sprintf } from '../../components/i18n';
@@ -178,6 +178,26 @@ function toggleQuickEdit( item: ArticleItem ): void {
 	store.quickEditId = store.quickEditId === item.id ? 0 : item.id;
 }
 
+/**
+ * Close quick edit and put focus back on the row's Quick edit button, so a
+ * keyboard user carries on from the row they were editing.
+ *
+ * @since 1.0.0
+ *
+ * @param {number} id The row.
+ *
+ * @return {void}
+ */
+function closeQuickEdit( id: number ): void {
+	store.quickEditId = 0;
+
+	nextTick( () =>
+		document
+			.querySelector< HTMLElement >( `[data-quick-edit="${ id }"]` )
+			?.focus()
+	);
+}
+
 const expandedKeys = computed( () =>
 	store.quickEditId ? [ store.quickEditId ] : []
 );
@@ -267,6 +287,7 @@ const expandedKeys = computed( () =>
 								class="lkb-rowactions__button"
 								:disabled="!! record.lock || ! record.edit_url"
 								:aria-expanded="store.quickEditId === record.id"
+								:data-quick-edit="record.id"
 								@click="toggleQuickEdit( record as ArticleItem )"
 							>
 								{{ __( 'Quick edit', 'licensio-knowledge-base' ) }}
@@ -351,7 +372,7 @@ const expandedKeys = computed( () =>
 				<QuickEditRow
 					:key="record.id"
 					:item="record as ArticleItem"
-					@close="store.quickEditId = 0"
+					@close="closeQuickEdit( record.id )"
 				/>
 			</template>
 		</a-table>
