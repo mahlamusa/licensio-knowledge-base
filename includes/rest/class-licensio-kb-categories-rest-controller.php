@@ -214,7 +214,7 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
             'slug'        => array(
                 'type'              => 'string',
                 'maxLength'         => 200,
-                'sanitize_callback' => 'sanitize_title',
+                'sanitize_callback' => array( __CLASS__, 'sanitize_slug_arg' ),
                 'description'       => __( 'The category slug. Made unique when it is taken.', 'licensio-knowledge-base' ),
             ),
             'parent'      => array(
@@ -251,6 +251,24 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
                 'description'       => __( 'The attachment ID of the category image, 0 for none.', 'licensio-knowledge-base' ),
             ),
         );
+    }
+
+    /**
+     * Reduce a slug argument to a slug.
+     *
+     * Not `sanitize_title` directly: the REST server passes the request and
+     * the parameter name as extra arguments, which `sanitize_title()` would
+     * take for its fallback title and context, answering the request object
+     * for an empty slug and skipping accent removal for any other.
+     *
+     * @since 1.0.0
+     *
+     * @param mixed $value The raw slug.
+     *
+     * @return string The slug, or an empty string to make one from the name.
+     */
+    public static function sanitize_slug_arg( $value ) {
+        return is_scalar( $value ) ? sanitize_title( (string) $value ) : '';
     }
 
     /**

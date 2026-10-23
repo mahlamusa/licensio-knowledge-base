@@ -1553,4 +1553,24 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
 
         $this->assert_error( 'licensio_kb_category_cycle', 400, $result );
     }
+
+    /**
+     * The slug sanitiser takes the extra REST arguments without misreading them.
+     *
+     * The REST server calls a sanitize callback with the request and the
+     * parameter name as well. An empty slug must stay an empty string, so the
+     * term gets a slug made from its name.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_slug_sanitiser_ignores_the_extra_rest_arguments() {
+        $callback = $this->routes['/categories'][1]['args']['slug']['sanitize_callback'];
+        $request  = new WP_REST_Request( array(), '/licensio-kb/v1/categories', array() );
+
+        $this->assertSame( '', call_user_func( $callback, '', $request, 'slug' ) );
+        $this->assertSame( 'getting-started', call_user_func( $callback, 'Getting Started', $request, 'slug' ) );
+        $this->assertSame( '', call_user_func( $callback, array( 'x' ), $request, 'slug' ) );
+    }
 }
