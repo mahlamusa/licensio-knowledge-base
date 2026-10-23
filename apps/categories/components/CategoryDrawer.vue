@@ -173,10 +173,17 @@ async function save(): Promise< void > {
 	const input: CategoryInput = {
 		name: form.name.trim(),
 		parent: form.parent ?? 0,
-		description: form.description,
 		icon: form.icon.trim(),
 		icon_svg: form.iconSvg,
 	};
+
+	// The description is shown and sent exactly as stored. It is sent only
+	// when the user changed it, so a save that only renames a category or
+	// changes its icon never passes the description through the server's
+	// HTML filter again.
+	if ( form.description !== ( props.category?.description ?? '' ) ) {
+		input.description = form.description;
+	}
 
 	// An unchanged icon or image is not sent again: if its file was deleted
 	// from the media library since, the server would refuse it and block

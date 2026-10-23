@@ -690,7 +690,7 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * The list answers every field, with stored entities decoded.
+     * The list answers every field: names decoded, descriptions as stored.
      *
      * @since 1.0.0
      *
@@ -726,7 +726,7 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
                 'name'        => 'Billing & invoices',
                 'slug'        => 'billing-&amp;-invoices',
                 'parent'      => 0,
-                'description' => 'Tom\'s "tips" & tricks',
+                'description' => 'Tom&#039;s &quot;tips&quot; &amp; tricks',
                 'count'       => 3,
                 'order'       => 20,
                 'icon'        => 'dashicons-money',
@@ -738,6 +738,66 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
             ),
             $billing[0]
         );
+    }
+
+    /**
+     * A description with escaped and real markup survives a list and a rename unchanged.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_description_round_trips_through_a_rename_unchanged() {
+        $stored                        = 'Use the &lt;head&gt; element, not <b>body</b>.';
+        $this->terms[4]['description'] = $stored;
+
+        $listed = array_column( $this->as_list( $this->controller->get_items( $this->request( array() ) ) ), null, 'id' );
+
+        $this->assertSame( $stored, $listed[4]['description'], 'Answered exactly as stored.' );
+
+        $item = $this->controller->update_item(
+            $this->request(
+                array(
+                    'id'   => 4,
+                    'name' => 'Billing',
+                )
+            )
+        );
+
+        $this->assertSame( array( array( 'name' => 'Billing' ) ), $this->term_writes, 'A rename does not write the description.' );
+        $this->assertSame( $stored, $this->terms[4]['description'] );
+        $this->assertSame( $stored, $item['description'] );
+    }
+
+    /**
+     * Every argument that declares a limit has core validate it.
+     *
+     * Core skips schema validation for an argument with its own sanitiser,
+     * so without this a negative parent would be turned positive and an
+     * overlong name would reach the database.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_every_limited_argument_is_validated() {
+        $limits  = array( 'minimum', 'maximum', 'minLength', 'maxLength', 'enum', 'pattern' );
+        $checked = 0;
+
+        foreach ( $this->routes as $route => $endpoints ) {
+            foreach ( $endpoints as $endpoint ) {
+                foreach ( $endpoint['args'] as $name => $arg ) {
+                    if ( ! isset( $arg['sanitize_callback'] ) || ! array_intersect( $limits, array_keys( $arg ) ) ) {
+                        continue;
+                    }
+
+                    $this->assertSame( 'rest_validate_request_arg', isset( $arg['validate_callback'] ) ? $arg['validate_callback'] : null, $route . ' ' . $name );
+                    ++$checked;
+                }
+            }
+        }
+
+        $this->assertGreaterThanOrEqual( 8, $checked );
     }
 
     /**
@@ -1782,6 +1842,36 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
         $this->denied = array();
         $request->set_param( 'parent', 99 );
         $this->assertTrue( $this->controller->update_order_permissions_check( $request ), 'A missing parent is left to the handler, which answers 400.' );
+    }
+
+    /**
+     * Ordering needs edit rights on the children it renumbers without being told to.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_order_checks_the_unlisted_children_it_renumbers() {
+        $request = $this->request(
+            array(
+                'parent' => 0,
+                'ids'    => array( 4 ),
+            )
+        );
+
+        $this->assertTrue( $this->controller->update_order_permissions_check( $request ) );
+        $this->assertContains( array( 'edit_term', 1 ), $this->cap_calls );
+
+        $this->denied = array( 'edit_term:1' );
+        $this->assert_error( 'licensio_kb_category_forbidden', 403, $this->controller->update_order_permissions_check( $request ) );
+
+        $request->set_param( 'ids', array( 4, 1 ) );
+        $this->assert_error( 'licensio_kb_category_forbidden', 403, $this->controller->update_order_permissions_check( $request ) );
+
+        $this->denied = array( 'edit_term:5' );
+        $request->set_param( 'parent', 4 );
+        $request->set_param( 'ids', array( 2 ) );
+        $this->assert_error( 'licensio_kb_category_forbidden', 403, $this->controller->update_order_permissions_check( $request ) );
     }
 
     /**

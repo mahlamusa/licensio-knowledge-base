@@ -75,8 +75,10 @@ const fallbackId = 'lkb-term-select-' + useId();
 
 const ariaLabel = computed( () => attrs[ 'aria-label' ] as string | undefined );
 
-const inputId = computed( () =>
-	ariaLabel.value ? ( attrs.id as string | undefined ) || fallbackId : undefined
+const inputId = computed(
+	() =>
+		( attrs.id as string | undefined ) ||
+		( ariaLabel.value ? fallbackId : undefined )
 );
 
 const selectAttrs = computed( () =>

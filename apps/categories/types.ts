@@ -21,6 +21,7 @@ export interface CategoryItem {
 	name: string;
 	slug: string;
 	parent: number;
+	/** As stored, entities and all. Shown as text, never as HTML. */
 	description: string;
 	/** Published articles in this category, as core counts them. */
 	count: number;

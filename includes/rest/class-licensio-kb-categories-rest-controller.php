@@ -189,6 +189,7 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
             'required'          => true,
             'type'              => 'integer',
             'minimum'           => 1,
+            'validate_callback' => 'rest_validate_request_arg',
             'sanitize_callback' => 'absint',
             'description'       => __( 'The category ID.', 'licensio-knowledge-base' ),
         );
@@ -210,18 +211,21 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
                 'type'              => 'string',
                 'minLength'         => 1,
                 'maxLength'         => 200,
+                'validate_callback' => 'rest_validate_request_arg',
                 'sanitize_callback' => 'sanitize_text_field',
                 'description'       => __( 'The category name.', 'licensio-knowledge-base' ),
             ),
             'slug'        => array(
                 'type'              => 'string',
                 'maxLength'         => 200,
+                'validate_callback' => 'rest_validate_request_arg',
                 'sanitize_callback' => array( __CLASS__, 'sanitize_slug_arg' ),
                 'description'       => __( 'The category slug. Made unique when it is taken.', 'licensio-knowledge-base' ),
             ),
             'parent'      => array(
                 'type'              => 'integer',
                 'minimum'           => 0,
+                'validate_callback' => 'rest_validate_request_arg',
                 'sanitize_callback' => 'absint',
                 'description'       => __( 'The parent category ID, 0 for the top level.', 'licensio-knowledge-base' ),
             ),
@@ -238,6 +242,7 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
             'icon_id'     => array(
                 'type'              => 'integer',
                 'minimum'           => 0,
+                'validate_callback' => 'rest_validate_request_arg',
                 'sanitize_callback' => array( __CLASS__, 'sanitize_image_arg' ),
                 'description'       => __( 'The attachment ID of an uploaded icon, 0 for none.', 'licensio-knowledge-base' ),
             ),
@@ -249,6 +254,7 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
             'image_id'    => array(
                 'type'              => 'integer',
                 'minimum'           => 0,
+                'validate_callback' => 'rest_validate_request_arg',
                 'sanitize_callback' => array( __CLASS__, 'sanitize_image_arg' ),
                 'description'       => __( 'The attachment ID of the category image, 0 for none.', 'licensio-knowledge-base' ),
             ),
@@ -349,6 +355,7 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
                 'required'          => true,
                 'type'              => 'integer',
                 'minimum'           => 0,
+                'validate_callback' => 'rest_validate_request_arg',
                 'sanitize_callback' => 'absint',
                 'description'       => __( 'The parent the categories are placed under, 0 for the top level.', 'licensio-knowledge-base' ),
             ),
@@ -394,6 +401,7 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
                 'required'          => true,
                 'type'              => 'integer',
                 'minimum'           => 1,
+                'validate_callback' => 'rest_validate_request_arg',
                 'sanitize_callback' => 'absint',
                 'description'       => __( 'The category that remains.', 'licensio-knowledge-base' ),
             ),
@@ -481,7 +489,9 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
     /**
      * Whether the current user may move every category in an order request.
      *
-     * Also needs `edit_term` on the parent they are placed under.
+     * Also needs `edit_term` on the parent they are placed under, and on
+     * every child of that parent the request leaves out, since those are
+     * renumbered after the listed ones.
      *
      * @since 1.0.0
      *
@@ -490,25 +500,27 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      * @return true|WP_Error True when allowed.
      */
     public function update_order_permissions_check( $request ) {
-        $allowed = $this->term_permission( $request, 'edit_terms', 'edit_term', self::id_list( $request->get_param( 'ids' ) ) );
+        $ids     = self::id_list( $request->get_param( 'ids' ) );
+        $allowed = $this->term_permission( $request, 'edit_terms', 'edit_term', $ids );
 
         if ( true !== $allowed ) {
             return $allowed;
         }
 
-        $parent = absint( $request->get_param( 'parent' ) );
-
-        if ( 0 === $parent ) {
-            return true;
-        }
-
+        $parent  = absint( $request->get_param( 'parent' ) );
         $parents = $this->parent_map();
 
         if ( is_wp_error( $parents ) ) {
             return $parents;
         }
 
-        return self::can_edit_existing( array( $parent ), $parents );
+        $edited = array_diff( self::children_of( $parent, $parents ), $ids );
+
+        if ( $parent > 0 ) {
+            $edited[] = $parent;
+        }
+
+        return self::can_edit_existing( $edited, $parents );
     }
 
     /**
@@ -735,9 +747,13 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      *
      * Every target is checked before anything is written. `reassign_articles`
      * of `parent` is refused for a top-level category, which has no parent to
-     * move them to; `none` leaves the articles without this category. If a
-     * child category cannot be moved, the children already moved are put back
-     * and the category is not deleted.
+     * move them to; `none` leaves the articles without this category.
+     *
+     * The articles are moved first, then the child categories, then the
+     * category is deleted. Only the child moves are undone on failure: if a
+     * child category cannot be moved, the children already moved are put
+     * back and the category is not deleted, but the articles stay where they
+     * were moved to. Nothing is undone if the final delete fails.
      *
      * @since 1.0.0
      *
@@ -995,7 +1011,9 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      * source's own parent as it deletes it. If one cannot be moved, the
      * children already moved are put back and nothing is merged. Then the
      * articles move and the sources are deleted through
-     * Licensio_KB_Term_Operations::merge_terms().
+     * Licensio_KB_Term_Operations::merge_terms(). That step is not undone:
+     * if it fails, the children stay under the target, and any articles
+     * already moved stay moved.
      *
      * @since 1.0.0
      *
@@ -1232,7 +1250,7 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
             'name'        => self::plain_text( $term->name ),
             'slug'        => (string) $term->slug,
             'parent'      => (int) $term->parent,
-            'description' => self::plain_text( $term->description ),
+            'description' => (string) $term->description,
             'count'       => (int) $term->count,
             'order'       => Licensio_KB_Term_Meta::get_order( $id ),
             'icon'        => Licensio_KB_Term_Meta::get_icon( $id ),
@@ -1443,9 +1461,12 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
     /**
      * Stored term text as plain text.
      *
-     * Core saves term names and descriptions with HTML special characters
-     * encoded, so "Billing & invoices" is stored as "Billing &amp; invoices".
-     * The app shows them as text, never as HTML.
+     * Core saves term names with HTML special characters encoded, so
+     * "Billing & invoices" is stored as "Billing &amp; invoices". The app
+     * shows them as text, never as HTML. Only names go through this:
+     * descriptions are answered exactly as stored, because decoding one
+     * would turn text such as `&lt;head&gt;` into markup that the next save
+     * strips, or keeps as real HTML.
      *
      * @since 1.0.0
      *

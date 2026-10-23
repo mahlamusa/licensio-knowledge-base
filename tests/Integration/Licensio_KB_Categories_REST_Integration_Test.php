@@ -484,6 +484,41 @@ class Licensio_KB_Categories_REST_Integration_Test extends Licensio_KB_Analytics
     }
 
     /**
+     * A description with escaped and real markup is answered as stored and kept by a rename.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_description_round_trips_through_a_rename_unchanged() {
+        $stored = 'Use the &lt;head&gt; element, not <b>body</b>.';
+        $id     = $this->ids['Billing'];
+
+        $this->live_query(
+            'UPDATE ' . $this->table( 'term_taxonomy' ) . " SET description = '" . $this->db->real_escape_string( $stored ) . "' WHERE term_id = " . (int) $id
+        );
+
+        $before = array_column( $this->tree( $this->controller->get_items( $this->request( array() ) ) ), null, 'id' );
+
+        $this->assertSame( $stored, $before[ $id ]['description'], 'Answered exactly as stored.' );
+
+        $renamed = $this->controller->update_item(
+            $this->request(
+                array(
+                    'id'   => $id,
+                    'name' => 'Billing and invoices',
+                )
+            )
+        );
+
+        $rows = $this->live_rows( 'SELECT description FROM ' . $this->table( 'term_taxonomy' ) . ' WHERE term_id = ' . (int) $id );
+
+        $this->assertSame( 'Billing and invoices', $renamed['name'] );
+        $this->assertSame( $stored, $rows[0]['description'], 'The stored description is unchanged.' );
+        $this->assertSame( $stored, $renamed['description'] );
+    }
+
+    /**
      * A name a sibling already has is refused with a 400; a cousin may share it.
      *
      * @since 1.0.0
