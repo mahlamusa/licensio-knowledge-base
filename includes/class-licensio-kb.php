@@ -286,6 +286,11 @@ final class Licensio_KB {
         $this->toc->init_hooks();
         $this->content_manager->init_hooks();
         $this->term_operations->init_hooks();
+
+        // Its REST routes must be registered for REST requests, so not admin only.
+        $tags_admin = new Licensio_KB_Tags_Admin( $this->assets );
+        $tags_admin->init_hooks();
+
         Licensio_KB_Sidebar::init_hooks();
 
         if ( ! is_admin() ) {
