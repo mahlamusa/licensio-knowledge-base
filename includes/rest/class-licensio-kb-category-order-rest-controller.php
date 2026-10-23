@@ -176,7 +176,8 @@ class Licensio_KB_Category_Order_REST_Controller extends Licensio_KB_REST_Contro
      *
      * Every status except trash (and auto-draft), filed directly in the
      * category; articles of sub-categories are not listed. Ordered articles
-     * come first, then unordered ones by title.
+     * come first, then unordered ones by title. A page past the end has no
+     * items but still reports the real `total` and `pages`.
      *
      * @since 1.0.0
      *
@@ -193,21 +194,20 @@ class Licensio_KB_Category_Order_REST_Controller extends Licensio_KB_REST_Contro
 
         $per_page = min( self::MAX_PER_PAGE, max( 1, (int) $request->get_param( 'per_page' ) ) );
         $page     = max( 1, (int) $request->get_param( 'page' ) );
-
-        $query = $this->query(
-            array(
-                'post_type'              => Licensio_KB_Post_Types::POST_TYPE,
-                'post_status'            => 'any',
-                'posts_per_page'         => $per_page,
-                'paged'                  => $page,
-                'orderby'                => Licensio_KB_Article_Order::ORDERBY,
-                'order'                  => 'ASC',
-                'ignore_sticky_posts'    => true,
-                'update_post_term_cache' => false,
-                // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
-                'tax_query'              => $this->category_clause( $term_id ),
-            )
+        $args     = array(
+            'post_type'              => Licensio_KB_Post_Types::POST_TYPE,
+            'post_status'            => 'any',
+            'posts_per_page'         => $per_page,
+            'paged'                  => $page,
+            'orderby'                => Licensio_KB_Article_Order::ORDERBY,
+            'order'                  => 'ASC',
+            'ignore_sticky_posts'    => true,
+            'update_post_term_cache' => false,
+            // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
+            'tax_query'              => $this->category_clause( $term_id ),
         );
+
+        $query = $this->query( $args );
 
         $key   = Licensio_KB_Article_Order::meta_key( $term_id );
         $items = array();
@@ -230,6 +230,15 @@ class Licensio_KB_Category_Order_REST_Controller extends Licensio_KB_REST_Contro
         }
 
         $total = (int) $query->found_posts;
+
+        // Core counts nothing when the page is past the end, so count the first page instead.
+        if ( $total < 1 && $page > 1 ) {
+            $args['paged']          = 1;
+            $args['posts_per_page'] = 1;
+            $args['fields']         = 'ids';
+
+            $total = (int) $this->query( $args )->found_posts;
+        }
 
         return rest_ensure_response(
             array(

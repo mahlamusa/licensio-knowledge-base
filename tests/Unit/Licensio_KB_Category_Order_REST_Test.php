@@ -236,6 +236,46 @@ class Licensio_KB_Category_Order_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * A page past the end still reports the real total.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_page_past_the_end_still_reports_the_total() {
+        $this->stub_category( 5 );
+
+        $empty              = new WP_Query();
+        $count              = new WP_Query();
+        $count->found_posts = 3;
+
+        $controller = new Licensio_KB_Category_Order_REST_Controller_Double( $empty, $count );
+        $result     = $controller->get_items(
+            $this->request(
+                5,
+                array(),
+                array(
+                    'per_page' => 2,
+                    'page'     => 4,
+                )
+            )
+        );
+
+        $this->assertCount( 2, $controller->calls );
+        $this->assertSame( 4, $controller->calls[0]['paged'] );
+        $this->assertSame( 1, $controller->calls[1]['paged'] );
+        $this->assertSame( 'ids', $controller->calls[1]['fields'] );
+        $this->assertSame(
+            array(
+                'items' => array(),
+                'total' => 3,
+                'pages' => 2,
+            ),
+            $result
+        );
+    }
+
+    /**
      * An ID outside the category stops the save before anything is written.
      *
      * @since 1.0.0
@@ -417,15 +457,15 @@ class Licensio_KB_Category_Order_REST_Test extends Licensio_KB_Test_Case {
 class Licensio_KB_Category_Order_REST_Controller_Double extends Licensio_KB_Category_Order_REST_Controller {
 
     /**
-     * The query the controller gets back.
+     * The queries the controller gets back, in turn; the last one repeats.
      *
      * @since 1.0.0
-     * @var WP_Query
+     * @var WP_Query[]
      */
-    private $result;
+    private $results;
 
     /**
-     * The arguments the controller queried with.
+     * The arguments of the first query.
      *
      * @since 1.0.0
      * @var array<string, mixed>
@@ -433,18 +473,26 @@ class Licensio_KB_Category_Order_REST_Controller_Double extends Licensio_KB_Cate
     public $args = array();
 
     /**
+     * The arguments of every query, in order.
+     *
+     * @since 1.0.0
+     * @var array<int, array<string, mixed>>
+     */
+    public $calls = array();
+
+    /**
      * Constructor.
      *
      * @since 1.0.0
      *
-     * @param WP_Query $result The query to answer with.
+     * @param WP_Query ...$results The queries to answer with, in turn.
      */
-    public function __construct( WP_Query $result ) {
-        $this->result = $result;
+    public function __construct( WP_Query ...$results ) {
+        $this->results = $results;
     }
 
     /**
-     * Record the arguments and answer the prepared query.
+     * Record the arguments and answer the next prepared query.
      *
      * @since 1.0.0
      *
@@ -453,8 +501,12 @@ class Licensio_KB_Category_Order_REST_Controller_Double extends Licensio_KB_Cate
      * @return WP_Query The prepared query.
      */
     protected function query( array $args ) {
-        $this->args = $args;
+        if ( empty( $this->calls ) ) {
+            $this->args = $args;
+        }
 
-        return $this->result;
+        $this->calls[] = $args;
+
+        return $this->results[ min( count( $this->calls ), count( $this->results ) ) - 1 ];
     }
 }
