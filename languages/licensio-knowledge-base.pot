@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-23T20:45:00+00:00\n"
+"POT-Creation-Date: 2026-10-23T22:36:41+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.7.1\n"
 "X-Domain: licensio-knowledge-base\n"
@@ -93,27 +93,47 @@ msgstr ""
 msgid "Loading the knowledge base analytics…"
 msgstr ""
 
+#: includes/admin/class-licensio-kb-articles-admin.php:101
+#: includes/class-licensio-kb-post-types.php:224
+msgid "All Articles"
+msgstr ""
+
+#: includes/admin/class-licensio-kb-articles-admin.php:102
+#: includes/admin/class-licensio-kb-articles-admin.php:183
+#: includes/import/class-licensio-kb-betterdocs-import-driver.php:81
+#: includes/import/class-licensio-kb-heroic-import-driver.php:80
+#: templates/category-body.php:71
+#: blocks/article-list/index.js:51
+#: blocks/article-list/index.js:119
+msgid "Articles"
+msgstr ""
+
+#: includes/admin/class-licensio-kb-articles-admin.php:179
+#: includes/admin/class-licensio-kb-feedback-admin.php:171
+#: includes/class-licensio-kb-rest-controller.php:124
+msgid "You are not allowed to manage the knowledge base."
+msgstr ""
+
+#: includes/admin/class-licensio-kb-articles-admin.php:185
+msgid "Loading articles…"
+msgstr ""
+
 #: includes/admin/class-licensio-kb-feedback-admin.php:91
 #: includes/admin/class-licensio-kb-feedback-admin.php:92
 #: includes/class-licensio-kb-settings-schema.php:128
 msgid "Feedback"
 msgstr ""
 
-#: includes/admin/class-licensio-kb-feedback-admin.php:168
-#: includes/class-licensio-kb-rest-controller.php:124
-msgid "You are not allowed to manage the knowledge base."
-msgstr ""
-
-#: includes/admin/class-licensio-kb-feedback-admin.php:172
+#: includes/admin/class-licensio-kb-feedback-admin.php:175
 msgid "Knowledge Base Feedback"
 msgstr ""
 
-#: includes/admin/class-licensio-kb-feedback-admin.php:174
+#: includes/admin/class-licensio-kb-feedback-admin.php:177
 msgid "Loading feedback…"
 msgstr ""
 
 #. translators: 1: usefulness percentage, 2: total number of votes.
-#: includes/admin/class-licensio-kb-feedback-admin.php:203
+#: includes/admin/class-licensio-kb-feedback-admin.php:206
 msgid "%1$d%% (%2$d vote)"
 msgid_plural "%1$d%% (%2$d votes)"
 msgstr[0] ""
@@ -320,6 +340,44 @@ msgstr ""
 msgid "Status"
 msgstr ""
 
+#: includes/class-licensio-kb-article-bulk.php:327
+msgid "Unknown bulk action."
+msgstr ""
+
+#: includes/class-licensio-kb-article-bulk.php:434
+msgid "Send between 1 and 100 articles to undo."
+msgstr ""
+
+#: includes/class-licensio-kb-article-bulk.php:439
+msgid "Each article to undo needs its earlier values."
+msgstr ""
+
+#. translators: %s: the field names that cannot be undone.
+#: includes/class-licensio-kb-article-bulk.php:448
+msgid "These fields cannot be undone: %s."
+msgstr ""
+
+#: includes/class-licensio-kb-article-bulk.php:453
+msgid "A status to undo to is not valid."
+msgstr ""
+
+#: includes/class-licensio-kb-article-bulk.php:457
+#: includes/class-licensio-kb-article-bulk.php:473
+msgid "The terms to undo to are not valid."
+msgstr ""
+
+#: includes/class-licensio-kb-article-bulk.php:462
+msgid "This undo is not valid for your account."
+msgstr ""
+
+#: includes/class-licensio-kb-article-bulk.php:468
+msgid "This change is too old to undo."
+msgstr ""
+
+#: includes/class-licensio-kb-article-bulk.php:706
+msgid "The article could not be changed."
+msgstr ""
+
 #: includes/class-licensio-kb-block-templates.php:124
 msgid "Single Article"
 msgstr ""
@@ -449,10 +507,6 @@ msgstr ""
 
 #: includes/class-licensio-kb-post-types.php:223
 msgid "View Articles"
-msgstr ""
-
-#: includes/class-licensio-kb-post-types.php:224
-msgid "All Articles"
 msgstr ""
 
 #: includes/class-licensio-kb-post-types.php:225
@@ -965,42 +1019,62 @@ msgid "Show the \"was this helpful?\" prompt at the foot of every article, with 
 msgstr ""
 
 #: includes/class-licensio-kb-settings-schema.php:363
-msgid "Collect analytics"
+msgid "Low rating threshold"
 msgstr ""
 
 #: includes/class-licensio-kb-settings-schema.php:364
-msgid "Record searches and article views. No IP address is ever stored; a visitor is a salted hash that rotates daily."
-msgstr ""
-
-#: includes/class-licensio-kb-settings-schema.php:369
-msgid "Keep analytics for"
+msgid "An article needs attention when its helpful share in the chosen window falls below this percentage."
 msgstr ""
 
 #: includes/class-licensio-kb-settings-schema.php:370
-msgid "How many days of search and view history the daily purge leaves in place."
+msgid "Minimum votes"
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:372
-msgid "days"
+#: includes/class-licensio-kb-settings-schema.php:371
+msgid "How many votes an article needs in the chosen window before it can be flagged as needing attention."
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:376
-msgid "Delete everything on uninstall"
+#: includes/class-licensio-kb-settings-schema.php:373
+msgid "votes"
 msgstr ""
 
 #: includes/class-licensio-kb-settings-schema.php:377
+msgid "Collect analytics"
+msgstr ""
+
+#: includes/class-licensio-kb-settings-schema.php:378
+msgid "Record searches and article views. No IP address is ever stored; a visitor is a salted hash that rotates daily."
+msgstr ""
+
+#: includes/class-licensio-kb-settings-schema.php:383
+msgid "Keep analytics for"
+msgstr ""
+
+#: includes/class-licensio-kb-settings-schema.php:384
+msgid "How many days of search and view history the daily purge leaves in place."
+msgstr ""
+
+#: includes/class-licensio-kb-settings-schema.php:386
+msgid "days"
+msgstr ""
+
+#: includes/class-licensio-kb-settings-schema.php:390
+msgid "Delete everything on uninstall"
+msgstr ""
+
+#: includes/class-licensio-kb-settings-schema.php:391
 msgid "On, deleting the plugin drops its tables, options and articles. Off, the data survives so a reinstall picks up where it left off."
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:498
+#: includes/class-licensio-kb-settings-schema.php:512
 msgid "Left"
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:499
+#: includes/class-licensio-kb-settings-schema.php:513
 msgid "Right"
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:500
+#: includes/class-licensio-kb-settings-schema.php:514
 msgid "No sidebar"
 msgstr ""
 
@@ -1050,16 +1124,8 @@ msgstr ""
 msgid "One of the chosen terms does not exist."
 msgstr ""
 
-#: includes/class-licensio-kb.php:381
+#: includes/class-licensio-kb.php:385
 msgid "Licensio Knowledge Base is missing its bundled database library, so its tables cannot be created. Reinstall the plugin, or run \"composer install\" in the plugin directory."
-msgstr ""
-
-#: includes/import/class-licensio-kb-betterdocs-import-driver.php:81
-#: includes/import/class-licensio-kb-heroic-import-driver.php:80
-#: templates/category-body.php:71
-#: blocks/article-list/index.js:51
-#: blocks/article-list/index.js:119
-msgid "Articles"
 msgstr ""
 
 #: includes/import/class-licensio-kb-betterdocs-import-driver.php:84
@@ -1103,6 +1169,161 @@ msgstr[1] ""
 
 #: includes/import/class-licensio-kb-heroic-import-source.php:42
 msgid "Heroic Knowledge Base"
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:281
+msgid "One status, or all but the trash."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:287
+msgid "Limit the articles to titles containing this text."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:289
+msgid "A category ID; its children are included."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:290
+msgid "A tag ID."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:291
+msgid "An author user ID."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:292
+msgid "Published on or after this day, YYYY-MM-DD."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:293
+msgid "Published on or before this day, YYYY-MM-DD."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:294
+msgid "Only articles with no category."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:295
+msgid "Only articles with no tag."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:296
+msgid "Only articles whose helpful share in the window is below the low rating threshold."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:301
+msgid "The days the views and rating cover."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:539
+msgid "Use a date in the form YYYY-MM-DD."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:556
+msgid "Use a date and time in the form YYYY-MM-DDTHH:MM:SS."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:573
+msgid "Tags must be a list."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:581
+msgid "Each tag must be a tag ID or a new tag name."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1030
+msgid "Restore this article before editing it."
+msgstr ""
+
+#. translators: %s: the name of the user editing the article.
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1106
+msgid "%s is editing this article."
+msgstr ""
+
+#. translators: %s: the name of the user editing the article.
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1106
+msgid "Someone else"
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1147
+msgid "You are not allowed to publish this article."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1159
+msgid "The date is not valid."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1177
+msgid "A private article cannot also have a password."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1184
+msgid "You are not allowed to change the author of this article."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1188
+msgid "That user cannot write articles."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1211
+msgid "You are not allowed to assign these terms."
+msgstr ""
+
+#. translators: %s: the names of the fields with errors.
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1228
+msgid "Invalid parameter(s): %s"
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1254
+msgid "Categories cannot be created here."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1258
+msgid "You are not allowed to create tags."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1266
+msgid "One of the tags does not exist."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1267
+msgid "One of the categories does not exist."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1347
+msgid "You are not allowed to edit this article."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1373
+msgid "Send between 1 and 100 article IDs."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1400
+msgid "Choose a status to set."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1411
+msgid "Choose a taxonomy, a mode and the terms."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1417
+msgid "Choose at least one term."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1422
+msgid "One of the terms does not exist."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1436
+msgid "Choose a user who can write articles."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1445
+msgid "Choose open or closed."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1630
+msgid "No article was found with that ID."
 msgstr ""
 
 #: includes/rest/class-licensio-kb-category-order-rest-controller.php:101
