@@ -65,6 +65,7 @@ class Licensio_KB_Admin_Menu_Test extends Licensio_KB_Test_Case {
         $this->assertSame( 'Analytics', $pages[0]['page_title'] );
         $this->assertSame( 'manage_licensio_kb', $pages[0]['capability'] );
         $this->assertSame( 10, $pages[0]['position'] );
+        $this->assertNull( $pages[0]['submenu_position'] );
     }
 
     /**
@@ -212,6 +213,76 @@ class Licensio_KB_Admin_Menu_Test extends Licensio_KB_Test_Case {
         $this->assertSame( 'edit.php?post_type=licensio_article', $added[0]['parent_slug'] );
         $this->assertSame( 'Knowledge Base Analytics', $added[0]['page_title'] );
         $this->assertSame( 'manage_licensio_kb', $added[0]['capability'] );
+    }
+
+    /**
+     * A page without a submenu position passes none to core.
+     *
+     * Core then appends the page after its own items, which is how every page
+     * registered before the option existed has always behaved.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_page_without_a_submenu_position_passes_none() {
+        Filters\expectApplied( 'licensio_admin_menu_pages' )->once()->andReturn(
+            array(
+                array(
+                    'menu_slug' => 'licensio-kb-settings',
+                    'callback'  => '__return_true',
+                    'position'  => 40,
+                ),
+            )
+        );
+
+        $positions = array();
+
+        Functions\when( 'add_submenu_page' )->alias(
+            function ( $parent_slug, $page_title, $menu_title, $capability, $slug, $callback = '', $position = 'not passed' ) use ( &$positions ) {
+                $positions[ $slug ] = $position;
+
+                return 'knowledge-base_page_' . $slug;
+            }
+        );
+
+        ( new Licensio_KB_Admin_Menu() )->register_pages();
+
+        $this->assertSame( array( 'licensio-kb-settings' => null ), $positions );
+    }
+
+    /**
+     * A page with a submenu position passes it to core.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_page_with_a_submenu_position_passes_it_to_core() {
+        Filters\expectApplied( 'licensio_admin_menu_pages' )->once()->andReturn(
+            array(
+                array(
+                    'menu_slug'        => 'licensio-kb-articles',
+                    'callback'         => '__return_true',
+                    'position'         => 1,
+                    'submenu_position' => '1',
+                ),
+            )
+        );
+
+        $positions = array();
+
+        Functions\when( 'add_submenu_page' )->alias(
+            function ( $parent_slug, $page_title, $menu_title, $capability, $slug, $callback = '', $position = 'not passed' ) use ( &$positions ) {
+                $positions[ $slug ] = $position;
+
+                return 'knowledge-base_page_' . $slug;
+            }
+        );
+
+        ( new Licensio_KB_Admin_Menu() )->register_pages();
+
+        $this->assertSame( array( 'licensio-kb-articles' => 1 ), $positions );
     }
 
     /**

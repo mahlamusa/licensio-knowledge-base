@@ -263,6 +263,7 @@ class Licensio_KB_Settings_Schema_Test extends Licensio_KB_Test_Case {
             'archive_columns'           => 'appearance',
             'show_subcategories'        => 'general',
             'show_article_counts'       => 'general',
+            'classic_screens'           => 'general',
             'sticky_sidebar'            => 'sidebar',
             'archive_sidebar_position'  => 'sidebar',
             'article_sidebar_position'  => 'sidebar',
@@ -298,6 +299,7 @@ class Licensio_KB_Settings_Schema_Test extends Licensio_KB_Test_Case {
             'archive_columns',
             'show_subcategories',
             'show_article_counts',
+            'classic_screens',
             'sticky_sidebar',
             'archive_sidebar_position',
             'article_sidebar_position',
@@ -331,6 +333,7 @@ class Licensio_KB_Settings_Schema_Test extends Licensio_KB_Test_Case {
         $this->assertSame( 'number', $fields['archive_columns']['control'] );
         $this->assertSame( 'toggle', $fields['show_subcategories']['control'] );
         $this->assertSame( 'toggle', $fields['show_article_counts']['control'] );
+        $this->assertSame( 'toggle', $fields['classic_screens']['control'] );
         $this->assertSame( 'toggle', $fields['sticky_sidebar']['control'] );
         $this->assertSame( 'select', $fields['archive_sidebar_position']['control'] );
     }

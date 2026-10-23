@@ -170,6 +170,12 @@ class Licensio_KB_Settings_Schema {
                 'description' => __( 'Print the number of articles beside every category name.', 'licensio-knowledge-base' ),
                 'control'     => 'toggle',
             ),
+            'classic_screens'            => array(
+                'group'       => self::GROUP_GENERAL,
+                'label'       => __( 'Classic screens', 'licensio-knowledge-base' ),
+                'description' => __( 'Use the classic WordPress screens for articles, categories and tags.', 'licensio-knowledge-base' ),
+                'control'     => 'toggle',
+            ),
             'article_slug'               => array(
                 'group'       => 'slugs',
                 'label'       => __( 'Article base', 'licensio-knowledge-base' ),

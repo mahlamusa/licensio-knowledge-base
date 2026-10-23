@@ -109,7 +109,11 @@ class Licensio_KB_Admin_Menu {
          * - `page_title` — the browser title. Defaults to `menu_title`.
          * - `menu_title` — the menu label. Defaults to `menu_slug`.
          * - `capability` — defaults to `manage_licensio_kb`.
-         * - `position`   — sort order within the menu. Defaults to 10.
+         * - `position`   — sort order among these pages. Defaults to 10.
+         * - `submenu_position` — optional. Passed to `add_submenu_page()` as
+         *   its `$position`, the index in the whole submenu, so a page can sit
+         *   before core's own items. Left out, nothing is passed and the page
+         *   is appended after core's items, as before.
          *
          * @since 1.0.0
          *
@@ -120,7 +124,7 @@ class Licensio_KB_Admin_Menu {
         $normalized = array();
 
         foreach ( (array) $pages as $page ) {
-            $page = $this->normalize_page( $page );
+            $page = self::normalize_page( $page );
 
             if ( null !== $page ) {
                 $normalized[] = $page;
@@ -156,13 +160,16 @@ class Licensio_KB_Admin_Menu {
     /**
      * Validate and fill in one page definition.
      *
+     * Also used by `Licensio_KB_Content_Manager::register_hidden_page()`, so
+     * menu pages and hidden pages follow the same rules.
+     *
      * @since 1.0.0
      *
      * @param mixed $page The raw definition supplied by a consumer.
      *
      * @return array<string, mixed>|null The normalised definition, or null when it is unusable.
      */
-    private function normalize_page( $page ) {
+    public static function normalize_page( $page ) {
         if ( ! is_array( $page ) || empty( $page['menu_slug'] ) || empty( $page['callback'] ) ) {
             return null;
         }
@@ -180,17 +187,21 @@ class Licensio_KB_Admin_Menu {
         $menu_title = isset( $page['menu_title'] ) ? (string) $page['menu_title'] : $slug;
 
         return array(
-            'menu_slug'  => $slug,
-            'callback'   => $page['callback'],
-            'menu_title' => $menu_title,
-            'page_title' => isset( $page['page_title'] ) ? (string) $page['page_title'] : $menu_title,
-            'capability' => isset( $page['capability'] ) ? (string) $page['capability'] : Licensio_KB_Capabilities::CAPABILITY,
-            'position'   => isset( $page['position'] ) ? (int) $page['position'] : 10,
+            'menu_slug'        => $slug,
+            'callback'         => $page['callback'],
+            'menu_title'       => $menu_title,
+            'page_title'       => isset( $page['page_title'] ) ? (string) $page['page_title'] : $menu_title,
+            'capability'       => isset( $page['capability'] ) ? (string) $page['capability'] : Licensio_KB_Capabilities::CAPABILITY,
+            'position'         => isset( $page['position'] ) ? (int) $page['position'] : 10,
+            'submenu_position' => isset( $page['submenu_position'] ) && is_numeric( $page['submenu_position'] ) ? (int) $page['submenu_position'] : null,
         );
     }
 
     /**
      * Add every registered page to the Knowledge Base menu.
+     *
+     * A page's `submenu_position` is passed on as core's `$position`; a page
+     * without one passes null, which is core's own default.
      *
      * @since 1.0.0
      *
@@ -204,7 +215,8 @@ class Licensio_KB_Admin_Menu {
                 $page['menu_title'],
                 $page['capability'],
                 $page['menu_slug'],
-                $page['callback']
+                $page['callback'],
+                $page['submenu_position']
             );
 
             if ( is_string( $hook_suffix ) && '' !== $hook_suffix ) {

@@ -190,6 +190,10 @@ class Licensio_KB_Settings {
                 'type'    => 'bool',
                 'default' => true,
             ),
+            'classic_screens'           => array(
+                'type'    => 'bool',
+                'default' => false,
+            ),
             'sticky_sidebar'            => array(
                 'type'    => 'bool',
                 'default' => true,

@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-23T16:44:27+00:00\n"
+"POT-Creation-Date: 2026-10-23T20:45:00+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.7.1\n"
 "X-Domain: licensio-knowledge-base\n"
@@ -192,7 +192,7 @@ msgid "Uploaded icon"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:173
-#: includes/class-licensio-kb-settings-schema.php:269
+#: includes/class-licensio-kb-settings-schema.php:275
 msgid "Image"
 msgstr ""
 
@@ -623,6 +623,7 @@ msgstr ""
 
 #. translators: %s: REST route path
 #: includes/class-licensio-kb-rest-controller.php:223
+#: includes/rest/class-licensio-kb-category-order-rest-controller.php:196
 msgid "The %s endpoint is registered but not yet implemented."
 msgstr ""
 
@@ -764,234 +765,242 @@ msgid "Print the number of articles beside every category name."
 msgstr ""
 
 #: includes/class-licensio-kb-settings-schema.php:175
-msgid "Article base"
+msgid "Classic screens"
 msgstr ""
 
 #: includes/class-licensio-kb-settings-schema.php:176
-msgid "The URL segment articles live under, for example \"docs\"."
+msgid "Use the classic WordPress screens for articles, categories and tags."
 msgstr ""
 
 #: includes/class-licensio-kb-settings-schema.php:181
-msgid "Category base"
+msgid "Article base"
 msgstr ""
 
 #: includes/class-licensio-kb-settings-schema.php:182
-msgid "The URL segment category archives live under."
+msgid "The URL segment articles live under, for example \"docs\"."
 msgstr ""
 
 #: includes/class-licensio-kb-settings-schema.php:187
-msgid "Tag base"
+msgid "Category base"
 msgstr ""
 
 #: includes/class-licensio-kb-settings-schema.php:188
-msgid "The URL segment tag archives live under."
+msgid "The URL segment category archives live under."
 msgstr ""
 
 #: includes/class-licensio-kb-settings-schema.php:193
-msgid "Nested category URLs"
+msgid "Tag base"
 msgstr ""
 
 #: includes/class-licensio-kb-settings-schema.php:194
-msgid "On, a child category is addressed as parent/child. Off, URLs stay short but every category slug must be unique across the whole taxonomy."
+msgid "The URL segment tag archives live under."
 msgstr ""
 
 #: includes/class-licensio-kb-settings-schema.php:199
-msgid "Brand colour"
+msgid "Nested category URLs"
 msgstr ""
 
 #: includes/class-licensio-kb-settings-schema.php:200
+msgid "On, a child category is addressed as parent/child. Off, URLs stay short but every category slug must be unique across the whole taxonomy."
+msgstr ""
+
+#: includes/class-licensio-kb-settings-schema.php:205
+msgid "Brand colour"
+msgstr ""
+
+#: includes/class-licensio-kb-settings-schema.php:206
 msgid "Links, buttons and accents derive from this one colour. A readable text colour is chosen for you."
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:213
+#: includes/class-licensio-kb-settings-schema.php:219
 msgid "Layout width"
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:214
+#: includes/class-licensio-kb-settings-schema.php:220
 msgid "How wide the knowledge base content column is allowed to grow."
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:217
+#: includes/class-licensio-kb-settings-schema.php:223
 msgid "Contained"
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:218
+#: includes/class-licensio-kb-settings-schema.php:224
 msgid "Wide"
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:219
+#: includes/class-licensio-kb-settings-schema.php:225
 msgid "Full width"
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:232
+#: includes/class-licensio-kb-settings-schema.php:238
 msgid "Card style"
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:233
+#: includes/class-licensio-kb-settings-schema.php:239
 msgid "How article and category cards are separated from the page behind them."
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:236
+#: includes/class-licensio-kb-settings-schema.php:242
 msgid "Raised"
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:237
+#: includes/class-licensio-kb-settings-schema.php:243
 msgid "Outlined"
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:238
+#: includes/class-licensio-kb-settings-schema.php:244
 msgid "Flat"
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:263
+#: includes/class-licensio-kb-settings-schema.php:269
 msgid "Archive header style"
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:264
+#: includes/class-licensio-kb-settings-schema.php:270
 msgid "How the band behind the archive heading and search box is filled."
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:267
+#: includes/class-licensio-kb-settings-schema.php:273
 msgid "Solid colour"
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:268
+#: includes/class-licensio-kb-settings-schema.php:274
 msgid "Gradient"
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:274
+#: includes/class-licensio-kb-settings-schema.php:280
 msgid "Archive header image"
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:275
+#: includes/class-licensio-kb-settings-schema.php:281
 msgid "The media library ID of the image behind the archive header. Used only when the header style is Image; 0 for none."
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:280
+#: includes/class-licensio-kb-settings-schema.php:286
 msgid "Archive heading"
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:281
+#: includes/class-licensio-kb-settings-schema.php:287
 msgid "The heading printed above the category grid on the knowledge base archive."
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:286
+#: includes/class-licensio-kb-settings-schema.php:292
 msgid "Search box placeholder"
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:287
+#: includes/class-licensio-kb-settings-schema.php:293
 msgid "The prompt shown inside the search box before anything is typed."
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:292
+#: includes/class-licensio-kb-settings-schema.php:298
 msgid "Archive columns"
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:293
+#: includes/class-licensio-kb-settings-schema.php:299
 msgid "How many category cards sit side by side on a wide screen. Zero follows the sidebar: two columns beside one, three without it."
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:298
+#: includes/class-licensio-kb-settings-schema.php:304
 msgid "Sticky sidebar"
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:299
+#: includes/class-licensio-kb-settings-schema.php:305
 msgid "On, the article sidebar follows the reader down the page instead of scrolling away."
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:304
+#: includes/class-licensio-kb-settings-schema.php:310
 msgid "Archive sidebar"
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:305
+#: includes/class-licensio-kb-settings-schema.php:311
 msgid "Which side the sidebar sits on when the knowledge base archive is shown."
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:311
+#: includes/class-licensio-kb-settings-schema.php:317
 msgid "Article sidebar"
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:312
+#: includes/class-licensio-kb-settings-schema.php:318
 msgid "Which side the sidebar sits on when a single article is shown."
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:318
+#: includes/class-licensio-kb-settings-schema.php:324
 msgid "Category sidebar"
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:319
+#: includes/class-licensio-kb-settings-schema.php:325
 msgid "Which side the sidebar sits on when a category archive is shown. Set it to No sidebar and the category grid widens to three columns."
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:325
+#: includes/class-licensio-kb-settings-schema.php:331
 msgid "Support URL"
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:326
+#: includes/class-licensio-kb-settings-schema.php:332
 msgid "Where the Contact Support button in the sidebar leads, such as a contact page. Empty hides the Need Support card."
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:339
+#: includes/class-licensio-kb-settings-schema.php:345
 msgid "Table of contents"
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:340
+#: includes/class-licensio-kb-settings-schema.php:346
 msgid "List an article's headings at the top of its sidebar, each one a link to that section. Articles with fewer than two headings never show it."
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:345
+#: includes/class-licensio-kb-settings-schema.php:351
 msgid "Results per search"
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:346
+#: includes/class-licensio-kb-settings-schema.php:352
 msgid "How many articles the search endpoint returns per page, and how many the type-ahead offers."
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:351
+#: includes/class-licensio-kb-settings-schema.php:357
 msgid "Article voting"
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:352
+#: includes/class-licensio-kb-settings-schema.php:358
 msgid "Show the \"was this helpful?\" prompt at the foot of every article, with a comment box after a negative vote."
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:357
+#: includes/class-licensio-kb-settings-schema.php:363
 msgid "Collect analytics"
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:358
+#: includes/class-licensio-kb-settings-schema.php:364
 msgid "Record searches and article views. No IP address is ever stored; a visitor is a salted hash that rotates daily."
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:363
+#: includes/class-licensio-kb-settings-schema.php:369
 msgid "Keep analytics for"
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:364
+#: includes/class-licensio-kb-settings-schema.php:370
 msgid "How many days of search and view history the daily purge leaves in place."
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:366
+#: includes/class-licensio-kb-settings-schema.php:372
 msgid "days"
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:370
+#: includes/class-licensio-kb-settings-schema.php:376
 msgid "Delete everything on uninstall"
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:371
+#: includes/class-licensio-kb-settings-schema.php:377
 msgid "On, deleting the plugin drops its tables, options and articles. Off, the data survives so a reinstall picks up where it left off."
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:492
+#: includes/class-licensio-kb-settings-schema.php:498
 msgid "Left"
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:493
+#: includes/class-licensio-kb-settings-schema.php:499
 msgid "Right"
 msgstr ""
 
-#: includes/class-licensio-kb-settings-schema.php:494
+#: includes/class-licensio-kb-settings-schema.php:500
 msgid "No sidebar"
 msgstr ""
 
@@ -1005,27 +1014,43 @@ msgstr ""
 msgid "Search results for “%s”"
 msgstr ""
 
-#: includes/class-licensio-kb-term-meta.php:161
+#: includes/class-licensio-kb-term-meta.php:160
 msgid "Dashicon name used as the category icon."
 msgstr ""
 
-#: includes/class-licensio-kb-term-meta.php:170
+#: includes/class-licensio-kb-term-meta.php:169
 msgid "Attachment ID of an uploaded category icon."
 msgstr ""
 
-#: includes/class-licensio-kb-term-meta.php:179
+#: includes/class-licensio-kb-term-meta.php:178
 msgid "Inline SVG markup used as the category icon."
 msgstr ""
 
-#: includes/class-licensio-kb-term-meta.php:188
+#: includes/class-licensio-kb-term-meta.php:187
 msgid "Attachment ID of the category image."
 msgstr ""
 
-#: includes/class-licensio-kb-term-meta.php:197
+#: includes/class-licensio-kb-term-meta.php:196
 msgid "Manual sort order of the category."
 msgstr ""
 
-#: includes/class-licensio-kb.php:355
+#: includes/class-licensio-kb-term-operations.php:191
+msgid "Choose at least one term to merge."
+msgstr ""
+
+#: includes/class-licensio-kb-term-operations.php:256
+msgid "That taxonomy is not a knowledge base taxonomy."
+msgstr ""
+
+#: includes/class-licensio-kb-term-operations.php:264
+msgid "A term cannot be moved onto itself."
+msgstr ""
+
+#: includes/class-licensio-kb-term-operations.php:273
+msgid "One of the chosen terms does not exist."
+msgstr ""
+
+#: includes/class-licensio-kb.php:381
 msgid "Licensio Knowledge Base is missing its bundled database library, so its tables cannot be created. Reinstall the plugin, or run \"composer install\" in the plugin directory."
 msgstr ""
 
@@ -1078,6 +1103,22 @@ msgstr[1] ""
 
 #: includes/import/class-licensio-kb-heroic-import-source.php:42
 msgid "Heroic Knowledge Base"
+msgstr ""
+
+#: includes/rest/class-licensio-kb-category-order-rest-controller.php:101
+msgid "The category whose articles are ordered."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-category-order-rest-controller.php:120
+msgid "The page of articles to return."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-category-order-rest-controller.php:128
+msgid "How many articles a page holds."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-category-order-rest-controller.php:151
+msgid "The article IDs in their new order, first first."
 msgstr ""
 
 #: includes/rest/class-licensio-kb-feedback-rest-controller.php:152
@@ -1210,6 +1251,26 @@ msgstr ""
 
 #: includes/rest/class-licensio-kb-rest-settings-controller.php:506
 msgid "This value is not accepted for this setting."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-terms-rest-controller.php:94
+msgid "The taxonomy to search."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-terms-rest-controller.php:100
+msgid "Limit the terms to names or slugs containing this text."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-terms-rest-controller.php:106
+msgid "Return only these term IDs."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-terms-rest-controller.php:111
+msgid "Leave these term IDs out."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-terms-rest-controller.php:119
+msgid "How many terms to return."
 msgstr ""
 
 #: templates/archive-body.php:79
