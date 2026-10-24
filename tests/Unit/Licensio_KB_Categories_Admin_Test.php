@@ -3,7 +3,8 @@
  * The Categories app page and its REST registration.
  *
  * What the page owes the rest of the plugin: the categories controller in the
- * REST registrar, the `/categories` stub released, a hidden page, and the app
+ * REST registrar, the `/categories` stub released, a menu page (hidden with
+ * the classic screens), and the app
  * with the media modal loaded on that page and nowhere else.
  *
  * @package Licensio_KB
@@ -52,6 +53,14 @@ class Licensio_KB_Categories_Admin_Test extends Licensio_KB_Test_Case {
     private $can_manage = true;
 
     /**
+     * Whether the classic screens setting is on.
+     *
+     * @since 1.0.0
+     * @var bool
+     */
+    private $classic = false;
+
+    /**
      * The apps the page asked to load, keyed by handle.
      *
      * @since 1.0.0
@@ -88,6 +97,7 @@ class Licensio_KB_Categories_Admin_Test extends Licensio_KB_Test_Case {
         $this->submenus   = array();
         $this->localized  = array();
         $this->can_manage = true;
+        $this->classic    = false;
         $this->apps       = array();
 
         Functions\when( 'add_submenu_page' )->alias(
@@ -109,6 +119,7 @@ class Licensio_KB_Categories_Admin_Test extends Licensio_KB_Test_Case {
                 return true;
             }
         );
+        Functions\when( 'licensio_kb' )->justReturn( $this );
         Functions\when( 'wp_create_nonce' )->justReturn( 'a-nonce' );
         Functions\when( 'esc_url_raw' )->returnArg();
         Functions\when( 'admin_url' )->alias(
@@ -241,14 +252,34 @@ class Licensio_KB_Categories_Admin_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * The page is hidden under `options.php` and keeps its hook suffix.
+     * The page is in the menu after Add New and keeps its hook suffix.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_the_page_is_registered_hidden() {
+    public function test_the_page_is_in_the_menu() {
         $this->assertSame( '', $this->admin->hook_suffix() );
+
+        $this->admin->register_page();
+
+        $this->assertCount( 1, $this->submenus );
+        $this->assertSame( Licensio_KB_Admin_Menu::PARENT_SLUG, $this->submenus[0][0] );
+        $this->assertSame( 'Categories', $this->submenus[0][1] );
+        $this->assertSame( 'licensio-kb-categories', $this->submenus[0][4] );
+        $this->assertSame( 3, $this->submenus[0][6] );
+        $this->assertSame( self::HOOK_SUFFIX, $this->admin->hook_suffix() );
+    }
+
+    /**
+     * With the classic screens the page is hidden under `options.php`.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_page_is_registered_hidden_with_the_classic_screens() {
+        $this->classic = true;
 
         $this->admin->register_page();
 
@@ -373,5 +404,26 @@ class Licensio_KB_Categories_Admin_Test extends Licensio_KB_Test_Case {
         $this->expectExceptionMessage( 'You are not allowed to manage the knowledge base.' );
 
         $this->admin->render_page();
+    }
+
+    /**
+     * A content manager whose classic screens setting is `$classic`.
+     *
+     * @since 1.0.0
+     *
+     * @return Licensio_KB_Content_Manager The content manager.
+     */
+    public function content_manager() {
+        return new Licensio_KB_Content_Manager(
+            new Licensio_KB_Settings_Spy(
+                array(
+                    'classic_screens' => array(
+                        'type'    => 'bool',
+                        'default' => false,
+                    ),
+                ),
+                array( 'classic_screens' => $this->classic )
+            )
+        );
     }
 }

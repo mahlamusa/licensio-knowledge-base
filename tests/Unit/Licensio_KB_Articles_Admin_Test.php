@@ -37,6 +37,14 @@ class Licensio_KB_Articles_Admin_Test extends Licensio_KB_Test_Case {
     private $submenus = array();
 
     /**
+     * Whether the classic screens setting is on.
+     *
+     * @since 1.0.0
+     * @var bool
+     */
+    private $classic = false;
+
+    /**
      * The script dependencies the page asked for, keyed by script handle.
      *
      * Filled by the asset loader double, which records the dependencies that
@@ -59,6 +67,7 @@ class Licensio_KB_Articles_Admin_Test extends Licensio_KB_Test_Case {
 
         $this->submenus = array();
         $this->enqueued = new ArrayObject();
+        $this->classic  = false;
 
         $assets = new class( $this->enqueued ) extends Licensio_KB_Assets {
 
@@ -101,7 +110,7 @@ class Licensio_KB_Articles_Admin_Test extends Licensio_KB_Test_Case {
             }
         };
 
-        $plugin = new class( $assets ) {
+        $plugin = new class( $assets, array( $this, 'content_manager' ) ) {
 
             /**
              * The asset loader handed out.
@@ -112,14 +121,35 @@ class Licensio_KB_Articles_Admin_Test extends Licensio_KB_Test_Case {
             private $assets;
 
             /**
-             * Keep the asset loader.
+             * Builds the content manager handed out.
+             *
+             * @since 1.0.0
+             * @var callable
+             */
+            private $content_manager;
+
+            /**
+             * Keep the asset loader and the content manager factory.
              *
              * @since 1.0.0
              *
-             * @param Licensio_KB_Assets $assets The asset loader.
+             * @param Licensio_KB_Assets $assets          The asset loader.
+             * @param callable           $content_manager Builds the content manager.
              */
-            public function __construct( $assets ) {
-                $this->assets = $assets;
+            public function __construct( $assets, callable $content_manager ) {
+                $this->assets          = $assets;
+                $this->content_manager = $content_manager;
+            }
+
+            /**
+             * The content manager.
+             *
+             * @since 1.0.0
+             *
+             * @return Licensio_KB_Content_Manager The content manager.
+             */
+            public function content_manager() {
+                return call_user_func( $this->content_manager );
             }
 
             /**
@@ -261,23 +291,43 @@ class Licensio_KB_Articles_Admin_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * The page is a hidden page, gated on the management capability.
+     * The page is the menu's first item, gated on the management capability.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_the_page_is_registered_as_a_hidden_page() {
+    public function test_the_page_is_first_in_the_menu() {
         $this->admin->register_page();
 
         $this->assertCount( 1, $this->submenus );
 
         $page = $this->submenus[0];
 
-        $this->assertSame( Licensio_KB_Content_Manager::HIDDEN_PARENT, $page[0] );
+        $this->assertSame( Licensio_KB_Admin_Menu::PARENT_SLUG, $page[0] );
+        $this->assertSame( 'All Articles', $page[2] );
         $this->assertSame( Licensio_KB_Capabilities::CAPABILITY, $page[3] );
         $this->assertSame( Licensio_KB_Content_Manager::ARTICLES_SLUG, $page[4] );
         $this->assertSame( array( $this->admin, 'render_page' ), $page[5] );
+        $this->assertSame( 1, $page[6], 'Position 1 puts it before Add New.' );
+        $this->assertSame( 'admin_page_licensio-kb-articles', $this->admin->hook_suffix() );
+    }
+
+    /**
+     * With the classic screens the page is hidden but still registered.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_page_is_hidden_with_the_classic_screens() {
+        $this->classic = true;
+
+        $this->admin->register_page();
+
+        $this->assertCount( 1, $this->submenus );
+        $this->assertSame( Licensio_KB_Content_Manager::HIDDEN_PARENT, $this->submenus[0][0] );
+        $this->assertSame( Licensio_KB_Content_Manager::ARTICLES_SLUG, $this->submenus[0][4] );
         $this->assertSame( 'admin_page_licensio-kb-articles', $this->admin->hook_suffix() );
     }
 
@@ -355,5 +405,26 @@ class Licensio_KB_Articles_Admin_Test extends Licensio_KB_Test_Case {
 
         $this->assertArrayHasKey( Licensio_KB_Articles_Admin::APP_HANDLE, $this->enqueued );
         $this->assertContains( 'wp-i18n', $this->enqueued[ Licensio_KB_Articles_Admin::APP_HANDLE ] );
+    }
+
+    /**
+     * A content manager whose classic screens setting is `$classic`.
+     *
+     * @since 1.0.0
+     *
+     * @return Licensio_KB_Content_Manager The content manager.
+     */
+    public function content_manager() {
+        return new Licensio_KB_Content_Manager(
+            new Licensio_KB_Settings_Spy(
+                array(
+                    'classic_screens' => array(
+                        'type'    => 'bool',
+                        'default' => false,
+                    ),
+                ),
+                array( 'classic_screens' => $this->classic )
+            )
+        );
     }
 }

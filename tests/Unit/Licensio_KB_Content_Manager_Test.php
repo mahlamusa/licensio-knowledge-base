@@ -1,11 +1,11 @@
 <?php
 /**
- * The content manager switch, hidden pages and redirect map.
+ * The content manager switch, app pages, redirects and escape hatch.
  *
- * The class ships inert, so most of what it holds is only reachable through
- * a subclass that reports itself active. Those tests stand in for the
- * switch-on: they prove the decision table, the hooks and the redirect map are
- * ready before anything turns them on.
+ * Covers the decision table (the classic screens setting and the
+ * `licensio_kb_use_content_manager` filter, each both ways), where the app
+ * pages are registered, which core menu items are removed, and which core
+ * screen requests are redirected and where to.
  *
  * @package Licensio_KB
  * @since   1.0.0
@@ -20,6 +20,14 @@ use Brain\Monkey\Functions;
  * @since 1.0.0
  */
 class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
+
+    /**
+     * The add_submenu_page() calls recorded by record_submenus().
+     *
+     * @since 1.0.0
+     * @var array<int, array<int, mixed>>
+     */
+    private $submenus = array();
 
     /**
      * Stub the URL helpers the redirect map builds on.
@@ -77,50 +85,37 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * A content manager that reports itself switched on.
+     * A content manager.
      *
      * @since 1.0.0
      *
      * @param bool $classic Whether classic screens are on.
      *
-     * @return Licensio_KB_Content_Manager The active content manager.
+     * @return Licensio_KB_Content_Manager The content manager.
      */
     private function active( $classic = false ) {
-        return new Licensio_KB_Active_Content_Manager( $this->settings( $classic ) );
+        return new Licensio_KB_Content_Manager( $this->settings( $classic ) );
     }
 
     /**
-     * The content manager ships switched off.
+     * The content manager ships switched on.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_it_ships_inactive() {
-        $this->assertFalse( Licensio_KB_Content_Manager::is_active() );
+    public function test_it_ships_active() {
+        $this->assertTrue( Licensio_KB_Content_Manager::is_active() );
     }
 
     /**
-     * While inactive it is never enabled, whatever the setting and filter say.
+     * It is enabled by default.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_an_inactive_content_manager_is_never_enabled() {
-        Filters\expectApplied( 'licensio_kb_use_content_manager' )->never();
-
-        $this->assertFalse( ( new Licensio_KB_Content_Manager( $this->settings( false ) ) )->enabled() );
-    }
-
-    /**
-     * Once active it is enabled by default.
-     *
-     * @since 1.0.0
-     *
-     * @return void
-     */
-    public function test_an_active_content_manager_is_enabled_by_default() {
+    public function test_it_is_enabled_by_default() {
         $this->assertTrue( $this->active( false )->enabled() );
     }
 
@@ -149,37 +144,23 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * While inactive only the REST controllers are hooked.
+     * The REST controllers, the menu removal and the redirects are hooked.
+     *
+     * Hooked whatever the setting says: the callbacks read the escape hatch
+     * when they run.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_an_inactive_content_manager_hooks_no_redirects_or_menu_changes() {
-        $manager = new Licensio_KB_Content_Manager( $this->settings() );
+    public function test_the_redirects_and_menu_changes_are_hooked() {
+        $manager = $this->active( true );
 
         $manager->init_hooks();
 
         $this->assertSame( 10, has_filter( 'licensio_rest_controllers', array( $manager, 'register_rest_controllers' ) ) );
-        $this->assertFalse( has_action( 'admin_menu', array( $manager, 'remove_core_menu_items' ) ) );
-        $this->assertFalse( has_action( 'load-edit.php', array( $manager, 'maybe_redirect' ) ) );
-        $this->assertFalse( has_action( 'load-edit-tags.php', array( $manager, 'maybe_redirect' ) ) );
-        $this->assertFalse( has_action( 'load-term.php', array( $manager, 'maybe_redirect' ) ) );
-    }
-
-    /**
-     * Once active the menu removal and the redirects are hooked.
-     *
-     * @since 1.0.0
-     *
-     * @return void
-     */
-    public function test_an_active_content_manager_hooks_redirects_and_menu_changes() {
-        $manager = $this->active();
-
-        $manager->init_hooks();
-
         $this->assertSame( 999, has_action( 'admin_menu', array( $manager, 'remove_core_menu_items' ) ) );
+        $this->assertSame( 10, has_filter( 'submenu_file', array( $manager, 'current_submenu_file' ) ) );
         $this->assertSame( 10, has_action( 'load-edit.php', array( $manager, 'maybe_redirect' ) ) );
         $this->assertSame( 10, has_action( 'load-edit-tags.php', array( $manager, 'maybe_redirect' ) ) );
         $this->assertSame( 10, has_action( 'load-term.php', array( $manager, 'maybe_redirect' ) ) );
@@ -367,7 +348,37 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
         Functions\expect( 'remove_submenu_page' )->never();
 
         $this->active( true )->remove_core_menu_items();
-        ( new Licensio_KB_Content_Manager( $this->settings() ) )->remove_core_menu_items();
+    }
+
+    /**
+     * The filter keeps the core items, and removes them again once it allows.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_filter_keeps_the_core_items_both_ways() {
+        $removed = 0;
+
+        Functions\when( 'remove_submenu_page' )->alias(
+            function () use ( &$removed ) {
+                ++$removed;
+
+                return true;
+            }
+        );
+
+        Filters\expectApplied( 'licensio_kb_use_content_manager' )->twice()->with( true )->andReturn( false, true );
+
+        $manager = $this->active();
+
+        $manager->remove_core_menu_items();
+
+        $this->assertSame( 0, $removed, 'The filter returning false keeps the core items.' );
+
+        $manager->remove_core_menu_items();
+
+        $this->assertSame( 3, $removed, 'Without the filter the core items are removed.' );
     }
 
     /**
@@ -660,5 +671,342 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
         $this->assertSame( '', $manager->redirect_url( 'post.php', array( 'post_type' => 'licensio_article' ) ) );
         $this->assertSame( '', $manager->redirect_url( 'post-new.php', array( 'post_type' => 'licensio_article' ) ) );
         $this->assertSame( '', $manager->redirect_url( 'edit-tags.php', array( 'taxonomy' => array( 'licensio_tag' ) ) ) );
+    }
+
+    /**
+     * Run maybe_redirect() for a GET request and report where it went.
+     *
+     * `wp_safe_redirect()` records the target and throws instead of
+     * redirecting, so the `exit` after it never runs.
+     *
+     * @since 1.0.0
+     *
+     * @param Licensio_KB_Content_Manager $manager The content manager.
+     * @param string                      $screen  The admin file being loaded.
+     * @param array<string, mixed>        $query   The query arguments.
+     *
+     * @return string The redirect target, or an empty string when nothing redirected.
+     */
+    private function redirect_for( Licensio_KB_Content_Manager $manager, $screen, array $query ) {
+        global $pagenow;
+
+        $pagenow                   = $screen; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- The screen under test.
+        $_GET                      = $query;
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+
+        $target = '';
+
+        Functions\when( 'wp_safe_redirect' )->alias(
+            function ( $location ) use ( &$target ) {
+                $target = $location;
+
+                throw new UnexpectedValueException( 'Redirected.' );
+            }
+        );
+
+        try {
+            $manager->maybe_redirect();
+        } catch ( UnexpectedValueException $redirect ) {
+            unset( $redirect );
+        } finally {
+            $_GET = array();
+            unset( $_SERVER['REQUEST_METHOD'] );
+        }
+
+        return $target;
+    }
+
+    /**
+     * Every core list and term screen redirects to its app with its filters.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_each_core_screen_redirects_to_its_app() {
+        Functions\when( 'get_term_by' )->alias(
+            function ( $field, $value, $taxonomy ) {
+                if ( 'getting-started' === $value && 'licensio_category' === $taxonomy ) {
+                    return new WP_Term( array( 'term_id' => 12 ) );
+                }
+
+                if ( 'how-to' === $value && 'licensio_tag' === $taxonomy ) {
+                    return new WP_Term( array( 'term_id' => 5 ) );
+                }
+
+                return false;
+            }
+        );
+
+        $base    = 'https://example.test/wp-admin/admin.php?page=';
+        $manager = $this->active();
+
+        $this->assertSame(
+            $base . 'licensio-kb-articles&status=pending&search=sso&category=12&tag=5',
+            $this->redirect_for(
+                $manager,
+                'edit.php',
+                array(
+                    'post_type'         => 'licensio_article',
+                    'post_status'       => 'pending',
+                    's'                 => 'sso',
+                    'licensio_category' => 'getting-started',
+                    'licensio_tag'      => 'how-to',
+                )
+            )
+        );
+        $this->assertSame(
+            $base . 'licensio-kb-categories&search=billing',
+            $this->redirect_for(
+                $manager,
+                'edit-tags.php',
+                array(
+                    'taxonomy' => 'licensio_category',
+                    's'        => 'billing',
+                )
+            )
+        );
+        $this->assertSame(
+            $base . 'licensio-kb-tags',
+            $this->redirect_for( $manager, 'edit-tags.php', array( 'taxonomy' => 'licensio_tag' ) )
+        );
+        $this->assertSame(
+            $base . 'licensio-kb-categories&term=42',
+            $this->redirect_for(
+                $manager,
+                'term.php',
+                array(
+                    'taxonomy' => 'licensio_category',
+                    'tag_ID'   => '42',
+                )
+            )
+        );
+        $this->assertSame(
+            $base . 'licensio-kb-tags&term=9',
+            $this->redirect_for(
+                $manager,
+                'term.php',
+                array(
+                    'taxonomy' => 'licensio_tag',
+                    'tag_ID'   => '9',
+                )
+            )
+        );
+    }
+
+    /**
+     * The editor, actions, other post types and other taxonomies stay on core.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_editor_and_foreign_screens_are_not_redirected() {
+        $manager = $this->active();
+
+        $this->assertSame(
+            '',
+            $this->redirect_for(
+                $manager,
+                'post.php',
+                array(
+                    'post'   => '4',
+                    'action' => 'edit',
+                )
+            )
+        );
+        $this->assertSame( '', $this->redirect_for( $manager, 'post-new.php', array( 'post_type' => 'licensio_article' ) ) );
+        $this->assertSame(
+            '',
+            $this->redirect_for(
+                $manager,
+                'edit.php',
+                array(
+                    'post_type' => 'licensio_article',
+                    'action'    => 'trash',
+                )
+            )
+        );
+        $this->assertSame( '', $this->redirect_for( $manager, 'edit.php', array( 'post_type' => 'post' ) ) );
+        $this->assertSame( '', $this->redirect_for( $manager, 'edit.php', array() ) );
+        $this->assertSame( '', $this->redirect_for( $manager, 'edit-tags.php', array( 'taxonomy' => 'category' ) ) );
+        $this->assertSame(
+            '',
+            $this->redirect_for(
+                $manager,
+                'term.php',
+                array(
+                    'taxonomy' => 'post_tag',
+                    'tag_ID'   => '3',
+                )
+            )
+        );
+    }
+
+    /**
+     * The classic screens setting stops every redirect.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_classic_screens_setting_stops_the_redirects() {
+        $this->assertSame( '', $this->redirect_for( $this->active( true ), 'edit.php', array( 'post_type' => 'licensio_article' ) ) );
+        $this->assertSame( '', $this->redirect_for( $this->active( true ), 'edit-tags.php', array( 'taxonomy' => 'licensio_tag' ) ) );
+    }
+
+    /**
+     * The filter stops the redirects, and they come back once it allows them.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_filter_stops_the_redirects_both_ways() {
+        Filters\expectApplied( 'licensio_kb_use_content_manager' )->twice()->with( true )->andReturn( false, true );
+
+        $manager = $this->active();
+
+        $this->assertSame( '', $this->redirect_for( $manager, 'edit.php', array( 'post_type' => 'licensio_article' ) ) );
+        $this->assertSame(
+            'https://example.test/wp-admin/admin.php?page=licensio-kb-articles',
+            $this->redirect_for( $manager, 'edit.php', array( 'post_type' => 'licensio_article' ) )
+        );
+    }
+
+    /**
+     * Record add_submenu_page() calls in `$submenus`.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    private function record_submenus() {
+        $this->submenus = array();
+
+        Functions\when( 'add_submenu_page' )->alias(
+            function ( ...$args ) {
+                $this->submenus[] = $args;
+
+                return 'admin_page_' . $args[4];
+            }
+        );
+    }
+
+    /**
+     * An app page.
+     *
+     * @since 1.0.0
+     *
+     * @return array<string, mixed> The page definition.
+     */
+    private function app_page() {
+        return array(
+            'menu_slug'        => Licensio_KB_Content_Manager::ARTICLES_SLUG,
+            'menu_title'       => 'All Articles',
+            'page_title'       => 'Articles',
+            'callback'         => '__return_true',
+            'position'         => 1,
+            'submenu_position' => 1,
+        );
+    }
+
+    /**
+     * While enabled an app page goes into the menu at its submenu position.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_app_page_is_in_the_menu_when_enabled() {
+        $this->record_submenus();
+
+        $suffix = $this->active()->register_page( $this->app_page() );
+
+        $this->assertSame( 'admin_page_licensio-kb-articles', $suffix );
+        $this->assertCount( 1, $this->submenus );
+        $this->assertSame( Licensio_KB_Admin_Menu::PARENT_SLUG, $this->submenus[0][0] );
+        $this->assertSame( 'Articles', $this->submenus[0][1] );
+        $this->assertSame( 'All Articles', $this->submenus[0][2] );
+        $this->assertSame( Licensio_KB_Capabilities::CAPABILITY, $this->submenus[0][3] );
+        $this->assertSame( 'licensio-kb-articles', $this->submenus[0][4] );
+        $this->assertSame( 1, $this->submenus[0][6] );
+    }
+
+    /**
+     * With the classic screens an app page is hidden, so it stays reachable.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_app_page_is_hidden_with_the_classic_screens() {
+        $this->record_submenus();
+
+        $this->active( true )->register_page( $this->app_page() );
+
+        $this->assertCount( 1, $this->submenus );
+        $this->assertSame( Licensio_KB_Content_Manager::HIDDEN_PARENT, $this->submenus[0][0] );
+        $this->assertSame( 'licensio-kb-articles', $this->submenus[0][4] );
+    }
+
+    /**
+     * The filter hides an app page too.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_app_page_is_hidden_when_the_filter_says_so() {
+        Filters\expectApplied( 'licensio_kb_use_content_manager' )->once()->andReturn( false );
+
+        $this->record_submenus();
+
+        $this->active()->register_page( $this->app_page() );
+
+        $this->assertSame( Licensio_KB_Content_Manager::HIDDEN_PARENT, $this->submenus[0][0] );
+    }
+
+    /**
+     * An unusable or refused app page registers nothing in the menu.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_unusable_app_page_is_not_registered() {
+        Functions\expect( 'add_submenu_page' )->once()->andReturn( false );
+
+        $this->assertSame( '', $this->active()->register_page( array( 'menu_slug' => 'no-callback' ) ) );
+        $this->assertSame( '', $this->active()->register_page( $this->app_page() ) );
+    }
+
+    /**
+     * On an app page the app's menu item is the current one, unless the
+     * classic screens are in use.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_app_page_is_the_current_submenu_item() {
+        global $plugin_page;
+
+        $plugin_page = Licensio_KB_Content_Manager::TAGS_SLUG; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- The page under test.
+
+        try {
+            $this->assertSame( 'licensio-kb-tags', $this->active()->current_submenu_file( null ) );
+            $this->assertSame( 'core.php', $this->active( true )->current_submenu_file( 'core.php' ) );
+
+            $plugin_page = 'licensio-kb-settings'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Another plugin page.
+
+            $this->assertSame( 'core.php', $this->active()->current_submenu_file( 'core.php' ) );
+
+            $plugin_page = null; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- A core screen.
+
+            $this->assertNull( $this->active()->current_submenu_file( null ) );
+        } finally {
+            $plugin_page = null; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Reset.
+        }
     }
 }

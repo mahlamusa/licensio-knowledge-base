@@ -2,12 +2,12 @@
 /**
  * The Articles app page.
  *
- * Registers the Articles Vue app as a hidden admin page
- * (`admin.php?page=licensio-kb-articles`), loads its bundle on that page only,
- * and announces its REST controller. The controller owns `/articles`, so the
- * scaffold's not-implemented stub for that path is released. The page has no
- * menu entry and nothing redirects to it yet: the content manager switch-on
- * moves it into the menu and sends the core article list here.
+ * Registers the Articles Vue app page (`admin.php?page=licensio-kb-articles`),
+ * loads its bundle on that page only, and announces its REST controller. The
+ * controller owns `/articles`, so the scaffold's not-implemented stub for that
+ * path is released. While the content manager is enabled the page is the
+ * menu's All Articles item and the core article list redirects here; with the
+ * classic screens it stays reachable as a hidden page.
  *
  * Constructed on every request, not only in wp-admin, because the REST
  * controller it announces must be registered for REST requests too.
@@ -111,19 +111,21 @@ class Licensio_KB_Articles_Admin {
     }
 
     /**
-     * Register the hidden page.
+     * Register the page, first in the menu, before Add New.
      *
      * @since 1.0.0
      *
      * @return void
      */
     public function register_page() {
-        $this->hook_suffix = Licensio_KB_Content_Manager::register_hidden_page(
+        $this->hook_suffix = licensio_kb()->content_manager()->register_page(
             array(
-                'menu_slug'  => Licensio_KB_Content_Manager::ARTICLES_SLUG,
-                'menu_title' => __( 'All Articles', 'licensio-knowledge-base' ),
-                'page_title' => __( 'Articles', 'licensio-knowledge-base' ),
-                'callback'   => array( $this, 'render_page' ),
+                'menu_slug'        => Licensio_KB_Content_Manager::ARTICLES_SLUG,
+                'menu_title'       => __( 'All Articles', 'licensio-knowledge-base' ),
+                'page_title'       => __( 'Articles', 'licensio-knowledge-base' ),
+                'callback'         => array( $this, 'render_page' ),
+                'position'         => 1,
+                'submenu_position' => 1,
             )
         );
     }
