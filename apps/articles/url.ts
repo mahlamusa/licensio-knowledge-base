@@ -6,8 +6,9 @@
  * admin page argument `page=licensio-kb-articles` is always kept, which is why
  * the list page number is written as `paged`. Default values are left out.
  *
- * The keys `status`, `search`, `category` and `tag` are the ones the core
- * screen redirects produce, so a redirected request opens the right view.
+ * The keys `status`, `search`, `category`, `tag`, `author`, `orderby`,
+ * `order` and `paged` are the ones the core screen redirects produce, so a
+ * redirected request opens the right view.
  *
  * @since 1.0.0
  */

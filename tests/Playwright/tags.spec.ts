@@ -4,8 +4,9 @@
  * Adds tags through the app, then checks that every change (add, save,
  * merge, convert and delete) waits for its Popconfirm and that Cancel sends
  * nothing, that a taken slug is made unique, and that merge and convert to
- * category work on the selected tags. The category the convert creates is
- * deleted again through the core REST API.
+ * category work on the selected tags, and that focus lands on the page title
+ * once a bulk delete takes the Delete button away. The category the convert
+ * creates is deleted again through the core REST API.
  *
  * The suite needs a running WordPress with this plugin active and an
  * administrator account, so it is skipped unless `LICENSIO_KB_E2E=1` and the
@@ -280,5 +281,8 @@ test( 'tags are edited, merged and converted only after confirmation', async ( {
 	await remove.click();
 	await confirmPopconfirm( page );
 	await expect( page.locator( '.ant-table-row' ) ).toHaveCount( 0 );
+
+	// The Delete button went with the selection, so focus is on the title.
+	await expect( page.locator( '.lkb-page__title' ) ).toBeFocused();
 	expect( await deleteCategory( page, categoryId ) ).toBe( 200 );
 } );

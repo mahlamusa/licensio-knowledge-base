@@ -6,13 +6,17 @@
  * written only after the user confirms. A field error from the server
  * (`data.params`) is shown on its field; any other error above the form.
  *
+ * Ant Design's drawer does not keep focus inside itself, so while it is open
+ * Tab and Shift+Tab wrap around its fields and buttons.
+ *
  * @since 1.0.0
  */
 
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import ConfirmButton from '../../components/ConfirmButton.vue';
 import TermSelect from '../../components/TermSelect.vue';
+import { FOCUSABLE } from '../../components/popover-focus';
 import { RestError } from '../../components/rest';
 import { __, sprintf } from '../../components/i18n';
 import type { TermValue } from '../../components/types/terms';
@@ -70,6 +74,64 @@ const exclude = computed( () =>
 );
 
 const nameMissing = computed( () => '' === form.name.trim() );
+
+/**
+ * Keep Tab and Shift+Tab inside the open drawer.
+ *
+ * Only acts while focus is in the drawer, so an open Popconfirm, which Ant
+ * Design renders elsewhere in the page, keeps its own tab order.
+ *
+ * @since 1.0.0
+ *
+ * @param {KeyboardEvent} event The key press.
+ *
+ * @return {void}
+ */
+function trapFocus( event: KeyboardEvent ): void {
+	const panel = document.querySelector< HTMLElement >(
+		'.lkb-category-drawer .ant-drawer-content-wrapper'
+	);
+	const active = document.activeElement;
+
+	if ( 'Tab' !== event.key || ! panel || ! panel.contains( active ) ) {
+		return;
+	}
+
+	const items = Array.from(
+		panel.querySelectorAll< HTMLElement >( FOCUSABLE )
+	).filter( ( item ) => null !== item.offsetParent );
+
+	if ( 0 === items.length ) {
+		return;
+	}
+
+	const first = items[ 0 ];
+	const last = items[ items.length - 1 ];
+
+	if ( event.shiftKey && ( active === first || ! items.includes( active as HTMLElement ) ) ) {
+		event.preventDefault();
+		last.focus();
+	} else if ( ! event.shiftKey && active === last ) {
+		event.preventDefault();
+		first.focus();
+	}
+}
+
+watch(
+	() => props.open,
+	( open ) => {
+		if ( open ) {
+			document.addEventListener( 'keydown', trapFocus );
+		} else {
+			document.removeEventListener( 'keydown', trapFocus );
+		}
+	},
+	{ immediate: true }
+);
+
+onBeforeUnmount( () => {
+	document.removeEventListener( 'keydown', trapFocus );
+} );
 
 /**
  * Fill the form from the category being edited, or blank it for a new one.

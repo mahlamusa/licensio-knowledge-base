@@ -9,6 +9,9 @@
  * (made unique if it was taken, or made from the name if the slug was
  * cleared) is shown back once saved.
  *
+ * Focus follows the row: Edit moves it to the Name field, and Cancel or a
+ * save puts it back on the row's Edit button.
+ *
  * Names and descriptions are rendered as text, never as HTML. A description
  * is sent on save only when it was changed, so a stored one round-trips
  * untouched.
@@ -16,7 +19,7 @@
  * @since 1.0.0
  */
 
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, nextTick, reactive, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import ConfirmButton from '../../components/ConfirmButton.vue';
 import { __, sprintf } from '../../components/i18n';
@@ -103,6 +106,27 @@ function onChange(
 }
 
 /**
+ * Focus a row: its Name field while it is open, otherwise its Edit button.
+ *
+ * @since 1.0.0
+ *
+ * @param {number} id The tag.
+ *
+ * @return {void}
+ */
+function focusRow( id: number ): void {
+	nextTick( () => {
+		const target = editingId.value === id ? 'input:not([type="checkbox"])' : 'button';
+
+		document
+			.querySelector< HTMLElement >(
+				`.lkb-tablecard [data-row-key="${ id }"] ${ target }`
+			)
+			?.focus();
+	} );
+}
+
+/**
  * Open a row's fields for editing.
  *
  * @since 1.0.0
@@ -116,6 +140,7 @@ function startEdit( tag: TagItem ): void {
 	draft.name = tag.name;
 	draft.slug = tag.slug;
 	draft.description = tag.description;
+	focusRow( tag.id );
 }
 
 /**
@@ -126,7 +151,13 @@ function startEdit( tag: TagItem ): void {
  * @return {void}
  */
 function cancelEdit(): void {
+	const id = editingId.value;
+
 	editingId.value = null;
+
+	if ( null !== id ) {
+		focusRow( id );
+	}
 }
 
 /**
@@ -170,6 +201,7 @@ async function save( tag: TagItem ): Promise< void > {
 		const updated = await store.update( tag.id, changes( tag ) );
 
 		editingId.value = null;
+		focusRow( tag.id );
 		message.success(
 			sprintf(
 				/* translators: %s: the tag's slug. */
@@ -235,6 +267,10 @@ watch(
 			:row-selection="{
 				selectedRowKeys: store.selected,
 				onChange: ( keys: unknown[] ) => ( store.selected = keys as number[] ),
+				getCheckboxProps: ( record: TagItem ) => ( {
+					/* translators: %s: tag name. */
+					'aria-label': sprintf( __( 'Select “%s”', 'licensio-knowledge-base' ), record.name ),
+				} ),
 			}"
 			:pagination="{
 				current: store.page,

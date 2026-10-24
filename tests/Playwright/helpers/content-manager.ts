@@ -1,9 +1,9 @@
 /**
  * Playwright helpers for the content manager apps.
  *
- * The apps are reached through their hidden admin pages,
- * `admin.php?page=licensio-kb-{app}`, which work before and after the content
- * manager is switched on. The slugs match the constants on
+ * The apps are reached through `admin.php?page=licensio-kb-{app}`, which
+ * works whether the pages are in the menu or, with the classic screens,
+ * hidden. The slugs match the constants on
  * `Licensio_KB_Content_Manager` (ARTICLES_SLUG, CATEGORIES_SLUG, TAGS_SLUG).
  *
  * Each app mounts into `#licensio-kb-{app}` and renders the shared shell, whose

@@ -2,10 +2,11 @@
 /**
  * The Tags app page.
  *
- * Registers the Tags Vue app on a hidden admin page,
- * `admin.php?page=licensio-kb-tags`, loads its bundle there only, and
- * announces the tag REST routes it talks to. The page has no menu entry and
- * no core screen redirects to it until the content manager is switched on.
+ * Registers the Tags Vue app page, `admin.php?page=licensio-kb-tags`, loads
+ * its bundle there only, and announces the tag REST routes it talks to. While
+ * the content manager is enabled the page is in the menu and the core tag
+ * screens redirect to it; with the classic screens it stays reachable as a
+ * hidden page.
  *
  * Built on every request, not only in wp-admin, because the REST controller
  * it announces must be registered for REST requests too. The admin hooks
@@ -105,23 +106,24 @@ class Licensio_KB_Tags_Admin {
     }
 
     /**
-     * Register the hidden Tags page.
+     * Register the Tags page, after Categories in the menu.
      *
-     * The position, after Categories, is where the page sits once the content
-     * manager puts it in the menu; a hidden page ignores it.
+     * With the classic screens in use the page is hidden and the position is
+     * ignored.
      *
      * @since 1.0.0
      *
      * @return void
      */
     public function register_page() {
-        $this->hook_suffix = Licensio_KB_Content_Manager::register_hidden_page(
+        $this->hook_suffix = licensio_kb()->content_manager()->register_page(
             array(
-                'menu_slug'  => Licensio_KB_Content_Manager::TAGS_SLUG,
-                'page_title' => __( 'Tags', 'licensio-knowledge-base' ),
-                'menu_title' => __( 'Tags', 'licensio-knowledge-base' ),
-                'callback'   => array( $this, 'render' ),
-                'position'   => 4,
+                'menu_slug'        => Licensio_KB_Content_Manager::TAGS_SLUG,
+                'page_title'       => __( 'Tags', 'licensio-knowledge-base' ),
+                'menu_title'       => __( 'Tags', 'licensio-knowledge-base' ),
+                'callback'         => array( $this, 'render' ),
+                'position'         => 4,
+                'submenu_position' => 4,
             )
         );
     }

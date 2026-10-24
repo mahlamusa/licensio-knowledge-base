@@ -109,6 +109,13 @@ const selectedKeys = computed( () =>
 	null === store.selectedId ? [] : [ store.selectedId ]
 );
 
+/*
+ * The node the arrow keys are on. Held here because Ant Design's tree only
+ * moves its keyboard cursor when `activeKey` is bound: left unbound, the
+ * arrow keys and Enter do nothing.
+ */
+const activeKey = ref< string | number | null >( null );
+
 const canDrag = computed(
 	() => ! searching.value && null === pending.value && ! saving.value
 );
@@ -600,11 +607,13 @@ function onMenu( item: CategoryItem, key: string ): void {
 					:tree-data="treeData"
 					:expanded-keys="expandedKeys"
 					:selected-keys="selectedKeys"
+					:active-key="activeKey"
 					:draggable="canDrag"
 					:allow-drop="allowDrop"
 					block-node
 					@expand="onExpand"
 					@select="onSelect"
+					@active-change="( key: string | number | null ) => ( activeKey = key )"
 					@drop="onDrop"
 				>
 					<template #title="node">

@@ -4,7 +4,8 @@
  *
  * Category (with its children), tag, author, date range, Uncategorised, No
  * tags and Needs attention. They combine with AND, apply as soon as they
- * change, and the trigger shows how many are set.
+ * change, and the trigger shows how many are set. Opening it moves focus to
+ * the first field, and Escape closes it.
  *
  * @since 1.0.0
  */
@@ -12,6 +13,7 @@
 import { computed } from 'vue';
 import { FilterOutlined } from '@ant-design/icons-vue';
 import TermSelect from '../../components/TermSelect.vue';
+import { usePopoverFocus } from '../../components/popover-focus';
 import { __, sprintf } from '../../components/i18n';
 import { config } from '../api';
 import { useArticlesStore } from '../store';
@@ -20,6 +22,7 @@ import type { TermValue } from '../../components/types/terms';
 
 const store = useArticlesStore();
 const lowRating = config().lowRating;
+const { open, overlayClass, setOpen } = usePopoverFocus();
 
 const dates = computed< [ string, string ] | undefined >( () =>
 	store.query.after || store.query.before
@@ -70,7 +73,13 @@ const attentionHelp = sprintf(
 </script>
 
 <template>
-	<a-popover trigger="click" placement="bottomLeft">
+	<a-popover
+		trigger="click"
+		placement="bottomLeft"
+		:open="open"
+		:overlay-class-name="overlayClass"
+		@open-change="setOpen"
+	>
 		<template #content>
 			<div class="lkb-filters">
 				<div class="lkb-filters__field">

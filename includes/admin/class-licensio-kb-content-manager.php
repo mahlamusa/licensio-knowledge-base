@@ -5,20 +5,20 @@
  * The content manager replaces the core article list and the category and tag
  * term screens with three Vue apps: Articles, Categories and Tags. This class
  * is the one place that decides whether those apps have taken over, and it
- * holds everything the takeover needs: the hidden page registration the apps
- * use while they are being built, the map from a core screen URL to the
- * matching app URL, and the list of core menu items the apps replace.
+ * holds everything the takeover needs: the app page registration, the map
+ * from a core screen URL to the matching app URL, and the list of core menu
+ * items the apps replace.
  *
- * It ships inert. `is_active()` returns false until the three apps are
- * finished, so neither the redirects nor the menu removal are hooked and the
- * admin looks exactly as it did before. The articles, categories and tags apps
- * register their pages through `register_hidden_page()` in the meantime, and
- * the switch-on work flips `is_active()`.
+ * While it is enabled the apps sit in the Knowledge Base menu in place of the
+ * core items, and the core screens redirect to them. The classic screens
+ * setting and the `licensio_kb_use_content_manager` filter turn it off: the
+ * core screens and menu items come back, and the apps stay reachable by URL
+ * as hidden pages.
  *
  * Constructed on every request, not only in wp-admin, because the REST
  * controllers it announces must be registered for REST requests too.
  *
- * Consumed by the articles, categories and tags apps and by the switch-on work.
+ * Consumed by the articles, categories and tags apps.
  *
  * @package Licensio_KB
  * @since   1.0.0
@@ -141,23 +141,25 @@ class Licensio_KB_Content_Manager {
         }
 
         add_action( 'admin_menu', array( $this, 'remove_core_menu_items' ), 999 );
+        add_filter( 'submenu_file', array( $this, 'current_submenu_file' ) );
         add_action( 'load-edit.php', array( $this, 'maybe_redirect' ) );
         add_action( 'load-edit-tags.php', array( $this, 'maybe_redirect' ) );
         add_action( 'load-term.php', array( $this, 'maybe_redirect' ) );
     }
 
     /**
-     * Whether the content manager has been switched on in this build.
+     * Whether the content manager is switched on in this build.
      *
-     * Returns false until the articles, categories and tags apps are finished.
-     * The switch-on work changes this to true.
+     * The build-time switch, separate from the per-site escape hatch in
+     * `enabled()`. It is on now that the articles, categories and tags apps
+     * are finished.
      *
      * @since 1.0.0
      *
-     * @return bool True once the content manager ships.
+     * @return bool Always true.
      */
     public static function is_active() {
-        return false;
+        return true;
     }
 
     /**
@@ -210,17 +212,62 @@ class Licensio_KB_Content_Manager {
     }
 
     /**
+     * Register an app page in the menu, or hidden when the apps are off.
+     *
+     * While the content manager is enabled the page goes into the Knowledge
+     * Base menu at its `submenu_position`, which core counts from the start of
+     * the submenu. The core items are still there when this runs (they are
+     * removed on `admin_menu` at priority 999), so position 1 puts All Articles
+     * straight after the core list item and before Add New, and positions 3
+     * and 4 put Categories and Tags after Add New. Once the core items are
+     * removed the order is All Articles, Add New, Categories, Tags.
+     *
+     * While the classic screens are in use the page is registered hidden, so
+     * the menu does not list two All Articles items and the app stays
+     * reachable by URL. Call it from an `admin_menu` callback.
+     *
+     * @since 1.0.0
+     *
+     * @param array<string, mixed> $page The page definition, with the keys of a
+     *                                   `licensio_admin_menu_pages` entry.
+     *
+     * @return string The hook suffix, or an empty string when the page was not registered.
+     */
+    public function register_page( array $page ) {
+        if ( ! $this->enabled() ) {
+            return static::register_hidden_page( $page );
+        }
+
+        $page = Licensio_KB_Admin_Menu::normalize_page( $page );
+
+        if ( null === $page ) {
+            return '';
+        }
+
+        $hook_suffix = add_submenu_page(
+            Licensio_KB_Admin_Menu::PARENT_SLUG,
+            $page['page_title'],
+            $page['menu_title'],
+            $page['capability'],
+            $page['menu_slug'],
+            $page['callback'],
+            $page['submenu_position']
+        );
+
+        return is_string( $hook_suffix ) ? $hook_suffix : '';
+    }
+
+    /**
      * Register an admin page that has no menu entry.
      *
-     * The apps use this while they are being built: the page is reachable at
+     * `register_page()` uses this while the classic screens are in use: the
+     * page is reachable at
      * `admin.php?page={menu_slug}` (see `page_url()`) but nothing in the menu
      * links to it. Call it from an `admin_menu` callback.
      *
      * The definition takes the same keys as a `licensio_admin_menu_pages`
-     * entry, so moving a page into the menu later means handing the same array
-     * to that filter instead. Unlike the menu, which registers through the
-     * filter, this calls `add_submenu_page()` directly: a hidden page has no
-     * menu position to share.
+     * entry. A hidden page has no menu position, so `position` and
+     * `submenu_position` are ignored.
      *
      * The returned hook suffix is `admin_page_{menu_slug}`. Compare it with
      * the `$hook_suffix` passed to `admin_enqueue_scripts` to load assets on
@@ -261,8 +308,9 @@ class Licensio_KB_Content_Manager {
     /**
      * The admin URL of a content manager page.
      *
-     * The `admin.php?page=` form works whether the page is hidden or in the
-     * menu, so links built with it survive the switch-on.
+     * The `admin.php?page=` form works whether the page is in the menu or,
+     * with the classic screens, hidden, so a link or bookmark built with it
+     * keeps working when the setting changes.
      *
      * @since 1.0.0
      *
@@ -322,6 +370,42 @@ class Licensio_KB_Content_Manager {
     }
 
     /**
+     * Mark an app's menu item as the current one.
+     *
+     * The apps open at `admin.php?page={slug}`, and so does the Knowledge
+     * Base menu's own link once All Articles is its first item. On that URL
+     * core opens the right menu but does not mark the app's item as current,
+     * because the item's parent is a post type screen, not `admin.php`.
+     * Naming the app as the current submenu file is the comparison core
+     * makes. Hooked to `submenu_file`.
+     *
+     * The article editor names the core article list as its submenu file.
+     * That item is removed while the content manager is active, so the
+     * Articles app takes its place. The Add New screen keeps its own item.
+     *
+     * @since 1.0.0
+     *
+     * @param string|null $submenu_file The submenu file core worked out.
+     *
+     * @return string|null The app's slug on an app page, the Articles app's slug for the core article list, otherwise the value unchanged.
+     */
+    public function current_submenu_file( $submenu_file ) {
+        global $plugin_page;
+
+        $apps = array( self::ARTICLES_SLUG, self::CATEGORIES_SLUG, self::TAGS_SLUG );
+
+        if ( is_string( $plugin_page ) && in_array( $plugin_page, $apps, true ) && $this->enabled() ) {
+            return $plugin_page;
+        }
+
+        if ( 'edit.php?post_type=' . Licensio_KB_Post_Types::POST_TYPE === $submenu_file && $this->enabled() ) {
+            return self::ARTICLES_SLUG;
+        }
+
+        return $submenu_file;
+    }
+
+    /**
      * Send a core list or term screen request to the matching app.
      *
      * Hooked to `load-edit.php`, `load-edit-tags.php` and `load-term.php`
@@ -363,6 +447,7 @@ class Licensio_KB_Content_Manager {
      *   Articles app. `post_status`, `s`, `licensio_category` and
      *   `licensio_tag` become `status`, `search`, `category` and `tag`. The
      *   category and tag query vars always carry a slug, which becomes its ID.
+     *   `author`, `orderby`, `order` and `paged` keep their names.
      * - `edit-tags.php` for either plugin taxonomy, without an action, goes
      *   to the Categories or Tags app, with `s` as `search`.
      * - `term.php` for either plugin taxonomy goes to the same app with the
@@ -419,6 +504,11 @@ class Licensio_KB_Content_Manager {
     /**
      * The Articles app URL for a core article list request.
      *
+     * Besides the filters, the author, the sort and the list page are
+     * carried over, checked the way the app reads them: the author only as
+     * a positive ID, the sort only when the app can sort by it, and the page
+     * only past the first. A negative number is dropped, not made positive.
+     *
      * @since 1.0.0
      *
      * @param array<string, mixed> $query The request's query arguments, unslashed.
@@ -456,6 +546,30 @@ class Licensio_KB_Content_Manager {
             if ( $term_id > 0 ) {
                 $args[ $arg ] = $term_id;
             }
+        }
+
+        $author = (int) self::arg( $query, 'author' );
+
+        if ( $author > 0 ) {
+            $args['author'] = $author;
+        }
+
+        $orderby = sanitize_key( self::arg( $query, 'orderby' ) );
+
+        if ( in_array( $orderby, Licensio_KB_Articles_REST_Controller::ORDERBY, true ) ) {
+            $args['orderby'] = $orderby;
+        }
+
+        $order = strtolower( self::arg( $query, 'order' ) );
+
+        if ( 'asc' === $order || 'desc' === $order ) {
+            $args['order'] = $order;
+        }
+
+        $paged = (int) self::arg( $query, 'paged' );
+
+        if ( $paged > 1 ) {
+            $args['paged'] = $paged;
         }
 
         return self::page_url( self::ARTICLES_SLUG, $args );

@@ -27,7 +27,6 @@ Articles are a post type of their own, with their own categories and tags, their
 
 * A Knowledge Base post type with category and tag taxonomies.
 * Category icons (inline SVG, sanitized on save, or an image), descriptions and a manual display order.
-* Admin list columns for categories, tags, attachments, helpfulness rating, views and reading time, so you can see at a glance which articles work.
 * Five dynamic blocks, each previewed in the editor by the same code that renders it on the front end.
 * **Knowledge Base Search** block: an instant search box with keyboard-navigable suggestions.
 * **Knowledge Base Articles** block: a list of articles, optionally filtered to one category.
@@ -35,6 +34,14 @@ Articles are a post type of their own, with their own categories and tags, their
 * **Knowledge Base Breadcrumbs** block: the trail from the site home to the article or category being viewed.
 * **Knowledge Base FAQ** block: articles as an expandable list of questions and answers.
 * Every block is also a shortcode (`[licensio_kb_search]`, `[licensio_kb_articles]`, `[licensio_kb_categories]`, `[licensio_kb_breadcrumbs]`, `[licensio_kb_faq]`), and the sidebar is available as `[licensio_kb_sidebar]`, so page builders and classic themes get identical markup.
+
+= Managing articles, categories and tags =
+
+* **All Articles**: status tabs with counts, search, and filters for category, tag, author, date, uncategorised, untagged and articles that need attention. Columns for categories, tags, attachments, helpfulness rating, views and reading time, with views and rating over the last 7, 30 or 90 days, so you can see at a glance which articles work. Quick edit inline, and bulk actions that can cover every matching article, not just one page.
+* **Categories**: a drag-and-drop category tree with icons and images, your own article order inside each category, and delete or merge that moves the articles and subcategories where you choose.
+* **Tags**: find unused tags, rename inline, merge tags, bulk delete them, or convert them into categories.
+* Every change asks for confirmation before it is saved, and trash, status and category or tag changes can be undone for a few seconds afterwards.
+* Prefer the classic WordPress screens? Turn on **Classic screens** under **Knowledge Base > Settings > General**, or return false from the `licensio_kb_use_content_manager` filter.
 
 = Search that finds things =
 
@@ -168,7 +175,7 @@ This plugin does not connect to any external service. Search, analytics and ever
 The admin screens and the editor blocks are compiled. The compiled files are in `dist/`, and their full, human-readable source is published alongside the plugin in the WordPress.org SVN repository:
 
 * SVN trunk: https://plugins.svn.wordpress.org/licensio-knowledge-base/trunk/
-* `apps/`: the Vue 3 admin applications (settings, analytics, feedback and tools).
+* `apps/`: the Vue 3 admin applications (articles, categories, tags, settings, analytics, feedback and tools).
 * `blocks/`: the editor blocks.
 * `package.json`, `package-lock.json`, `vite.config.mjs` and `tools/build-apps.mjs` / `tools/build-blocks.mjs`: the build configuration.
 
@@ -197,10 +204,12 @@ Included as PHP source in `libraries/`:
 2. A category page listing all of its articles, with the category navigation in the sidebar.
 3. A single article with breadcrumbs, a search bar and an "On this page" table of contents.
 4. The search block with live type-ahead suggestions.
-5. All Articles in the admin, with categories, helpfulness rating, views and reading time columns.
+5. All Articles: status tabs, filters, and categories, helpfulness rating, views and reading time columns.
 6. The analytics dashboard: views, searches and zero-result searches over time.
 7. The feedback inbox.
 8. The settings screen.
+9. Categories: the drag-and-drop category tree with each category's own article order.
+10. Tags: search, the unused filter, and bulk merge, delete and convert to category.
 
 == Changelog ==
 
@@ -212,6 +221,7 @@ Included as PHP source in `libraries/`:
 * Classic PHP templates and Site Editor block templates, both overridable, sharing one hook contract.
 * Five dynamic blocks, each also registered as a shortcode from the same render callback.
 * Article voting, comment feedback and an admin feedback inbox.
+* All Articles, Categories and Tags admin screens with filters, quick edit, confirmed and undoable bulk actions, a drag-and-drop category tree, per-category article order, and tag merge and convert, with a setting and a filter to keep the classic WordPress screens.
 * Privacy-safe search and view analytics with a reporting dashboard, retention cleanup and personal-data export and erase support.
 * Import wizard for Heroic Knowledge Base and BetterDocs, with dry runs, redirects from old URLs and a migration log.
 * Tools for duplicate articles and terms, search index rebuilds and data maintenance.

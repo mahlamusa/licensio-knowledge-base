@@ -2,13 +2,13 @@
 /**
  * The Categories app page.
  *
- * Registers the Categories Vue app on its hidden content manager page
+ * Registers the Categories Vue app on its content manager page
  * (`admin.php?page=licensio-kb-categories`), loads it with the WordPress media
  * modal on that page only, and announces the categories REST controller.
  *
- * The page has no menu entry yet. Putting it in the menu and redirecting the
- * core category screens to it is the content manager switch-on work, not this
- * class's.
+ * While the content manager is enabled the page is in the menu and the core
+ * category screens redirect to it; with the classic screens it stays
+ * reachable as a hidden page.
  *
  * Constructed on every request, not only in wp-admin, because the REST
  * controller it announces must be registered for REST requests too.
@@ -127,20 +127,21 @@ class Licensio_KB_Categories_Admin {
     }
 
     /**
-     * Register the hidden Categories page.
+     * Register the Categories page, after Add New in the menu.
      *
      * @since 1.0.0
      *
      * @return void
      */
     public function register_page() {
-        $this->hook_suffix = Licensio_KB_Content_Manager::register_hidden_page(
+        $this->hook_suffix = licensio_kb()->content_manager()->register_page(
             array(
-                'menu_slug'  => Licensio_KB_Content_Manager::CATEGORIES_SLUG,
-                'page_title' => __( 'Categories', 'licensio-knowledge-base' ),
-                'menu_title' => __( 'Categories', 'licensio-knowledge-base' ),
-                'callback'   => array( $this, 'render_page' ),
-                'position'   => 3,
+                'menu_slug'        => Licensio_KB_Content_Manager::CATEGORIES_SLUG,
+                'page_title'       => __( 'Categories', 'licensio-knowledge-base' ),
+                'menu_title'       => __( 'Categories', 'licensio-knowledge-base' ),
+                'callback'         => array( $this, 'render_page' ),
+                'position'         => 3,
+                'submenu_position' => 3,
             )
         );
     }

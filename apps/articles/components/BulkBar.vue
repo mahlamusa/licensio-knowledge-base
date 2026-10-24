@@ -7,6 +7,10 @@
  * the action's own argument (a status, terms or an author) and an Apply
  * button that asks before anything is sent, naming the action and the count.
  *
+ * Ant Design puts an `aria-label` on a select's wrapper, not on the combobox
+ * a screen reader announces, so the plain selects are named by visually
+ * hidden labels instead.
+ *
  * @since 1.0.0
  */
 
@@ -220,23 +224,29 @@ watch( inTrash, () => {
 			</span>
 
 			<div class="lkb-bulk__actions">
+				<label for="lkb-bulk-action" class="screen-reader-text">
+					{{ __( 'Bulk action', 'licensio-knowledge-base' ) }}
+				</label>
 				<a-select
+					id="lkb-bulk-action"
 					v-model:value="choice"
 					size="small"
 					class="lkb-bulk__choice"
 					:options="choices"
 					:placeholder="__( 'Bulk action', 'licensio-knowledge-base' )"
-					:aria-label="__( 'Bulk action', 'licensio-knowledge-base' )"
 				/>
 
+				<label v-if="'status' === choice" for="lkb-bulk-status" class="screen-reader-text">
+					{{ __( 'New status', 'licensio-knowledge-base' ) }}
+				</label>
 				<a-select
 					v-if="'status' === choice"
+					id="lkb-bulk-status"
 					v-model:value="status"
 					size="small"
 					class="lkb-bulk__arg"
 					:options="statusOptions"
 					:placeholder="__( 'New status', 'licensio-knowledge-base' )"
-					:aria-label="__( 'New status', 'licensio-knowledge-base' )"
 				/>
 
 				<TermSelect
