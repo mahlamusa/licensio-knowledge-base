@@ -86,6 +86,17 @@ class Licensio_KB_Heroic_Content_Migrator {
     private $dry_run = false;
 
     /**
+     * Per target category, the highest position it held before this run wrote to it.
+     *
+     * Read once per category and run, so the positions written by earlier
+     * batches do not move the later ones further down.
+     *
+     * @since 1.0.0
+     * @var array<int, int>
+     */
+    private $position_bases = array();
+
+    /**
      * Constructor.
      *
      * @since 1.0.0
@@ -327,19 +338,6 @@ class Licensio_KB_Heroic_Content_Migrator {
 
         $order = Licensio_KB_Heroic_Map::article_order( $this->source->article_orders( $source_id ) );
 
-        if ( $order['ambiguous'] ) {
-            $this->report->count( 'articles_order_collapsed' );
-            $this->report->note(
-                'article_order',
-                sprintf(
-                    'Heroic article %1$d had different positions in different categories; kept %2$d from category %3$d.',
-                    $source_id,
-                    $order['order'],
-                    $order['source_term_id']
-                )
-            );
-        }
-
         if ( $this->dry_run ) {
             $this->report->count( 'articles_created' );
 
@@ -386,7 +384,9 @@ class Licensio_KB_Heroic_Content_Migrator {
 
         update_post_meta( $article_id, self::META_SOURCE_POST, $source_id );
 
-        $this->assign_terms( $source_id, $article_id );
+        $categories = $this->assign_terms( $source_id, $article_id );
+
+        $this->migrate_positions( $article_id, $order['positions'], $categories );
         $this->migrate_thumbnail( $source_id, $article_id );
         $this->reparent_attachments( $source_id, $article_id );
 
@@ -407,13 +407,15 @@ class Licensio_KB_Heroic_Content_Migrator {
      * @param int $source_id  The Heroic post ID.
      * @param int $article_id The target article ID.
      *
-     * @return void
+     * @return array<int, int> Heroic category term ID to the category it was migrated as.
      */
     private function assign_terms( $source_id, $article_id ) {
         $pairs = array(
             Licensio_KB_Heroic_Schema::TAXONOMY_CATEGORY => Licensio_KB_Post_Types::TAXONOMY_CATEGORY,
             Licensio_KB_Heroic_Schema::TAXONOMY_TAG      => Licensio_KB_Post_Types::TAXONOMY_TAG,
         );
+
+        $categories = array();
 
         foreach ( $pairs as $from => $to ) {
             $target_ids = array();
@@ -423,6 +425,10 @@ class Licensio_KB_Heroic_Content_Migrator {
 
                 if ( $target > 0 ) {
                     $target_ids[] = $target;
+
+                    if ( Licensio_KB_Post_Types::TAXONOMY_CATEGORY === $to ) {
+                        $categories[ (int) $heroic_term_id ] = $target;
+                    }
                 } else {
                     $this->report->count( 'article_terms_missing' );
                     $this->report->note(
@@ -435,6 +441,49 @@ class Licensio_KB_Heroic_Content_Migrator {
             if ( ! empty( $target_ids ) ) {
                 wp_set_object_terms( $article_id, $target_ids, $to, false );
             }
+        }
+
+        return $categories;
+    }
+
+    /**
+     * Write a migrated article's position in each migrated category.
+     *
+     * Each Heroic category's position is stored as `licensio_order_{term_id}`
+     * against the category it was migrated as, the key the plugin's own order
+     * screen and the importers write. The positions follow any the category
+     * already held before this run, so migrating into a category that was
+     * ordered by hand never interleaves with that order. A category that was
+     * not migrated has no key to write. Should two Heroic categories lead to
+     * one target, the lower Heroic term ID wins.
+     *
+     * @since 1.0.0
+     *
+     * @param int             $article_id The target article ID.
+     * @param array<int, int> $positions  Heroic category term ID to the article's position in it, lowest term ID first.
+     * @param array<int, int> $categories Heroic category term ID to the category it was migrated as.
+     *
+     * @return void
+     */
+    private function migrate_positions( $article_id, array $positions, array $categories ) {
+        $saved = array();
+
+        foreach ( $positions as $heroic_term_id => $position ) {
+            $target = isset( $categories[ $heroic_term_id ] ) ? $categories[ $heroic_term_id ] : 0;
+
+            if ( $target <= 0 || isset( $saved[ $target ] ) ) {
+                continue;
+            }
+
+            if ( ! isset( $this->position_bases[ $target ] ) ) {
+                $current = Licensio_KB_Article_Order::positions( $target );
+
+                $this->position_bases[ $target ] = empty( $current ) ? -1 : max( $current );
+            }
+
+            $saved[ $target ] = $this->position_bases[ $target ] + 1 + (int) $position;
+
+            update_post_meta( $article_id, Licensio_KB_Article_Order::meta_key( $target ), $saved[ $target ] );
         }
     }
 

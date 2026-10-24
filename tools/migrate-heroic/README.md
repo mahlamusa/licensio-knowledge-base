@@ -91,33 +91,36 @@ don't use it.
 | `ht_kb` posts | `licensio_article`, with author, dates, status, excerpt, comment status |
 | `ht_kb_category` / `ht_kb_tag` terms | `licensio_category` / `licensio_tag`, hierarchy preserved |
 | term meta `term_order` | `licensio_order` |
+| post meta `_ht_article_order_{term_id}` | `licensio_order_{term_id}` on the migrated category |
 | term meta `meta_image` (an attachment ID) | `licensio_image_id` |
 | featured image, uploaded attachments | copied and re-parented onto the new article |
 | `hkb_voting` | `licensio_feedback`, direction, comment, author and date preserved |
 | `hkb_analytics_search_atomic` | `licensio_search_log` |
 | `hkb_visits` where `object_type = ht_kb_article` | `licensio_article_views` |
 
-### Does not cross — two product gaps, not migration defects
+Heroic orders an article once per category it belongs to, in a separate
+`_ht_article_order_{term_id}` post meta key each time
+(`ht-knowledge-base.php:2722`). Each position is written to the migrated
+category as `licensio_order_{term_id}`, the per-category order the plugin's
+order screen and its built-in importers use. The positions follow any order the
+category already held before the run, so migrating into a category ordered by
+hand never interleaves with it. That existing order is read once per run; a run
+resumed in a new process reads it again, so its articles still follow the
+existing order, only further down. `menu_order` is still set, as the fallback
+for listings not limited to one category: the position recorded against the
+lowest Heroic category term ID.
 
-1. **Category icons.** Heroic stores them as raw inline SVG markup in the
-   `meta_svg` term meta (`php/ht-knowledge-base-category-meta.php:147` echoes it
-   through `stripslashes()` with no escaping — a stored XSS in their plugin, and
-   a good reason not to carry the pattern across). Our `licensio_icon` holds a
-   dashicon *name* and is printed into a `class` attribute;
-   `licensio_icon_id` holds an attachment ID. Neither can hold markup, and
-   writing SVG into either would be an injection rather than a migration. Both
-   `meta_svg` and `meta_svg_color` are therefore counted and reported as
-   unmapped. Carrying icons over needs an SVG-icon field in the content model.
+### Does not cross — a product gap, not a migration defect
 
-2. **Per-category article ordering.** Heroic orders an article once per category
-   it belongs to, in a separate `_ht_article_order_{term_id}` post meta key each
-   time (`ht-knowledge-base.php:2722`); it never writes `menu_order` and does not
-   expose it. Our model has exactly one position per article, `menu_order`. So N
-   positions collapse into one: **the position recorded against the lowest
-   Heroic category term ID wins.** Not the smallest order value, which would
-   pick a position out of whichever list happened to hold a small number; and
-   not "the primary category", because Heroic has no such concept. Every article
-   whose discarded positions disagreed with the kept one is counted and listed.
+**Category icons.** Heroic stores them as raw inline SVG markup in the
+`meta_svg` term meta (`php/ht-knowledge-base-category-meta.php:147` echoes it
+through `stripslashes()` with no escaping — a stored XSS in their plugin, and
+a good reason not to carry the pattern across). Our `licensio_icon` holds a
+dashicon *name* and is printed into a `class` attribute;
+`licensio_icon_id` holds an attachment ID. Neither can hold markup, and
+writing SVG into either would be an injection rather than a migration. Both
+`meta_svg` and `meta_svg_color` are therefore counted and reported as
+unmapped. Carrying icons over needs an SVG-icon field in the content model.
 
 ### Not migrated at all
 
