@@ -4,9 +4,12 @@
  *
  * The dialog only chooses the parent; leaving it empty puts new categories at
  * the top level. Each tag becomes a category with its name and slug, or joins
- * the category that already has its slug, and its articles are kept. The
- * conversion is sent from the Popconfirm of the Convert button, so closing the
- * dialog or cancelling the Popconfirm sends nothing.
+ * the category that already has its slug or the parent's child that already
+ * has its name, and its articles are kept. Once done, each tag that joined an
+ * existing category is named with that category, since it may sit somewhere
+ * other than the chosen parent. The conversion is sent from the Popconfirm of
+ * the Convert button, so closing the dialog or cancelling the Popconfirm sends
+ * nothing.
  *
  * @since 1.0.0
  */
@@ -15,7 +18,7 @@ import { computed, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import ConfirmButton from '../../components/ConfirmButton.vue';
 import TermSelect from '../../components/TermSelect.vue';
-import { __, sprintf } from '../../components/i18n';
+import { __, _n, sprintf } from '../../components/i18n';
 import type { TermValue } from '../../components/types/terms';
 import { useTagsStore } from '../store';
 
@@ -35,8 +38,10 @@ const parentId = computed( () =>
 const confirmTitle = computed( () =>
 	sprintf(
 		/* translators: %d: how many tags will be converted. */
-		__(
+		_n(
+			'Convert %d tag to a category? The tag is deleted.',
 			'Convert %d tags to categories? The tags are deleted.',
+			store.selected.length,
 			'licensio-knowledge-base'
 		),
 		store.selected.length
@@ -71,6 +76,11 @@ function close(): void {
  * @return {Promise<void>} Resolves once converted, or once the error is shown.
  */
 async function convert(): Promise< void > {
+	// The tags are gone once the list reloads, so keep their names now.
+	const names = new Map(
+		store.items.map( ( item ) => [ item.id, item.name ] )
+	);
+
 	try {
 		const result = await store.convertSelected( parentId.value );
 
@@ -78,13 +88,32 @@ async function convert(): Promise< void > {
 		message.success(
 			sprintf(
 				/* translators: %d: how many tags were converted. */
-				__(
+				_n(
+					'%d tag converted to a category.',
 					'%d tags converted to categories.',
+					result.converted.length,
 					'licensio-knowledge-base'
 				),
 				result.converted.length
 			)
 		);
+
+		result.converted
+			.filter( ( entry ) => entry.reused )
+			.forEach( ( entry ) => {
+				message.info(
+					sprintf(
+						/* translators: 1: the tag's name, 2: the existing category's name. */
+						__(
+							'“%1$s” was added to the existing category “%2$s”.',
+							'licensio-knowledge-base'
+						),
+						names.get( entry.tag ) ?? entry.category.name,
+						entry.category.name
+					),
+					6
+				);
+			} );
 
 		result.failed.forEach( ( failure ) => {
 			message.error( failure.message );
@@ -104,7 +133,7 @@ async function convert(): Promise< void > {
 		<p>
 			{{
 				__(
-					'Each tag becomes a category with the same name and slug, or joins the category that already has its slug. Its articles keep it as a category, and the tag is deleted.',
+					'Each tag becomes a category with the same name and slug, or joins the category that already has its slug or the same name under the chosen parent. Its articles keep it as a category, and the tag is deleted.',
 					'licensio-knowledge-base'
 				)
 			}}

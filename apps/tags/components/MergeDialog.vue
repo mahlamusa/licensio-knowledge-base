@@ -13,7 +13,7 @@ import { computed, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import ConfirmButton from '../../components/ConfirmButton.vue';
 import TermSelect from '../../components/TermSelect.vue';
-import { __, sprintf } from '../../components/i18n';
+import { __, _n, sprintf } from '../../components/i18n';
 import type { TermValue } from '../../components/types/terms';
 import { useTagsStore } from '../store';
 
@@ -33,8 +33,10 @@ const targetId = computed( () =>
 const intro = computed( () =>
 	sprintf(
 		/* translators: %d: how many tags are selected. */
-		__(
+		_n(
+			'The articles of the %d selected tag get the tag you choose, then the selected tag is deleted.',
 			'The articles of the %d selected tags get the tag you choose, then the selected tags are deleted.',
+			store.selected.length,
 			'licensio-knowledge-base'
 		),
 		store.selected.length
@@ -44,8 +46,10 @@ const intro = computed( () =>
 const confirmTitle = computed( () =>
 	sprintf(
 		/* translators: %d: how many tags will be merged. */
-		__(
+		_n(
+			'Merge %d tag? It is deleted after its articles move.',
 			'Merge %d tags? They are deleted after their articles move.',
+			store.selected.length,
 			'licensio-knowledge-base'
 		),
 		store.selected.length
@@ -87,7 +91,12 @@ async function merge(): Promise< void > {
 		message.success(
 			sprintf(
 				/* translators: 1: how many tags were merged, 2: the target tag's name. */
-				__( '%1$d tags merged into “%2$s”.', 'licensio-knowledge-base' ),
+				_n(
+					'%1$d tag merged into “%2$s”.',
+					'%1$d tags merged into “%2$s”.',
+					result.deleted.length,
+					'licensio-knowledge-base'
+				),
 				result.deleted.length,
 				result.target?.name ?? ''
 			)

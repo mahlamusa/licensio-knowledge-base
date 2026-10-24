@@ -9,7 +9,8 @@
  * route's real code runs and its effect is read back from real rows. Term
  * counts follow core: only published articles are counted.
  *
- * The shims cover only what the term routes use: lookups by ID and slug,
+ * The shims cover only what the term routes use: lookups by ID and slug, a
+ * `get_terms()` lookup of one child by its stored name,
  * appending and removing assignments, inserting with a slug, parent and
  * description, and deleting a term with its assignments.
  *
@@ -57,6 +58,19 @@ trait Licensio_KB_Term_API_Shims {
                 $term = $this->shim_find_term( "t.slug = '" . $this->db->real_escape_string( (string) $value ) . "'", $taxonomy );
 
                 return null === $term ? false : $term;
+            }
+        );
+
+        Brain\Monkey\Functions\when( 'get_terms' )->alias(
+            function ( $args ) {
+                $this->assertSame( array( 'hide_empty', 'name', 'number', 'parent', 'taxonomy' ), self::shim_sorted_keys( $args ), 'Only a child-by-name lookup is shimmed.' );
+
+                $term = $this->shim_find_term(
+                    'tt.parent = ' . (int) $args['parent'] . " AND t.name = '" . $this->db->real_escape_string( (string) $args['name'] ) . "'",
+                    $args['taxonomy']
+                );
+
+                return null === $term ? array() : array( $term );
             }
         );
 
@@ -174,6 +188,23 @@ trait Licensio_KB_Term_API_Shims {
         }
 
         return new WP_Term( $row );
+    }
+
+    /**
+     * The keys of an argument array, sorted.
+     *
+     * @since 1.0.0
+     *
+     * @param array<string, mixed> $args The arguments.
+     *
+     * @return string[] The keys.
+     */
+    private static function shim_sorted_keys( array $args ) {
+        $keys = array_keys( $args );
+
+        sort( $keys );
+
+        return $keys;
     }
 
     /**

@@ -1,9 +1,11 @@
 /**
  * The Tags app, end to end.
  *
- * Adds tags through the app, then checks that every change waits for its
- * Popconfirm (Cancel sends nothing), that a taken slug is made unique, and
- * that merge and convert to category work on the selected tags.
+ * Adds tags through the app, then checks that every change (add, save,
+ * merge, convert and delete) waits for its Popconfirm and that Cancel sends
+ * nothing, that a taken slug is made unique, and that merge and convert to
+ * category work on the selected tags. The category the convert creates is
+ * deleted again through the core REST API.
  *
  * The suite needs a running WordPress with this plugin active and an
  * administrator account, so it is skipped unless `LICENSIO_KB_E2E=1` and the
@@ -72,6 +74,63 @@ function recordWrites( page: Page ): string[] {
 }
 
 /**
+ * Open a Popconfirm, cancel it, and check no write was sent.
+ *
+ * @since 1.0.0
+ *
+ * @param {Page}     page   The browser page.
+ * @param {string[]} writes The writes recorded so far.
+ * @param {Function} open   Clicks the button that opens the Popconfirm.
+ *
+ * @return {Promise<void>} Resolves once the Popconfirm is cancelled.
+ */
+async function cancelSendsNothing(
+	page: Page,
+	writes: string[],
+	open: () => Promise< void >
+): Promise< void > {
+	const before = writes.length;
+
+	await open();
+	await cancelPopconfirm( page );
+	expect( writes.length ).toBe( before );
+}
+
+/**
+ * Delete a category through the core REST API, as the signed-in user.
+ *
+ * @since 1.0.0
+ *
+ * @param {Page}   page The browser page, on the Tags app.
+ * @param {number} id   The category ID.
+ *
+ * @return {Promise<number>} The response status.
+ */
+async function deleteCategory( page: Page, id: number ): Promise< number > {
+	return page.evaluate( async ( categoryId ) => {
+		const config = (
+			window as unknown as {
+				licensioKbTags: { root: string; nonce: string };
+			}
+		 ).licensioKbTags;
+		const base = config.root.replace( 'licensio-kb/v1', 'wp/v2' );
+		const url =
+			base +
+			'licensio_categories/' +
+			categoryId +
+			( base.includes( '?' ) ? '&' : '?' ) +
+			'force=true';
+		const response = await fetch( url, {
+			method: 'DELETE',
+			headers: { 'X-WP-Nonce': config.nonce },
+			credentials: 'same-origin',
+		} );
+
+		return response.status;
+	}, id );
+}
+
+/**
  * Add a tag through the Add tag form.
  *
  * @since 1.0.0
@@ -132,6 +191,17 @@ test( 'tags are edited, merged and converted only after confirmation', async ( {
 	await logIn( page );
 	await openContentManager( page, 'tags' );
 
+	// Cancel on Add sends nothing.
+	await page.getByRole( 'button', { name: 'Add tag' } ).click();
+
+	const form = page.locator( '.lkb-tags__add' );
+
+	await form.getByLabel( 'Name' ).fill( alpha );
+	await cancelSendsNothing( page, writes, () =>
+		form.getByRole( 'button', { name: 'Add tag' } ).click()
+	);
+	await form.getByRole( 'button', { name: 'Cancel' } ).click();
+
 	for ( const name of [ alpha, beta, gamma ] ) {
 		await addTag( page, name );
 	}
@@ -165,6 +235,9 @@ test( 'tags are edited, merged and converted only after confirmation', async ( {
 	await merge.getByLabel( 'Tag to merge into' ).click();
 	await page.keyboard.type( alpha );
 	await page.locator( '.ant-select-item-option', { hasText: alpha } ).click();
+	await cancelSendsNothing( page, writes, () =>
+		merge.getByRole( 'button', { name: 'Merge' } ).click()
+	);
 	await merge.getByRole( 'button', { name: 'Merge' } ).click();
 	await confirmPopconfirm( page );
 	await expect( page.locator( '.ant-table-row' ) ).toHaveCount( 2 );
@@ -177,17 +250,35 @@ test( 'tags are edited, merged and converted only after confirmation', async ( {
 		hasText: 'Convert to categories',
 	} );
 
+	await cancelSendsNothing( page, writes, () =>
+		convert.getByRole( 'button', { name: 'Convert' } ).click()
+	);
+
+	const converted = page.waitForResponse(
+		( response ) =>
+			decodeURIComponent( response.url() ).includes( 'tags/convert' ) &&
+			'POST' === response.request().method()
+	);
+
 	await convert.getByRole( 'button', { name: 'Convert' } ).click();
 	await confirmPopconfirm( page );
+
+	const categoryId: number = ( await ( await converted ).json() )
+		.converted[ 0 ].category.id;
+
 	await expect( page.locator( '.ant-table-row' ) ).toHaveCount( 1 );
 	await expect( row( page, alpha ) ).toBeVisible();
 
-	// Clean up.
+	// Clean up, checking Cancel on Delete first.
 	await row( page, alpha ).locator( '.ant-checkbox-input' ).check();
-	await page
+
+	const remove = page
 		.locator( '.lkb-bulk' )
-		.getByRole( 'button', { name: 'Delete' } )
-		.click();
+		.getByRole( 'button', { name: 'Delete' } );
+
+	await cancelSendsNothing( page, writes, () => remove.click() );
+	await remove.click();
 	await confirmPopconfirm( page );
 	await expect( page.locator( '.ant-table-row' ) ).toHaveCount( 0 );
+	expect( await deleteCategory( page, categoryId ) ).toBe( 200 );
 } );

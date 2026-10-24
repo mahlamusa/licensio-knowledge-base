@@ -62,7 +62,7 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
 
         $this->routes = array();
         $this->calls  = array();
-        $this->caps   = array( 'manage_licensio_kb', 'manage_tags', 'edit_tags', 'delete_tags', 'edit_categories', 'assign_categories' );
+        $this->caps   = array( 'manage_licensio_kb', 'manage_tags', 'edit_tags', 'delete_tags', 'assign_tags', 'edit_categories', 'assign_categories' );
         $this->terms  = array(
             'licensio_tag'      => array(
                 10 => $this->term( 10, 'Billing', 'licensio_tag', 'About money' ),
@@ -136,6 +136,7 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
                 return false;
             }
         );
+        Functions\when( 'get_terms' )->justReturn( array() );
         Functions\when( 'get_objects_in_term' )->justReturn( array( '100', '101' ) );
         Functions\when( 'wp_set_object_terms' )->alias(
             function ( ...$args ) {
@@ -239,7 +240,7 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
         $this->assertTrue( $this->routes['/tags'][1]['args']['name']['required'] );
         $this->assertSame( 'PATCH', $this->routes['/tags/(?P<id>[\d]+)'][0]['methods'] );
         $this->assertFalse( $this->routes['/tags/(?P<id>[\d]+)'][0]['args']['name']['required'] );
-        $this->assertSame( 'sanitize_title', $this->routes['/tags/(?P<id>[\d]+)'][0]['args']['slug']['sanitize_callback'] );
+        $this->assertSame( 'sanitize_slug', $this->routes['/tags/(?P<id>[\d]+)'][0]['args']['slug']['sanitize_callback'][1], 'Core sanitize_slug(), not sanitize_title(), which would take the request as its fallback for an empty slug.' );
 
         foreach ( array(
             '/tags/bulk-delete' => 'ids',
@@ -275,6 +276,7 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
             array( '/tags/bulk-delete', 'POST', 'delete_tags' ),
             array( '/tags/merge', 'POST', 'edit_tags' ),
             array( '/tags/merge', 'POST', 'delete_tags' ),
+            array( '/tags/merge', 'POST', 'assign_tags' ),
             array( '/tags/convert', 'POST', 'delete_tags' ),
             array( '/tags/convert', 'POST', 'edit_categories' ),
             array( '/tags/convert', 'POST', 'assign_categories' ),
@@ -346,6 +348,40 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * A slug sent empty is handed to core empty, so core regenerates it from the name.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_emptied_slug_is_regenerated_from_the_name() {
+        $updates = array();
+
+        Functions\expect( 'wp_unique_term_slug' )->never();
+        Functions\when( 'wp_update_term' )->alias(
+            function ( $id, $taxonomy, $args ) use ( &$updates ) {
+                $updates[] = $args;
+
+                $this->terms[ $taxonomy ][ $id ]->slug = 'billing-2';
+
+                return array( 'term_id' => $id );
+            }
+        );
+
+        $edited = $this->call(
+            '/tags/(?P<id>[\d]+)',
+            'PATCH',
+            array(
+                'id'   => 10,
+                'slug' => '',
+            )
+        );
+
+        $this->assertSame( array( array( 'slug' => '' ) ), $updates );
+        $this->assertSame( 'billing-2', $edited['slug'], 'The answer carries the slug core saved.' );
+    }
+
+    /**
      * Edits reject an empty name and an unknown tag.
      *
      * @since 1.0.0
@@ -389,7 +425,46 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * Names and descriptions are answered as plain text.
+     * An escaped description round-trips unchanged when only the name is edited.
+     *
+     * Decoding it and sending it back would let kses turn `&lt;b&gt;` into a
+     * real tag, so it is answered as stored and a name edit leaves it out.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_escaped_description_round_trips_through_a_name_edit() {
+        $updates = array();
+
+        $this->terms['licensio_tag'][10]->description = 'Use &lt;b&gt; for bold';
+
+        Functions\when( 'wp_update_term' )->alias(
+            function ( $id, $taxonomy, $args ) use ( &$updates ) {
+                $updates[] = $args;
+
+                $this->terms[ $taxonomy ][ $id ]->name = $args['name'];
+
+                return array( 'term_id' => $id );
+            }
+        );
+
+        $edited = $this->call(
+            '/tags/(?P<id>[\d]+)',
+            'PATCH',
+            array(
+                'id'   => 10,
+                'name' => 'Billing and money',
+            )
+        );
+
+        $this->assertSame( array( array( 'name' => 'Billing and money' ) ), $updates, 'The description is not sent back.' );
+        $this->assertSame( 'Use &lt;b&gt; for bold', $edited['description'] );
+        $this->assertSame( 'Use &lt;b&gt; for bold', $this->terms['licensio_tag'][10]->description );
+    }
+
+    /**
+     * Names are answered as plain text and descriptions as stored.
      *
      * @since 1.0.0
      *
@@ -415,7 +490,7 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
                 'id'          => 31,
                 'name'        => 'Q&A',
                 'slug'        => 'q-a',
-                'description' => 'Questions & answers',
+                'description' => 'Questions &amp; answers',
                 'count'       => 2,
             ),
             $response->get_data()
@@ -491,6 +566,56 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
         $this->assertSame( array( 'set', 100, array( 30 ), 'licensio_category', true ), $this->calls[1] );
         $this->assertSame( array( 'delete', 11, 'licensio_tag' ), $this->calls[3] );
         $this->assertSame( 20, $result['converted'][0]['category']['parent'] );
+    }
+
+    /**
+     * Converting reuses a category of the same name under the parent.
+     *
+     * Core lets a second category of the same name in under one parent when
+     * the slug differs, so the convert looks for it by its stored name first.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_convert_reuses_a_same_name_category_under_the_parent() {
+        $sibling = $this->term( 22, 'Q&amp;A', 'licensio_category', '', 20, 'q-a-help' );
+        $queries = array();
+
+        $this->terms['licensio_tag'][12]      = $this->term( 12, 'Q&amp;A', 'licensio_tag', '', 0, 'q-a' );
+        $this->terms['licensio_category'][22] = $sibling;
+
+        Functions\when( 'get_terms' )->alias(
+            function ( $args ) use ( &$queries, $sibling ) {
+                $queries[] = $args;
+
+                return ( 20 === $args['parent'] && 'Q&amp;A' === $args['name'] ) ? array( $sibling ) : array();
+            }
+        );
+
+        $result = $this->call(
+            '/tags/convert',
+            'POST',
+            array(
+                'ids'    => array( 12 ),
+                'parent' => 20,
+            )
+        );
+
+        $this->assertSame( 'licensio_category', $queries[0]['taxonomy'] );
+        $this->assertFalse( $queries[0]['hide_empty'] );
+        $this->assertTrue( $result['converted'][0]['reused'] );
+        $this->assertSame( 22, $result['converted'][0]['category']['id'] );
+        $this->assertSame( 'Q&A', $result['converted'][0]['category']['name'] );
+        $this->assertSame(
+            array(
+                array( 'set', 100, array( 22 ), 'licensio_category', true ),
+                array( 'set', 101, array( 22 ), 'licensio_category', true ),
+                array( 'delete', 12, 'licensio_tag' ),
+            ),
+            $this->calls,
+            'No category is inserted.'
+        );
     }
 
     /**

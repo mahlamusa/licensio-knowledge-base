@@ -6,9 +6,12 @@
  * the bulk bar, and inline edit of name, slug and description. Edit opens the
  * row's fields in place; Save asks for confirmation first, and the row keeps
  * the user's input when the server refuses it. The slug the server settled on
- * (made unique if it was taken) is shown back once saved.
+ * (made unique if it was taken, or made from the name if the slug was
+ * cleared) is shown back once saved.
  *
- * Names and descriptions are rendered as text, never as HTML.
+ * Names and descriptions are rendered as text, never as HTML. A description
+ * is sent on save only when it was changed, so a stored one round-trips
+ * untouched.
  *
  * @since 1.0.0
  */
@@ -24,6 +27,9 @@ const store = useTagsStore();
 
 const editingId = ref< number | null >( null );
 const draft = reactive( { name: '', slug: '', description: '' } );
+
+// Whether the tag the page was opened for has been opened for editing.
+let openedFromUrl = false;
 
 /**
  * The Ant Design sort order of a column.
@@ -195,16 +201,18 @@ function canSave( tag: TagItem ): boolean {
 	);
 }
 
-// A page opened for one tag (`?term=`) opens that tag for editing.
+// A page opened for one tag (`?term=`) opens that tag for editing, once.
 watch(
 	() => store.items,
 	( items ) => {
 		if (
+			! openedFromUrl &&
 			1 === store.include.length &&
 			1 === items.length &&
 			items[ 0 ].id === store.include[ 0 ] &&
 			null === editingId.value
 		) {
+			openedFromUrl = true;
 			startEdit( items[ 0 ] );
 		}
 	}

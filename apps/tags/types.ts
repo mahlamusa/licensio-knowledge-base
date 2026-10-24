@@ -8,7 +8,8 @@
  */
 
 /**
- * One tag. Name and description are plain text.
+ * One tag. The name is plain text; the description is as stored, so an
+ * unchanged one is never sent back.
  */
 export interface TagItem {
 	id: number;

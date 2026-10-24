@@ -22,6 +22,12 @@
 
 interface Translator {
 	__?: ( text: string, domain?: string ) => string;
+	_n?: (
+		single: string,
+		plural: string,
+		number: number,
+		domain?: string
+	) => string;
 	sprintf?: ( format: string, ...args: Array< string | number > ) => string;
 }
 
@@ -52,6 +58,35 @@ export function __( text: string, domain?: string ): string {
 	const translate = translator().__;
 
 	return translate ? translate( text, domain ) : text;
+}
+
+/**
+ * Translate a string with a singular and a plural form.
+ *
+ * Falls back to the English rule (one is singular) when `wp.i18n` is missing.
+ *
+ * @since 1.0.0
+ *
+ * @param {string} single The singular form.
+ * @param {string} plural The plural form.
+ * @param {number} number The count that picks the form.
+ * @param {string} domain The text domain, always `licensio-knowledge-base`.
+ *
+ * @return {string} The translated form.
+ */
+export function _n(
+	single: string,
+	plural: string,
+	number: number,
+	domain?: string
+): string {
+	const translate = translator()._n;
+
+	if ( translate ) {
+		return translate( single, plural, number, domain );
+	}
+
+	return 1 === number ? single : plural;
 }
 
 /**

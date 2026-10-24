@@ -151,7 +151,7 @@ class Licensio_KB_Tags_Integration_Test extends Licensio_KB_Analytics_DB_Test_Ca
     /**
      * Seed four tags across three articles, one of them a draft.
      *
-     * Counts: Billing 2, Invoices 1, Q&A 0 (only on a draft), Unused 0.
+     * Counts: Billing 2, Invoices 1, Q&A 1 (only on a draft), Unused 0.
      *
      * @since 1.0.0
      *
@@ -195,29 +195,72 @@ class Licensio_KB_Tags_Integration_Test extends Licensio_KB_Analytics_DB_Test_Ca
     }
 
     /**
-     * The Unused filter lists tags no published article has.
+     * The count and the Unused filter count articles in every status but trash and auto-draft.
+     *
+     * A tag only a draft, scheduled, pending or private article uses is not
+     * unused, so deleting the Unused list never strips a tag from them.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_unused_lists_tags_with_no_published_article() {
-        $this->seed_tags();
+    public function test_unused_counts_every_status_but_trash_and_auto_draft() {
+        $tags = $this->seed_tags();
+
+        foreach ( array( 'private', 'future', 'pending', 'trash', 'auto-draft' ) as $status ) {
+            $tags[ $status ] = $this->make_term( 'Only ' . $status );
+
+            $this->make_article(
+                array(
+                    'status' => $status,
+                    'tags'   => array( $tags[ $status ] ),
+                )
+            );
+        }
 
         $result = $this->list_tags( array( 'unused' => true ) );
 
-        $this->assertSame( array( 'Q&A', 'Unused' ), array_column( $result['items'], 'name' ) );
-        $this->assertSame( 2, $result['total'] );
+        $this->assertSame( array( 'Only auto-draft', 'Only trash', 'Unused' ), array_column( $result['items'], 'name' ) );
+        $this->assertSame( 3, $result['total'] );
+        $this->assertSame( array( 0, 0, 0 ), array_column( $result['items'], 'count' ) );
         $this->assertSame(
-            array( 'Q&A' ),
+            array(
+                'Billing'         => 2,
+                'Invoices'        => 1,
+                'Only auto-draft' => 0,
+                'Only future'     => 1,
+                'Only pending'    => 1,
+                'Only private'    => 1,
+                'Only trash'      => 0,
+                'Q&A'             => 1,
+                'Unused'          => 0,
+            ),
+            array_column( $this->list_tags()['items'], 'count', 'name' ),
+            'The draft, private, scheduled and pending articles are counted.'
+        );
+        $this->assertSame(
+            array( 'Unused' ),
             $this->names(
                 array(
                     'unused' => true,
-                    'search' => 'q',
+                    'search' => 'unu',
                 )
             ),
             'Filters combine.'
         );
+
+        // Deleting everything the Unused filter lists leaves the draft's tag alone.
+        $this->controller->bulk_delete(
+            new WP_REST_Request(
+                array(),
+                '/licensio-kb/v1/tags/bulk-delete',
+                array( 'ids' => array_column( $result['items'], 'id' ) )
+            )
+        );
+
+        $this->assertCount( 1, $this->articles_in( $tags['Q&A'], Licensio_KB_Post_Types::TAXONOMY_TAG ), 'The draft keeps its tag.' );
+        $this->assertCount( 1, $this->articles_in( $tags['private'], Licensio_KB_Post_Types::TAXONOMY_TAG ), 'The private article keeps its tag.' );
+        $this->assertSame( array(), $this->list_tags( array( 'unused' => true ) )['items'] );
     }
 
     /**
@@ -241,7 +284,7 @@ class Licensio_KB_Tags_Integration_Test extends Licensio_KB_Analytics_DB_Test_Ca
             ),
             'Equal counts fall back to the name.'
         );
-        $this->assertSame( array( 'Q&A', 'Unused', 'Invoices', 'Billing' ), $this->names( array( 'orderby' => 'count' ) ) );
+        $this->assertSame( array( 'Unused', 'Invoices', 'Q&A', 'Billing' ), $this->names( array( 'orderby' => 'count' ) ) );
 
         $page = $this->list_tags(
             array(
@@ -255,6 +298,9 @@ class Licensio_KB_Tags_Integration_Test extends Licensio_KB_Analytics_DB_Test_Ca
         $this->assertSame( 2, $page['pages'] );
 
         $this->assertSame( array( 'Billing', 'Unused' ), $this->names( array( 'include' => array( $tags['Unused'], $tags['Billing'] ) ) ) );
+
+        $this->db->query( 'UPDATE ' . $this->table( 'term_taxonomy' ) . " SET description = 'Use &lt;b&gt; for bold' WHERE term_id = " . $tags['Unused'] );
+        $this->assertSame( 'Use &lt;b&gt; for bold', $this->list_tags( array( 'include' => array( $tags['Unused'] ) ) )['items'][0]['description'], 'Descriptions are answered as stored.' );
         $this->assertSame(
             array(
                 'id'          => $tags['Billing'],
@@ -343,6 +389,48 @@ class Licensio_KB_Tags_Integration_Test extends Licensio_KB_Analytics_DB_Test_Ca
         $this->assertSame( 0, get_term( $categories['Billing'], Licensio_KB_Post_Types::TAXONOMY_CATEGORY )->parent, 'The reused category is not moved.' );
         $this->assertSame( array( $one, $two ), $this->articles_in( $categories['Billing'], Licensio_KB_Post_Types::TAXONOMY_CATEGORY ) );
         $this->assertSame( array( $two ), $this->articles_in( $categories['Help'], Licensio_KB_Post_Types::TAXONOMY_CATEGORY ), 'Existing categories stay.' );
+        $this->assertSame( 0, $this->term_count( Licensio_KB_Post_Types::TAXONOMY_TAG ), 'The tag is deleted.' );
+    }
+
+    /**
+     * Converting reuses the category of the same name under the parent.
+     *
+     * Core lets a second category of one name in under the same parent when
+     * its slug differs, so without the name lookup the convert would add a
+     * duplicate. The names are stored entity encoded and still match.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_convert_reuses_a_same_name_category_under_the_parent() {
+        $help    = $this->make_term( 'Help', Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
+        $sibling = $this->make_term( 'Q&amp;A', Licensio_KB_Post_Types::TAXONOMY_CATEGORY, $help );
+        $other   = $this->make_term( 'Q&amp;A', Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
+        $tag     = $this->make_term( 'Q&amp;A' );
+
+        $this->db->query( 'UPDATE ' . $this->table( 'terms' ) . " SET slug = 'q-a-help' WHERE term_id = " . $sibling );
+        $this->db->query( 'UPDATE ' . $this->table( 'terms' ) . " SET slug = 'q-a-top' WHERE term_id = " . $other );
+
+        $article = $this->make_article( array( 'tags' => array( $tag ) ) );
+
+        $result = $this->controller->convert(
+            new WP_REST_Request(
+                array(),
+                '/licensio-kb/v1/tags/convert',
+                array(
+                    'ids'    => array( $tag ),
+                    'parent' => $help,
+                )
+            )
+        );
+
+        $this->assertSame( array(), $result['failed'] );
+        $this->assertTrue( $result['converted'][0]['reused'] );
+        $this->assertSame( $sibling, $result['converted'][0]['category']['id'], 'The child of the chosen parent is reused, not the top-level namesake.' );
+        $this->assertSame( 'Q&A', $result['converted'][0]['category']['name'] );
+        $this->assertSame( 3, $this->term_count( Licensio_KB_Post_Types::TAXONOMY_CATEGORY ), 'No category is created.' );
+        $this->assertSame( array( $article ), $this->articles_in( $sibling, Licensio_KB_Post_Types::TAXONOMY_CATEGORY ) );
         $this->assertSame( 0, $this->term_count( Licensio_KB_Post_Types::TAXONOMY_TAG ), 'The tag is deleted.' );
     }
 

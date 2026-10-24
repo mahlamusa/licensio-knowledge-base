@@ -11,15 +11,18 @@
  * Bulk actions work on the selected rows of the current page, at most 100,
  * so each is a single request.
  *
+ * Back and forward restore the filters, sort and page the store keeps in the
+ * URL.
+ *
  * @since 1.0.0
  */
 
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import { lkbTheme } from '../styles/theme';
 import AppHeader from '../components/AppHeader.vue';
 import ConfirmButton from '../components/ConfirmButton.vue';
-import { __, sprintf } from '../components/i18n';
+import { __, _n, sprintf } from '../components/i18n';
 import { settings } from './api';
 import { useTagsStore } from './store';
 import ConvertDialog from './components/ConvertDialog.vue';
@@ -38,8 +41,10 @@ const convertOpen = ref( false );
 const deleteTitle = computed( () =>
 	sprintf(
 		/* translators: %d: how many tags will be deleted. */
-		__(
+		_n(
+			'Delete %d tag? Its articles lose it.',
 			'Delete %d tags? Their articles lose them.',
+			store.selected.length,
 			'licensio-knowledge-base'
 		),
 		store.selected.length
@@ -116,7 +121,12 @@ async function deleteSelected(): Promise< void > {
 		message.success(
 			sprintf(
 				/* translators: %d: how many tags were deleted. */
-				__( '%d tags deleted.', 'licensio-knowledge-base' ),
+				_n(
+					'%d tag deleted.',
+					'%d tags deleted.',
+					result.deleted.length,
+					'licensio-knowledge-base'
+				),
 				result.deleted.length
 			)
 		);
@@ -129,8 +139,32 @@ async function deleteSelected(): Promise< void > {
 	}
 }
 
+/**
+ * Restore the view from the URL after back or forward.
+ *
+ * @since 1.0.0
+ *
+ * @return {void}
+ */
+function onPopState(): void {
+	store.restore();
+}
+
+// The search box follows the store when back or forward changes the search.
+watch(
+	() => store.search,
+	( search ) => {
+		searchText.value = search;
+	}
+);
+
 onMounted( () => {
+	window.addEventListener( 'popstate', onPopState );
 	store.load();
+} );
+
+onUnmounted( () => {
+	window.removeEventListener( 'popstate', onPopState );
 } );
 </script>
 

@@ -10,6 +10,15 @@
  * screens redirect with: `search` fills the search box, and `term` shows that
  * one tag until the filter is cleared.
  *
+ * The view lives in the URL so a reload, back and forward, or a pasted link
+ * restore it: filters (`search`, `unused`, `term`) are written with
+ * `history.replaceState`, sort and page (`orderby`, `order`, `paged`) with
+ * `history.pushState`. The page is `paged` because `page` already names the
+ * admin screen. Values at their default are left out.
+ *
+ * Only the answer of the latest list request is kept, so a slow earlier
+ * request can never overwrite a later one.
+ *
  * @since 1.0.0
  */
 
@@ -50,20 +59,82 @@ interface State {
 }
 
 /**
- * The filters the page was opened with.
+ * The part of the state the URL holds.
+ */
+interface UrlState {
+	search: string;
+	unused: boolean;
+	include: number[];
+	orderby: TagOrderBy;
+	order: TagOrder;
+	page: number;
+}
+
+/**
+ * The ID of the latest list request; older answers are dropped.
+ */
+let latestRequest = 0;
+
+/**
+ * The view the URL describes.
  *
  * @since 1.0.0
  *
- * @return {{ search: string, include: number[] }} The search text and the tag to show.
+ * @return {UrlState} The filters, sort and page, with defaults for what is missing.
  */
-function initialFilters(): { search: string; include: number[] } {
+function readUrl(): UrlState {
 	const params = new URLSearchParams( window.location.search );
 	const term = Number( params.get( 'term' ) ?? '' );
+	const page = Number( params.get( 'paged' ) ?? '' );
 
 	return {
 		search: params.get( 'search' ) ?? '',
+		unused: '1' === params.get( 'unused' ),
 		include: Number.isInteger( term ) && term > 0 ? [ term ] : [],
+		orderby: 'count' === params.get( 'orderby' ) ? 'count' : 'name',
+		order: 'desc' === params.get( 'order' ) ? 'desc' : 'asc',
+		page: Number.isInteger( page ) && page > 1 ? page : 1,
 	};
+}
+
+/**
+ * Write the view into the URL, leaving every other query argument alone.
+ *
+ * @since 1.0.0
+ *
+ * @param {UrlState} state The filters, sort and page.
+ * @param {boolean}  push  True to add a history entry, false to replace the current one.
+ *
+ * @return {void}
+ */
+function writeUrl( state: UrlState, push: boolean ): void {
+	const url = new URL( window.location.href );
+	const values: Record< string, string > = {
+		search: state.search,
+		unused: state.unused ? '1' : '',
+		term: 1 === state.include.length ? String( state.include[ 0 ] ) : '',
+		orderby: 'name' === state.orderby ? '' : state.orderby,
+		order: 'asc' === state.order ? '' : state.order,
+		paged: state.page > 1 ? String( state.page ) : '',
+	};
+
+	Object.entries( values ).forEach( ( [ key, value ] ) => {
+		if ( '' === value ) {
+			url.searchParams.delete( key );
+		} else {
+			url.searchParams.set( key, value );
+		}
+	} );
+
+	if ( url.href === window.location.href ) {
+		return;
+	}
+
+	if ( push ) {
+		window.history.pushState( null, '', url.href );
+	} else {
+		window.history.replaceState( null, '', url.href );
+	}
 }
 
 /**
@@ -85,10 +156,7 @@ export const useTagsStore = defineStore( 'licensioKBTags', {
 		total: 0,
 		page: 1,
 		perPage: settings().perPage,
-		...initialFilters(),
-		unused: false,
-		orderby: 'name',
-		order: 'asc',
+		...readUrl(),
 		selected: [],
 		loading: false,
 		saving: false,
@@ -104,6 +172,8 @@ export const useTagsStore = defineStore( 'licensioKBTags', {
 		 * @return {Promise<void>} Resolves once the page is in state.
 		 */
 		async load(): Promise< void > {
+			const request = ++latestRequest;
+
 			this.loading = true;
 			this.error = '';
 
@@ -118,12 +188,18 @@ export const useTagsStore = defineStore( 'licensioKBTags', {
 					perPage: this.perPage,
 				} );
 
+				// A newer request is in flight; its answer wins.
+				if ( request !== latestRequest ) {
+					return;
+				}
+
 				this.items = page.items;
 				this.total = page.total;
 
 				// A page emptied by a delete steps back to the last page with rows.
 				if ( 0 === page.items.length && this.page > 1 ) {
 					this.page = Math.max( 1, page.pages );
+					writeUrl( this.$state, false );
 					await this.load();
 					return;
 				}
@@ -135,10 +211,28 @@ export const useTagsStore = defineStore( 'licensioKBTags', {
 					visible.has( id )
 				);
 			} catch ( error ) {
-				this.error = messageOf( error );
+				if ( request === latestRequest ) {
+					this.error = messageOf( error );
+				}
 			} finally {
-				this.loading = false;
+				if ( request === latestRequest ) {
+					this.loading = false;
+				}
 			}
+		},
+
+		/**
+		 * Take the view back from the URL, after back or forward.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @return {Promise<void>} Resolves once that page is loaded.
+		 */
+		async restore(): Promise< void > {
+			Object.assign( this, readUrl() );
+			this.selected = [];
+
+			await this.load();
 		},
 
 		/**
@@ -160,6 +254,7 @@ export const useTagsStore = defineStore( 'licensioKBTags', {
 			Object.assign( this, filters );
 			this.page = 1;
 			this.selected = [];
+			writeUrl( this.$state, false );
 
 			await this.load();
 		},
@@ -187,6 +282,7 @@ export const useTagsStore = defineStore( 'licensioKBTags', {
 			this.page = Math.max( 1, page );
 			this.orderby = orderby;
 			this.order = order;
+			writeUrl( this.$state, true );
 
 			await this.load();
 		},

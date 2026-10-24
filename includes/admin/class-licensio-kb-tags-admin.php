@@ -123,17 +123,6 @@ class Licensio_KB_Tags_Admin {
     }
 
     /**
-     * The hook suffix of the Tags page.
-     *
-     * @since 1.0.0
-     *
-     * @return string The hook suffix, or an empty string before the page is registered.
-     */
-    public function hook_suffix() {
-        return $this->hook_suffix;
-    }
-
-    /**
      * Render the mount point the app takes over.
      *
      * @since 1.0.0

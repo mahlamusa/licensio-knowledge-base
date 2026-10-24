@@ -7,6 +7,13 @@
  *
  * - `GET /tags`: `search`, `unused`, `include[]`, `orderby` (`name`, `count`),
  *   `order`, `page`, `per_page`. Answers `{ items, total, pages, page, per_page }`.
+ *   Each item's `count` is the number of articles with the tag in any status
+ *   but trash and auto-draft, so a tag only drafts, scheduled, pending or
+ *   private articles use is not unused. The Unused filter and the count sort
+ *   use the same number. Core's own term count, which only counts published
+ *   articles and which the front end reads, is left untouched. The single-tag
+ *   answers of the write routes carry core's count; the app reads counts only
+ *   from this list, which it reloads after every write.
  * - `POST /tags` and `PATCH /tags/{id}`: `name`, `slug`, `description`. A slug
  *   that is taken is made unique the way core does it.
  * - `POST /tags/bulk-delete`: `{ ids[] }`.
@@ -14,11 +21,14 @@
  *   `Licensio_KB_Term_Operations::merge_terms()`.
  * - `POST /tags/convert`: `{ ids[], parent }`. Each tag becomes a category
  *   with the same slug under `parent`, or reuses the category that already
- *   has that slug, keeps its articles, and is then deleted.
+ *   has that slug, or the child of `parent` that already has that name, keeps
+ *   its articles, and is then deleted.
  *
  * Every route needs `manage_licensio_kb` and the matching capability of the
- * taxonomy it changes. Term names and descriptions are answered as plain text:
- * core stores `&` as `&amp;`, and the app renders them as text.
+ * taxonomy it changes. Term names are answered as plain text: core stores `&`
+ * as `&amp;`, and the app renders them as text. Descriptions are answered as
+ * stored: decoding one and sending it back on save would let kses turn
+ * escaped text such as `&lt;b&gt;` into markup, or strip it.
  *
  * @package Licensio_KB
  * @since   1.0.0
@@ -196,7 +206,7 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
             'unused'   => array(
                 'type'        => 'boolean',
                 'default'     => false,
-                'description' => __( 'Only tags no published article uses.', 'licensio-knowledge-base' ),
+                'description' => __( 'Only tags no article uses, counting every status but trash and auto-draft.', 'licensio-knowledge-base' ),
             ),
             'include'  => array(
                 'type'        => 'array',
@@ -257,8 +267,8 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
             ),
             'slug'        => array(
                 'type'              => 'string',
-                'sanitize_callback' => 'sanitize_title',
-                'description'       => __( 'The tag slug. A slug that is taken gets a number added.', 'licensio-knowledge-base' ),
+                'sanitize_callback' => array( $this, 'sanitize_slug' ),
+                'description'       => __( 'The tag slug. A slug that is taken gets a number added; an empty slug is made from the name.', 'licensio-knowledge-base' ),
             ),
             'description' => array(
                 'type'              => 'string',
@@ -336,6 +346,9 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
     /**
      * Permission callback for merging tags, which edits one and deletes others.
      *
+     * Merging also moves the sources' articles onto the target, so it needs
+     * the tag assign capability too.
+     *
      * @since 1.0.0
      *
      * @param WP_REST_Request $request The request.
@@ -348,6 +361,7 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
             array(
                 array( Licensio_KB_Post_Types::TAXONOMY_TAG, 'edit_terms' ),
                 array( Licensio_KB_Post_Types::TAXONOMY_TAG, 'delete_terms' ),
+                array( Licensio_KB_Post_Types::TAXONOMY_TAG, 'assign_terms' ),
             )
         );
     }
@@ -417,6 +431,11 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
      * "off" value, and the sort is a set of CASE expressions of which only the
      * chosen one is not null.
      *
+     * The article count comes from a derived table over the term
+     * relationships of articles in any status but trash and auto-draft, not
+     * from core's published-only `count` column, so the Unused filter never
+     * lists a tag a draft, scheduled, pending or private article still uses.
+     *
      * @since 1.0.0
      *
      * @param WP_REST_Request $request The request.
@@ -440,12 +459,22 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
         $total = (int) $wpdb->get_var(
             $wpdb->prepare(
                 'SELECT COUNT(*) FROM %i AS t INNER JOIN %i AS tt ON tt.term_id = t.term_id
+                LEFT JOIN (
+                    SELECT r.term_taxonomy_id, COUNT(*) AS n FROM %i AS r INNER JOIN %i AS p ON p.ID = r.object_id
+                    WHERE p.post_type = %s AND p.post_status NOT IN ( %s, %s )
+                    GROUP BY r.term_taxonomy_id
+                ) AS c ON c.term_taxonomy_id = tt.term_taxonomy_id
                 WHERE tt.taxonomy = %s
                     AND ( %s = \'\' OR t.name LIKE %s OR t.slug LIKE %s )
-                    AND ( %d = 0 OR tt.count = 0 )
+                    AND ( %d = 0 OR COALESCE( c.n, 0 ) = 0 )
                     AND ( %s = \'\' OR FIND_IN_SET( t.term_id, %s ) > 0 )',
                 $wpdb->terms,
                 $wpdb->term_taxonomy,
+                $wpdb->term_relationships,
+                $wpdb->posts,
+                Licensio_KB_Post_Types::POST_TYPE,
+                'trash',
+                'auto-draft',
                 $taxonomy,
                 $like,
                 $like,
@@ -459,20 +488,30 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $rows = $wpdb->get_results(
             $wpdb->prepare(
-                'SELECT t.term_id, t.name, t.slug, tt.description, tt.count FROM %i AS t INNER JOIN %i AS tt ON tt.term_id = t.term_id
+                'SELECT t.term_id, t.name, t.slug, tt.description, COALESCE( c.n, 0 ) AS count FROM %i AS t INNER JOIN %i AS tt ON tt.term_id = t.term_id
+                LEFT JOIN (
+                    SELECT r.term_taxonomy_id, COUNT(*) AS n FROM %i AS r INNER JOIN %i AS p ON p.ID = r.object_id
+                    WHERE p.post_type = %s AND p.post_status NOT IN ( %s, %s )
+                    GROUP BY r.term_taxonomy_id
+                ) AS c ON c.term_taxonomy_id = tt.term_taxonomy_id
                 WHERE tt.taxonomy = %s
                     AND ( %s = \'\' OR t.name LIKE %s OR t.slug LIKE %s )
-                    AND ( %d = 0 OR tt.count = 0 )
+                    AND ( %d = 0 OR COALESCE( c.n, 0 ) = 0 )
                     AND ( %s = \'\' OR FIND_IN_SET( t.term_id, %s ) > 0 )
                 ORDER BY
-                    CASE WHEN %s = \'count\' AND %s = \'asc\' THEN tt.count END ASC,
-                    CASE WHEN %s = \'count\' AND %s = \'desc\' THEN tt.count END DESC,
+                    CASE WHEN %s = \'count\' AND %s = \'asc\' THEN COALESCE( c.n, 0 ) END ASC,
+                    CASE WHEN %s = \'count\' AND %s = \'desc\' THEN COALESCE( c.n, 0 ) END DESC,
                     CASE WHEN %s = \'name\' AND %s = \'desc\' THEN t.name END DESC,
                     t.name ASC,
                     t.term_id ASC
                 LIMIT %d OFFSET %d',
                 $wpdb->terms,
                 $wpdb->term_taxonomy,
+                $wpdb->term_relationships,
+                $wpdb->posts,
+                Licensio_KB_Post_Types::POST_TYPE,
+                'trash',
+                'auto-draft',
                 $taxonomy,
                 $like,
                 $like,
@@ -553,7 +592,8 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
      * Only the fields sent are changed. Core's `wp_update_term()` refuses a
      * slug another term already has, so a new slug is first made unique with
      * `wp_unique_term_slug()`, which adds a number the way core does for a new
-     * term.
+     * term. A slug sent empty is regenerated from the name by
+     * `wp_update_term()`, made unique the same way.
      *
      * @since 1.0.0
      *
@@ -583,7 +623,9 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
         if ( null !== $request->get_param( 'slug' ) ) {
             $slug = sanitize_title( (string) $request->get_param( 'slug' ) );
 
-            if ( '' !== $slug && $slug !== $term->slug ) {
+            if ( '' === $slug ) {
+                $args['slug'] = '';
+            } elseif ( $slug !== $term->slug ) {
                 $args['slug'] = wp_unique_term_slug( $slug, $term );
             }
         }
@@ -742,6 +784,11 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
     /**
      * Turn one tag into a category.
      *
+     * Reuses the category with the tag's slug wherever it is, or else the
+     * child of the parent with the tag's name, so a convert never adds a
+     * second category of the same name under the same parent. A new category
+     * is created only when neither exists.
+     *
      * @since 1.0.0
      *
      * @param int $id        The tag ID.
@@ -757,7 +804,12 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
         }
 
         $category = get_term_by( 'slug', $tag->slug, Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
-        $reused   = $category instanceof WP_Term;
+
+        if ( ! $category instanceof WP_Term ) {
+            $category = self::child_named( $tag->name, $parent_id );
+        }
+
+        $reused = $category instanceof WP_Term;
 
         if ( ! $reused ) {
             $created = wp_insert_term(
@@ -815,6 +867,39 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
     }
 
     /**
+     * The category under a parent that has a name.
+     *
+     * The name is compared as core stores it, entity encoded (`Q&amp;A`), which
+     * is how a tag's name is stored too.
+     *
+     * @since 1.0.0
+     *
+     * @param string $name      The stored name.
+     * @param int    $parent_id The parent category, or 0 for the top level.
+     *
+     * @return WP_Term|null The category, or null when there is none.
+     */
+    private static function child_named( $name, $parent_id ) {
+        $found = get_terms(
+            array(
+                'taxonomy'   => Licensio_KB_Post_Types::TAXONOMY_CATEGORY,
+                'parent'     => (int) $parent_id,
+                'name'       => $name,
+                'hide_empty' => false,
+                'number'     => 1,
+            )
+        );
+
+        if ( ! is_array( $found ) ) {
+            return null;
+        }
+
+        $first = reset( $found );
+
+        return $first instanceof WP_Term ? $first : null;
+    }
+
+    /**
      * A list of positive, distinct IDs.
      *
      * @since 1.0.0
@@ -847,6 +932,11 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
     /**
      * A tag row from the list query, as the app reads it.
      *
+     * The list query's `count` counts articles in every status but trash and
+     * auto-draft; a `WP_Term` passed through `prepare_term()` carries core's
+     * published-only count. The name is decoded to plain text; the
+     * description is kept as stored, so it round-trips unchanged.
+     *
      * @since 1.0.0
      *
      * @param object $row A row with `term_id`, `name`, `slug`, `description` and `count`.
@@ -858,7 +948,7 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
             'id'          => (int) $row->term_id,
             'name'        => self::plain_text( $row->name ),
             'slug'        => (string) $row->slug,
-            'description' => self::plain_text( $row->description ),
+            'description' => (string) $row->description,
             'count'       => (int) $row->count,
         );
     }
