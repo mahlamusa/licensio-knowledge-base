@@ -87,6 +87,7 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
         Functions\when( 'rest_ensure_response' )->returnArg();
         Functions\when( 'rest_authorization_required_code' )->justReturn( 403 );
         Functions\when( 'wp_slash' )->returnArg();
+        Functions\when( 'wp_defer_term_counting' )->justReturn( false );
         Functions\when( 'absint' )->alias(
             function ( $value ) {
                 return abs( (int) $value );

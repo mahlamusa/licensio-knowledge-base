@@ -4,7 +4,7 @@
  *
  * The list query is the controller's own SQL, so it runs here exactly as it
  * runs in production. The write routes call core's term API, which is stood
- * in by Licensio_KB_Term_API_Shims over the same tables, so these tests prove
+ * in by Licensio_KB_Live_Term_API over the same tables, so these tests prove
  * which assignments and terms are left once a merge, convert or bulk delete
  * has run.
  *
@@ -20,7 +20,7 @@
 
 require_once __DIR__ . '/Licensio_KB_Analytics_DB_Test_Case.php';
 require_once __DIR__ . '/trait-licensio-kb-content-fixtures.php';
-require_once __DIR__ . '/trait-licensio-kb-term-api-shims.php';
+require_once __DIR__ . '/trait-licensio-kb-live-term-api.php';
 
 /**
  * Exercises Licensio_KB_Tags_REST_Controller against a live server.
@@ -30,7 +30,7 @@ require_once __DIR__ . '/trait-licensio-kb-term-api-shims.php';
 class Licensio_KB_Tags_Integration_Test extends Licensio_KB_Analytics_DB_Test_Case {
 
     use Licensio_KB_Content_Fixtures;
-    use Licensio_KB_Term_API_Shims;
+    use Licensio_KB_Live_Term_API;
 
     /**
      * The controller under test.
@@ -51,20 +51,10 @@ class Licensio_KB_Tags_Integration_Test extends Licensio_KB_Analytics_DB_Test_Ca
         parent::setUp();
 
         $this->install_content_schemas();
-        $this->stub_term_api();
+        $this->stub_category_term_api();
 
-        Brain\Monkey\Functions\when( 'rest_ensure_response' )->returnArg();
         Brain\Monkey\Functions\when( 'wp_slash' )->returnArg();
-        Brain\Monkey\Functions\when( 'absint' )->alias(
-            function ( $value ) {
-                return abs( (int) $value );
-            }
-        );
-        Brain\Monkey\Functions\when( 'is_wp_error' )->alias(
-            function ( $thing ) {
-                return $thing instanceof WP_Error;
-            }
-        );
+        Brain\Monkey\Functions\when( 'wp_defer_term_counting' )->justReturn( false );
         Brain\Monkey\Functions\when( 'rest_sanitize_boolean' )->alias(
             function ( $value ) {
                 return (bool) $value;

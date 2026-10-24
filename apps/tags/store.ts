@@ -61,14 +61,10 @@ interface State {
 /**
  * The part of the state the URL holds.
  */
-interface UrlState {
-	search: string;
-	unused: boolean;
-	include: number[];
-	orderby: TagOrderBy;
-	order: TagOrder;
-	page: number;
-}
+type UrlState = Pick<
+	State,
+	'search' | 'unused' | 'include' | 'orderby' | 'order' | 'page'
+>;
 
 /**
  * The ID of the latest list request; older answers are dropped.
@@ -245,11 +241,7 @@ export const useTagsStore = defineStore( 'licensioKBTags', {
 		 * @return {Promise<void>} Resolves once the first page is loaded.
 		 */
 		async filter(
-			filters: Partial< {
-				search: string;
-				unused: boolean;
-				include: number[];
-			} >
+			filters: Partial< Pick< State, 'search' | 'unused' | 'include' > >
 		): Promise< void > {
 			Object.assign( this, filters );
 			this.page = 1;
@@ -285,19 +277,6 @@ export const useTagsStore = defineStore( 'licensioKBTags', {
 			writeUrl( this.$state, true );
 
 			await this.load();
-		},
-
-		/**
-		 * Replace the selection.
-		 *
-		 * @since 1.0.0
-		 *
-		 * @param {number[]} ids The selected tag IDs.
-		 *
-		 * @return {void}
-		 */
-		select( ids: number[] ): void {
-			this.selected = ids;
 		},
 
 		/**

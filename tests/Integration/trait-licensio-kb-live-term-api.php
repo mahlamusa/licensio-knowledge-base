@@ -3,7 +3,8 @@
  * The core term functions, run as SQL against the scratch database.
  *
  * No WordPress is loaded in the live database suite, so the term API the
- * categories controller and Licensio_KB_Term_Operations call does not exist.
+ * categories and tags controllers and Licensio_KB_Term_Operations call does
+ * not exist.
  * This trait supplies the few functions they use, through Brain Monkey, as
  * plain SQL against the core term tables `install_content_schemas()` creates.
  * Each one does what core does to the rows that matter here:
@@ -19,9 +20,7 @@
  *   description as `&amp;`, as core's term filters do.
  *
  * Use it with Licensio_KB_Content_Fixtures in a subclass of
- * Licensio_KB_Analytics_DB_Test_Case and call `stub_category_term_api()` from `setUp()`. The method name is
- * specific to the categories suites so it cannot collide with the term shims
- * other suites use.
+ * Licensio_KB_Analytics_DB_Test_Case and call `stub_category_term_api()` from `setUp()`.
  *
  * @package Licensio_KB
  * @since   1.0.0
@@ -43,7 +42,7 @@ use Brain\Monkey\Functions;
 trait Licensio_KB_Live_Term_API {
 
     /**
-     * Stub every core term function the categories routes call.
+     * Stub every core term function the categories and tags routes call.
      *
      * @since 1.0.0
      *
@@ -68,6 +67,7 @@ trait Licensio_KB_Live_Term_API {
 
         Functions\when( 'get_terms' )->alias( array( $this, 'live_get_terms' ) );
         Functions\when( 'get_term' )->alias( array( $this, 'live_get_term' ) );
+        Functions\when( 'get_term_by' )->alias( array( $this, 'live_get_term_by' ) );
         Functions\when( 'wp_insert_term' )->alias( array( $this, 'live_insert_term' ) );
         Functions\when( 'wp_update_term' )->alias( array( $this, 'live_update_term' ) );
         Functions\when( 'wp_delete_term' )->alias( array( $this, 'live_delete_term' ) );
@@ -168,9 +168,10 @@ trait Licensio_KB_Live_Term_API {
     }
 
     /**
-     * Stand-in for `get_terms()`: every term of one taxonomy.
+     * Stand-in for `get_terms()`: the terms of one taxonomy.
      *
-     * Supports the default `fields` (WP_Term objects) and `id=>parent`.
+     * Supports the default `fields` (WP_Term objects) and `id=>parent`, and
+     * the `parent`, `name` (as stored) and `number` filters.
      *
      * @since 1.0.0
      *
@@ -179,10 +180,21 @@ trait Licensio_KB_Live_Term_API {
      * @return array<int|string, mixed> The terms.
      */
     public function live_get_terms( $args ) {
-        $rows = $this->live_rows(
+        $where = 'tt.taxonomy = ' . $this->live_quote( (string) $args['taxonomy'] );
+
+        if ( isset( $args['parent'] ) ) {
+            $where .= ' AND tt.parent = ' . (int) $args['parent'];
+        }
+
+        if ( isset( $args['name'] ) ) {
+            $where .= ' AND t.name = ' . $this->live_quote( (string) $args['name'] );
+        }
+
+        $limit = empty( $args['number'] ) ? '' : ' LIMIT ' . (int) $args['number'];
+        $rows  = $this->live_rows(
             'SELECT t.term_id, t.name, t.slug, tt.term_taxonomy_id, tt.taxonomy, tt.description, tt.parent, tt.count FROM '
-            . $this->table( 'terms' ) . ' t JOIN ' . $this->table( 'term_taxonomy' ) . ' tt ON tt.term_id = t.term_id WHERE tt.taxonomy = '
-            . $this->live_quote( (string) $args['taxonomy'] ) . ' ORDER BY t.name ASC'
+            . $this->table( 'terms' ) . ' t JOIN ' . $this->table( 'term_taxonomy' ) . ' tt ON tt.term_id = t.term_id WHERE '
+            . $where . ' ORDER BY t.name ASC' . $limit
         );
 
         $terms = array();
@@ -213,6 +225,25 @@ trait Licensio_KB_Live_Term_API {
         $row = $this->live_term_row( (int) $term_id, (string) $taxonomy );
 
         return null === $row ? null : $this->live_term_object( $row );
+    }
+
+    /**
+     * Stand-in for `get_term_by()`, by slug only.
+     *
+     * @since 1.0.0
+     *
+     * @param string $field    The field to match; must be `slug`.
+     * @param string $value    The slug.
+     * @param string $taxonomy The taxonomy.
+     *
+     * @return WP_Term|false The term, or false when there is none.
+     */
+    public function live_get_term_by( $field, $value, $taxonomy ) {
+        $this->assertSame( 'slug', $field, 'Only slug lookups are supported by this stand-in.' );
+
+        $owner = $this->live_slug_owner( (string) $value, (string) $taxonomy );
+
+        return null === $owner ? false : $this->live_get_term( (int) $owner['term_id'], (string) $taxonomy );
     }
 
     /**

@@ -431,7 +431,7 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
      * "off" value, and the sort is a set of CASE expressions of which only the
      * chosen one is not null.
      *
-     * The article count comes from a derived table over the term
+     * The article count comes from a derived table over the tag
      * relationships of articles in any status but trash and auto-draft, not
      * from core's published-only `count` column, so the Unused filter never
      * lists a tag a draft, scheduled, pending or private article still uses.
@@ -461,6 +461,7 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
                 'SELECT COUNT(*) FROM %i AS t INNER JOIN %i AS tt ON tt.term_id = t.term_id
                 LEFT JOIN (
                     SELECT r.term_taxonomy_id, COUNT(*) AS n FROM %i AS r INNER JOIN %i AS p ON p.ID = r.object_id
+                    INNER JOIN %i AS rt ON rt.term_taxonomy_id = r.term_taxonomy_id AND rt.taxonomy = %s
                     WHERE p.post_type = %s AND p.post_status NOT IN ( %s, %s )
                     GROUP BY r.term_taxonomy_id
                 ) AS c ON c.term_taxonomy_id = tt.term_taxonomy_id
@@ -472,6 +473,8 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
                 $wpdb->term_taxonomy,
                 $wpdb->term_relationships,
                 $wpdb->posts,
+                $wpdb->term_taxonomy,
+                $taxonomy,
                 Licensio_KB_Post_Types::POST_TYPE,
                 'trash',
                 'auto-draft',
@@ -491,6 +494,7 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
                 'SELECT t.term_id, t.name, t.slug, tt.description, COALESCE( c.n, 0 ) AS count FROM %i AS t INNER JOIN %i AS tt ON tt.term_id = t.term_id
                 LEFT JOIN (
                     SELECT r.term_taxonomy_id, COUNT(*) AS n FROM %i AS r INNER JOIN %i AS p ON p.ID = r.object_id
+                    INNER JOIN %i AS rt ON rt.term_taxonomy_id = r.term_taxonomy_id AND rt.taxonomy = %s
                     WHERE p.post_type = %s AND p.post_status NOT IN ( %s, %s )
                     GROUP BY r.term_taxonomy_id
                 ) AS c ON c.term_taxonomy_id = tt.term_taxonomy_id
@@ -509,6 +513,8 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
                 $wpdb->term_taxonomy,
                 $wpdb->term_relationships,
                 $wpdb->posts,
+                $wpdb->term_taxonomy,
+                $taxonomy,
                 Licensio_KB_Post_Types::POST_TYPE,
                 'trash',
                 'auto-draft',
@@ -583,7 +589,7 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
             return self::not_found_error();
         }
 
-        return new WP_REST_Response( self::prepare_term( $term ), 201 );
+        return new WP_REST_Response( self::prepare_row( $term ), 201 );
     }
 
     /**
@@ -648,7 +654,7 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
             }
         }
 
-        return rest_ensure_response( self::prepare_term( $term ) );
+        return rest_ensure_response( self::prepare_row( $term ) );
     }
 
     /**
@@ -666,6 +672,9 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
     public function bulk_delete( $request ) {
         $deleted = array();
         $failed  = array();
+
+        // Recount each changed term once at the end, not once per article.
+        wp_defer_term_counting( true );
 
         foreach ( self::ids( $request->get_param( 'ids' ) ) as $id ) {
             if ( ! get_term( $id, Licensio_KB_Post_Types::TAXONOMY_TAG ) instanceof WP_Term ) {
@@ -685,6 +694,8 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
                 is_wp_error( $result ) ? $result->get_error_message() : __( 'The tag could not be deleted.', 'licensio-knowledge-base' )
             );
         }
+
+        wp_defer_term_counting( false );
 
         return rest_ensure_response(
             array(
@@ -724,7 +735,7 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
             array(
                 'moved'   => (int) $result['moved'],
                 'deleted' => array_map( 'intval', $result['deleted'] ),
-                'target'  => $term instanceof WP_Term ? self::prepare_term( $term ) : null,
+                'target'  => $term instanceof WP_Term ? self::prepare_row( $term ) : null,
             )
         );
     }
@@ -762,6 +773,9 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
         $converted = array();
         $failed    = array();
 
+        // Recount each changed term once at the end, not once per article.
+        wp_defer_term_counting( true );
+
         foreach ( self::ids( $request->get_param( 'ids' ) ) as $id ) {
             $result = $this->convert_tag( $id, $parent );
 
@@ -772,6 +786,8 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
 
             $converted[] = $result;
         }
+
+        wp_defer_term_counting( false );
 
         return rest_ensure_response(
             array(
@@ -930,16 +946,16 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
     }
 
     /**
-     * A tag row from the list query, as the app reads it.
+     * A tag, as the app reads it.
      *
      * The list query's `count` counts articles in every status but trash and
-     * auto-draft; a `WP_Term` passed through `prepare_term()` carries core's
-     * published-only count. The name is decoded to plain text; the
-     * description is kept as stored, so it round-trips unchanged.
+     * auto-draft; a `WP_Term` carries core's published-only count. The name
+     * is decoded to plain text; the description is kept as stored, so it
+     * round-trips unchanged.
      *
      * @since 1.0.0
      *
-     * @param object $row A row with `term_id`, `name`, `slug`, `description` and `count`.
+     * @param object $row A list query row or a `WP_Term`, with `term_id`, `name`, `slug`, `description` and `count`.
      *
      * @return array<string, mixed> The tag.
      */
@@ -951,19 +967,6 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
             'description' => (string) $row->description,
             'count'       => (int) $row->count,
         );
-    }
-
-    /**
-     * A tag, as the app reads it.
-     *
-     * @since 1.0.0
-     *
-     * @param WP_Term $term The tag.
-     *
-     * @return array<string, mixed> The tag.
-     */
-    private static function prepare_term( WP_Term $term ) {
-        return self::prepare_row( $term );
     }
 
     /**

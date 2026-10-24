@@ -139,17 +139,6 @@ async function deleteSelected(): Promise< void > {
 	}
 }
 
-/**
- * Restore the view from the URL after back or forward.
- *
- * @since 1.0.0
- *
- * @return {void}
- */
-function onPopState(): void {
-	store.restore();
-}
-
 // The search box follows the store when back or forward changes the search.
 watch(
 	() => store.search,
@@ -159,12 +148,13 @@ watch(
 );
 
 onMounted( () => {
-	window.addEventListener( 'popstate', onPopState );
+	// Back and forward restore the view from the URL.
+	window.addEventListener( 'popstate', store.restore );
 	store.load();
 } );
 
 onUnmounted( () => {
-	window.removeEventListener( 'popstate', onPopState );
+	window.removeEventListener( 'popstate', store.restore );
 } );
 </script>
 

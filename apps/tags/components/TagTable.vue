@@ -97,11 +97,7 @@ function onChange(
 		order?: string | null;
 	};
 	const orderby: TagOrderBy = 'count' === sort?.columnKey ? 'count' : 'name';
-	let order: TagOrder = 'descend' === sort?.order ? 'desc' : 'asc';
-
-	if ( ! sort?.order ) {
-		order = 'asc';
-	}
+	const order: TagOrder = 'descend' === sort?.order ? 'desc' : 'asc';
 
 	store.view( pagination.current ?? 1, orderby, order );
 }
@@ -229,7 +225,7 @@ watch(
 			:scroll="{ x: 760 }"
 			:row-selection="{
 				selectedRowKeys: store.selected,
-				onChange: ( keys: unknown[] ) => store.select( keys as number[] ),
+				onChange: ( keys: unknown[] ) => ( store.selected = keys as number[] ),
 			}"
 			:pagination="{
 				current: store.page,
