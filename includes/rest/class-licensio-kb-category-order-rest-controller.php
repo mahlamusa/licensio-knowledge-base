@@ -9,9 +9,8 @@
  *   directly in the category, in their per-category order. Articles filed
  *   only in a sub-category are not listed, although the archive and the
  *   category cards show them after the ordered ones, by menu order, then
- *   title. Query: `page` (default 1) and `per_page` (1 to 200, default
- *   200). Answers
- *   `{ items: [ { id, title, status, order, edit_url } ], total, pages }`,
+ *   title. Query: `page` (default 1) and `per_page` (1 to 200, default 200).
+ *   Answers `{ items: [ { id, title, status, order, edit_url } ], total, pages }`,
  *   where `order` is the article's position or null when it has none.
  * - `PUT /licensio-kb/v1/categories/{id}/articles/order` saves a new order.
  *   Body: `{ ids: int[] }`, first comes first, at most 1000 IDs. Answers
@@ -178,8 +177,7 @@ class Licensio_KB_Category_Order_REST_Controller extends Licensio_KB_REST_Contro
      * Every status except trash (and auto-draft), filed directly in the
      * category; articles of sub-categories are not listed. Ordered articles
      * come first, then unordered ones by menu order, then title. A page past
-     * the end has no
-     * items but still reports the real `total` and `pages`.
+     * the end has no items but still reports the real `total` and `pages`.
      *
      * @since 1.0.0
      *
