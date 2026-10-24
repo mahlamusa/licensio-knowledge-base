@@ -11,10 +11,12 @@
 
 import { SettingOutlined } from '@ant-design/icons-vue';
 import { __ } from '../../components/i18n';
+import { usePopoverFocus } from '../../components/popover-focus';
 import { useArticlesStore } from '../store';
 import type { ArticleColumn, PerPage } from '../types';
 
 const store = useArticlesStore();
+const { open, overlayClass, setOpen } = usePopoverFocus();
 
 const columns: Array< { value: ArticleColumn; label: string } > = [
 	{ value: 'author', label: __( 'Author', 'licensio-knowledge-base' ) },
@@ -32,7 +34,13 @@ const perPageOptions: PerPage[] = [ 20, 50, 100 ];
 </script>
 
 <template>
-	<a-popover trigger="click" placement="bottomRight">
+	<a-popover
+		trigger="click"
+		placement="bottomRight"
+		:open="open"
+		:overlay-class-name="overlayClass"
+		@open-change="setOpen"
+	>
 		<template #content>
 			<fieldset class="lkb-columns">
 				<legend>{{ __( 'Columns', 'licensio-knowledge-base' ) }}</legend>

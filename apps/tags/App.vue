@@ -17,7 +17,7 @@
  * @since 1.0.0
  */
 
-import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import { lkbTheme } from '../styles/theme';
 import AppHeader from '../components/AppHeader.vue';
@@ -34,6 +34,7 @@ const chrome = settings();
 
 const searchText = ref( store.search );
 const adding = ref( false );
+const addButton = ref< { $el?: HTMLElement } | null >( null );
 const newTag = reactive( { name: '', slug: '', description: '' } );
 const mergeOpen = ref( false );
 const convertOpen = ref( false );
@@ -62,6 +63,9 @@ const selectedLabel = computed( () =>
 /**
  * Open or close the Add tag form, clearing it.
  *
+ * Focus moves to the Name field when it opens, and back to Add tag when it
+ * closes.
+ *
  * @since 1.0.0
  *
  * @param {boolean} open Whether the form should be open.
@@ -73,6 +77,14 @@ function toggleAdd( open: boolean ): void {
 	newTag.name = '';
 	newTag.slug = '';
 	newTag.description = '';
+
+	nextTick( () => {
+		if ( open ) {
+			document.querySelector< HTMLElement >( '.lkb-tags__add input' )?.focus();
+		} else {
+			addButton.value?.$el?.focus();
+		}
+	} );
 }
 
 /**
@@ -170,6 +182,7 @@ onUnmounted( () => {
 					</h1>
 					<a-button
 						v-if="! adding"
+						ref="addButton"
 						type="primary"
 						@click="toggleAdd( true )"
 					>

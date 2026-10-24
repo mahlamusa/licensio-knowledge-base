@@ -7,8 +7,11 @@
  * confirms. Nothing should be sent to the server from a click handler; send
  * it from `@confirm`. Cancelling emits `cancel` and sends nothing.
  *
- * After either answer, focus goes back to the button, so a keyboard user
- * stays where they were.
+ * Opening it moves focus to its Cancel button (see `usePopoverFocus()`), so
+ * a keyboard user can answer it, and Escape closes it from there. Cancel is
+ * the first button, which also means a second Enter cannot carry out a
+ * destructive change by accident. After any answer, focus goes back to the
+ * button, so a keyboard user stays where they were.
  *
  * Usage:
  *
@@ -30,6 +33,7 @@
 import { nextTick, ref } from 'vue';
 import { Button as AButton, Popconfirm as APopconfirm } from 'ant-design-vue';
 import { __ } from './i18n';
+import { usePopoverFocus } from './popover-focus';
 
 const props = withDefaults(
 	defineProps< {
@@ -64,6 +68,8 @@ const emit = defineEmits< {
 } >();
 
 const trigger = ref< { $el?: HTMLElement } | null >( null );
+
+const { open, overlayClass, setOpen } = usePopoverFocus();
 
 /**
  * Put focus back on the trigger once the Popconfirm has closed.
@@ -110,6 +116,9 @@ function onCancel(): void {
 		:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
 		:ok-button-props="{ danger: props.danger }"
 		:disabled="props.disabled || props.loading"
+		:open="open"
+		:overlay-class-name="overlayClass"
+		@open-change="setOpen"
 		@confirm="onConfirm"
 		@cancel="onCancel"
 	>
