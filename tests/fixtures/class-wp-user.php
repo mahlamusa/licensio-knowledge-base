@@ -34,6 +34,18 @@ if ( ! class_exists( 'WP_User' ) ) {
         public $user_email = '';
 
         /**
+         * The user's display name; an empty string unless a test sets it.
+         *
+         * Never null in practice. The type admits null only so code that
+         * guards the read with isset(), as code reading a real user may,
+         * still passes static analysis.
+         *
+         * @since 1.0.0
+         * @var string|null
+         */
+        public $display_name = '';
+
+        /**
          * Constructor.
          *
          * @since 1.0.0

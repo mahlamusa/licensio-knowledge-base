@@ -240,4 +240,93 @@ class Licensio_KB_Feedback_Admin_Test extends Licensio_KB_Test_Case {
         // The real assertion is the never() expectation, verified on teardown.
         $this->assertNotSame( 'edit.php', $this->admin->hook_suffix() );
     }
+
+    /**
+     * On its own screen the inbox loads with wp-i18n and its translations.
+     *
+     * The inbox translates its strings through the page's wp.i18n, so without
+     * the dependency and the script translations it shows English only.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_application_is_enqueued_with_its_translations() {
+        $assets = new class() extends Licensio_KB_Assets {
+
+            /**
+             * The dependencies requested, keyed by script handle.
+             *
+             * @since 1.0.0
+             * @var array<string, string[]>
+             */
+            public $deps = array();
+
+            /**
+             * Record an enqueue instead of performing one.
+             *
+             * @since 1.0.0
+             *
+             * @param string   $handle The script handle.
+             * @param string   $entry  The Vite entry, relative to the plugin root.
+             * @param string[] $deps   The script dependencies.
+             *
+             * @return bool Always true, so the screen carries on to localise.
+             */
+            public function enqueue_app( $handle, $entry, $deps = array() ) {
+                unset( $entry );
+
+                $this->deps[ (string) $handle ] = (array) $deps;
+
+                return true;
+            }
+        };
+
+        $plugin = new class( $assets ) {
+
+            /**
+             * The asset loader handed out.
+             *
+             * @since 1.0.0
+             * @var Licensio_KB_Assets
+             */
+            private $assets;
+
+            /**
+             * Keep the asset loader.
+             *
+             * @since 1.0.0
+             *
+             * @param Licensio_KB_Assets $assets The asset loader.
+             */
+            public function __construct( $assets ) {
+                $this->assets = $assets;
+            }
+
+            /**
+             * The asset loader.
+             *
+             * @since 1.0.0
+             *
+             * @return Licensio_KB_Assets The asset loader.
+             */
+            public function assets() {
+                return $this->assets;
+            }
+        };
+
+        Functions\when( 'licensio_kb' )->justReturn( $plugin );
+        Functions\expect( 'wp_set_script_translations' )
+            ->once()
+            ->with( Licensio_KB_Feedback_Admin::APP_HANDLE, 'licensio-knowledge-base' );
+        Functions\expect( 'wp_localize_script' )
+            ->once()
+            ->with( Licensio_KB_Feedback_Admin::APP_HANDLE, 'licensioKBFeedbackInbox', Mockery::type( 'array' ) );
+
+        $this->admin->register_page();
+        $this->admin->enqueue_app( 'licensio_article_page_licensio-kb-feedback' );
+
+        $this->assertArrayHasKey( Licensio_KB_Feedback_Admin::APP_HANDLE, $assets->deps );
+        $this->assertContains( 'wp-i18n', $assets->deps[ Licensio_KB_Feedback_Admin::APP_HANDLE ] );
+    }
 }

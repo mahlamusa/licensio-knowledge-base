@@ -321,9 +321,7 @@ class Licensio_KB_Heroic_Import_Map {
     }
 
     /**
-     * The single `menu_order` to give an article that Heroic ordered per category.
-     *
-     * This mapping is lossy by construction and the loss is reported, not hidden.
+     * An article's per-category positions, and the one `menu_order` to fall back on.
      *
      * Heroic orders an article once per category it belongs to, in a separate
      * post meta key each time: `hkb_set_custom_article_order()` at
@@ -332,14 +330,15 @@ class Licensio_KB_Heroic_Import_Map {
      * Heroic never writes `menu_order` at all, and does not even expose it — the
      * CPT's `supports` array (ht-knowledge-base.php:469) omits `page-attributes`.
      *
-     * The target model has exactly one position per article: the article
-     * listings sort by `menu_order` (class-licensio-kb-article-list-block.php:32,
-     * class-licensio-kb-faq-block.php:33). Introducing a per-category ordering
-     * scheme to preserve fidelity is a content-model decision, not something a
-     * disposable migrator gets to invent, so N positions collapse into one.
+     * The target model keeps a position per category too
+     * (`licensio_order_{term_id}`), so every numeric position is returned in
+     * `positions`, keyed by the source term ID, for the importer to write
+     * against the imported category.
      *
-     * The rule: the position recorded against the LOWEST Heroic category term ID
-     * wins. Two rules were considered and this one chosen:
+     * `menu_order` is still set, as the fallback for listings that are not
+     * limited to one category. The rule for it: the position recorded against
+     * the LOWEST category term ID wins. Two rules were considered and this one
+     * chosen:
      *
      * - Not the smallest order value. That picks a position out of whichever
      *   category happens to hold a small number, which is not the article's
@@ -350,16 +349,12 @@ class Licensio_KB_Heroic_Import_Map {
      *   explainable stand-in: it names one real list, and it gives the same
      *   answer on a re-run.
      *
-     * The caller is told when the discarded positions disagreed with the kept
-     * one, so every lossy collapse is counted and reported.
-     *
      * @since 1.0.0
      *
-     * @param array<int, mixed> $orders The per-category positions, keyed by Heroic term ID.
+     * @param array<int, mixed> $orders The per-category positions, keyed by source term ID.
      *
-     * @return array{order: int, ambiguous: bool, source_term_id: int} The kept position, whether
-     *                                                                 the source disagreed, and the
-     *                                                                 category it was taken from.
+     * @return array{order: int, positions: array<int, int>} The fallback position, and every
+     *               numeric position keyed by source term ID, lowest term ID first.
      */
     public static function article_order( array $orders ) {
         $values = array();
@@ -372,9 +367,8 @@ class Licensio_KB_Heroic_Import_Map {
 
         if ( empty( $values ) ) {
             return array(
-                'order'          => 0,
-                'ambiguous'      => false,
-                'source_term_id' => 0,
+                'order'     => 0,
+                'positions' => array(),
             );
         }
 
@@ -384,9 +378,8 @@ class Licensio_KB_Heroic_Import_Map {
         $chosen   = $term_ids[0];
 
         return array(
-            'order'          => $values[ $chosen ],
-            'ambiguous'      => count( array_unique( $values ) ) > 1,
-            'source_term_id' => $chosen,
+            'order'     => $values[ $chosen ],
+            'positions' => $values,
         );
     }
 

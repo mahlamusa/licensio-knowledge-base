@@ -103,5 +103,16 @@ if ( ! class_exists( 'WP_Query' ) ) {
         public function is_search() {
             return false;
         }
+
+        /**
+         * Whether this is a feed.
+         *
+         * @since 1.0.0
+         *
+         * @return bool Always false in the double.
+         */
+        public function is_feed() {
+            return false;
+        }
     }
 }

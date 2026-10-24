@@ -226,6 +226,18 @@ class Licensio_KB_Settings {
                 'type'    => 'bool',
                 'default' => true,
             ),
+            'low_rating_threshold'      => array(
+                'type'    => 'int',
+                'default' => 50,
+                'min'     => 1,
+                'max'     => 99,
+            ),
+            'low_rating_min_votes'      => array(
+                'type'    => 'int',
+                'default' => 5,
+                'min'     => 1,
+                'max'     => 100000,
+            ),
             'enable_analytics'          => array(
                 'type'    => 'bool',
                 'default' => true,

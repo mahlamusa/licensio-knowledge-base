@@ -378,6 +378,49 @@ class Licensio_KB_Import_State {
     }
 
     /**
+     * The highest position a category held before this run first wrote to it.
+     *
+     * Recorded once per run by the article phase, so every batch of the run,
+     * and a resumed run, places the imported positions after the same
+     * existing ones instead of after the positions the run already wrote.
+     *
+     * @since 1.0.0
+     *
+     * @param int $term_id The target category term ID.
+     *
+     * @return int|null The highest position, -1 when the category had none, or null when not recorded yet.
+     */
+    public function position_base( $term_id ) {
+        $term_id = (int) $term_id;
+
+        if ( ! isset( $this->state['position_bases'] ) || ! is_array( $this->state['position_bases'] ) || ! isset( $this->state['position_bases'][ $term_id ] ) ) {
+            return null;
+        }
+
+        return (int) $this->state['position_bases'][ $term_id ];
+    }
+
+    /**
+     * Record the highest position a category held before this run.
+     *
+     * @since 1.0.0
+     *
+     * @param int $term_id The target category term ID.
+     * @param int $base    The highest position, -1 when the category had none.
+     *
+     * @return void
+     */
+    public function set_position_base( $term_id, $base ) {
+        if ( ! isset( $this->state['position_bases'] ) || ! is_array( $this->state['position_bases'] ) ) {
+            $this->state['position_bases'] = array();
+        }
+
+        $this->state['position_bases'][ (int) $term_id ] = (int) $base;
+
+        $this->save();
+    }
+
+    /**
      * Whether the operator asked this run to copy the source's settings.
      *
      * @since 1.0.0
@@ -476,7 +519,7 @@ class Licensio_KB_Import_State {
             }
         }
 
-        unset( $this->state['finished_at'], $this->state['salt'], $this->state['run_id'], $this->state['started_at'], $this->state['category_map'], $this->state['import_settings'] );
+        unset( $this->state['finished_at'], $this->state['salt'], $this->state['run_id'], $this->state['started_at'], $this->state['category_map'], $this->state['import_settings'], $this->state['position_bases'] );
 
         $this->save();
     }

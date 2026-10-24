@@ -385,6 +385,63 @@ class Licensio_KB_Settings_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * The low rating rule defaults to under 50 per cent with at least 5 votes.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_low_rating_settings_have_their_defaults() {
+        $settings = new Licensio_KB_Settings();
+
+        $this->assertSame( 50, $settings->get( 'low_rating_threshold' ) );
+        $this->assertSame( 5, $settings->get( 'low_rating_min_votes' ) );
+    }
+
+    /**
+     * The low rating threshold is held between 1 and 99 per cent.
+     *
+     * At 0 no article could ever be low rated, and at 100 every article
+     * short of a perfect score would be.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_low_rating_threshold_is_clamped() {
+        $settings = new Licensio_KB_Settings();
+
+        $settings->set( 'low_rating_threshold', 0 );
+        $this->assertSame( 1, $settings->get( 'low_rating_threshold' ) );
+
+        $settings->set( 'low_rating_threshold', 100 );
+        $this->assertSame( 99, $settings->get( 'low_rating_threshold' ) );
+
+        $settings->set( 'low_rating_threshold', '75' );
+        $this->assertSame( 75, $settings->get( 'low_rating_threshold' ) );
+    }
+
+    /**
+     * The minimum vote count for the low rating rule is at least 1.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_low_rating_minimum_votes_is_at_least_one() {
+        $settings = new Licensio_KB_Settings();
+
+        $settings->set( 'low_rating_min_votes', 0 );
+        $this->assertSame( 1, $settings->get( 'low_rating_min_votes' ) );
+
+        $settings->set( 'low_rating_min_votes', -5 );
+        $this->assertSame( 1, $settings->get( 'low_rating_min_votes' ) );
+
+        $settings->set( 'low_rating_min_votes', '12' );
+        $this->assertSame( 12, $settings->get( 'low_rating_min_votes' ) );
+    }
+
+    /**
      * A retention period of zero falls back to the default, never to one day.
      *
      * People type 0 meaning "keep forever". Clamping that up to the 1-day

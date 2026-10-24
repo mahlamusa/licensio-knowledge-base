@@ -100,16 +100,41 @@ class Licensio_KB_Heroic_Import_Source extends Licensio_KB_Import_Source {
     }
 
     /**
-     * The menu order a Heroic article should get.
+     * The per-category positions of a Heroic article, and its fallback menu order.
      *
      * @since 1.0.0
      *
      * @param int $post_id The Heroic post ID.
      *
-     * @return array{order: int, ambiguous: bool, source_term_id: int} The kept position.
+     * @return array{order: int, positions: array<int, int>} The fallback position, and every
+     *               per-category position keyed by source term ID.
      */
     public function article_order( $post_id ) {
         return Licensio_KB_Heroic_Import_Map::article_order( $this->article_orders( $post_id ) );
+    }
+
+    /**
+     * The highest position any article holds in one Heroic category.
+     *
+     * @since 1.0.0
+     *
+     * @param int $term_id The Heroic category term ID.
+     *
+     * @return int The highest position, or -1 when the category orders no article.
+     */
+    public function last_position( $term_id ) {
+        global $wpdb;
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $last = $wpdb->get_var(
+            $wpdb->prepare(
+                'SELECT MAX(CAST(meta_value AS SIGNED)) FROM %i WHERE meta_key = %s',
+                $wpdb->postmeta,
+                Licensio_KB_Heroic_Import_Schema::META_ARTICLE_ORDER_PREFIX . (int) $term_id
+            )
+        );
+
+        return is_numeric( $last ) ? (int) $last : -1;
     }
 
     /**
@@ -134,7 +159,7 @@ class Licensio_KB_Heroic_Import_Source extends Licensio_KB_Import_Source {
         if ( 0 === strpos( $key, Licensio_KB_Heroic_Import_Schema::META_ARTICLE_ORDER_PREFIX ) ) {
             return array(
                 'action' => 'migrated',
-                'target' => 'menu_order',
+                'target' => 'licensio_order_{term} (per category)',
             );
         }
 
