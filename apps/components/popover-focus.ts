@@ -21,7 +21,7 @@
  *     >
  *
  * Consumed by ConfirmButton and the articles app's filters and columns
- * popovers.
+ * popovers. `FOCUSABLE` is shared with the category drawer's focus trap.
  *
  * @since 1.0.0
  */
@@ -30,7 +30,7 @@ import { nextTick, onBeforeUnmount, ref, useId } from 'vue';
 import type { Ref } from 'vue';
 
 /** What a keyboard user can tab to. */
-const FOCUSABLE =
+export const FOCUSABLE =
 	'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 /**
@@ -142,14 +142,8 @@ export function usePopoverFocus(): {
 		nextTick( () => {
 			window.setTimeout( () => {
 				document
-					.querySelector< HTMLElement >(
-						FOCUSABLE.split( ', ' )
-							.map(
-								( selector ) =>
-									`.${ overlayClass } ${ selector }`
-							)
-							.join( ', ' )
-					)
+					.querySelector( `.${ overlayClass }` )
+					?.querySelector< HTMLElement >( FOCUSABLE )
 					?.focus();
 			}, 50 );
 		} );

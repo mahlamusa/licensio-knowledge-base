@@ -16,6 +16,7 @@ import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import ConfirmButton from '../../components/ConfirmButton.vue';
 import TermSelect from '../../components/TermSelect.vue';
+import { FOCUSABLE } from '../../components/popover-focus';
 import { RestError } from '../../components/rest';
 import { __, sprintf } from '../../components/i18n';
 import type { TermValue } from '../../components/types/terms';
@@ -73,10 +74,6 @@ const exclude = computed( () =>
 );
 
 const nameMissing = computed( () => '' === form.name.trim() );
-
-/** What a keyboard user can tab to. */
-const FOCUSABLE =
-	'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 /**
  * Keep Tab and Shift+Tab inside the open drawer.
