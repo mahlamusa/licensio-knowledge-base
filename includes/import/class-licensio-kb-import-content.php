@@ -109,6 +109,17 @@ class Licensio_KB_Import_Content {
     private $position_offsets = array();
 
     /**
+     * Per target category, the offset just past the last of its sources.
+     *
+     * Where the next source category missing from the target's provenance
+     * starts. Filled together with `$position_offsets`.
+     *
+     * @since 1.0.0
+     * @var array<int, int>
+     */
+    private $position_ends = array();
+
+    /**
      * Constructor.
      *
      * @since 1.0.0
@@ -652,8 +663,9 @@ class Licensio_KB_Import_Content {
      * categories were imported into one category, their orders are merged
      * rather than overwritten: the first source's positions come first and
      * each later source's follow them, shifted past the earlier sources (see
-     * `position_offsets()`). An article listed in more than one of them keeps
-     * its place from the first.
+     * `position_offsets()`). A source missing from the category's provenance
+     * comes after all of them. An article listed in more than one of them
+     * keeps its place from the first.
      *
      * @since 1.0.0
      *
@@ -675,16 +687,15 @@ class Licensio_KB_Import_Content {
                 continue;
             }
 
-            $offsets = $this->position_offsets( $target );
-            $rank    = array_search( $source, array_keys( $offsets ), true );
-            $rank    = false === $rank ? count( $offsets ) : (int) $rank;
+            $offsets = $this->position_offsets( $target, $source );
+            $rank    = (int) array_search( $source, array_keys( $offsets ), true );
 
             if ( isset( $ranks[ $target ] ) && $ranks[ $target ] <= $rank ) {
                 continue;
             }
 
             $ranks[ $target ] = $rank;
-            $saved[ $target ] = (int) $positions[ $source ] + ( isset( $offsets[ $source ] ) ? $offsets[ $source ] : (int) $this->state->position_base( $target ) + 1 );
+            $saved[ $target ] = (int) $positions[ $source ] + $offsets[ $source ];
         }
 
         foreach ( $saved as $target => $position ) {
@@ -700,9 +711,12 @@ class Licensio_KB_Import_Content {
      * The sources are the target's provenance, in the order they were imported.
      * The first source starts one past the highest position the target held
      * before this run, or at 0 when it held none; each later source starts one
-     * past the highest position of the sources before it. The target's
-     * highest position is recorded in the run state the first time the run
-     * reaches the target, and the sources' highest positions are read from the
+     * past the highest position of the sources before it. A source missing
+     * from the provenance, which happens when the provenance gained it after
+     * the offsets were read in this request, is appended after the last one,
+     * so it never lands on the positions of the first. The target's highest
+     * position is recorded in the run state the first time the run reaches
+     * the target, and the sources' highest positions are read from the
      * source, so the result is the same in every batch of the run and in a
      * resumed run. If the run state is lost part-way, the next batch records
      * the target again, after the positions earlier batches wrote: later
@@ -711,39 +725,40 @@ class Licensio_KB_Import_Content {
      * @since 1.0.0
      *
      * @param int $target The target category term ID.
+     * @param int $source The source category term ID the caller needs an offset for.
      *
-     * @return array<int, int> Source category term ID to offset, first source first.
+     * @return array<int, int> Source category term ID to offset, first source first, including `$source`.
      */
-    private function position_offsets( $target ) {
-        if ( isset( $this->position_offsets[ $target ] ) ) {
-            return $this->position_offsets[ $target ];
-        }
+    private function position_offsets( $target, $source ) {
+        if ( ! isset( $this->position_offsets[ $target ] ) ) {
+            $sources = array_values( array_unique( array_map( 'intval', (array) get_term_meta( $target, $this->source->provenance_term_key(), false ) ) ) );
+            $offsets = array();
+            $base    = $this->state->position_base( $target );
 
-        $sources = array_values( array_unique( array_map( 'intval', (array) get_term_meta( $target, $this->source->provenance_term_key(), false ) ) ) );
-        $offsets = array();
-        $base    = $this->state->position_base( $target );
-        $last    = count( $sources ) - 1;
+            if ( null === $base ) {
+                $base = $this->highest_position( $target );
 
-        if ( null === $base ) {
-            $base = $this->highest_position( $target );
-
-            $this->state->set_position_base( $target, $base );
-        }
-
-        $next = $base + 1;
-
-        foreach ( $sources as $index => $source ) {
-            $offsets[ $source ] = $next;
-
-            // The last source's size shifts nothing, so it is not read.
-            if ( $index < $last ) {
-                $next += max( -1, $this->source->last_position( $source ) ) + 1;
+                $this->state->set_position_base( $target, $base );
             }
+
+            $next = $base + 1;
+
+            foreach ( $sources as $known ) {
+                $offsets[ $known ] = $next;
+
+                $next += max( -1, $this->source->last_position( $known ) ) + 1;
+            }
+
+            $this->position_offsets[ $target ] = $offsets;
+            $this->position_ends[ $target ]    = $next;
         }
 
-        $this->position_offsets[ $target ] = $offsets;
+        if ( ! isset( $this->position_offsets[ $target ][ $source ] ) ) {
+            $this->position_offsets[ $target ][ $source ] = $this->position_ends[ $target ];
+            $this->position_ends[ $target ]              += max( -1, $this->source->last_position( $source ) ) + 1;
+        }
 
-        return $offsets;
+        return $this->position_offsets[ $target ];
     }
 
     /**
