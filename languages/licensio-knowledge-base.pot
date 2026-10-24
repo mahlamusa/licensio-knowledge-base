@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-23T23:17:25+00:00\n"
+"POT-Creation-Date: 2026-10-24T05:48:15+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.7.1\n"
 "X-Domain: licensio-knowledge-base\n"
@@ -111,6 +111,7 @@ msgstr ""
 #: includes/admin/class-licensio-kb-articles-admin.php:202
 #: includes/admin/class-licensio-kb-categories-admin.php:213
 #: includes/admin/class-licensio-kb-feedback-admin.php:171
+#: includes/admin/class-licensio-kb-tags-admin.php:138
 #: includes/class-licensio-kb-rest-controller.php:124
 msgid "You are not allowed to manage the knowledge base."
 msgstr ""
@@ -206,6 +207,21 @@ msgstr ""
 
 #: includes/admin/class-licensio-kb-settings-admin.php:123
 msgid "Loading the knowledge base settings…"
+msgstr ""
+
+#: includes/admin/class-licensio-kb-tags-admin.php:121
+#: includes/admin/class-licensio-kb-tags-admin.php:122
+#: includes/admin/class-licensio-kb-tags-admin.php:142
+#: includes/class-licensio-kb-post-types.php:348
+#: includes/import/class-licensio-kb-betterdocs-import-driver.php:83
+#: includes/import/class-licensio-kb-heroic-import-driver.php:82
+#: templates/sidebar.php:119
+#: templates/sidebar.php:120
+msgid "Tags"
+msgstr ""
+
+#: includes/admin/class-licensio-kb-tags-admin.php:144
+msgid "Loading tags…"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:105
@@ -620,14 +636,6 @@ msgstr ""
 #: includes/class-licensio-kb-post-types.php:347
 msgctxt "taxonomy singular name"
 msgid "Tag"
-msgstr ""
-
-#: includes/class-licensio-kb-post-types.php:348
-#: includes/import/class-licensio-kb-betterdocs-import-driver.php:83
-#: includes/import/class-licensio-kb-heroic-import-driver.php:82
-#: templates/sidebar.php:119
-#: templates/sidebar.php:120
-msgid "Tags"
 msgstr ""
 
 #: includes/class-licensio-kb-post-types.php:349
@@ -1131,7 +1139,7 @@ msgstr ""
 msgid "One of the chosen terms does not exist."
 msgstr ""
 
-#: includes/class-licensio-kb.php:392
+#: includes/class-licensio-kb.php:397
 msgid "Licensio Knowledge Base is missing its bundled database library, so its tables cannot be created. Reinstall the plugin, or run \"composer install\" in the plugin directory."
 msgstr ""
 
@@ -1333,96 +1341,96 @@ msgstr ""
 msgid "No article was found with that ID."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:193
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:194
 msgid "The category ID."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:214
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:216
 msgid "The category name."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:220
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:223
 msgid "The category slug. Made unique when it is taken."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:226
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:230
 msgid "The parent category ID, 0 for the top level."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:231
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:235
 msgid "The category description."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:236
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:240
 msgid "A Dashicons name, e.g. dashicons-book-alt."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:242
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:247
 msgid "The attachment ID of an uploaded icon, 0 for none."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:247
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:252
 msgid "Inline SVG icon markup. Reduced to an allowlist on save."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:253
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:259
 msgid "The attachment ID of the category image, 0 for none."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:302
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:308
 msgid "Choose an image from the media library."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:328
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:334
 msgid "Where the articles go: parent, none, or a category ID."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:334
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:340
 msgid "Where the child categories go: parent, or a category ID."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:353
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:360
 msgid "The parent the categories are placed under, 0 for the top level."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:365
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:372
 msgid "The children of the parent, in the new order, first first. Children left out follow them in their current order."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:391
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:398
 msgid "The categories to merge away."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:398
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:406
 msgid "The category that remains."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:800
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:816
 msgid "The category could not be deleted."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:834
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:850
 msgid "A top-level category has no parent to move its articles to. Choose a category, or leave them without one."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:1486
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:1507
 #: includes/rest/class-licensio-kb-category-order-rest-controller.php:341
 msgid "That category does not exist."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:1501
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:1522
 msgid "One of the chosen categories does not exist."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:1516
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:1537
 msgid "A category cannot be moved onto itself."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:1531
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:1552
 msgid "A category cannot be placed inside itself or one of its own subcategories."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:1546
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:1567
 msgid "You are not allowed to change knowledge base categories."
 msgstr ""
 
@@ -1580,6 +1588,97 @@ msgstr ""
 
 #: includes/rest/class-licensio-kb-rest-settings-controller.php:506
 msgid "This value is not accepted for this setting."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:124
+msgid "The tag ID."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:142
+msgid "The tags to delete."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:157
+msgid "The tags to merge away."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:162
+msgid "The tag that remains."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:178
+msgid "The tags to convert."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:183
+msgid "The category the new categories go under, or 0 for the top level."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:204
+msgid "Limit the tags to names or slugs containing this text."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:209
+msgid "Only tags no article uses, counting every status but trash and auto-draft."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:219
+msgid "Return only these tag IDs."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:225
+msgid "Sort by name or by article count."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:231
+msgid "The sort direction."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:238
+msgid "The page to return."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:246
+msgid "How many tags a page holds."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:270
+msgid "The tag name."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:275
+msgid "The tag slug. A slug that is taken gets a number added; an empty slug is made from the name."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:280
+msgid "The tag description."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:420
+msgid "You are not allowed to change these terms."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:685
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:823
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:1026
+msgid "The tag does not exist."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:698
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:873
+msgid "The tag could not be deleted."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:772
+msgid "The chosen parent category does not exist."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:852
+msgid "The category could not be created."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:1041
+msgid "A tag needs a name."
 msgstr ""
 
 #: includes/rest/class-licensio-kb-terms-rest-controller.php:94
