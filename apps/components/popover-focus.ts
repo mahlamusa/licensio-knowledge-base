@@ -6,7 +6,8 @@
  * closes on Escape, and only while focus is still on its trigger. Bound to
  * the overlay, this moves focus to the first control in it when it opens,
  * and closes it on Escape from anywhere, putting focus back where it was.
- * Escape on an open select inside the overlay closes that select first.
+ * Escape on an open select or date picker inside the overlay closes that
+ * select or picker first.
  *
  * Usage:
  *
@@ -31,6 +32,30 @@ import type { Ref } from 'vue';
 /** What a keyboard user can tab to. */
 const FOCUSABLE =
 	'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+/**
+ * Whether a key press belongs to a date picker whose calendar is open.
+ *
+ * Ant Design's picker input has no `aria-expanded`, and its calendar is
+ * rendered at the end of the page and hidden with `display: none` once
+ * closed. The picker closes its own calendar on Escape, so the overlay
+ * should leave that press alone.
+ *
+ * @since 1.0.0
+ *
+ * @param {HTMLElement} target The element the key was pressed on.
+ *
+ * @return {boolean} True while the target's picker shows its calendar.
+ */
+function inOpenPicker( target: HTMLElement ): boolean {
+	if ( ! target.closest( '.ant-picker' ) ) {
+		return false;
+	}
+
+	return Array.from(
+		document.querySelectorAll< HTMLElement >( '.ant-picker-dropdown' )
+	).some( ( dropdown ) => dropdown.getClientRects().length > 0 );
+}
 
 /**
  * The open state and focus handling of one overlay.
@@ -74,7 +99,8 @@ export function usePopoverFocus(): {
 		 */
 		if (
 			event.target instanceof HTMLElement &&
-			'true' === event.target.getAttribute( 'aria-expanded' )
+			( 'true' === event.target.getAttribute( 'aria-expanded' ) ||
+				inOpenPicker( event.target ) )
 		) {
 			return;
 		}

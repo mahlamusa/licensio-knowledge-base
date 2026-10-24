@@ -411,7 +411,7 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
         );
 
         $this->assertSame(
-            'https://example.test/wp-admin/admin.php?page=licensio-kb-articles&status=draft&search=reset%20password&category=12&tag=5',
+            'https://example.test/wp-admin/admin.php?page=licensio-kb-articles&status=draft&search=reset%20password&category=12&tag=5&paged=3',
             $manager->redirect_url(
                 'edit.php',
                 array(
@@ -423,6 +423,71 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
                     'paged'             => '3',
                 )
             )
+        );
+    }
+
+    /**
+     * The article list's author, sort and page go to the Articles app.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_article_list_redirects_with_its_author_sort_and_page() {
+        $manager = new Licensio_KB_Content_Manager( $this->settings() );
+
+        $this->assertSame(
+            'https://example.test/wp-admin/admin.php?page=licensio-kb-articles&author=3&orderby=title&order=asc&paged=2',
+            $manager->redirect_url(
+                'edit.php',
+                array(
+                    'post_type' => 'licensio_article',
+                    'author'    => '3',
+                    'orderby'   => 'title',
+                    'order'     => 'ASC',
+                    'paged'     => '2',
+                )
+            )
+        );
+    }
+
+    /**
+     * An author, sort or page the app would not read is dropped.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_unusable_author_sort_or_page_is_dropped() {
+        $manager = new Licensio_KB_Content_Manager( $this->settings() );
+
+        $this->assertSame(
+            'https://example.test/wp-admin/admin.php?page=licensio-kb-articles',
+            $manager->redirect_url(
+                'edit.php',
+                array(
+                    'post_type' => 'licensio_article',
+                    'author'    => 'abc',
+                    'orderby'   => 'comment_count',
+                    'order'     => 'sideways',
+                    'paged'     => '1',
+                )
+            )
+        );
+
+        $this->assertSame(
+            'https://example.test/wp-admin/admin.php?page=licensio-kb-articles',
+            $manager->redirect_url(
+                'edit.php',
+                array(
+                    'post_type' => 'licensio_article',
+                    'author'    => '-3',
+                    'orderby'   => array( 'title' ),
+                    'order'     => array( 'asc' ),
+                    'paged'     => '-4',
+                )
+            ),
+            'Zero, negative and non-scalar values are dropped.'
         );
     }
 
@@ -1005,6 +1070,33 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
             $plugin_page = null; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- A core screen.
 
             $this->assertNull( $this->active()->current_submenu_file( null ) );
+        } finally {
+            $plugin_page = null; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Reset.
+        }
+    }
+
+    /**
+     * On the article editor the Articles app stands in for the removed
+     * core list item, while Add New keeps its own item.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_article_editor_marks_the_articles_app_as_current() {
+        global $plugin_page;
+
+        $plugin_page = null; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- A core screen.
+
+        try {
+            $this->assertSame( 'licensio-kb-articles', $this->active()->current_submenu_file( 'edit.php?post_type=licensio_article' ) );
+            $this->assertSame( 'post-new.php?post_type=licensio_article', $this->active()->current_submenu_file( 'post-new.php?post_type=licensio_article' ) );
+            $this->assertSame( 'edit.php?post_type=page', $this->active()->current_submenu_file( 'edit.php?post_type=page' ) );
+            $this->assertSame(
+                'edit.php?post_type=licensio_article',
+                $this->active( true )->current_submenu_file( 'edit.php?post_type=licensio_article' ),
+                'With the classic screens the core list item is still there.'
+            );
         } finally {
             $plugin_page = null; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Reset.
         }
