@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-24T05:20:35+00:00\n"
+"POT-Creation-Date: 2026-10-24T05:48:15+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.7.1\n"
 "X-Domain: licensio-knowledge-base\n"
@@ -111,7 +111,7 @@ msgstr ""
 #: includes/admin/class-licensio-kb-articles-admin.php:202
 #: includes/admin/class-licensio-kb-categories-admin.php:213
 #: includes/admin/class-licensio-kb-feedback-admin.php:171
-#: includes/admin/class-licensio-kb-tags-admin.php:134
+#: includes/admin/class-licensio-kb-tags-admin.php:138
 #: includes/class-licensio-kb-rest-controller.php:124
 msgid "You are not allowed to manage the knowledge base."
 msgstr ""
@@ -209,9 +209,9 @@ msgstr ""
 msgid "Loading the knowledge base settings…"
 msgstr ""
 
-#: includes/admin/class-licensio-kb-tags-admin.php:118
-#: includes/admin/class-licensio-kb-tags-admin.php:119
-#: includes/admin/class-licensio-kb-tags-admin.php:138
+#: includes/admin/class-licensio-kb-tags-admin.php:121
+#: includes/admin/class-licensio-kb-tags-admin.php:122
+#: includes/admin/class-licensio-kb-tags-admin.php:142
 #: includes/class-licensio-kb-post-types.php:348
 #: includes/import/class-licensio-kb-betterdocs-import-driver.php:83
 #: includes/import/class-licensio-kb-heroic-import-driver.php:82
@@ -220,7 +220,7 @@ msgstr ""
 msgid "Tags"
 msgstr ""
 
-#: includes/admin/class-licensio-kb-tags-admin.php:140
+#: includes/admin/class-licensio-kb-tags-admin.php:144
 msgid "Loading tags…"
 msgstr ""
 
@@ -1642,42 +1642,42 @@ msgstr ""
 msgid "How many tags a page holds."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:266
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:270
 msgid "The tag name."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:271
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:275
 msgid "The tag slug. A slug that is taken gets a number added; an empty slug is made from the name."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:276
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:280
 msgid "The tag description."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:416
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:420
 msgid "You are not allowed to change these terms."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:672
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:803
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:1019
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:685
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:823
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:1026
 msgid "The tag does not exist."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:685
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:853
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:698
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:873
 msgid "The tag could not be deleted."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:757
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:772
 msgid "The chosen parent category does not exist."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:832
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:852
 msgid "The category could not be created."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:1034
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:1041
 msgid "A tag needs a name."
 msgstr ""
 
