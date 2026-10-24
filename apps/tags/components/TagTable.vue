@@ -197,10 +197,19 @@ function canSave( tag: TagItem ): boolean {
 	);
 }
 
-// A page opened for one tag (`?term=`) opens that tag for editing, once.
+// When the open row leaves the list (paged, filtered, deleted, merged or
+// converted away), close it so the other rows can be edited again. Then a
+// page opened for one tag (`?term=`) opens that tag for editing, once.
 watch(
 	() => store.items,
 	( items ) => {
+		if (
+			null !== editingId.value &&
+			! items.some( ( item ) => item.id === editingId.value )
+		) {
+			cancelEdit();
+		}
+
 		if (
 			! openedFromUrl &&
 			1 === store.include.length &&
@@ -298,6 +307,13 @@ watch(
 						v-else
 						size="small"
 						:disabled="null !== editingId"
+						:aria-label="
+							sprintf(
+								/* translators: %s: the tag's name. */
+								__( 'Edit “%s”', 'licensio-knowledge-base' ),
+								record.name
+							)
+						"
 						@click="startEdit( record as TagItem )"
 					>
 						{{ __( 'Edit', 'licensio-knowledge-base' ) }}
