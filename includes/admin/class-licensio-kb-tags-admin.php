@@ -107,6 +107,9 @@ class Licensio_KB_Tags_Admin {
     /**
      * Register the hidden Tags page.
      *
+     * The position, after Categories, is where the page sits once the content
+     * manager puts it in the menu; a hidden page ignores it.
+     *
      * @since 1.0.0
      *
      * @return void
@@ -118,6 +121,7 @@ class Licensio_KB_Tags_Admin {
                 'page_title' => __( 'Tags', 'licensio-knowledge-base' ),
                 'menu_title' => __( 'Tags', 'licensio-knowledge-base' ),
                 'callback'   => array( $this, 'render' ),
+                'position'   => 4,
             )
         );
     }

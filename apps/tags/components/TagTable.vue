@@ -234,7 +234,7 @@ watch(
 				showSizeChanger: false,
 			}"
 			:locale="{
-				emptyText: store.unused || store.search
+				emptyText: store.unused || store.search || store.include.length
 					? __( 'No tags match these filters.', 'licensio-knowledge-base' )
 					: __( 'No tags yet. Add your first tag above.', 'licensio-knowledge-base' ),
 			}"

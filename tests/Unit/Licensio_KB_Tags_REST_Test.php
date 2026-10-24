@@ -242,6 +242,8 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
         $this->assertSame( 'PATCH', $this->routes['/tags/(?P<id>[\d]+)'][0]['methods'] );
         $this->assertFalse( $this->routes['/tags/(?P<id>[\d]+)'][0]['args']['name']['required'] );
         $this->assertSame( 'sanitize_slug', $this->routes['/tags/(?P<id>[\d]+)'][0]['args']['slug']['sanitize_callback'][1], 'Core sanitize_slug(), not sanitize_title(), which would take the request as its fallback for an empty slug.' );
+        $this->assertSame( 'wp_kses_post', $this->routes['/tags'][1]['args']['description']['sanitize_callback'], 'A new description keeps the HTML core allows.' );
+        $this->assertSame( 'wp_kses_post', $this->routes['/tags/(?P<id>[\d]+)'][0]['args']['description']['sanitize_callback'], 'An edited description keeps its links and formatting.' );
 
         foreach ( array(
             '/tags/bulk-delete' => 'ids',

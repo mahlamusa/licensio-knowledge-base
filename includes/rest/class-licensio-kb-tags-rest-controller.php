@@ -251,6 +251,10 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
     /**
      * The accepted arguments for creating or editing a tag.
      *
+     * A description keeps the HTML a post may hold, as the core tag screen
+     * and the Categories app allow, so editing one does not strip its links
+     * or formatting.
+     *
      * @since 1.0.0
      *
      * @param bool $creating True for a new tag, which must have a name.
@@ -272,7 +276,7 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
             ),
             'description' => array(
                 'type'              => 'string',
-                'sanitize_callback' => 'sanitize_textarea_field',
+                'sanitize_callback' => 'wp_kses_post',
                 'description'       => __( 'The tag description.', 'licensio-knowledge-base' ),
             ),
         );
