@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-25T18:10:48+00:00\n"
+"POT-Creation-Date: 2026-10-25T18:32:13+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.7.1\n"
 "X-Domain: licensio-knowledge-base\n"
@@ -526,12 +526,12 @@ msgid "Shown at the top of every knowledge base template. Edit it once to change
 msgstr ""
 
 #: includes/class-licensio-kb-feedback-widget.php:134
-#: includes/rest/class-licensio-kb-feedback-rest-controller.php:329
+#: includes/rest/class-licensio-kb-feedback-rest-controller.php:345
 msgid "Thanks for your feedback."
 msgstr ""
 
 #: includes/class-licensio-kb-feedback-widget.php:135
-#: includes/rest/class-licensio-kb-feedback-rest-controller.php:330
+#: includes/rest/class-licensio-kb-feedback-rest-controller.php:346
 msgid "Thanks — your feedback helps us improve this article."
 msgstr ""
 
@@ -540,12 +540,12 @@ msgid "Sending your feedback…"
 msgstr ""
 
 #: includes/class-licensio-kb-feedback-widget.php:137
-#: includes/rest/class-licensio-kb-feedback-rest-controller.php:315
+#: includes/rest/class-licensio-kb-feedback-rest-controller.php:331
 msgid "Your feedback could not be saved. Please try again."
 msgstr ""
 
 #: includes/class-licensio-kb-feedback-widget.php:138
-#: includes/rest/class-licensio-kb-feedback-rest-controller.php:303
+#: includes/rest/class-licensio-kb-feedback-rest-controller.php:319
 msgid "You have already given feedback on this article."
 msgstr ""
 
@@ -1562,27 +1562,31 @@ msgstr ""
 msgid "An optional comment offered with a negative vote."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-feedback-rest-controller.php:264
+#: includes/rest/class-licensio-kb-feedback-rest-controller.php:267
 msgid "Article feedback is turned off on this site."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-feedback-rest-controller.php:275
+#: includes/rest/class-licensio-kb-feedback-rest-controller.php:278
 msgid "A vote must be either helpful or not helpful."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-feedback-rest-controller.php:283
+#: includes/rest/class-licensio-kb-feedback-rest-controller.php:286
 msgid "That article could not be found."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-feedback-rest-controller.php:387
+#: includes/rest/class-licensio-kb-feedback-rest-controller.php:299
+msgid "Enter the article password before giving feedback."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-feedback-rest-controller.php:403
 msgid "That is not a feedback status."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-feedback-rest-controller.php:397
+#: includes/rest/class-licensio-kb-feedback-rest-controller.php:413
 msgid "That feedback entry could not be found."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-feedback-rest-controller.php:405
+#: includes/rest/class-licensio-kb-feedback-rest-controller.php:421
 msgid "That feedback entry could not be updated."
 msgstr ""
 

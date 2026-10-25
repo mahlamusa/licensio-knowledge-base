@@ -372,6 +372,7 @@ class Licensio_KB_Feedback_REST_Test extends Licensio_KB_Test_Case {
         Functions\when( 'wp_verify_nonce' )->justReturn( 1 );
         Functions\when( 'current_user_can' )->justReturn( true );
         Functions\when( 'get_current_user_id' )->justReturn( 0 );
+        Functions\when( 'post_password_required' )->justReturn( false );
         Functions\when( 'absint' )->alias(
             function ( $value ) {
                 return abs( (int) $value );
@@ -657,6 +658,32 @@ class Licensio_KB_Feedback_REST_Test extends Licensio_KB_Test_Case {
         $this->assertInstanceOf( 'WP_Error', $result );
         $this->assertSame( 'licensio_invalid_vote', $result->get_error_code() );
         $this->assertCount( 0, $this->store->rows );
+    }
+
+    /**
+     * A protected article takes a vote only once the visitor has unlocked it.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_locked_protected_article_refuses_a_vote() {
+        Functions\when( 'post_password_required' )->justReturn( true );
+
+        $result = $this->controller->create_item( $this->vote_request() );
+
+        $this->assertInstanceOf( 'WP_Error', $result );
+        $this->assertSame( 'licensio_article_locked', $result->get_error_code() );
+        $this->assertSame( 403, $result->error_data['licensio_article_locked']['status'] );
+        $this->assertCount( 0, $this->store->rows );
+
+        Functions\when( 'post_password_required' )->justReturn( false );
+
+        $result = $this->controller->create_item( $this->vote_request() );
+
+        $this->assertIsArray( $result );
+        $this->assertTrue( $result['recorded'] );
+        $this->assertCount( 1, $this->store->rows );
     }
 
     /**

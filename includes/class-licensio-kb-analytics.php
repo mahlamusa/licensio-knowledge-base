@@ -250,6 +250,10 @@ class Licensio_KB_Analytics {
     /**
      * Record a view of the article a frontend hook is rendering.
      *
+     * A password-protected article the visitor has not unlocked is not
+     * counted: they saw the password form, not the article. The view is
+     * recorded once the right password has been entered.
+     *
      * @since 1.0.0
      *
      * @param WP_Post|int|null $post The article being rendered.
@@ -274,6 +278,10 @@ class Licensio_KB_Analytics {
         }
 
         if ( ! $this->is_enabled() ) {
+            return false;
+        }
+
+        if ( post_password_required( $article_id ) ) {
             return false;
         }
 

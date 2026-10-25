@@ -143,20 +143,27 @@ class Licensio_KB_Feedback_Widget {
     /**
      * Whether the widget belongs on this request.
      *
+     * A password-protected article the visitor has not unlocked is left out,
+     * as core leaves out the comments of such a post: there is nothing to rate
+     * until the content can be read.
+     *
      * @since 1.0.0
      *
-     * @return bool True on a single article when feedback is enabled.
+     * @return bool True on a single, readable article when feedback is enabled.
      */
     public function should_render() {
         if ( ! $this->feedback->is_enabled() ) {
             return false;
         }
 
-        return is_singular( Licensio_KB_Post_Types::POST_TYPE );
+        return is_singular( Licensio_KB_Post_Types::POST_TYPE ) && ! post_password_required();
     }
 
     /**
      * Render the voting widget.
+     *
+     * Renders nothing for a password-protected article the visitor has not
+     * unlocked yet, matching how core hides comments on such a post.
      *
      * @since 1.0.0
      *
@@ -172,6 +179,10 @@ class Licensio_KB_Feedback_Widget {
         $post = get_post( $post );
 
         if ( ! $post instanceof WP_Post || Licensio_KB_Post_Types::POST_TYPE !== $post->post_type ) {
+            return;
+        }
+
+        if ( post_password_required( $post ) ) {
             return;
         }
 
