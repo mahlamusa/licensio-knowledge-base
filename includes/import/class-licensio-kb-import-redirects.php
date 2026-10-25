@@ -150,7 +150,7 @@ class Licensio_KB_Import_Redirects {
      */
     public function __construct( $source, $directory = '', $dry_run = false ) {
         $this->source    = sanitize_key( (string) $source );
-        $this->directory = '' === (string) $directory ? self::upload_directory() : rtrim( (string) $directory, '/\\' );
+        $this->directory = self::resolve_directory( $directory );
         $this->dry_run   = (bool) $dry_run;
     }
 
@@ -266,7 +266,7 @@ class Licensio_KB_Import_Redirects {
             return '';
         }
 
-        $directory = '' === (string) $directory ? self::upload_directory() : rtrim( (string) $directory, '/\\' );
+        $directory = self::resolve_directory( $directory );
 
         return $directory . '/' . $name;
     }
@@ -300,7 +300,7 @@ class Licensio_KB_Import_Redirects {
      * @return void
      */
     public static function delete_directory( $directory = '' ) {
-        $directory = '' === (string) $directory ? self::upload_directory() : rtrim( (string) $directory, '/\\' );
+        $directory = self::resolve_directory( $directory );
 
         if ( ! is_dir( $directory ) ) {
             return;
@@ -584,6 +584,19 @@ class Licensio_KB_Import_Redirects {
                 $this->put( $this->directory . '/' . $name, $contents );
             }
         }
+    }
+
+    /**
+     * The given directory without a trailing slash, or the uploads directory.
+     *
+     * @since 1.0.0
+     *
+     * @param string $directory The directory; empty for the uploads directory.
+     *
+     * @return string The absolute directory path, without a trailing slash.
+     */
+    private static function resolve_directory( $directory ) {
+        return '' === (string) $directory ? self::upload_directory() : rtrim( (string) $directory, '/\\' );
     }
 
     /**
