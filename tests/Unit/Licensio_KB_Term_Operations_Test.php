@@ -500,34 +500,37 @@ class Licensio_KB_Term_Operations_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * Copying gives every object of a tag the category and leaves the tag alone.
+     * Moving across taxonomies gives every object of a tag the category and takes the tag off.
+     *
+     * The tag is taken off here so that deleting it afterwards has no
+     * objects left to rewrite one at a time.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_assignments_are_copied_across_taxonomies() {
+    public function test_assignments_are_moved_across_taxonomies() {
         $record = array();
-        $copied = ( new Licensio_KB_Term_Operations() )->copy_assignments( 10, 'licensio_tag', 30, 'licensio_category', $record );
+        $moved  = ( new Licensio_KB_Term_Operations() )->move_across_taxonomies( 10, 'licensio_tag', 30, 'licensio_category', $record );
 
-        $this->assertSame( 2, $copied );
+        $this->assertSame( 2, $moved );
         $this->assertSame( array( 1, 2 ), $this->assignments[30] );
-        $this->assertSame( array( 1, 2 ), $this->assignments[10], 'The source keeps its objects; deleting it removes them.' );
-        $this->assertSame( array( array() ), array_column( $record, 'removed' ), 'Nothing was taken off the source.' );
+        $this->assertSame( array(), $this->assignments[10], 'The source term is taken off every object.' );
+        $this->assertSame( array( array( 1, 2 ) ), array_column( $record, 'removed' ), 'The removal is recorded for undo.' );
     }
 
     /**
-     * A copy names both taxonomies, and each must be a knowledge base one.
+     * A move across taxonomies names both, and each must be a knowledge base one.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_a_bad_copy_is_refused() {
+    public function test_a_bad_move_across_taxonomies_is_refused() {
         $operations = new Licensio_KB_Term_Operations();
 
-        $this->assertSame( 'licensio_kb_invalid_taxonomy', $operations->copy_assignments( 10, 'post_tag', 30, 'licensio_category' )->get_error_code() );
-        $this->assertSame( 'licensio_kb_invalid_term', $operations->copy_assignments( 10, 'licensio_tag', 99, 'licensio_category' )->get_error_code() );
+        $this->assertSame( 'licensio_kb_invalid_taxonomy', $operations->move_across_taxonomies( 10, 'post_tag', 30, 'licensio_category' )->get_error_code() );
+        $this->assertSame( 'licensio_kb_invalid_term', $operations->move_across_taxonomies( 10, 'licensio_tag', 99, 'licensio_category' )->get_error_code() );
         $this->assertSame( array(), $this->events, 'Nothing is written.' );
     }
 

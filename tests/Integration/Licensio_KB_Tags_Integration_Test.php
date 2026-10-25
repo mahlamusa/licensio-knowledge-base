@@ -426,6 +426,8 @@ class Licensio_KB_Tags_Integration_Test extends Licensio_KB_Analytics_DB_Test_Ca
     /**
      * Converting creates a category under the parent and keeps the articles.
      *
+     * The articles move off the tag in batches before the tag is deleted.
+     *
      * @since 1.0.0
      *
      * @return void
@@ -438,6 +440,15 @@ class Licensio_KB_Tags_Integration_Test extends Licensio_KB_Analytics_DB_Test_Ca
         $this->db->query( 'UPDATE ' . $this->table( 'term_taxonomy' ) . " SET description = 'Money back' WHERE term_id = " . $refunds );
 
         $article = $this->make_article( array( 'tags' => array( $refunds, $other ) ) );
+        $left    = null;
+
+        Brain\Monkey\Functions\when( 'wp_delete_term' )->alias(
+            function ( $term_id, $taxonomy ) use ( &$left ) {
+                $left = $this->articles_in( (int) $term_id, (string) $taxonomy );
+
+                return $this->live_delete_term( $term_id, $taxonomy );
+            }
+        );
 
         $result = $this->controller->convert(
             new WP_REST_Request(
@@ -461,6 +472,7 @@ class Licensio_KB_Tags_Integration_Test extends Licensio_KB_Analytics_DB_Test_Ca
         $this->assertSame( array( $article ), $this->articles_in( $created->term_id, Licensio_KB_Post_Types::TAXONOMY_CATEGORY ) );
         $this->assertSame( array( 'Other' ), $this->names(), 'Only the converted tag is deleted.' );
         $this->assertSame( array( $article ), $this->articles_in( $other, Licensio_KB_Post_Types::TAXONOMY_TAG ) );
+        $this->assertSame( array(), $left, 'The tag is taken off its articles before it is deleted, so core has none to rewrite one by one.' );
     }
 
     /**

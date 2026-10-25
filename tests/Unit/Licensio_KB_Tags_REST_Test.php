@@ -540,8 +540,8 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
     /**
      * Converting reuses the category that already has the tag's slug.
      *
-     * The category stays where it is, gains every article the tag had, and
-     * the tag is deleted after the assignments are made.
+     * The category stays where it is, every article the tag had moves to it,
+     * and the tag is deleted after the assignments are moved.
      *
      * @since 1.0.0
      *
@@ -565,6 +565,7 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
         $this->assertSame(
             array(
                 array( 'add', 21, array( 100, 101 ) ),
+                array( 'remove', 10, array( 100, 101 ) ),
                 array( 'delete', 10, 'licensio_tag' ),
             ),
             $this->calls
@@ -603,7 +604,8 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
             $this->calls[0]
         );
         $this->assertSame( array( 'add', 30, array( 100, 101 ) ), $this->calls[1] );
-        $this->assertSame( array( 'delete', 11, 'licensio_tag' ), $this->calls[2] );
+        $this->assertSame( array( 'remove', 11, array( 100, 101 ) ), $this->calls[2] );
+        $this->assertSame( array( 'delete', 11, 'licensio_tag' ), $this->calls[3] );
         $this->assertSame( 20, $result['converted'][0]['category']['parent'] );
     }
 
@@ -649,6 +651,7 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
         $this->assertSame(
             array(
                 array( 'add', 22, array( 100, 101 ) ),
+                array( 'remove', 12, array( 100, 101 ) ),
                 array( 'delete', 12, 'licensio_tag' ),
             ),
             $this->calls,
@@ -680,8 +683,8 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
     /**
      * A tag that cannot be deleted is left as it was.
      *
-     * Its articles lose the category again, and the category the convert
-     * created for it is deleted.
+     * Its articles get the tag back and lose the category again, and the
+     * category the convert created for it is deleted.
      *
      * @since 1.0.0
      *
@@ -708,7 +711,9 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
         $this->assertSame(
             array(
                 array( 'add', 30, array( 100, 101 ) ),
+                array( 'remove', 11, array( 100, 101 ) ),
                 array( 'delete', 11, 'licensio_tag' ),
+                array( 'add', 11, array( 100, 101 ) ),
                 array( 'remove', 30, array( 100, 101 ) ),
                 array( 'delete', 30, 'licensio_category' ),
             ),

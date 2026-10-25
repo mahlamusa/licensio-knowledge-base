@@ -18,7 +18,7 @@
  * Writing the rows directly skips core's per-object relationship hooks
  * (`set_object_terms`, `added_term_relationship`, `deleted_term_relationships`
  * and the like). `licensio_kb_term_assignments_changed` ( int[] $object_ids,
- * string $taxonomy ) fires instead, once per taxonomy for every move, copy or
+ * string $taxonomy ) fires instead, once per taxonomy for every move, merge or
  * undo, so the search index can refresh the articles that changed.
  *
  * Two hooks form the contract the per-category article order relies on:
@@ -138,35 +138,36 @@ class Licensio_KB_Term_Operations {
             return $valid;
         }
 
-        return $this->move_all( array( $from ), $taxonomy, $to, $taxonomy, true, $record );
+        return $this->move_all( array( $from ), $taxonomy, $to, $taxonomy, $record );
     }
 
     /**
-     * Give every object assigned to a term a term of another taxonomy too.
+     * Move every object assigned to a term onto a term of another taxonomy.
      *
      * Used to turn a tag into a category: each article with the tag gains
-     * the category. The source assignments are left alone; deleting the
-     * source term afterwards removes them. Term counting is deferred as in
-     * `move_assignments()`.
+     * the category and loses the tag, in batches as in `move_assignments()`.
+     * Taking the tag off here, rather than leaving it for the tag's delete,
+     * matters at scale: core's `wp_delete_term()` rewrites the terms of every
+     * object still assigned, one object at a time.
      *
-     * All or nothing, as `move_assignments()`: if one object fails, the ones
-     * already given the target lose it again, and on success `$record`
-     * receives what was added, for `undo()`.
+     * All or nothing, as `move_assignments()`: if one object fails, the
+     * objects already moved are put back, and on success `$record` receives
+     * what was moved, for `undo()`.
      *
      * No capability is checked here. Callers must check the current user's
      * capability first.
      *
      * @since 1.0.0
      *
-     * @param int        $from          The term whose objects are copied.
+     * @param int        $from          The term whose objects move.
      * @param string     $from_taxonomy The source term's taxonomy.
      * @param int        $to            The term the objects gain.
      * @param string     $to_taxonomy   The target term's taxonomy.
-     * @param array|null $record        Optional. Receives the assignments added, for `undo()`; empty when nothing was added.
+     * @param array|null $record        Optional. Receives the moves made, for `undo()`; empty when nothing moved.
      *
-     * @return int|WP_Error The number of objects the target was given, or an error when an input is invalid or a write fails.
+     * @return int|WP_Error The number of objects moved, or an error when an input is invalid or a write fails.
      */
-    public function copy_assignments( $from, $from_taxonomy, $to, $to_taxonomy, &$record = null ) {
+    public function move_across_taxonomies( $from, $from_taxonomy, $to, $to_taxonomy, &$record = null ) {
         $record = array();
         $from   = absint( $from );
         $to     = absint( $to );
@@ -177,11 +178,11 @@ class Licensio_KB_Term_Operations {
             return $valid;
         }
 
-        return $this->move_all( array( $from ), $from_taxonomy, $to, $to_taxonomy, false, $record );
+        return $this->move_all( array( $from ), $from_taxonomy, $to, $to_taxonomy, $record );
     }
 
     /**
-     * Put back the assignments a move, copy or merge recorded.
+     * Put back the assignments a move or merge recorded.
      *
      * Works through the record newest first: the objects that lost the source
      * term get it back, and the objects that gained the target term lose it
@@ -192,7 +193,7 @@ class Licensio_KB_Term_Operations {
      *
      * @since 1.0.0
      *
-     * @param array<int, array<string, mixed>> $record The record `move_assignments()` or `copy_assignments()` filled.
+     * @param array<int, array<string, mixed>> $record The record `move_assignments()` or `move_across_taxonomies()` filled.
      *
      * @return void
      */
@@ -215,7 +216,7 @@ class Licensio_KB_Term_Operations {
     }
 
     /**
-     * Move or copy the objects of several checked terms onto one term.
+     * Move the objects of several checked terms onto one term.
      *
      * The inputs must already have passed `validate()`. Term counting is
      * deferred throughout, the undo included, so a failure recounts once. If
@@ -229,20 +230,19 @@ class Licensio_KB_Term_Operations {
      * @param string $source_taxonomy The sources' taxonomy.
      * @param int    $to              The term the objects gain.
      * @param string $target_taxonomy The target's taxonomy.
-     * @param bool   $remove          True to take the source term off each object, false to leave it.
      * @param array  $record          Receives one entry per source term handled.
      *
      * @return int|WP_Error The number of objects handled, or the first error.
      */
-    private function move_all( array $sources, $source_taxonomy, $to, $target_taxonomy, $remove, &$record ) {
+    private function move_all( array $sources, $source_taxonomy, $to, $target_taxonomy, &$record ) {
         $record = array();
 
         return $this->with_deferred_counting(
-            function () use ( $sources, $source_taxonomy, $to, $target_taxonomy, $remove, &$record ) {
+            function () use ( $sources, $source_taxonomy, $to, $target_taxonomy, &$record ) {
                 $moved = 0;
 
                 foreach ( $sources as $from ) {
-                    $count = $this->move_objects( $from, $source_taxonomy, $to, $target_taxonomy, $remove, $record );
+                    $count = $this->move_objects( $from, $source_taxonomy, $to, $target_taxonomy, $record );
 
                     if ( is_wp_error( $count ) ) {
                         $this->undo( $record );
@@ -262,7 +262,7 @@ class Licensio_KB_Term_Operations {
     }
 
     /**
-     * Move or copy every object from one checked term to another.
+     * Move every object from one checked term to another.
      *
      * The target relationships are written first, then the source ones are
      * removed, in batches. The record entry is added before anything is
@@ -275,12 +275,11 @@ class Licensio_KB_Term_Operations {
      * @param string $source_taxonomy The source's taxonomy.
      * @param int    $to              The term the objects gain.
      * @param string $target_taxonomy The target's taxonomy.
-     * @param bool   $remove          True to take the source term off each object.
      * @param array  $record          Receives one entry for this source term.
      *
      * @return int|WP_Error The number of objects handled, or an error when a read or write fails.
      */
-    private function move_objects( $from, $source_taxonomy, $to, $target_taxonomy, $remove, &$record ) {
+    private function move_objects( $from, $source_taxonomy, $to, $target_taxonomy, &$record ) {
         $object_ids = get_objects_in_term( $from, $source_taxonomy );
 
         if ( is_wp_error( $object_ids ) ) {
@@ -329,12 +328,10 @@ class Licensio_KB_Term_Operations {
             return $written;
         }
 
-        if ( $remove ) {
-            $written = $this->write_relationships( 'remove', $object_ids, $record[ $index ]['from_tt'], $record[ $index ]['removed'] );
+        $written = $this->write_relationships( 'remove', $object_ids, $record[ $index ]['from_tt'], $record[ $index ]['removed'] );
 
-            if ( is_wp_error( $written ) ) {
-                return $written;
-            }
+        if ( is_wp_error( $written ) ) {
+            return $written;
         }
 
         return count( $object_ids );
@@ -537,7 +534,7 @@ class Licensio_KB_Term_Operations {
         }
 
         $record = array();
-        $moved  = $this->move_all( $sources, $taxonomy, $target, $taxonomy, true, $record );
+        $moved  = $this->move_all( $sources, $taxonomy, $target, $taxonomy, $record );
 
         if ( is_wp_error( $moved ) ) {
             return $moved;

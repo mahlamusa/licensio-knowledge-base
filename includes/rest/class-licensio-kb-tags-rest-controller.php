@@ -755,8 +755,8 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
      * For each tag: the category with the tag's slug is reused if there is
      * one, wherever it sits in the tree, and is left where it is. Otherwise a
      * category is created under `parent` with the tag's name, slug and
-     * description. Every article with the tag gains the category, through
-     * `Licensio_KB_Term_Operations::copy_assignments()`, then the tag is
+     * description. Every article with the tag moves to the category, through
+     * `Licensio_KB_Term_Operations::move_across_taxonomies()`, then the tag is
      * deleted. A tag that fails is kept as it was, and reported as failed.
      *
      * @since 1.0.0
@@ -860,7 +860,7 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
         }
 
         $record   = array();
-        $articles = $this->term_operations->copy_assignments(
+        $articles = $this->term_operations->move_across_taxonomies(
             (int) $tag->term_id,
             Licensio_KB_Post_Types::TAXONOMY_TAG,
             (int) $category->term_id,

@@ -214,7 +214,7 @@ class Licensio_KB_Search_Index {
     }
 
     /**
-     * Reindex the articles a term move, copy or merge changed.
+     * Reindex the articles a term move, merge or undo changed.
      *
      * Those operations write the relationship rows in batches, so core's
      * `set_object_terms` does not fire for each article. Many articles at once
