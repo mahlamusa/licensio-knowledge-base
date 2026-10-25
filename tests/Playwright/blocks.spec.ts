@@ -16,7 +16,7 @@
  * @since 1.0.0
  */
 
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 const enabled = process.env.LICENSIO_KB_E2E === '1';
 const user = process.env.LICENSIO_KB_ADMIN_USER ?? '';
@@ -65,13 +65,23 @@ async function logIn( page: Page ): Promise< void > {
 }
 
 async function newPost( page: Page ): Promise< void > {
-	await page.goto( '/wp-admin/post-new.php?post_type=page' );
+	// A new post rather than a new page: a page opens the starter pattern
+	// chooser over the editor, and the blocks are the same in either.
+	await page.goto( '/wp-admin/post-new.php' );
 
-	const modal = page.getByRole( 'button', { name: 'Close', exact: true } );
+	// The welcome guide opens over the editor some time after load. It is not
+	// under test, so it is switched off through the editor's own preferences.
+	await page.waitForFunction(
+		() =>
+			// eslint-disable-next-line no-undef
+			!! ( window as any ).wp?.data?.dispatch( 'core/preferences' )
+	);
+	await page.evaluate( () => {
+		// eslint-disable-next-line no-undef
+		const preferences = ( window as any ).wp.data.dispatch( 'core/preferences' );
 
-	if ( await modal.isVisible().catch( () => false ) ) {
-		await modal.click();
-	}
+		preferences.set( 'core/edit-post', 'welcomeGuide', false );
+	} );
 
 	await expect(
 		page.getByRole( 'button', { name: /Block Inserter|Toggle block inserter/ } )
@@ -83,7 +93,26 @@ async function insertBlock( page: Page, title: string ): Promise< void > {
 		.getByRole( 'button', { name: /Block Inserter|Toggle block inserter/ } )
 		.click();
 	await page.getByPlaceholder( 'Search' ).fill( title );
-	await page.getByRole( 'option', { name: title, exact: true } ).click();
+	await blockOption( page, title ).click();
+}
+
+/**
+ * A block in the inserter's results, by its title.
+ *
+ * The option's accessible name starts with the block icon's text, so it is
+ * matched on how it ends rather than exactly.
+ *
+ * @since 1.0.0
+ *
+ * @param {Page}   page  The browser page.
+ * @param {string} title The block title.
+ *
+ * @return {Locator} The option.
+ */
+function blockOption( page: Page, title: string ): Locator {
+	return page.getByRole( 'option', {
+		name: new RegExp( `${ title }$` ),
+	} );
 }
 
 test.describe( 'Knowledge base blocks', () => {
@@ -127,7 +156,7 @@ test.describe( 'Knowledge base blocks', () => {
 
 		for ( const block of BLOCKS ) {
 			await expect(
-				page.getByRole( 'option', { name: block.title, exact: true } )
+				blockOption( page, block.title )
 			).toBeVisible();
 		}
 	} );
