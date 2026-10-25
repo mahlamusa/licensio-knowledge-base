@@ -52,6 +52,28 @@ class Licensio_KB_Heroic_State_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * A category's position base is persisted and read back by the next process.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_position_base_survives_into_a_second_run() {
+        $first = new Licensio_KB_Heroic_State();
+
+        $this->assertNull( $first->position_base( 501 ) );
+
+        $first->set_position_base( 501, -1 );
+        $first->set_position_base( 502, 40 );
+
+        $second = new Licensio_KB_Heroic_State();
+
+        $this->assertSame( -1, $second->position_base( 501 ) );
+        $this->assertSame( 40, $second->position_base( 502 ) );
+        $this->assertNull( $second->position_base( 503 ) );
+    }
+
+    /**
      * A cursor never moves backwards.
      *
      * A batch that came back empty, or one processed out of order, must not be
