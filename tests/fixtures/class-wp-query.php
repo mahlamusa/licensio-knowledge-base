@@ -7,6 +7,10 @@
  * `instanceof`, so the unit suite needs the class to exist before it can prove
  * the guard works.
  *
+ * The main, search and feed answers are public flags rather than fixed
+ * values, so a test sets the kind of query it needs on one shared double
+ * instead of declaring a subclass of its own.
+ *
  * @package Licensio_KB
  * @since   1.0.0
  */
@@ -42,6 +46,38 @@ if ( ! class_exists( 'WP_Query' ) ) {
          * @var int
          */
         public $found_posts = 0;
+
+        /**
+         * The parsed tax query, as WordPress leaves it after parsing.
+         *
+         * @since 1.0.0
+         * @var WP_Tax_Query|null
+         */
+        public $tax_query = null;
+
+        /**
+         * Whether is_main_query() answers yes. Exists only on the double.
+         *
+         * @since 1.0.0
+         * @var bool
+         */
+        public $main = false;
+
+        /**
+         * Whether this is a search.
+         *
+         * @since 1.0.0
+         * @var bool
+         */
+        public $is_search = false;
+
+        /**
+         * Whether this is a feed.
+         *
+         * @since 1.0.0
+         * @var bool
+         */
+        public $is_feed = false;
 
         /**
          * Constructor.
@@ -87,10 +123,10 @@ if ( ! class_exists( 'WP_Query' ) ) {
          *
          * @since 1.0.0
          *
-         * @return bool Always false in the double.
+         * @return bool The main flag.
          */
         public function is_main_query() {
-            return false;
+            return $this->main;
         }
 
         /**
@@ -98,10 +134,10 @@ if ( ! class_exists( 'WP_Query' ) ) {
          *
          * @since 1.0.0
          *
-         * @return bool Always false in the double.
+         * @return bool The search flag.
          */
         public function is_search() {
-            return false;
+            return $this->is_search;
         }
 
         /**
@@ -109,10 +145,10 @@ if ( ! class_exists( 'WP_Query' ) ) {
          *
          * @since 1.0.0
          *
-         * @return bool Always false in the double.
+         * @return bool The feed flag.
          */
         public function is_feed() {
-            return false;
+            return $this->is_feed;
         }
     }
 }

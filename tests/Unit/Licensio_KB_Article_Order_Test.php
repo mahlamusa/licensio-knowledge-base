@@ -14,79 +14,6 @@
 use Brain\Monkey\Functions;
 
 /**
- * A query double that can be the main query of a category archive.
- *
- * @since 1.0.0
- */
-class Licensio_KB_Article_Order_Query extends WP_Query {
-
-    /**
-     * The parsed tax query.
-     *
-     * @since 1.0.0
-     * @var WP_Tax_Query|null
-     */
-    public $tax_query = null;
-
-    /**
-     * Whether this is the main query of a category archive.
-     *
-     * @since 1.0.0
-     * @var bool
-     */
-    public $archive = false;
-
-    /**
-     * Whether this is a search.
-     *
-     * @since 1.0.0
-     * @var bool
-     */
-    public $search = false;
-
-    /**
-     * Whether this is a feed.
-     *
-     * @since 1.0.0
-     * @var bool
-     */
-    public $feed = false;
-
-    /**
-     * Whether this is the main query.
-     *
-     * @since 1.0.0
-     *
-     * @return bool The archive flag.
-     */
-    public function is_main_query() {
-        return $this->archive;
-    }
-
-    /**
-     * Whether this is a search.
-     *
-     * @since 1.0.0
-     *
-     * @return bool The search flag.
-     */
-    public function is_search() {
-        return $this->search;
-    }
-
-    /**
-     * Whether this is a feed.
-     *
-     * @since 1.0.0
-     *
-     * @return bool The feed flag.
-     */
-    public function is_feed() {
-        return $this->feed;
-    }
-}
-
-/**
  * Drives Licensio_KB_Article_Order.
  *
  * @since 1.0.0
@@ -177,10 +104,10 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
      * @param array<int|string, mixed> $tax_queries The parsed tax clauses.
      * @param array<string, mixed>     $vars        The query variables.
      *
-     * @return Licensio_KB_Article_Order_Query The query.
+     * @return WP_Query The query.
      */
     private function query( array $tax_queries, array $vars = array() ) {
-        $query            = new Licensio_KB_Article_Order_Query( array_merge( array( 'orderby' => 'licensio_order' ), $vars ) );
+        $query            = new WP_Query( array_merge( array( 'orderby' => 'licensio_order' ), $vars ) );
         $query->tax_query = new WP_Tax_Query( $tax_queries );
 
         return $query;
@@ -400,8 +327,8 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     public function test_the_category_archive_uses_the_order() {
-        $query          = $this->query( array( $this->clause( 'billing', 'slug' ) ), array( 'orderby' => '' ) );
-        $query->archive = true;
+        $query       = $this->query( array( $this->clause( 'billing', 'slug' ) ), array( 'orderby' => '' ) );
+        $query->main = true;
 
         ( new Licensio_KB_Article_Order() )->prepare_query( $query );
 
@@ -416,8 +343,8 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     public function test_the_category_archive_keeps_a_chosen_ordering() {
-        $query          = $this->query( array( $this->clause( 7 ) ), array( 'orderby' => 'date' ) );
-        $query->archive = true;
+        $query       = $this->query( array( $this->clause( 7 ) ), array( 'orderby' => 'date' ) );
+        $query->main = true;
 
         ( new Licensio_KB_Article_Order() )->prepare_query( $query );
 
@@ -432,9 +359,9 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     public function test_a_search_or_feed_on_the_archive_keeps_its_order() {
-        foreach ( array( 'search', 'feed' ) as $flag ) {
+        foreach ( array( 'is_search', 'is_feed' ) as $flag ) {
             $query          = $this->query( array( $this->clause( 7 ) ), array( 'orderby' => '' ) );
-            $query->archive = true;
+            $query->main    = true;
             $query->{$flag} = true;
 
             ( new Licensio_KB_Article_Order() )->prepare_query( $query );
@@ -452,9 +379,9 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     public function test_the_category_archive_keeps_an_array_ordering() {
-        $orderby        = array( 'date' => 'DESC' );
-        $query          = $this->query( array( $this->clause( 7 ) ), array( 'orderby' => $orderby ) );
-        $query->archive = true;
+        $orderby     = array( 'date' => 'DESC' );
+        $query       = $this->query( array( $this->clause( 7 ) ), array( 'orderby' => $orderby ) );
+        $query->main = true;
 
         ( new Licensio_KB_Article_Order() )->prepare_query( $query );
 
@@ -472,8 +399,8 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
     public function test_the_admin_is_not_reordered() {
         Functions\when( 'is_admin' )->justReturn( true );
 
-        $query          = $this->query( array( $this->clause( 7 ) ), array( 'orderby' => '' ) );
-        $query->archive = true;
+        $query       = $this->query( array( $this->clause( 7 ) ), array( 'orderby' => '' ) );
+        $query->main = true;
 
         ( new Licensio_KB_Article_Order() )->prepare_query( $query );
 
