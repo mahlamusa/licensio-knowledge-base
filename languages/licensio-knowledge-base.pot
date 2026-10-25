@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-25T14:25:19+00:00\n"
+"POT-Creation-Date: 2026-10-25T14:42:51+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.7.1\n"
 "X-Domain: licensio-knowledge-base\n"
@@ -1484,7 +1484,7 @@ msgid "A top-level category has no parent to move its articles to. Choose a cate
 msgstr ""
 
 #: includes/rest/class-licensio-kb-categories-rest-controller.php:1507
-#: includes/rest/class-licensio-kb-category-order-rest-controller.php:341
+#: includes/rest/class-licensio-kb-category-order-rest-controller.php:339
 msgid "That category does not exist."
 msgstr ""
 
@@ -1504,27 +1504,27 @@ msgstr ""
 msgid "You are not allowed to change knowledge base categories."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-category-order-rest-controller.php:119
+#: includes/rest/class-licensio-kb-category-order-rest-controller.php:118
 msgid "The category whose articles are ordered."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-category-order-rest-controller.php:138
+#: includes/rest/class-licensio-kb-category-order-rest-controller.php:137
 msgid "The page of articles to return."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-category-order-rest-controller.php:146
+#: includes/rest/class-licensio-kb-category-order-rest-controller.php:145
 msgid "How many articles a page holds."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-category-order-rest-controller.php:170
+#: includes/rest/class-licensio-kb-category-order-rest-controller.php:169
 msgid "The article IDs in their new order, first first."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-category-order-rest-controller.php:300
+#: includes/rest/class-licensio-kb-category-order-rest-controller.php:298
 msgid "Some of these articles are not in this category."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-category-order-rest-controller.php:312
+#: includes/rest/class-licensio-kb-category-order-rest-controller.php:310
 msgid "You are not allowed to reorder one of these articles."
 msgstr ""
 
