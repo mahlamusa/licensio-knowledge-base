@@ -22,6 +22,7 @@ import {
 	resetSettings,
 	saveSettings,
 } from './api';
+import { __ } from '../components/i18n';
 import type {
 	CategoryBlock,
 	Field,
@@ -85,7 +86,11 @@ export const useSettingsStore = defineStore( 'licensioKbSettings', {
 			);
 
 			if ( orphans.length > 0 ) {
-				blocks.push( { id: 'other', label: 'Other', groups: orphans } );
+				blocks.push( {
+					id: 'other',
+					label: __( 'Other', 'licensio-knowledge-base' ),
+					groups: orphans,
+				} );
 			}
 
 			return blocks.filter( ( block ) => block.groups.length > 0 );

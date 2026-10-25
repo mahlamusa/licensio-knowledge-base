@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-25T14:45:49+00:00\n"
+"POT-Creation-Date: 2026-10-25T14:52:50+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.7.1\n"
 "X-Domain: licensio-knowledge-base\n"
@@ -117,7 +117,7 @@ msgstr ""
 #: blocks/article-list/index.js:119
 #: dist/apps/articles/index.hWPRdLMX.js:59
 #: dist/apps/tags/index.CvtmeWt8.js:13
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 #: dist/blocks/article-list/index.js:1
 msgid "Articles"
 msgstr ""
@@ -147,7 +147,7 @@ msgstr ""
 #: dist/apps/articles/index.hWPRdLMX.js:35
 #: dist/apps/articles/index.hWPRdLMX.js:57
 #: dist/apps/categories/index.l87bWEsT.js:35
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 #: dist/blocks/category-grid/index.js:1
 msgid "Categories"
 msgstr ""
@@ -220,7 +220,7 @@ msgstr ""
 
 #: includes/admin/class-licensio-kb-settings-admin.php:97
 #: includes/admin/class-licensio-kb-settings-admin.php:121
-#: dist/apps/settings/index.BDETSswq.js:1
+#: dist/apps/settings/index.BKAZASVJ.js:1
 msgid "Settings"
 msgstr ""
 
@@ -337,6 +337,7 @@ msgstr ""
 
 #: includes/admin/class-licensio-kb-tools-admin.php:91
 #: includes/admin/class-licensio-kb-tools-admin.php:112
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Tools"
 msgstr ""
 
@@ -369,7 +370,7 @@ msgid "Results returned"
 msgstr ""
 
 #: includes/class-licensio-kb-analytics-privacy.php:447
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Source"
 msgstr ""
 
@@ -430,7 +431,7 @@ msgstr ""
 #: includes/class-licensio-kb-analytics-privacy.php:523
 #: dist/apps/articles/index.hWPRdLMX.js:34
 #: dist/apps/feedback/index.C2TYrwLG.js:1
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Status"
 msgstr ""
 
@@ -1135,7 +1136,7 @@ msgstr ""
 
 #: includes/class-licensio-kb-settings-schema.php:386
 #: dist/apps/analytics/index.CWsOpk4o.js:1
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "days"
 msgstr ""
 
@@ -1216,7 +1217,7 @@ msgstr ""
 #: includes/import/class-licensio-kb-betterdocs-import-driver.php:86
 #: includes/import/class-licensio-kb-heroic-import-driver.php:85
 #: dist/apps/analytics/index.CWsOpk4o.js:1
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Searches"
 msgstr ""
 
@@ -1241,7 +1242,7 @@ msgstr ""
 
 #: includes/import/class-licensio-kb-heroic-import-driver.php:83
 #: dist/apps/analytics/index.CWsOpk4o.js:1
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Votes"
 msgstr ""
 
@@ -1929,7 +1930,7 @@ msgstr ""
 #: blocks/article-list/index.js:55
 #: blocks/faq/index.js:49
 #: dist/apps/articles/index.hWPRdLMX.js:59
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 #: dist/blocks/article-list/index.js:1
 #: dist/blocks/faq/index.js:1
 msgid "Category"
@@ -1960,7 +1961,7 @@ msgstr ""
 #: blocks/faq/index.js:76
 #: dist/apps/articles/index.hWPRdLMX.js:34
 #: dist/apps/articles/index.hWPRdLMX.js:35
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 #: dist/blocks/article-list/index.js:1
 #: dist/blocks/faq/index.js:1
 msgid "Title"
@@ -2295,7 +2296,7 @@ msgid "Create an article for this"
 msgstr ""
 
 #: dist/apps/analytics/index.CWsOpk4o.js:1
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Article views"
 msgstr ""
 
@@ -2592,12 +2593,12 @@ msgstr ""
 #: dist/apps/categories/index.l87bWEsT.js:25
 #: dist/apps/categories/index.l87bWEsT.js:29
 #: dist/apps/categories/index.l87bWEsT.js:35
-#: dist/apps/settings/index.BDETSswq.js:1
+#: dist/apps/settings/index.BKAZASVJ.js:1
 #: dist/apps/tags/index.CvtmeWt8.js:7
 #: dist/apps/tags/index.CvtmeWt8.js:13
 #: dist/apps/tags/index.CvtmeWt8.js:17
 #: dist/apps/tags/index.CvtmeWt8.js:27
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 #: dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.D9cjqXmu.js:1
 msgid "Cancel"
 msgstr ""
@@ -2839,12 +2840,12 @@ msgid "The run stopped at a batch the server refused."
 msgstr ""
 
 #: dist/apps/articles/index.hWPRdLMX.js:57
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Skipped"
 msgstr ""
 
 #: dist/apps/articles/index.hWPRdLMX.js:57
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Failed"
 msgstr ""
 
@@ -2874,7 +2875,7 @@ msgid "Any category"
 msgstr ""
 
 #: dist/apps/articles/index.hWPRdLMX.js:59
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Tag"
 msgstr ""
 
@@ -2908,7 +2909,7 @@ msgstr ""
 
 #: dist/apps/articles/index.hWPRdLMX.js:59
 #: dist/apps/feedback/index.C2TYrwLG.js:1
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "All"
 msgstr ""
 
@@ -3156,7 +3157,7 @@ msgstr ""
 
 #: dist/apps/categories/index.l87bWEsT.js:25
 #: dist/apps/tags/index.CvtmeWt8.js:27
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Delete"
 msgstr ""
 
@@ -3214,7 +3215,7 @@ msgstr ""
 
 #: dist/apps/categories/index.l87bWEsT.js:29
 #: dist/apps/tags/index.CvtmeWt8.js:13
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Merge"
 msgstr ""
 
@@ -3231,7 +3232,7 @@ msgid "Their articles move to the target, and they are deleted."
 msgstr ""
 
 #: dist/apps/categories/index.l87bWEsT.js:29
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Merge into"
 msgstr ""
 
@@ -3275,7 +3276,7 @@ msgid "Category tree"
 msgstr ""
 
 #: dist/apps/feedback/index.C2TYrwLG.js:1
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 #: dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.D9cjqXmu.js:1
 msgid "The request failed."
 msgstr ""
@@ -3333,75 +3334,79 @@ msgstr ""
 msgid "(untitled)"
 msgstr ""
 
-#: dist/apps/settings/index.BDETSswq.js:1
+#: dist/apps/settings/index.BKAZASVJ.js:1
 msgid "The settings request failed."
 msgstr ""
 
-#: dist/apps/settings/index.BDETSswq.js:1
+#: dist/apps/settings/index.BKAZASVJ.js:1
+msgid "Other"
+msgstr ""
+
+#: dist/apps/settings/index.BKAZASVJ.js:1
 msgid "Resetting your password"
 msgstr ""
 
-#: dist/apps/settings/index.BDETSswq.js:1
+#: dist/apps/settings/index.BKAZASVJ.js:1
 msgid "A sample article card, drawn with the values above."
 msgstr ""
 
-#: dist/apps/settings/index.BDETSswq.js:1
+#: dist/apps/settings/index.BKAZASVJ.js:1
 msgid "Read the article"
 msgstr ""
 
-#: dist/apps/settings/index.BDETSswq.js:1
+#: dist/apps/settings/index.BKAZASVJ.js:1
 msgid "Was this helpful?"
 msgstr ""
 
-#: dist/apps/settings/index.BDETSswq.js:1
+#: dist/apps/settings/index.BKAZASVJ.js:1
 msgid "Settings saved."
 msgstr ""
 
-#: dist/apps/settings/index.BDETSswq.js:1
+#: dist/apps/settings/index.BKAZASVJ.js:1
 msgid "Every setting is back to its default."
 msgstr ""
 
-#: dist/apps/settings/index.BDETSswq.js:1
+#: dist/apps/settings/index.BKAZASVJ.js:1
 msgid "You have unsaved knowledge base settings. Leave this page and lose them?"
 msgstr ""
 
-#: dist/apps/settings/index.BDETSswq.js:1
+#: dist/apps/settings/index.BKAZASVJ.js:1
 msgid "View documentation"
 msgstr ""
 
-#: dist/apps/settings/index.BDETSswq.js:1
+#: dist/apps/settings/index.BKAZASVJ.js:1
 msgid "Settings sections"
 msgstr ""
 
-#: dist/apps/settings/index.BDETSswq.js:1
+#: dist/apps/settings/index.BKAZASVJ.js:1
 msgid "Unsaved changes"
 msgstr ""
 
-#: dist/apps/settings/index.BDETSswq.js:1
+#: dist/apps/settings/index.BKAZASVJ.js:1
 msgid "All changes saved."
 msgstr ""
 
-#: dist/apps/settings/index.BDETSswq.js:1
+#: dist/apps/settings/index.BKAZASVJ.js:1
 msgid "Discard"
 msgstr ""
 
-#: dist/apps/settings/index.BDETSswq.js:1
+#: dist/apps/settings/index.BKAZASVJ.js:1
 msgid "Reset all"
 msgstr ""
 
-#: dist/apps/settings/index.BDETSswq.js:1
+#: dist/apps/settings/index.BKAZASVJ.js:1
 msgid "Save changes"
 msgstr ""
 
-#: dist/apps/settings/index.BDETSswq.js:1
+#: dist/apps/settings/index.BKAZASVJ.js:1
 msgid "Reset every setting?"
 msgstr ""
 
-#: dist/apps/settings/index.BDETSswq.js:1
+#: dist/apps/settings/index.BKAZASVJ.js:1
 msgid "Reset everything"
 msgstr ""
 
-#: dist/apps/settings/index.BDETSswq.js:1
+#: dist/apps/settings/index.BKAZASVJ.js:1
 msgid "Every setting goes back to its default. Stored articles, categories and feedback are untouched."
 msgstr ""
 
@@ -3553,544 +3558,560 @@ msgstr ""
 msgid "Select tags below to delete, merge or convert them"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "This tool is not available."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Rows older than"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "The recount failed."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "The backlog is too large for the browser; finish it with WP-CLI."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "The deletion failed."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Failed to load the status."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Feedback usefulness scores"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Each article's helpfulness score is a cache over the vote table. Migrated, imported or hand-edited votes can leave it stale; this recounts every article from the raw rows."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Votes recorded"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Recount scores"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Recounted the score of"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "articles."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Analytics retention"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Analytics rows older than the retention window are deleted by a scheduled job. This runs the same deletion now."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Retention window"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Permanently delete the expired rows?"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Delete expired rows"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Deleted"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "rows:"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "The scan failed."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "The fix failed."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Article groups merged"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Duplicates moved to trash"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Meta keys copied"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Votes moved"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Views moved"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Migration sources cleaned"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Source posts moved to trash"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Term groups merged"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Terms deleted"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Term meta keys copied"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Article assignments moved"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Duplicate articles share a title, a slug once any -2 style suffix is stripped, a date and the opening lines of their content; duplicate categories and tags share a name, a slug and a description. Merging keeps the member without a suffix: for articles the duplicate with the most meta provides the content and the rest go to the trash, for terms the meta and article assignments move across and the empty duplicate is deleted. Anything the knowledge base does not own is listed for you to resolve by hand."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Scan for duplicates"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "group(s)? Duplicated articles and migration source posts are moved to the trash; duplicated terms are deleted."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Merge duplicates"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "No duplicate articles, categories or tags detected."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Merge report"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "What was done"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Mergeable article groups"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "keeps the slug"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "provides the content"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "meta"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Migration sources to clean up"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Each pair is an article and the migration source post it replaced. Merging moves the source post to the trash; the article is left exactly as the site serves it."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "stays"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "moves to trash"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Mergeable term groups"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "provides the meta"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "articles"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Flagged for manual review"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "These groups involve a post type the knowledge base does not own, or have no un-suffixed member to merge into. Nothing was changed."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Warnings"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Orphaned"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Created"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Adopted"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Merged"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Updated"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Info"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Type"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Source ID"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "New ID"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Details"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Dry run"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Import"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "failed"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "entries"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "would be"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "The log could not be loaded."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "The log could not be cleared."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "No imports have been logged yet."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Run"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Download CSV"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Delete this run's log entries? The imported content is not affected."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Delete this run's log"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Clear the whole migration log? The imported content is not affected."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Clear log"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Clear all logs"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "No entries match this filter."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Categories and tags"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Meta"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Key"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Value"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Outcome"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Where"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Create a new category"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Complete"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Preparing…"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Wrapping up…"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Processing phase"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Failed to detect sources."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "The categories could not be loaded."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "The import failed."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Checking for import sources…"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "No import sources detected on this installation. Earlier imports are in the log below."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "These knowledge base plugins have data available for import:"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Totals as stored by the source. Records for deleted articles, and analytics from today, are not imported; the dry run shows the exact numbers."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "An import from this source was interrupted. Resume it to carry on from where it stopped; nothing is imported twice."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Last imported"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Importing again adds new content and the analytics recorded since; content already imported is left as it is."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Resume import"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Next: categories"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Choose where each category goes. A new category is created by default; merging files its articles under an existing category and redirects its old address there."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "This source has no categories."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Source category"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Import as"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Knowledge base"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Also copy the matching settings (layout, columns, sidebars, search placeholder, feedback). URL slugs are never changed, and every change is in the log."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Back"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Start dry run"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Run the import now, without a dry run first?"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Run import"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Skip the dry run and import"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Verifying import (dry run)"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Importing data"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Processed"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "items in the latest batch."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Dry run complete. Nothing was imported; the counts below are what the import would do, and the log shows every item."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Download URL map (CSV)"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Looks good, run the import"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Resume"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "View knowledge base"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Back to sources"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Migration log"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "The rebuild did not finish."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "The rebuild failed."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Failed to load the index status."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "The search index holds one row per article. It is kept in sync automatically; rebuild it after bulk edits outside the editor, or when search results look stale."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Indexed articles"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "A rebuild is part-way through"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "The index was rebuilt."
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Empty the index and re-index every article?"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Rebuild"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Rebuild index"
 msgstr ""
 
-#: dist/apps/tools/index.4D4XZC1l.js:1
+#: dist/apps/tools/index.DT3OL3S8.js:1
 msgid "Resume rebuild"
+msgstr ""
+
+#: dist/apps/tools/index.DT3OL3S8.js:1
+msgid "Migration"
+msgstr ""
+
+#: dist/apps/tools/index.DT3OL3S8.js:1
+msgid "Search Index"
+msgstr ""
+
+#: dist/apps/tools/index.DT3OL3S8.js:1
+msgid "Data Maintenance"
+msgstr ""
+
+#: dist/apps/tools/index.DT3OL3S8.js:1
+msgid "Duplicates"
 msgstr ""
 
 #: dist/chunks/admin.Dbr4AN9z.js:1
