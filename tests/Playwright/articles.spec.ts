@@ -9,8 +9,8 @@
  *
  * Needs a running WordPress with this plugin active, an administrator
  * account and at least one article, so it is skipped unless
- * `LICENSIO_KB_E2E=1` and the two credential variables are present. CI has no
- * such site and runs Playwright with `--pass-with-no-tests`.
+ * `LICENSIO_KB_E2E=1` and the two credential variables are present. CI
+ * provides both through `bin/e2e-env.sh`.
  *
  * @since 1.0.0
  */
