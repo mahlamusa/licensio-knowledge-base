@@ -73,6 +73,14 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
     private $cron_cleared = array();
 
     /**
+     * The cron hooks cleared, by blog ID.
+     *
+     * @since 1.0.0
+     * @var array<int, string[]>
+     */
+    private $cron_hooks_cleared = array();
+
+    /**
      * The delete_metadata() calls made, as argument lists.
      *
      * @since 1.0.0
@@ -106,10 +114,11 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
     protected function setUp(): void {
         parent::setUp();
 
-        $this->blogs        = array();
-        $this->current_blog = 0;
-        $this->cron_cleared = array();
-        $this->meta_deleted = array();
+        $this->blogs              = array();
+        $this->current_blog       = 0;
+        $this->cron_cleared       = array();
+        $this->cron_hooks_cleared = array();
+        $this->meta_deleted       = array();
 
         $this->autoload_calls = array();
         $this->uploads        = sys_get_temp_dir() . '/licensio-kb-uninstall-' . uniqid( '', false );
@@ -138,9 +147,11 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
 
         Functions\when( 'wp_clear_scheduled_hook' )->alias(
             function ( $hook ) {
-                unset( $hook );
+                $this->cron_hooks_cleared[ $this->current_blog ][] = $hook;
 
-                $this->cron_cleared[] = $this->current_blog;
+                if ( Licensio_KB_Visitor::CRON_HOOK === $hook ) {
+                    $this->cron_cleared[] = $this->current_blog;
+                }
 
                 return 1;
             }
@@ -219,6 +230,7 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
             'licensio_db_version'                      => '1.0.0',
             'licensio_unrelated_key'                   => 'left alone',
             Licensio_KB_Search_Index::BUILT_OPTION     => '1.0.0',
+            Licensio_KB_Lifecycle::UPGRADE_LOCK_OPTION => 1700000000,
             Licensio_KB_Import_State::option_for( 'heroic' ) => array( 'phase' => 'articles' ),
             Licensio_KB_Import_Report::option_for( 'heroic' ) => array( 'counts' => array() ),
             Licensio_KB_Import_Redirects::OPTION       => array( '/old' => '/new' ),
@@ -319,11 +331,16 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
 
         Licensio_KB_Uninstaller::uninstall_site();
 
+        $this->assertContains( Licensio_KB_Lifecycle::UPGRADE_LOCK_OPTION, Licensio_KB_Uninstaller::OPTIONS, 'A lock left by an interrupted upgrade must not outlive the plugin.' );
+
         foreach ( Licensio_KB_Uninstaller::OPTIONS as $option ) {
             $this->assertArrayNotHasKey( $option, $this->options, $option . ' must not survive uninstall.' );
         }
 
         $this->assertNotEmpty( $this->cron_cleared, 'The salt rotation event must be cleared.' );
+        $this->assertSame( Licensio_KB_Uninstaller::CRON_HOOKS, $this->cron_hooks_cleared[0], 'Every plugin cron hook must be cleared.' );
+        $this->assertContains( Licensio_KB_Search_Index::CRON_HOOK, Licensio_KB_Uninstaller::CRON_HOOKS );
+        $this->assertContains( Licensio_KB_Analytics_Retention::CRON_HOOK, Licensio_KB_Uninstaller::CRON_HOOKS );
         $this->assertArrayHasKey( 'licensio_unrelated_key', $this->options, 'Other plugins options must be left alone.' );
     }
 

@@ -9,8 +9,9 @@
  * Two rules govern what is removed:
  *
  * - Data is kept unless the site owner opted in through the
- *   `delete_data_on_uninstall` setting. Data is the four tables (feedback
- *   comments, votes, search and view history), the settings (which hold the
+ *   `delete_data_on_uninstall` setting. Data is the five tables (feedback
+ *   comments and votes, the search index, search and view history, and the
+ *   import log), the settings (which hold the
  *   article, category and tag slugs, so every permalink survives a delete and
  *   reinstall), the import options (the served redirect map, the resume
  *   cursors and the run reports) and the import URL map files. Deleting
@@ -19,7 +20,7 @@
  *   keeping it is. Kept options are switched to not autoload, so a site
  *   without the plugin does not load them on every request.
  * - Plugin state - the version markers, the visitor salt, the one-shot flags,
- *   the salt-rotation cron event and per-user admin preferences - is always
+ *   the upgrade lock, the cron events and per-user admin preferences - is always
  *   removed, on every site of the network. A scheduled hook or a user meta row
  *   that outlives the plugin that owns it is pure residue.
  *
@@ -52,6 +53,7 @@ class Licensio_KB_Uninstaller {
         'licensio_flush_rewrite_rules',
         'licensio_search_reindex_state',
         Licensio_KB_Search_Index::BUILT_OPTION,
+        Licensio_KB_Lifecycle::UPGRADE_LOCK_OPTION,
     );
 
     /**
@@ -62,6 +64,21 @@ class Licensio_KB_Uninstaller {
      */
     const DATA_OPTIONS = array(
         Licensio_KB_Settings::OPTION_NAME,
+    );
+
+    /**
+     * Every cron hook the plugin schedules, cleared on every site.
+     *
+     * Deactivation clears them too, but a network deactivation runs only on
+     * the main site, so a subsite's events would otherwise outlive the plugin.
+     *
+     * @since 1.0.0
+     * @var string[]
+     */
+    const CRON_HOOKS = array(
+        Licensio_KB_Visitor::CRON_HOOK,
+        Licensio_KB_Search_Index::CRON_HOOK,
+        Licensio_KB_Analytics_Retention::CRON_HOOK,
     );
 
     /**
@@ -152,7 +169,9 @@ class Licensio_KB_Uninstaller {
             delete_option( $option );
         }
 
-        wp_clear_scheduled_hook( Licensio_KB_Visitor::CRON_HOOK );
+        foreach ( self::CRON_HOOKS as $hook ) {
+            wp_clear_scheduled_hook( $hook );
+        }
 
         /*
          * Delete the key for every user. The users table is shared by the
