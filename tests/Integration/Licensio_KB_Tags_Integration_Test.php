@@ -54,7 +54,6 @@ class Licensio_KB_Tags_Integration_Test extends Licensio_KB_Analytics_DB_Test_Ca
         $this->stub_category_term_api();
 
         Brain\Monkey\Functions\when( 'wp_slash' )->returnArg();
-        Brain\Monkey\Functions\when( 'wp_defer_term_counting' )->justReturn( false );
         Brain\Monkey\Functions\when( 'rest_sanitize_boolean' )->alias(
             function ( $value ) {
                 return (bool) $value;
@@ -487,5 +486,156 @@ class Licensio_KB_Tags_Integration_Test extends Licensio_KB_Analytics_DB_Test_Ca
         $this->assertSame( array( 'Invoices', 'Q&A' ), $this->names() );
         $this->assertSame( 2, $this->count_rows( 'term_relationships' ), 'The other tags keep their articles.' );
         $this->assertSame( 3, $this->count_rows( 'posts' ), 'No article is touched.' );
+    }
+
+    /**
+     * A merge whose second source fails leaves every term and assignment as it was.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_merge_that_fails_part_way_changes_nothing() {
+        $a = $this->make_term( 'Alpha' );
+        $b = $this->make_term( 'Beta' );
+        $c = $this->make_term( 'Gamma' );
+
+        $this->make_article( array( 'tags' => array( $a ) ) );
+        $this->make_article( array( 'tags' => array( $a, $c ) ) );
+
+        $failing = $this->make_article( array( 'tags' => array( $b ) ) );
+        $before  = $this->live_snapshot();
+
+        Brain\Monkey\Actions\expectDone( 'licensio_kb_terms_merged' )->never();
+        Brain\Monkey\Functions\when( 'wp_remove_object_terms' )->alias(
+            function ( $object_id, $terms, $taxonomy ) use ( $failing, $b ) {
+                if ( $failing === (int) $object_id && array( $b ) === $terms ) {
+                    return new WP_Error( 'db_delete_error', 'Could not remove the term relationship.' );
+                }
+
+                return $this->live_remove_object_terms( $object_id, $terms, $taxonomy );
+            }
+        );
+
+        $result = $this->controller->merge(
+            new WP_REST_Request(
+                array(),
+                '/licensio-kb/v1/tags/merge',
+                array(
+                    'sources' => array( $a, $b ),
+                    'target'  => $c,
+                )
+            )
+        );
+
+        $this->assertInstanceOf( WP_Error::class, $result );
+        $this->assertSame( $before, $this->live_snapshot() );
+    }
+
+    /**
+     * A convert whose tags cannot be deleted leaves the tags, articles and categories as they were.
+     *
+     * One tag reuses an existing category, whose new articles lose it again;
+     * the other gets a new category, which is deleted again.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_convert_that_cannot_delete_the_tags_changes_nothing() {
+        $categories = $this->make_category_tree(
+            array(
+                'Help'    => array(),
+                'Refunds' => array(),
+            )
+        );
+        $refunds    = $this->make_term( 'Refunds' );
+        $other      = $this->make_term( 'Other' );
+
+        $this->make_article(
+            array(
+                'tags'       => array( $refunds, $other ),
+                'categories' => array( $categories['Help'] ),
+            )
+        );
+        $this->make_article( array( 'tags' => array( $refunds ) ) );
+
+        $before = $this->live_snapshot();
+
+        Brain\Monkey\Functions\when( 'wp_delete_term' )->alias(
+            function ( $term_id, $taxonomy ) {
+                return Licensio_KB_Post_Types::TAXONOMY_TAG === $taxonomy ? false : $this->live_delete_term( $term_id, $taxonomy );
+            }
+        );
+
+        $result = $this->controller->convert(
+            new WP_REST_Request(
+                array(),
+                '/licensio-kb/v1/tags/convert',
+                array(
+                    'ids'    => array( $refunds, $other ),
+                    'parent' => $categories['Help'],
+                )
+            )
+        );
+
+        $this->assertSame( array(), $result['converted'] );
+        $this->assertSame( array( $refunds, $other ), array_column( $result['failed'], 'id' ) );
+        $this->assertSame( $before, $this->live_snapshot() );
+    }
+
+    /**
+     * A new tag with a taken slug gets a unique one; an edit to a taken slug is a 409.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_taken_slug_is_made_unique_on_add_and_refused_on_edit() {
+        $this->make_term( 'Billing' );
+
+        $added = $this->controller->create_item(
+            new WP_REST_Request(
+                array(),
+                '/licensio-kb/v1/tags',
+                array(
+                    'name' => 'Invoices',
+                    'slug' => 'billing',
+                )
+            )
+        );
+
+        $this->assertSame( 'billing-2', $added->get_data()['slug'] );
+
+        // The slug is sent already sanitised; the stand-in keeps it as it is.
+        Brain\Monkey\Functions\when( 'sanitize_title' )->returnArg();
+
+        $before = $this->live_snapshot();
+        $edited = $this->controller->update_item(
+            new WP_REST_Request(
+                array(),
+                '/licensio-kb/v1/tags/' . $added->get_data()['id'],
+                array(
+                    'id'   => $added->get_data()['id'],
+                    'slug' => 'billing',
+                )
+            )
+        );
+
+        $this->assertInstanceOf( WP_Error::class, $edited );
+        $this->assertSame( 409, $edited->get_error_data()['status'] );
+        $this->assertSame( 'Another tag already uses the slug “billing”. Choose a different slug.', $edited->get_error_message() );
+        $this->assertSame( $before, $this->live_snapshot() );
+
+        $clash = $this->controller->create_item(
+            new WP_REST_Request(
+                array(),
+                '/licensio-kb/v1/tags',
+                array( 'name' => 'Billing' )
+            )
+        );
+
+        $this->assertSame( 'term_exists', $clash->get_error_code() );
+        $this->assertSame( 409, $clash->get_error_data()['status'] );
     }
 }

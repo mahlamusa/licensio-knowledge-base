@@ -46,6 +46,14 @@ class Licensio_KB_Term_Operations_Test extends Licensio_KB_Test_Case {
     private $events = array();
 
     /**
+     * Whether term counting is deferred, as core's switch holds it.
+     *
+     * @since 1.0.0
+     * @var bool
+     */
+    private $deferring = false;
+
+    /**
      * Back the core term functions with the in-memory store.
      *
      * @since 1.0.0
@@ -63,6 +71,18 @@ class Licensio_KB_Term_Operations_Test extends Licensio_KB_Test_Case {
         );
         $this->deleted     = array();
         $this->events      = array();
+        $this->deferring   = false;
+
+        Functions\when( 'wp_defer_term_counting' )->alias(
+            function ( $defer = null ) {
+                if ( is_bool( $defer ) ) {
+                    $this->deferring = $defer;
+                    $this->events[]  = $defer ? 'defer' : 'count';
+                }
+
+                return $this->deferring;
+            }
+        );
 
         Functions\when( 'absint' )->alias(
             function ( $value ) {
@@ -226,7 +246,7 @@ class Licensio_KB_Term_Operations_Test extends Licensio_KB_Test_Case {
 
         ( new Licensio_KB_Term_Operations() )->merge_terms( array( 10, 11 ), 30, 'licensio_category' );
 
-        $this->assertSame( array( 'merged', 'delete 10', 'delete 11' ), $this->events );
+        $this->assertSame( array( 'defer', 'count', 'merged', 'delete 10', 'delete 11' ), $this->events );
     }
 
     /**
@@ -293,5 +313,227 @@ class Licensio_KB_Term_Operations_Test extends Licensio_KB_Test_Case {
         $operations->announce_removal( 42, 7, 'licensio_category' );
         $operations->announce_removal( 43, 8, 'licensio_tag' );
         $operations->announce_removal( 44, 9, 'category' );
+    }
+
+    /**
+     * Counting is deferred while assignments move and recounted once after.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_counting_is_deferred_while_assignments_move() {
+        ( new Licensio_KB_Term_Operations() )->move_assignments( 10, 11, 'licensio_category' );
+
+        $this->assertSame( array( 'defer', 'count' ), $this->events );
+        $this->assertFalse( $this->deferring );
+    }
+
+    /**
+     * A caller that already deferred counting keeps it deferred.
+     *
+     * The tag conversion loop defers counting itself and moves one tag at a
+     * time; turning the switch off after the first tag would recount on every
+     * later article.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_counting_deferred_by_the_caller_stays_deferred() {
+        $this->deferring = true;
+
+        ( new Licensio_KB_Term_Operations() )->move_assignments( 10, 11, 'licensio_category' );
+
+        $this->assertSame( array(), $this->events );
+        $this->assertTrue( $this->deferring );
+    }
+
+    /**
+     * Counting is restored when the work throws.
+     *
+     * A hook on an assignment write can throw. Counting must not stay
+     * deferred for the rest of the request when that happens.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_counting_is_restored_when_a_move_throws() {
+        Functions\when( 'wp_set_object_terms' )->alias(
+            function () {
+                throw new RuntimeException( 'A hook failed.' );
+            }
+        );
+
+        try {
+            ( new Licensio_KB_Term_Operations() )->move_assignments( 10, 11, 'licensio_category' );
+            $this->fail( 'The exception should reach the caller.' );
+        } catch ( RuntimeException $exception ) {
+            $this->assertSame( 'A hook failed.', $exception->getMessage() );
+        }
+
+        $this->assertSame( array( 'defer', 'count' ), $this->events );
+        $this->assertFalse( $this->deferring );
+    }
+
+    /**
+     * A move that fails part way puts back the objects already moved.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_failed_move_puts_back_what_it_moved() {
+        $before = $this->assignments;
+
+        $this->fail_removal_of( 2 );
+
+        $record = array( 'stale' );
+        $result = ( new Licensio_KB_Term_Operations() )->move_assignments( 10, 20, 'licensio_category', $record );
+
+        $this->assertInstanceOf( 'WP_Error', $result );
+        $this->assertSame( array(), $record, 'Nothing is left for the caller to undo.' );
+        $this->assertEqualsCanonicalizing( $before[10], $this->assignments[10] );
+        $this->assertEqualsCanonicalizing( $before[20], $this->assignments[20] );
+    }
+
+    /**
+     * The record of a move lets the caller put everything back later.
+     *
+     * An object that had the target before the move keeps it.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_undo_puts_a_recorded_move_back() {
+        $before     = $this->assignments;
+        $operations = new Licensio_KB_Term_Operations();
+        $record     = array();
+
+        $this->assertSame( 2, $operations->move_assignments( 10, 11, 'licensio_category', $record ) );
+        $this->assertCount( 2, $record );
+
+        $operations->undo( $record );
+
+        $this->assertEqualsCanonicalizing( $before[10], $this->assignments[10] );
+        $this->assertEqualsCanonicalizing( $before[11], $this->assignments[11], 'Object 2 had the target already and keeps it.' );
+    }
+
+    /**
+     * A merge whose second source fails puts the first source's moves back.
+     *
+     * Nothing is deleted and the merged hook does not fire.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_failed_merge_changes_nothing() {
+        $before = $this->assignments;
+
+        Functions\expect( 'wp_delete_term' )->never();
+        Actions\expectDone( 'licensio_kb_terms_merged' )->never();
+
+        $this->fail_removal_of( 3 );
+
+        $result = ( new Licensio_KB_Term_Operations() )->merge_terms( array( 10, 11 ), 20, 'licensio_tag' );
+
+        $this->assertInstanceOf( 'WP_Error', $result );
+
+        foreach ( $before as $term_id => $objects ) {
+            $this->assertEqualsCanonicalizing( $objects, $this->assignments[ $term_id ], 'Term ' . $term_id . ' is as it was.' );
+        }
+    }
+
+    /**
+     * Copying gives every object of a tag the category and leaves the tag alone.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_assignments_are_copied_across_taxonomies() {
+        $record = array();
+        $copied = ( new Licensio_KB_Term_Operations() )->copy_assignments( 10, 'licensio_tag', 30, 'licensio_category', $record );
+
+        $this->assertSame( 2, $copied );
+        $this->assertSame( array( 1, 2 ), $this->assignments[30] );
+        $this->assertSame( array( 1, 2 ), $this->assignments[10], 'The source keeps its objects; deleting it removes them.' );
+        $this->assertSame( array( false, false ), array_column( $record, 'removed' ) );
+    }
+
+    /**
+     * A copy names both taxonomies, and each must be a knowledge base one.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_bad_copy_is_refused() {
+        Functions\expect( 'wp_set_object_terms' )->never();
+
+        $operations = new Licensio_KB_Term_Operations();
+
+        $this->assertSame( 'licensio_kb_invalid_taxonomy', $operations->copy_assignments( 10, 'post_tag', 30, 'licensio_category' )->get_error_code() );
+        $this->assertSame( 'licensio_kb_invalid_term', $operations->copy_assignments( 10, 'licensio_tag', 99, 'licensio_category' )->get_error_code() );
+    }
+
+    /**
+     * An edited slug is refused only when another term of the taxonomy has it.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_slug_another_term_uses_is_a_conflict() {
+        Functions\when( 'get_term_by' )->alias(
+            function ( $field, $value ) {
+                unset( $field );
+
+                return 'billing' === $value ? new WP_Term( array( 'term_id' => 10 ) ) : false;
+            }
+        );
+
+        $operations = new Licensio_KB_Term_Operations();
+
+        $this->assertTrue( $operations->check_slug( 11, 'invoices', 'licensio_tag' ), 'A free slug.' );
+        $this->assertTrue( $operations->check_slug( 10, 'billing', 'licensio_tag' ), 'The term\'s own slug.' );
+        $this->assertTrue( $operations->check_slug( 11, '', 'licensio_tag' ), 'An empty slug is made from the name.' );
+
+        $taken = $operations->check_slug( 11, 'billing', 'licensio_tag' );
+
+        $this->assertInstanceOf( 'WP_Error', $taken );
+        $this->assertSame( 'licensio_kb_slug_taken', $taken->get_error_code() );
+        $this->assertSame( 409, $taken->get_error_data()['status'] );
+        $this->assertStringContainsString( 'Another tag already uses the slug “billing”', $taken->get_error_message() );
+        $this->assertSame( array( 'slug' => $taken->get_error_message() ), $taken->get_error_data()['params'] );
+        $this->assertStringContainsString( 'Another category', $operations->check_slug( 11, 'billing', 'licensio_category' )->get_error_message() );
+    }
+
+    /**
+     * Make removing a term from one object fail.
+     *
+     * @since 1.0.0
+     *
+     * @param int $failing_object The object whose removal fails.
+     *
+     * @return void
+     */
+    private function fail_removal_of( $failing_object ) {
+        Functions\when( 'wp_remove_object_terms' )->alias(
+            function ( $object_id, $terms ) use ( $failing_object ) {
+                if ( $failing_object === $object_id && ! in_array( 20, $terms, true ) ) {
+                    return new WP_Error( 'db_delete_error', 'Could not remove the term relationship.' );
+                }
+
+                foreach ( $terms as $term_id ) {
+                    $this->assignments[ $term_id ] = array_values( array_diff( $this->assignments[ $term_id ], array( $object_id ) ) );
+                }
+
+                return true;
+            }
+        );
     }
 }
