@@ -24,6 +24,7 @@ import {
 	openContentManager,
 } from './helpers/content-manager';
 import { logIn, password, user } from './helpers/session';
+import { wpCli, wpEval } from './helpers/wp-cli';
 
 const enabled = process.env.LICENSIO_KB_E2E === '1';
 
@@ -381,33 +382,31 @@ test( 'a description shows as plain text and is edited as stored', async ( {
 test( 'a description leaves out the code in script and style elements', async ( {
 	page,
 } ) => {
+	test.skip( ! wpCli, 'Set LICENSIO_KB_WP_CLI to run.' );
+
 	const name = `Code ${ suffix }`;
-	const stored =
-		'Tom<script>var shown = false;</script> &amp; <style>em { color: red; }</style><em>Jerry</em>';
 
 	await logIn( page );
 	await openContentManager( page, 'tags' );
+	await addTag( page, name );
 
-	await page.getByRole( 'button', { name: 'Add tag' } ).click();
+	/*
+	 * Saving through the app or REST filters the markup, so the description
+	 * is written straight to the table, as an import or another plugin might.
+	 */
+	wpEval( `
+		global $wpdb;
+		$term = get_term_by( 'name', '${ name }', 'licensio_tag' );
+		$wpdb->update( $wpdb->term_taxonomy, array( 'description' => 'Tom<script>var shown = false;</script> &amp; <style>em { color: red; }</style><em>Jerry</em>' ), array( 'term_taxonomy_id' => $term->term_taxonomy_id ) );
+		clean_term_cache( $term->term_id, 'licensio_tag' );
+	` );
 
-	const form = page.locator( '.lkb-tags__add' );
-
-	await form.getByLabel( 'Name' ).fill( name );
-	await form.getByLabel( 'Description' ).fill( stored );
-	await form.getByRole( 'button', { name: 'Add tag' } ).click();
-	await confirmPopconfirm( page );
+	await page.reload();
 	await search( page, name );
 
 	await expect(
 		row( page, name ).locator( '.lkb-tags__description' )
 	).toHaveText( 'Tom & Jerry' );
-
-	// The stored description still holds the elements the table left out.
-	await row( page, name ).getByRole( 'button', { name: 'Edit' } ).click();
-	await expect(
-		page.locator( '.ant-table-row' ).getByLabel( 'Description' )
-	).toHaveValue( /<script>/ );
-	await page.keyboard.press( 'Escape' );
 
 	await deleteListed( page );
 } );
