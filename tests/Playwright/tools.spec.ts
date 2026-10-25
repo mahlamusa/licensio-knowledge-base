@@ -1,9 +1,10 @@
 /**
  * The Tools screen's Data Maintenance tab, end to end.
  *
- * Checks that the recount report is one translatable sentence with a plural,
- * not words joined around a number: the answer is rewritten to report a
- * single article, which only the singular form reads right for.
+ * Checks that the recount asks first and sends nothing when cancelled, and
+ * that its report is one translatable sentence with a plural, not words
+ * joined around a number: the answer is rewritten to report a single article,
+ * which only the singular form reads right for.
  *
  * The suite needs a running WordPress with this plugin active and an
  * administrator account, so it is skipped unless `LICENSIO_KB_E2E=1` and the
@@ -13,6 +14,11 @@
  */
 
 import { expect, test } from '@playwright/test';
+import {
+	cancelPopconfirm,
+	confirmPopconfirm,
+	openPopconfirm,
+} from './helpers/content-manager';
 import { logIn, password, user } from './helpers/session';
 
 const enabled = process.env.LICENSIO_KB_E2E === '1';
@@ -50,9 +56,31 @@ test( 'the recount report reads as one sentence for a single article', async ( {
 		} );
 	} );
 
+	const recounts: string[] = [];
+
+	page.on( 'request', ( request ) => {
+		if (
+			( request.postData() ?? '' ).includes(
+				'action=licensio_tools_recount_scores'
+			)
+		) {
+			recounts.push( request.url() );
+		}
+	} );
+
 	await page.goto( TOOLS_URL );
 	await page.getByRole( 'tab', { name: 'Data Maintenance' } ).click();
+
+	// The recount asks first, and Cancel sends nothing.
 	await page.getByRole( 'button', { name: 'Recount scores' } ).click();
+	await expect( openPopconfirm( page ) ).toContainText(
+		'Recount the score of every article?'
+	);
+	await cancelPopconfirm( page );
+	expect( recounts ).toHaveLength( 0 );
+
+	await page.getByRole( 'button', { name: 'Recount scores' } ).click();
+	await confirmPopconfirm( page );
 
 	await expect(
 		page.locator( '.licensio-kb-data-maintenance__done' )

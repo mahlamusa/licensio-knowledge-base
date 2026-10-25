@@ -3,9 +3,10 @@
  *
  * Walks the import wizard as far as a dry run and reads the migration log. A
  * dry run writes nothing but its own log rows, so it is safe to repeat. The spec
- * never starts a real import: it does not click "Looks good, run the import",
- * "Skip the dry run and import" or "Resume import", and it refuses to continue
- * past a source whose only way forward is "Resume import".
+ * never starts a real import: it only opens and cancels the confirmation of
+ * "Looks good, run the import", never clicks "Skip the dry run and import" or
+ * "Resume import", and it refuses to continue past a source whose only way
+ * forward is "Resume import".
  *
  * The suite needs a running WordPress with this plugin active, an
  * administrator account and at least one import source with data, so it is
@@ -20,6 +21,7 @@
  */
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { cancelPopconfirm, openPopconfirm } from './helpers/content-manager';
 import { logIn, password, user } from './helpers/session';
 
 const enabled = process.env.LICENSIO_KB_E2E === '1';
@@ -209,6 +211,15 @@ test.describe( 'Migration wizard', () => {
 		} );
 		await expect( root.locator( '.licensio-kb-migration__counts-table .ant-descriptions-item-label' ).first() ).toBeVisible();
 		await expect( root.getByRole( 'button', { name: 'Looks good, run the import' } ) ).toBeVisible();
+
+		// The real run asks first; cancelling leaves the dry run report alone.
+		await root.getByRole( 'button', { name: 'Looks good, run the import' } ).click();
+		await expect( openPopconfirm( page ) ).toContainText( 'Run the import now?' );
+		await cancelPopconfirm( page );
+		await expect(
+			root.getByRole( 'heading', { name: 'Verifying import (dry run)' } )
+		).toBeVisible();
+		await expect( root.getByText( /Dry run complete/ ) ).toBeVisible();
 
 		// The run is the first thing in the migration log, flagged as a dry run.
 		const log = root.locator( '.licensio-kb-migration-log' );

@@ -4,8 +4,10 @@
  * Opens the app through its hidden admin page and checks what only a real
  * WordPress can answer: the pills match the database, a Popconfirm stands
  * before every write and Cancel sends nothing, a quick edit is saved only
- * once confirmed, and the list state lives in the URL, with back and forward
- * stepping through it. A keyboard trash moves focus to the Undo toast, whose
+ * once confirmed, and the list state lives in the URL: filters replace the
+ * history entry while sort and page push one. An out of range page moves
+ * back to the last page, a failed load shows no empty state, and a quick
+ * edit reloads the list and its counts. A keyboard trash moves focus to the Undo toast, whose
  * countdown waits while it has focus.
  *
  * Needs a running WordPress with this plugin active, an administrator
@@ -216,27 +218,117 @@ test.describe( 'Articles app', () => {
 		await expect( page ).toHaveURL( /window=7/ );
 	} );
 
-	test( 'back and forward step through status and window changes', async ( {
+	test( 'filters replace the history entry while sort and page push one', async ( {
 		page,
 	} ) => {
 		const app = await openContentManager( page, 'articles' );
 		const active = app.locator( '.lkb-pill.is-active' );
+		const entries = () => page.evaluate( () => window.history.length );
+		const start = await entries();
 
 		await app.locator( '.lkb-pill', { hasText: 'Drafts' } ).click();
 		await expect( page ).toHaveURL( /status=draft/ );
 		await app.getByText( '7 days', { exact: true } ).click();
 		await expect( page ).toHaveURL( /window=7/ );
+		expect( await entries() ).toBe( start );
+
+		await app.locator( '.ant-table-thead th', { hasText: 'Title' } ).click();
+		await expect( page ).toHaveURL( /orderby=title/ );
+		expect( await entries() ).toBe( start + 1 );
 
 		await page.goBack();
-		await expect( page ).not.toHaveURL( /window=7/ );
+		await expect( page ).not.toHaveURL( /orderby=title/ );
+		await expect( page ).toHaveURL( /status=draft.*window=7/ );
 		await expect( active ).toContainText( 'Drafts' );
-
-		await page.goBack();
-		await expect( page ).not.toHaveURL( /status=draft/ );
-		await expect( active ).toContainText( 'All' );
 
 		await page.goForward();
-		await expect( active ).toContainText( 'Drafts' );
+		await expect( page ).toHaveURL( /orderby=title/ );
+	} );
+
+	test( 'a page past the end moves back to the last page', async ( {
+		page,
+	} ) => {
+		await page.goto( contentManagerUrl( 'articles' ) + '&paged=999' );
+
+		const app = page.locator( '#licensio-kb-articles' );
+
+		await expect( app.locator( '.ant-table-row' ).first() ).toBeVisible();
+		await expect( page ).not.toHaveURL( /paged=999/ );
+		await expect( app.getByText( 'No articles yet.' ) ).toHaveCount( 0 );
+	} );
+
+	test( 'a failed first load shows the error without the empty state', async ( {
+		page,
+	} ) => {
+		await page.route(
+			( url ) =>
+				/licensio-kb(%2F|\/)v1(%2F|\/)articles(&|\?|$)/.test( url.href ),
+			( route ) =>
+				route.fulfill( {
+					status: 500,
+					json: { code: 'e2e', message: 'The list is down.' },
+				} )
+		);
+
+		await page.goto( contentManagerUrl( 'articles' ) );
+
+		const app = page.locator( '#licensio-kb-articles' );
+
+		await expect( app.locator( '.ant-alert-error' ) ).toBeVisible();
+		await expect( app.getByText( 'No articles yet.' ) ).toHaveCount( 0 );
+		await expect( app.getByText( 'No articles match' ) ).toHaveCount( 0 );
+	} );
+
+	test( 'a quick edit that publishes a draft takes it out of the Drafts view', async ( {
+		page,
+	} ) => {
+		const app = await openContentManager( page, 'articles' );
+		const title = `Quick publish ${ Date.now() }`;
+		const { id } = await articleRequest( page, 'POST', '', {
+			title,
+			status: 'draft',
+		} );
+
+		try {
+			await page.goto( contentManagerUrl( 'articles' ) + '&status=draft' );
+
+			const pill = ( label: string ) =>
+				app.locator( '.lkb-pill', { hasText: label } );
+			const count = async ( label: string ) =>
+				Number(
+					/\((\d+)\)/.exec( ( await pill( label ).textContent() ) ?? '' )?.[ 1 ]
+				);
+			const row = app.locator( '.ant-table-row', { hasText: title } );
+
+			await expect( row ).toBeVisible();
+
+			const drafts = await count( 'Drafts' );
+			const published = await count( 'Published' );
+
+			await row.getByRole( 'button', { name: 'Quick edit' } ).click();
+
+			const form = app.locator( '.ant-table-expanded-row' ).first();
+
+			await form
+				.locator( '.ant-form-item', { hasText: 'Status' } )
+				.locator( '.ant-select' )
+				.click();
+			await page
+				.locator( '.ant-select-dropdown:visible .ant-select-item-option' )
+				.filter( { hasText: /^Published$/ } )
+				.click();
+			await form.getByRole( 'button', { name: /Save/ } ).click();
+			await confirmPopconfirm( page );
+
+			await expect( row ).toHaveCount( 0 );
+			await expect( app.locator( '.ant-table-expanded-row' ) ).toHaveCount( 0 );
+			await expect( pill( 'Drafts' ) ).toContainText( `(${ drafts - 1 })` );
+			await expect( pill( 'Published' ) ).toContainText(
+				`(${ published + 1 })`
+			);
+		} finally {
+			await articleRequest( page, 'DELETE', '/' + id );
+		}
 	} );
 
 	test( 'a keyboard trash hands focus to Undo and waits while it has focus', async ( {

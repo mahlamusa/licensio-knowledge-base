@@ -378,6 +378,72 @@ test( 'a description shows as plain text and is edited as stored', async ( {
 	await deleteListed( page );
 } );
 
+test( 'a description leaves out the code in script and style elements', async ( {
+	page,
+} ) => {
+	const name = `Code ${ suffix }`;
+	const stored =
+		'Tom<script>var shown = false;</script> &amp; <style>em { color: red; }</style><em>Jerry</em>';
+
+	await logIn( page );
+	await openContentManager( page, 'tags' );
+
+	await page.getByRole( 'button', { name: 'Add tag' } ).click();
+
+	const form = page.locator( '.lkb-tags__add' );
+
+	await form.getByLabel( 'Name' ).fill( name );
+	await form.getByLabel( 'Description' ).fill( stored );
+	await form.getByRole( 'button', { name: 'Add tag' } ).click();
+	await confirmPopconfirm( page );
+	await search( page, name );
+
+	await expect(
+		row( page, name ).locator( '.lkb-tags__description' )
+	).toHaveText( 'Tom & Jerry' );
+
+	// The stored description still holds the elements the table left out.
+	await row( page, name ).getByRole( 'button', { name: 'Edit' } ).click();
+	await expect(
+		page.locator( '.ant-table-row' ).getByLabel( 'Description' )
+	).toHaveValue( /<script>/ );
+	await page.keyboard.press( 'Escape' );
+
+	await deleteListed( page );
+} );
+
+test( 'a tag count links to the Articles app filtered by the tag', async ( {
+	page,
+} ) => {
+	const name = `Counted ${ suffix }`;
+
+	await logIn( page );
+	await openContentManager( page, 'tags' );
+	await addTag( page, name );
+	await search( page, name );
+
+	const link = row( page, name ).getByRole( 'link', { name: '0' } );
+
+	await expect( link ).toHaveAttribute(
+		'href',
+		/page=licensio-kb-articles&tag=\d+$/
+	);
+
+	const href = ( await link.getAttribute( 'href' ) ) ?? '';
+
+	await link.click();
+	await expect( page ).toHaveURL( href );
+	await expect(
+		page.locator( '#licensio-kb-articles' ).getByText(
+			'No articles match these filters.'
+		)
+	).toBeVisible();
+
+	await page.goBack();
+	await search( page, name );
+	await deleteListed( page );
+} );
+
 test( 'a slow save leaves the row the user opened next alone', async ( {
 	page,
 } ) => {
