@@ -3,7 +3,8 @@
  *
  * Adds tags through the app, then checks that every change (add, save,
  * merge, convert and delete) waits for its Popconfirm and that Cancel sends
- * nothing, that a taken slug is made unique, and that merge and convert to
+ * nothing, that an edit to a slug another tag uses is refused with a message
+ * and keeps the input, and that merge and convert to
  * category work on the selected tags, and that focus lands on the page title
  * once a bulk delete takes the Delete button away. Escape closes the Add tag
  * form and an inline edit, sending nothing. The category the convert
@@ -211,7 +212,7 @@ test( 'tags are edited, merged and converted only after confirmation', async ( {
 	await search( page, suffix );
 	await expect( page.locator( '.ant-table-row' ) ).toHaveCount( 3 );
 
-	// A slug that is taken is made unique, and Cancel sends nothing.
+	// A slug another tag uses is refused with a message, and Cancel sends nothing.
 	const before = writes.length;
 	const editing = row( page, gamma );
 
@@ -226,7 +227,17 @@ test( 'tags are edited, merged and converted only after confirmation', async ( {
 
 	await page.getByRole( 'button', { name: 'Save' } ).first().click();
 	await confirmPopconfirm( page );
-	await expect( row( page, gamma ) ).toContainText( `alpha-${ suffix }-2` );
+	await expect(
+		page.getByText(
+			`Another tag already uses the slug “alpha-${ suffix }”. Choose a different slug.`
+		)
+	).toBeVisible();
+	await expect( slug ).toHaveValue( `alpha-${ suffix }` );
+	await page
+		.locator( '.ant-table-row' )
+		.getByRole( 'button', { name: 'Cancel' } )
+		.click();
+	await expect( row( page, gamma ) ).toContainText( `gamma-${ suffix }` );
 
 	// Merge Beta into Alpha.
 	await row( page, beta ).locator( '.ant-checkbox-input' ).check();

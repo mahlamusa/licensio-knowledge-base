@@ -226,4 +226,28 @@ abstract class Licensio_KB_REST_Controller extends WP_REST_Controller {
             array( 'status' => 501 )
         );
     }
+
+    /**
+     * A core term error with the HTTP status the REST layer should answer.
+     *
+     * Core's term functions return errors without a status, which the REST
+     * layer would answer as a 500. A clash with an existing term is a 409;
+     * anything else is a bad request. Shared by the Categories and Tags
+     * routes so both answer a clash the same way.
+     *
+     * @since 1.0.0
+     *
+     * @param WP_Error $error The core error.
+     *
+     * @return WP_Error The same code and message with status 409 or 400.
+     */
+    protected static function rest_error( WP_Error $error ) {
+        $code = (string) $error->get_error_code();
+
+        return new WP_Error(
+            $code,
+            $error->get_error_message(),
+            array( 'status' => in_array( $code, array( 'term_exists', 'duplicate_term_slug' ), true ) ? 409 : 400 )
+        );
+    }
 }

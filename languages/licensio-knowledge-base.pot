@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-25T15:13:47+00:00\n"
+"POT-Creation-Date: 2026-10-25T15:35:51+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.7.1\n"
 "X-Domain: licensio-knowledge-base\n"
@@ -44,8 +44,8 @@ msgid "Attachment(s)"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-admin-columns.php:205
-#: dist/apps/articles/index.BHttPLre.js:35
-#: dist/apps/articles/index.BHttPLre.js:57
+#: dist/apps/articles/index.BqH5L0yX.js:35
+#: dist/apps/articles/index.BqH5L0yX.js:57
 msgid "Rating"
 msgstr ""
 
@@ -53,8 +53,8 @@ msgstr ""
 #: includes/import/class-licensio-kb-betterdocs-import-driver.php:85
 #: includes/import/class-licensio-kb-heroic-import-driver.php:84
 #: dist/apps/analytics/index.DzCL-Ax5.js:1
-#: dist/apps/articles/index.BHttPLre.js:35
-#: dist/apps/articles/index.BHttPLre.js:57
+#: dist/apps/articles/index.BqH5L0yX.js:35
+#: dist/apps/articles/index.BqH5L0yX.js:57
 msgid "Views"
 msgstr ""
 
@@ -63,10 +63,10 @@ msgid "Reading Time"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-admin-columns.php:236
-#: dist/apps/articles/index.BHttPLre.js:34
-#: dist/apps/articles/index.BHttPLre.js:35
-#: dist/apps/articles/index.BHttPLre.js:57
-#: dist/apps/articles/index.BHttPLre.js:59
+#: dist/apps/articles/index.BqH5L0yX.js:34
+#: dist/apps/articles/index.BqH5L0yX.js:35
+#: dist/apps/articles/index.BqH5L0yX.js:57
+#: dist/apps/articles/index.BqH5L0yX.js:59
 msgid "Author"
 msgstr ""
 
@@ -115,8 +115,8 @@ msgstr ""
 #: templates/category-body.php:71
 #: blocks/article-list/index.js:51
 #: blocks/article-list/index.js:119
-#: dist/apps/articles/index.BHttPLre.js:59
-#: dist/apps/tags/index.Dv6dwfa-.js:13
+#: dist/apps/articles/index.BqH5L0yX.js:59
+#: dist/apps/tags/index.BlXDf--e.js:13
 #: dist/apps/tools/index.CQiyWl5Q.js:1
 #: dist/blocks/article-list/index.js:1
 msgid "Articles"
@@ -143,10 +143,10 @@ msgstr ""
 #: templates/sidebar.php:90
 #: templates/sidebar.php:91
 #: blocks/category-grid/index.js:45
-#: dist/apps/articles/index.BHttPLre.js:34
-#: dist/apps/articles/index.BHttPLre.js:35
-#: dist/apps/articles/index.BHttPLre.js:57
-#: dist/apps/categories/index.BoHKQrvD.js:35
+#: dist/apps/articles/index.BqH5L0yX.js:34
+#: dist/apps/articles/index.BqH5L0yX.js:35
+#: dist/apps/articles/index.BqH5L0yX.js:57
+#: dist/apps/categories/index.g1kYC16c.js:35
 #: dist/apps/tools/index.CQiyWl5Q.js:1
 #: dist/blocks/category-grid/index.js:1
 msgid "Categories"
@@ -240,10 +240,10 @@ msgstr ""
 #: includes/import/class-licensio-kb-heroic-import-driver.php:82
 #: templates/sidebar.php:119
 #: templates/sidebar.php:120
-#: dist/apps/articles/index.BHttPLre.js:34
-#: dist/apps/articles/index.BHttPLre.js:35
-#: dist/apps/articles/index.BHttPLre.js:57
-#: dist/apps/tags/index.Dv6dwfa-.js:27
+#: dist/apps/articles/index.BqH5L0yX.js:34
+#: dist/apps/articles/index.BqH5L0yX.js:35
+#: dist/apps/articles/index.BqH5L0yX.js:57
+#: dist/apps/tags/index.BlXDf--e.js:27
 msgid "Tags"
 msgstr ""
 
@@ -252,33 +252,33 @@ msgid "Loading tags…"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:105
-#: dist/apps/categories/index.BoHKQrvD.js:11
+#: dist/apps/categories/index.g1kYC16c.js:11
 msgid "Select an image"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:106
-#: dist/apps/categories/index.BoHKQrvD.js:9
+#: dist/apps/categories/index.g1kYC16c.js:9
 msgid "Use this image"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:170
-#: dist/apps/categories/index.BoHKQrvD.js:9
+#: dist/apps/categories/index.g1kYC16c.js:9
 msgid "Inline SVG icon"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:171
-#: dist/apps/categories/index.BoHKQrvD.js:9
+#: dist/apps/categories/index.g1kYC16c.js:9
 msgid "Icon"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:172
-#: dist/apps/categories/index.BoHKQrvD.js:9
+#: dist/apps/categories/index.g1kYC16c.js:9
 msgid "Uploaded icon"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:173
 #: includes/class-licensio-kb-settings-schema.php:275
-#: dist/apps/categories/index.BoHKQrvD.js:11
+#: dist/apps/categories/index.g1kYC16c.js:11
 msgid "Image"
 msgstr ""
 
@@ -293,22 +293,22 @@ msgid "Order"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:224
-#: dist/apps/categories/index.BoHKQrvD.js:9
+#: dist/apps/categories/index.g1kYC16c.js:9
 msgid "Paste an SVG icon. Everything outside a small allowlist of shape elements and presentation attributes is removed on save, so the preview shows what was actually kept. Takes precedence over the uploaded icon and the Dashicons name. An icon drawn with currentColor follows the knowledge base colour."
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:236
-#: dist/apps/categories/index.BoHKQrvD.js:9
+#: dist/apps/categories/index.g1kYC16c.js:9
 msgid "A Dashicons name, for example dashicons-book-alt. Ignored when an SVG icon or an uploaded icon is set."
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:247
-#: dist/apps/categories/index.BoHKQrvD.js:9
+#: dist/apps/categories/index.g1kYC16c.js:9
 msgid "An uploaded icon, for example an SVG file. Takes precedence over the Dashicons name, and is itself ignored when an SVG icon is pasted above."
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:252
-#: dist/apps/categories/index.BoHKQrvD.js:11
+#: dist/apps/categories/index.g1kYC16c.js:11
 msgid "Shown on the category card and at the top of the category page."
 msgstr ""
 
@@ -317,17 +317,17 @@ msgid "Lower numbers appear first. Categories with the same order fall back to t
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:301
-#: dist/apps/categories/index.BoHKQrvD.js:9
+#: dist/apps/categories/index.g1kYC16c.js:9
 msgid "Paste SVG markup here"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:347
-#: dist/apps/categories/index.BoHKQrvD.js:9
+#: dist/apps/categories/index.g1kYC16c.js:9
 msgid "Select"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:348
-#: dist/apps/categories/index.BoHKQrvD.js:9
+#: dist/apps/categories/index.g1kYC16c.js:9
 msgid "Remove"
 msgstr ""
 
@@ -383,8 +383,8 @@ msgstr ""
 #: includes/class-licensio-kb-analytics-privacy.php:455
 #: includes/class-licensio-kb-analytics-privacy.php:486
 #: includes/class-licensio-kb-analytics-privacy.php:531
-#: dist/apps/articles/index.BHttPLre.js:35
-#: dist/apps/articles/index.BHttPLre.js:57
+#: dist/apps/articles/index.BqH5L0yX.js:35
+#: dist/apps/articles/index.BqH5L0yX.js:57
 #: dist/apps/feedback/index.CRtgA1Eh.js:1
 msgid "Date"
 msgstr ""
@@ -429,7 +429,7 @@ msgid "Comment"
 msgstr ""
 
 #: includes/class-licensio-kb-analytics-privacy.php:523
-#: dist/apps/articles/index.BHttPLre.js:34
+#: dist/apps/articles/index.BqH5L0yX.js:34
 #: dist/apps/feedback/index.CRtgA1Eh.js:1
 #: dist/apps/tools/index.CQiyWl5Q.js:1
 msgid "Status"
@@ -746,7 +746,7 @@ msgstr ""
 
 #. translators: %d: article ID.
 #: includes/class-licensio-kb-rest-analytics-controller.php:337
-#: dist/apps/articles/index.BHttPLre.js:49
+#: dist/apps/articles/index.BqH5L0yX.js:49
 msgid "Article #%d"
 msgstr ""
 
@@ -773,8 +773,8 @@ msgstr ""
 #: includes/class-licensio-kb-settings-schema.php:122
 #: templates/search-field.php:39
 #: blocks/search/index.js:41
-#: dist/apps/articles/index.BHttPLre.js:59
-#: dist/apps/tags/index.Dv6dwfa-.js:27
+#: dist/apps/articles/index.BqH5L0yX.js:59
+#: dist/apps/tags/index.BlXDf--e.js:27
 #: dist/blocks/search/index.js:1
 msgid "Search"
 msgstr ""
@@ -1192,19 +1192,29 @@ msgstr ""
 msgid "Manual sort order of the category."
 msgstr ""
 
-#: includes/class-licensio-kb-term-operations.php:191
+#: includes/class-licensio-kb-term-operations.php:382
 msgid "Choose at least one term to merge."
 msgstr ""
 
-#: includes/class-licensio-kb-term-operations.php:256
+#. translators: %s: the slug that is taken.
+#: includes/class-licensio-kb-term-operations.php:458
+msgid "Another tag already uses the slug “%s”. Choose a different slug."
+msgstr ""
+
+#. translators: %s: the slug that is taken.
+#: includes/class-licensio-kb-term-operations.php:460
+msgid "Another category already uses the slug “%s”. Choose a different slug."
+msgstr ""
+
+#: includes/class-licensio-kb-term-operations.php:491
 msgid "That taxonomy is not a knowledge base taxonomy."
 msgstr ""
 
-#: includes/class-licensio-kb-term-operations.php:264
+#: includes/class-licensio-kb-term-operations.php:499
 msgid "A term cannot be moved onto itself."
 msgstr ""
 
-#: includes/class-licensio-kb-term-operations.php:273
+#: includes/class-licensio-kb-term-operations.php:514
 msgid "One of the chosen terms does not exist."
 msgstr ""
 
@@ -1414,96 +1424,96 @@ msgstr ""
 msgid "No article was found with that ID."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:194
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:200
 msgid "The category ID."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:216
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:222
 msgid "The category name."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:223
-msgid "The category slug. Made unique when it is taken."
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:229
+msgid "The category slug. A new category with a taken slug gets a unique one; an edit to a slug another category uses is refused."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:230
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:236
 msgid "The parent category ID, 0 for the top level."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:235
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:241
 msgid "The category description."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:240
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:246
 msgid "A Dashicons name, e.g. dashicons-book-alt."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:247
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:253
 msgid "The attachment ID of an uploaded icon, 0 for none."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:252
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:258
 msgid "Inline SVG icon markup. Reduced to an allowlist on save."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:259
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:265
 msgid "The attachment ID of the category image, 0 for none."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:308
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:314
 msgid "Choose an image from the media library."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:334
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:340
 msgid "Where the articles go: parent, none, or a category ID."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:340
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:346
 msgid "Where the child categories go: parent, or a category ID."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:360
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:366
 msgid "The parent the categories are placed under, 0 for the top level."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:372
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:378
 msgid "The children of the parent, in the new order, first first. Children left out follow them in their current order."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:398
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:404
 msgid "The categories to merge away."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:406
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:412
 msgid "The category that remains."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:816
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:833
 msgid "The category could not be deleted."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:850
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:867
 msgid "A top-level category has no parent to move its articles to. Choose a category, or leave them without one."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:1507
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:1528
 #: includes/rest/class-licensio-kb-category-order-rest-controller.php:339
 msgid "That category does not exist."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:1522
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:1543
 msgid "One of the chosen categories does not exist."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:1537
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:1558
 msgid "A category cannot be moved onto itself."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:1552
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:1573
 msgid "A category cannot be placed inside itself or one of its own subcategories."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:1567
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:1588
 msgid "You are not allowed to change knowledge base categories."
 msgstr ""
 
@@ -1663,119 +1673,119 @@ msgstr ""
 msgid "This value is not accepted for this setting."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:124
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:126
 msgid "The tag ID."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:142
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:144
 msgid "The tags to delete."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:157
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:159
 msgid "The tags to merge away."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:162
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:164
 msgid "The tag that remains."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:178
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:180
 msgid "The tags to convert."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:183
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:185
 msgid "The category the new categories go under, or 0 for the top level."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:204
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:206
 msgid "Limit the tags to names or slugs containing this text."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:209
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:211
 msgid "Only tags no article uses, counting every status but trash and auto-draft."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:219
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:221
 msgid "Return only these tag IDs."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:225
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:227
 msgid "Sort by name or by article count."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:231
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:233
 msgid "The sort direction."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:238
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:240
 msgid "The page to return."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:246
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:248
 msgid "How many tags a page holds."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:270
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:272
 msgid "The tag name."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:275
-msgid "The tag slug. A slug that is taken gets a number added; an empty slug is made from the name."
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:277
+msgid "The tag slug. A new tag with a taken slug gets a unique one; an edit to a slug another tag uses is refused. An empty slug is made from the name."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:280
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:282
 msgid "The tag description."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:420
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:422
 msgid "You are not allowed to change these terms."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:685
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:823
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:1026
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:690
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:829
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:1013
 msgid "The tag does not exist."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:698
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:873
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:703
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:880
 msgid "The tag could not be deleted."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:772
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:774
 msgid "The chosen parent category does not exist."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:852
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:858
 msgid "The category could not be created."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:1041
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:1028
 msgid "A tag needs a name."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-terms-rest-controller.php:94
+#: includes/rest/class-licensio-kb-terms-rest-controller.php:95
 msgid "The taxonomy to search."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-terms-rest-controller.php:100
+#: includes/rest/class-licensio-kb-terms-rest-controller.php:101
 msgid "Limit the terms to names or slugs containing this text."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-terms-rest-controller.php:106
+#: includes/rest/class-licensio-kb-terms-rest-controller.php:107
 msgid "Return only these term IDs."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-terms-rest-controller.php:111
+#: includes/rest/class-licensio-kb-terms-rest-controller.php:115
 msgid "Leave these term IDs out."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-terms-rest-controller.php:119
+#: includes/rest/class-licensio-kb-terms-rest-controller.php:124
 msgid "How many terms to return."
 msgstr ""
 
 #: templates/archive-body.php:79
-#: dist/apps/articles/index.BHttPLre.js:59
+#: dist/apps/articles/index.BqH5L0yX.js:59
 msgid "Uncategorised"
 msgstr ""
 
@@ -1931,7 +1941,7 @@ msgstr ""
 
 #: blocks/article-list/index.js:55
 #: blocks/faq/index.js:49
-#: dist/apps/articles/index.BHttPLre.js:59
+#: dist/apps/articles/index.BqH5L0yX.js:59
 #: dist/apps/tools/index.CQiyWl5Q.js:1
 #: dist/blocks/article-list/index.js:1
 #: dist/blocks/faq/index.js:1
@@ -1961,8 +1971,8 @@ msgstr ""
 
 #: blocks/article-list/index.js:82
 #: blocks/faq/index.js:76
-#: dist/apps/articles/index.BHttPLre.js:34
-#: dist/apps/articles/index.BHttPLre.js:35
+#: dist/apps/articles/index.BqH5L0yX.js:34
+#: dist/apps/articles/index.BqH5L0yX.js:35
 #: dist/apps/tools/index.CQiyWl5Q.js:1
 #: dist/blocks/article-list/index.js:1
 #: dist/blocks/faq/index.js:1
@@ -1996,7 +2006,7 @@ msgstr ""
 
 #: blocks/article-list/index.js:127
 #: blocks/category-grid/index.js:111
-#: dist/apps/articles/index.BHttPLre.js:57
+#: dist/apps/articles/index.BqH5L0yX.js:57
 #: dist/blocks/article-list/index.js:1
 #: dist/blocks/category-grid/index.js:1
 msgid "Columns"
@@ -2023,9 +2033,9 @@ msgid "Start the trail at the site home rather than at the knowledge base."
 msgstr ""
 
 #: blocks/category-grid/index.js:38
-#: dist/apps/categories/index.BoHKQrvD.js:11
-#: dist/apps/categories/index.BoHKQrvD.js:35
-#: dist/apps/tags/index.Dv6dwfa-.js:7
+#: dist/apps/categories/index.g1kYC16c.js:11
+#: dist/apps/categories/index.g1kYC16c.js:35
+#: dist/apps/tags/index.BlXDf--e.js:7
 #: dist/blocks/category-grid/index.js:1
 msgid "Top level"
 msgstr ""
@@ -2036,10 +2046,10 @@ msgid "Show children of"
 msgstr ""
 
 #: blocks/category-grid/index.js:63
-#: dist/apps/categories/index.BoHKQrvD.js:11
-#: dist/apps/tags/index.Dv6dwfa-.js:13
-#: dist/apps/tags/index.Dv6dwfa-.js:15
-#: dist/apps/tags/index.Dv6dwfa-.js:27
+#: dist/apps/categories/index.g1kYC16c.js:11
+#: dist/apps/tags/index.BlXDf--e.js:13
+#: dist/apps/tags/index.BlXDf--e.js:15
+#: dist/apps/tags/index.BlXDf--e.js:27
 #: dist/blocks/category-grid/index.js:1
 msgid "Name"
 msgstr ""
@@ -2315,7 +2325,7 @@ msgid "To"
 msgstr ""
 
 #: dist/apps/analytics/index.DzCL-Ax5.js:1
-#: dist/apps/articles/index.BHttPLre.js:47
+#: dist/apps/articles/index.BqH5L0yX.js:47
 msgid "Apply"
 msgstr ""
 
@@ -2359,932 +2369,932 @@ msgstr ""
 msgid "Most read articles"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:1
+#: dist/apps/articles/index.BqH5L0yX.js:1
 msgid "You can undo this for a few seconds."
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:1
+#: dist/apps/articles/index.BqH5L0yX.js:1
 msgid "Undo"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:1
+#: dist/apps/articles/index.BqH5L0yX.js:1
 msgid "Dismiss"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:1
+#: dist/apps/articles/index.BqH5L0yX.js:1
 msgid "Not found"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:1
+#: dist/apps/articles/index.BqH5L0yX.js:1
 msgid "No permission"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:1
+#: dist/apps/articles/index.BqH5L0yX.js:1
 msgid "Being edited by someone else"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:1
+#: dist/apps/articles/index.BqH5L0yX.js:1
 msgid "Not in the trash"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:1
+#: dist/apps/articles/index.BqH5L0yX.js:1
 msgid "In the trash"
 msgstr ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.BHttPLre.js:3
+#: dist/apps/articles/index.BqH5L0yX.js:3
 msgid "Move %d article to the trash?"
 msgid_plural "Move %d articles to the trash?"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.BHttPLre.js:5
+#: dist/apps/articles/index.BqH5L0yX.js:5
 msgid "Restore %d article from the trash?"
 msgid_plural "Restore %d articles from the trash?"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.BHttPLre.js:7
+#: dist/apps/articles/index.BqH5L0yX.js:7
 msgid "Permanently delete %d article? This cannot be undone."
 msgid_plural "Permanently delete %d articles? This cannot be undone."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.BHttPLre.js:9
+#: dist/apps/articles/index.BqH5L0yX.js:9
 msgid "Change the status of %d article?"
 msgid_plural "Change the status of %d articles?"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.BHttPLre.js:11
+#: dist/apps/articles/index.BqH5L0yX.js:11
 msgid "Change the author of %d article?"
 msgid_plural "Change the author of %d articles?"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.BHttPLre.js:13
+#: dist/apps/articles/index.BqH5L0yX.js:13
 msgid "Open comments on %d article?"
 msgid_plural "Open comments on %d articles?"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.BHttPLre.js:15
+#: dist/apps/articles/index.BqH5L0yX.js:15
 msgid "Close comments on %d article?"
 msgid_plural "Close comments on %d articles?"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.BHttPLre.js:17
+#: dist/apps/articles/index.BqH5L0yX.js:17
 msgid "Add the chosen terms to %d article?"
 msgid_plural "Add the chosen terms to %d articles?"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.BHttPLre.js:19
+#: dist/apps/articles/index.BqH5L0yX.js:19
 msgid "Remove the chosen terms from %d article?"
 msgid_plural "Remove the chosen terms from %d articles?"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.BHttPLre.js:21
+#: dist/apps/articles/index.BqH5L0yX.js:21
 msgid "Replace the terms of %d article with the chosen ones?"
 msgid_plural "Replace the terms of %d articles with the chosen ones?"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.BHttPLre.js:23
+#: dist/apps/articles/index.BqH5L0yX.js:23
 msgid "%d article moved to the trash."
 msgid_plural "%d articles moved to the trash."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.BHttPLre.js:25
+#: dist/apps/articles/index.BqH5L0yX.js:25
 msgid "%d article restored."
 msgid_plural "%d articles restored."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.BHttPLre.js:27
+#: dist/apps/articles/index.BqH5L0yX.js:27
 msgid "%d article permanently deleted."
 msgid_plural "%d articles permanently deleted."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.BHttPLre.js:29
+#: dist/apps/articles/index.BqH5L0yX.js:29
 msgid "%d article updated."
 msgid_plural "%d articles updated."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.BHttPLre.js:31
+#: dist/apps/articles/index.BqH5L0yX.js:31
 msgid "%d article put back."
 msgid_plural "%d articles put back."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: 1: number of articles, 2: the reasons.
-#: dist/apps/articles/index.BHttPLre.js:33
+#: dist/apps/articles/index.BqH5L0yX.js:33
 msgid "%1$d article could not be put back: %2$s"
 msgid_plural "%1$d articles could not be put back: %2$s"
 msgstr[0] ""
 msgstr[1] ""
 
-#: dist/apps/articles/index.BHttPLre.js:33
+#: dist/apps/articles/index.BqH5L0yX.js:33
 msgid "Any author"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:33
-#: dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.DNFBDbu5.js:3
+#: dist/apps/articles/index.BqH5L0yX.js:33
+#: dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.SXZgOMjT.js:3
 msgid "No matches"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:33
-#: dist/apps/articles/index.BHttPLre.js:35
-#: dist/apps/articles/index.BHttPLre.js:43
-#: dist/apps/articles/index.BHttPLre.js:59
+#: dist/apps/articles/index.BqH5L0yX.js:33
+#: dist/apps/articles/index.BqH5L0yX.js:35
+#: dist/apps/articles/index.BqH5L0yX.js:43
+#: dist/apps/articles/index.BqH5L0yX.js:59
 msgid "Published"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:33
-#: dist/apps/articles/index.BHttPLre.js:35
-#: dist/apps/articles/index.BHttPLre.js:43
+#: dist/apps/articles/index.BqH5L0yX.js:33
+#: dist/apps/articles/index.BqH5L0yX.js:35
+#: dist/apps/articles/index.BqH5L0yX.js:43
 msgid "Draft"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:33
-#: dist/apps/articles/index.BHttPLre.js:43
+#: dist/apps/articles/index.BqH5L0yX.js:33
+#: dist/apps/articles/index.BqH5L0yX.js:43
 msgid "Pending review"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:33
-#: dist/apps/articles/index.BHttPLre.js:35
-#: dist/apps/articles/index.BHttPLre.js:59
+#: dist/apps/articles/index.BqH5L0yX.js:33
+#: dist/apps/articles/index.BqH5L0yX.js:35
+#: dist/apps/articles/index.BqH5L0yX.js:59
 msgid "Scheduled"
 msgstr ""
 
 #. translators: %s: the new slug.
-#: dist/apps/articles/index.BHttPLre.js:34
+#: dist/apps/articles/index.BqH5L0yX.js:34
 msgid "Saved. The slug is now “%s”."
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:34
-#: dist/apps/categories/index.BoHKQrvD.js:11
-#: dist/apps/tags/index.Dv6dwfa-.js:13
-#: dist/apps/tags/index.Dv6dwfa-.js:15
-#: dist/apps/tags/index.Dv6dwfa-.js:27
+#: dist/apps/articles/index.BqH5L0yX.js:34
+#: dist/apps/categories/index.g1kYC16c.js:11
+#: dist/apps/tags/index.BlXDf--e.js:13
+#: dist/apps/tags/index.BlXDf--e.js:15
+#: dist/apps/tags/index.BlXDf--e.js:27
 msgid "Slug"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:34
+#: dist/apps/articles/index.BqH5L0yX.js:34
 msgid "Publish date"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:34
+#: dist/apps/articles/index.BqH5L0yX.js:34
 msgid "Visibility"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:34
+#: dist/apps/articles/index.BqH5L0yX.js:34
 msgid "Public"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:34
-#: dist/apps/articles/index.BHttPLre.js:35
-#: dist/apps/articles/index.BHttPLre.js:43
-#: dist/apps/articles/index.BHttPLre.js:59
+#: dist/apps/articles/index.BqH5L0yX.js:34
+#: dist/apps/articles/index.BqH5L0yX.js:35
+#: dist/apps/articles/index.BqH5L0yX.js:43
+#: dist/apps/articles/index.BqH5L0yX.js:59
 msgid "Private"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:34
-#: dist/apps/articles/index.BHttPLre.js:37
+#: dist/apps/articles/index.BqH5L0yX.js:34
+#: dist/apps/articles/index.BqH5L0yX.js:37
 msgid "Password protected"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:34
+#: dist/apps/articles/index.BqH5L0yX.js:34
 msgid "Leave empty to keep the current password"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:34
+#: dist/apps/articles/index.BqH5L0yX.js:34
 msgid "Password"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:34
+#: dist/apps/articles/index.BqH5L0yX.js:34
 msgid "Comments"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:34
+#: dist/apps/articles/index.BqH5L0yX.js:34
 msgid "Open"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:34
+#: dist/apps/articles/index.BqH5L0yX.js:34
 msgid "Closed"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:34
-#: dist/apps/categories/index.BoHKQrvD.js:11
-#: dist/apps/categories/index.BoHKQrvD.js:17
-#: dist/apps/categories/index.BoHKQrvD.js:25
-#: dist/apps/categories/index.BoHKQrvD.js:29
-#: dist/apps/categories/index.BoHKQrvD.js:35
+#: dist/apps/articles/index.BqH5L0yX.js:34
+#: dist/apps/categories/index.g1kYC16c.js:11
+#: dist/apps/categories/index.g1kYC16c.js:17
+#: dist/apps/categories/index.g1kYC16c.js:25
+#: dist/apps/categories/index.g1kYC16c.js:29
+#: dist/apps/categories/index.g1kYC16c.js:35
 #: dist/apps/settings/index.BQ_yUjod.js:1
-#: dist/apps/tags/index.Dv6dwfa-.js:7
-#: dist/apps/tags/index.Dv6dwfa-.js:13
-#: dist/apps/tags/index.Dv6dwfa-.js:17
-#: dist/apps/tags/index.Dv6dwfa-.js:27
+#: dist/apps/tags/index.BlXDf--e.js:7
+#: dist/apps/tags/index.BlXDf--e.js:13
+#: dist/apps/tags/index.BlXDf--e.js:17
+#: dist/apps/tags/index.BlXDf--e.js:27
 #: dist/apps/tools/index.CQiyWl5Q.js:1
-#: dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.DNFBDbu5.js:1
+#: dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.SXZgOMjT.js:1
 msgid "Cancel"
 msgstr ""
 
 #. translators: %s: article title.
-#: dist/apps/articles/index.BHttPLre.js:35
+#: dist/apps/articles/index.BqH5L0yX.js:35
 msgid "Save the changes to “%s”?"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:35
-#: dist/apps/articles/index.BHttPLre.js:37
-#: dist/apps/categories/index.BoHKQrvD.js:5
+#: dist/apps/articles/index.BqH5L0yX.js:35
+#: dist/apps/articles/index.BqH5L0yX.js:37
+#: dist/apps/categories/index.g1kYC16c.js:5
 msgid "(no title)"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:35
-#: dist/apps/categories/index.BoHKQrvD.js:11
-#: dist/apps/tags/index.Dv6dwfa-.js:15
-#: dist/apps/tags/index.Dv6dwfa-.js:17
+#: dist/apps/articles/index.BqH5L0yX.js:35
+#: dist/apps/categories/index.g1kYC16c.js:11
+#: dist/apps/tags/index.BlXDf--e.js:15
+#: dist/apps/tags/index.BlXDf--e.js:17
 msgid "Save"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:35
-#: dist/apps/articles/index.BHttPLre.js:59
+#: dist/apps/articles/index.BqH5L0yX.js:35
+#: dist/apps/articles/index.BqH5L0yX.js:59
 msgid "Pending"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:35
-#: dist/apps/articles/index.BHttPLre.js:40
-#: dist/apps/articles/index.BHttPLre.js:59
+#: dist/apps/articles/index.BqH5L0yX.js:35
+#: dist/apps/articles/index.BqH5L0yX.js:40
+#: dist/apps/articles/index.BqH5L0yX.js:59
 msgid "Trash"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:35
-#: dist/apps/articles/index.BHttPLre.js:57
+#: dist/apps/articles/index.BqH5L0yX.js:35
+#: dist/apps/articles/index.BqH5L0yX.js:57
 msgid "Attachments"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:35
-#: dist/apps/articles/index.BHttPLre.js:57
+#: dist/apps/articles/index.BqH5L0yX.js:35
+#: dist/apps/articles/index.BqH5L0yX.js:57
 msgid "Reading time"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:35
-#: dist/apps/articles/index.BHttPLre.js:57
+#: dist/apps/articles/index.BqH5L0yX.js:35
+#: dist/apps/articles/index.BqH5L0yX.js:57
 msgid "Modified"
 msgstr ""
 
 #. translators: %s: article title.
 #. translators: %s: tag name.
-#: dist/apps/articles/index.BHttPLre.js:37
-#: dist/apps/tags/index.Dv6dwfa-.js:15
+#: dist/apps/articles/index.BqH5L0yX.js:37
+#: dist/apps/tags/index.BlXDf--e.js:15
 msgid "Select “%s”"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:37
+#: dist/apps/articles/index.BqH5L0yX.js:37
 msgid "No articles match these filters."
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:37
-#: dist/apps/articles/index.BHttPLre.js:59
+#: dist/apps/articles/index.BqH5L0yX.js:37
+#: dist/apps/articles/index.BqH5L0yX.js:59
 msgid "Clear filters"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:37
+#: dist/apps/articles/index.BqH5L0yX.js:37
 msgid "No articles yet."
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:37
+#: dist/apps/articles/index.BqH5L0yX.js:37
 msgid "Create your first article"
 msgstr ""
 
 #. translators: %s: name of the user editing the article.
-#: dist/apps/articles/index.BHttPLre.js:38
-#: dist/apps/articles/index.BHttPLre.js:40
+#: dist/apps/articles/index.BqH5L0yX.js:38
+#: dist/apps/articles/index.BqH5L0yX.js:40
 msgid "%s is editing"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:40
-#: dist/apps/categories/index.BoHKQrvD.js:19
-#: dist/apps/tags/index.Dv6dwfa-.js:19
+#: dist/apps/articles/index.BqH5L0yX.js:40
+#: dist/apps/categories/index.g1kYC16c.js:19
+#: dist/apps/tags/index.BlXDf--e.js:19
 msgid "Edit"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:40
+#: dist/apps/articles/index.BqH5L0yX.js:40
 msgid "Quick edit"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:40
+#: dist/apps/articles/index.BqH5L0yX.js:40
 msgid "View"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:40
+#: dist/apps/articles/index.BqH5L0yX.js:40
 msgid "Preview"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:40
+#: dist/apps/articles/index.BqH5L0yX.js:40
 msgid "View feedback"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:40
-#: dist/apps/articles/index.BHttPLre.js:43
+#: dist/apps/articles/index.BqH5L0yX.js:40
+#: dist/apps/articles/index.BqH5L0yX.js:43
 msgid "Move to trash"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:40
-#: dist/apps/articles/index.BHttPLre.js:43
+#: dist/apps/articles/index.BqH5L0yX.js:40
+#: dist/apps/articles/index.BqH5L0yX.js:43
 msgid "Restore"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:40
-#: dist/apps/articles/index.BHttPLre.js:43
+#: dist/apps/articles/index.BqH5L0yX.js:40
+#: dist/apps/articles/index.BqH5L0yX.js:43
 msgid "Delete permanently"
 msgstr ""
 
 #. translators: 1: helpful votes, 2: not helpful votes.
-#: dist/apps/articles/index.BHttPLre.js:41
+#: dist/apps/articles/index.BqH5L0yX.js:41
 msgid "%1$d helpful, %2$d not helpful"
 msgstr ""
 
 #. translators: %d: reading time in minutes.
-#: dist/apps/articles/index.BHttPLre.js:43
+#: dist/apps/articles/index.BqH5L0yX.js:43
 msgid "%d min"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:43
+#: dist/apps/articles/index.BqH5L0yX.js:43
 msgid "Change status"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:43
+#: dist/apps/articles/index.BqH5L0yX.js:43
 msgid "Add categories"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:43
+#: dist/apps/articles/index.BqH5L0yX.js:43
 msgid "Remove categories"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:43
+#: dist/apps/articles/index.BqH5L0yX.js:43
 msgid "Replace categories"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:43
+#: dist/apps/articles/index.BqH5L0yX.js:43
 msgid "Add tags"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:43
+#: dist/apps/articles/index.BqH5L0yX.js:43
 msgid "Remove tags"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:43
+#: dist/apps/articles/index.BqH5L0yX.js:43
 msgid "Replace tags"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:43
+#: dist/apps/articles/index.BqH5L0yX.js:43
 msgid "Change author"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:43
+#: dist/apps/articles/index.BqH5L0yX.js:43
 msgid "Open comments"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:43
+#: dist/apps/articles/index.BqH5L0yX.js:43
 msgid "Close comments"
 msgstr ""
 
 #. translators: %d: number of selected articles.
 #. translators: %d: number of selected feedback entries.
 #. translators: %d: how many tags are selected.
-#: dist/apps/articles/index.BHttPLre.js:45
+#: dist/apps/articles/index.BqH5L0yX.js:45
 #: dist/apps/feedback/index.CRtgA1Eh.js:7
-#: dist/apps/tags/index.Dv6dwfa-.js:23
+#: dist/apps/tags/index.BlXDf--e.js:23
 msgid "%d selected"
 msgid_plural "%d selected"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of matching articles.
-#: dist/apps/articles/index.BHttPLre.js:47
+#: dist/apps/articles/index.BqH5L0yX.js:47
 msgid "Select all %d matching"
 msgid_plural "Select all %d matching"
 msgstr[0] ""
 msgstr[1] ""
 
-#: dist/apps/articles/index.BHttPLre.js:47
+#: dist/apps/articles/index.BqH5L0yX.js:47
 msgid "Clear selection"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:47
+#: dist/apps/articles/index.BqH5L0yX.js:47
 msgid "Only the first 10,000 matching articles were selected."
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:47
-#: dist/apps/articles/index.BHttPLre.js:49
+#: dist/apps/articles/index.BqH5L0yX.js:47
+#: dist/apps/articles/index.BqH5L0yX.js:49
 msgid "Bulk action"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:47
+#: dist/apps/articles/index.BqH5L0yX.js:47
 msgid "New status"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:47
+#: dist/apps/articles/index.BqH5L0yX.js:47
 msgid "Tags for the bulk action"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:47
+#: dist/apps/articles/index.BqH5L0yX.js:47
 msgid "Categories for the bulk action"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:47
+#: dist/apps/articles/index.BqH5L0yX.js:47
 msgid "New author"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:47
+#: dist/apps/articles/index.BqH5L0yX.js:47
 msgid "Select articles below to perform bulk actions"
 msgstr ""
 
 #. translators: 1: articles processed, 2: articles in the run.
-#: dist/apps/articles/index.BHttPLre.js:51
+#: dist/apps/articles/index.BqH5L0yX.js:51
 msgid "%1$d of %2$d processed"
 msgstr ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.BHttPLre.js:53
+#: dist/apps/articles/index.BqH5L0yX.js:53
 msgid "Done: %d"
 msgstr ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.BHttPLre.js:55
+#: dist/apps/articles/index.BqH5L0yX.js:55
 msgid "Skipped: %d"
 msgstr ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.BHttPLre.js:57
+#: dist/apps/articles/index.BqH5L0yX.js:57
 msgid "Failed: %d"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:57
+#: dist/apps/articles/index.BqH5L0yX.js:57
 msgid "The run stopped at a batch the server refused."
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:57
+#: dist/apps/articles/index.BqH5L0yX.js:57
 #: dist/apps/tools/index.CQiyWl5Q.js:1
 msgid "Skipped"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:57
+#: dist/apps/articles/index.BqH5L0yX.js:57
 #: dist/apps/tools/index.CQiyWl5Q.js:1
 msgid "Failed"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:57
+#: dist/apps/articles/index.BqH5L0yX.js:57
 msgid "Close"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:57
+#: dist/apps/articles/index.BqH5L0yX.js:57
 msgid "Rows per page"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:57
+#: dist/apps/articles/index.BqH5L0yX.js:57
 msgid "Columns and rows per page"
 msgstr ""
 
 #. translators: 1: helpful share threshold percentage, 2: minimum votes.
-#: dist/apps/articles/index.BHttPLre.js:59
+#: dist/apps/articles/index.BqH5L0yX.js:59
 msgid "Helpful share below %1$d%% with at least %2$d votes in the selected window."
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:59
+#: dist/apps/articles/index.BqH5L0yX.js:59
 msgid "Filter by category"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:59
+#: dist/apps/articles/index.BqH5L0yX.js:59
 msgid "Any category"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:59
+#: dist/apps/articles/index.BqH5L0yX.js:59
 #: dist/apps/tools/index.CQiyWl5Q.js:1
 msgid "Tag"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:59
+#: dist/apps/articles/index.BqH5L0yX.js:59
 msgid "Filter by tag"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:59
+#: dist/apps/articles/index.BqH5L0yX.js:59
 msgid "Any tag"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:59
+#: dist/apps/articles/index.BqH5L0yX.js:59
 msgid "Filter by author"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:59
+#: dist/apps/articles/index.BqH5L0yX.js:59
 msgid "Published between"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:59
+#: dist/apps/articles/index.BqH5L0yX.js:59
 msgid "No tags"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:59
+#: dist/apps/articles/index.BqH5L0yX.js:59
 msgid "Needs attention"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:59
+#: dist/apps/articles/index.BqH5L0yX.js:59
 msgid "Filters"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:59
+#: dist/apps/articles/index.BqH5L0yX.js:59
 #: dist/apps/feedback/index.CRtgA1Eh.js:1
 #: dist/apps/tools/index.CQiyWl5Q.js:1
 msgid "All"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:59
+#: dist/apps/articles/index.BqH5L0yX.js:59
 msgid "Drafts"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:59
+#: dist/apps/articles/index.BqH5L0yX.js:59
 msgid "7 days"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:59
+#: dist/apps/articles/index.BqH5L0yX.js:59
 msgid "30 days"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:59
+#: dist/apps/articles/index.BqH5L0yX.js:59
 msgid "90 days"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:59
+#: dist/apps/articles/index.BqH5L0yX.js:59
 msgid "New article"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:59
-#: dist/apps/categories/index.BoHKQrvD.js:3
-#: dist/apps/categories/index.BoHKQrvD.js:35
-#: dist/apps/tags/index.Dv6dwfa-.js:27
+#: dist/apps/articles/index.BqH5L0yX.js:59
+#: dist/apps/categories/index.g1kYC16c.js:3
+#: dist/apps/categories/index.g1kYC16c.js:35
+#: dist/apps/tags/index.BlXDf--e.js:27
 msgid "Retry"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:59
+#: dist/apps/articles/index.BqH5L0yX.js:59
 #: dist/apps/feedback/index.CRtgA1Eh.js:5
 msgid "Filter by status"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:59
+#: dist/apps/articles/index.BqH5L0yX.js:59
 msgid "Search titles"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:59
+#: dist/apps/articles/index.BqH5L0yX.js:59
 msgid "Search articles by title"
 msgstr ""
 
-#: dist/apps/articles/index.BHttPLre.js:59
+#: dist/apps/articles/index.BqH5L0yX.js:59
 msgid "Views and rating period"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:1
+#: dist/apps/categories/index.g1kYC16c.js:1
 msgid "Article order saved."
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:1
-#: dist/apps/categories/index.BoHKQrvD.js:3
+#: dist/apps/categories/index.g1kYC16c.js:1
+#: dist/apps/categories/index.g1kYC16c.js:3
 msgid "Article order"
 msgstr ""
 
 #. translators: %s: category name.
-#: dist/apps/categories/index.BoHKQrvD.js:3
+#: dist/apps/categories/index.g1kYC16c.js:3
 msgid "Articles in “%s”"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:3
+#: dist/apps/categories/index.g1kYC16c.js:3
 msgid "Select a category to order its articles."
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:3
+#: dist/apps/categories/index.g1kYC16c.js:3
 msgid "This category has no articles."
 msgstr ""
 
 #. translators: 1: number of articles listed, 2: number of articles in the category.
-#: dist/apps/categories/index.BoHKQrvD.js:5
+#: dist/apps/categories/index.g1kYC16c.js:5
 msgid "Only the first %1$d of %2$d articles are listed."
 msgstr ""
 
 #. translators: %s: article title.
-#: dist/apps/categories/index.BoHKQrvD.js:7
+#: dist/apps/categories/index.g1kYC16c.js:7
 msgid "Move “%s” up"
 msgstr ""
 
 #. translators: %s: article title.
-#: dist/apps/categories/index.BoHKQrvD.js:9
+#: dist/apps/categories/index.g1kYC16c.js:9
 msgid "Move “%s” down"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:9
+#: dist/apps/categories/index.g1kYC16c.js:9
 msgid "Reset"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:9
+#: dist/apps/categories/index.g1kYC16c.js:9
 msgid "Save this article order?"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:9
+#: dist/apps/categories/index.g1kYC16c.js:9
 msgid "Save order"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:9
+#: dist/apps/categories/index.g1kYC16c.js:9
 msgid "Image selected"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:9
+#: dist/apps/categories/index.g1kYC16c.js:9
 msgid "The media library is not available on this page, so images cannot be picked."
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:9
+#: dist/apps/categories/index.g1kYC16c.js:9
 msgid "SVG icon preview"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:9
+#: dist/apps/categories/index.g1kYC16c.js:9
 msgid "Select an icon"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:9
+#: dist/apps/categories/index.g1kYC16c.js:9
 msgid "Dashicons names start with dashicons- and use lowercase letters, digits and hyphens."
 msgstr ""
 
 #. translators: %s: category name.
 #. translators: %s: the tag's name.
-#: dist/apps/categories/index.BoHKQrvD.js:11
-#: dist/apps/tags/index.Dv6dwfa-.js:19
+#: dist/apps/categories/index.g1kYC16c.js:11
+#: dist/apps/tags/index.BlXDf--e.js:19
 msgid "Edit “%s”"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:11
-#: dist/apps/categories/index.BoHKQrvD.js:35
+#: dist/apps/categories/index.g1kYC16c.js:11
+#: dist/apps/categories/index.g1kYC16c.js:35
 msgid "Add category"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:11
+#: dist/apps/categories/index.g1kYC16c.js:11
 msgid "Category saved."
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:11
+#: dist/apps/categories/index.g1kYC16c.js:11
 msgid "Save category?"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:11
+#: dist/apps/categories/index.g1kYC16c.js:11
 msgid "Enter a name to save."
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:11
+#: dist/apps/categories/index.g1kYC16c.js:11
 msgid "Leave empty to make one from the name."
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:11
-#: dist/apps/tags/index.Dv6dwfa-.js:7
+#: dist/apps/categories/index.g1kYC16c.js:11
+#: dist/apps/tags/index.BlXDf--e.js:7
 msgid "Parent category"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:11
+#: dist/apps/categories/index.g1kYC16c.js:11
 msgid "Leave empty for a top-level category."
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:11
-#: dist/apps/tags/index.Dv6dwfa-.js:13
-#: dist/apps/tags/index.Dv6dwfa-.js:15
-#: dist/apps/tags/index.Dv6dwfa-.js:27
+#: dist/apps/categories/index.g1kYC16c.js:11
+#: dist/apps/tags/index.BlXDf--e.js:13
+#: dist/apps/tags/index.BlXDf--e.js:15
+#: dist/apps/tags/index.BlXDf--e.js:27
 msgid "Description"
 msgstr ""
 
 #. translators: %s: category name.
-#: dist/apps/categories/index.BoHKQrvD.js:13
+#: dist/apps/categories/index.g1kYC16c.js:13
 msgid "Move “%s” here?"
 msgstr ""
 
 #. translators: %s: category name.
-#: dist/apps/categories/index.BoHKQrvD.js:15
+#: dist/apps/categories/index.g1kYC16c.js:15
 msgid "Move “%s” up?"
 msgstr ""
 
 #. translators: %s: category name.
-#: dist/apps/categories/index.BoHKQrvD.js:17
+#: dist/apps/categories/index.g1kYC16c.js:17
 msgid "Move “%s” down?"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:17
-#: dist/apps/categories/index.BoHKQrvD.js:33
+#: dist/apps/categories/index.g1kYC16c.js:17
+#: dist/apps/categories/index.g1kYC16c.js:33
 msgid "Category moved."
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:17
-#: dist/apps/categories/index.BoHKQrvD.js:35
+#: dist/apps/categories/index.g1kYC16c.js:17
+#: dist/apps/categories/index.g1kYC16c.js:35
 msgid "Category tree"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:17
+#: dist/apps/categories/index.g1kYC16c.js:17
 msgid "Filter categories"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:17
+#: dist/apps/categories/index.g1kYC16c.js:17
 msgid "Clear the filter to drag categories."
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:17
-#: dist/apps/categories/index.BoHKQrvD.js:35
+#: dist/apps/categories/index.g1kYC16c.js:17
+#: dist/apps/categories/index.g1kYC16c.js:35
 msgid "Move"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:17
+#: dist/apps/categories/index.g1kYC16c.js:17
 msgid "No categories match the filter."
 msgstr ""
 
 #. translators: %d: number of articles.
-#: dist/apps/categories/index.BoHKQrvD.js:19
+#: dist/apps/categories/index.g1kYC16c.js:19
 msgid "Articles: %d"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:19
+#: dist/apps/categories/index.g1kYC16c.js:19
 msgid "Add child"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:19
+#: dist/apps/categories/index.g1kYC16c.js:19
 msgid "Move up"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:19
+#: dist/apps/categories/index.g1kYC16c.js:19
 msgid "Move down"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:19
+#: dist/apps/categories/index.g1kYC16c.js:19
 msgid "Move to…"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:19
+#: dist/apps/categories/index.g1kYC16c.js:19
 msgid "Merge…"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:19
+#: dist/apps/categories/index.g1kYC16c.js:19
 msgid "Delete…"
 msgstr ""
 
 #. translators: %s: category name.
-#: dist/apps/categories/index.BoHKQrvD.js:21
+#: dist/apps/categories/index.g1kYC16c.js:21
 msgid "Actions for %s"
 msgstr ""
 
 #. translators: %s: category name.
-#: dist/apps/categories/index.BoHKQrvD.js:23
+#: dist/apps/categories/index.g1kYC16c.js:23
 msgid "Delete “%s”?"
 msgstr ""
 
 #. translators: 1: category name, 2: number of articles moved, 3: number of child categories moved.
-#: dist/apps/categories/index.BoHKQrvD.js:25
+#: dist/apps/categories/index.g1kYC16c.js:25
 msgid "Deleted “%1$s”. Articles moved: %2$d. Child categories moved: %3$d."
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:25
+#: dist/apps/categories/index.g1kYC16c.js:25
 msgid "Delete category"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:25
-#: dist/apps/tags/index.Dv6dwfa-.js:27
+#: dist/apps/categories/index.g1kYC16c.js:25
+#: dist/apps/tags/index.BlXDf--e.js:27
 #: dist/apps/tools/index.CQiyWl5Q.js:1
 msgid "Delete"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:25
+#: dist/apps/categories/index.g1kYC16c.js:25
 msgid "What should happen to its articles?"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:25
+#: dist/apps/categories/index.g1kYC16c.js:25
 msgid "Move to parent category"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:25
+#: dist/apps/categories/index.g1kYC16c.js:25
 msgid "Move to another category"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:25
+#: dist/apps/categories/index.g1kYC16c.js:25
 msgid "Leave them without this category"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:25
+#: dist/apps/categories/index.g1kYC16c.js:25
 msgid "Category to move the articles to"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:25
+#: dist/apps/categories/index.g1kYC16c.js:25
 msgid "What should happen to its child categories?"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:25
+#: dist/apps/categories/index.g1kYC16c.js:25
 msgid "Move to parent (or top level)"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:25
+#: dist/apps/categories/index.g1kYC16c.js:25
 msgid "Move under another category"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:25
+#: dist/apps/categories/index.g1kYC16c.js:25
 msgid "Category to move the child categories under"
 msgstr ""
 
 #. translators: 1: number of categories, 2: target category name.
-#: dist/apps/categories/index.BoHKQrvD.js:27
+#: dist/apps/categories/index.g1kYC16c.js:27
 msgid "Merge %1$d category into “%2$s”?"
 msgid_plural "Merge %1$d categories into “%2$s”?"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: 1: number of articles moved, 2: number of categories deleted.
-#: dist/apps/categories/index.BoHKQrvD.js:29
+#: dist/apps/categories/index.g1kYC16c.js:29
 msgid "Merged. Articles moved: %1$d. Categories deleted: %2$d."
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:29
+#: dist/apps/categories/index.g1kYC16c.js:29
 msgid "Merge categories"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:29
-#: dist/apps/tags/index.Dv6dwfa-.js:13
+#: dist/apps/categories/index.g1kYC16c.js:29
+#: dist/apps/tags/index.BlXDf--e.js:13
 #: dist/apps/tools/index.CQiyWl5Q.js:1
 msgid "Merge"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:29
+#: dist/apps/categories/index.g1kYC16c.js:29
 msgid "Categories to merge"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:29
+#: dist/apps/categories/index.g1kYC16c.js:29
 msgid "At most 50 categories can be merged at once."
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:29
+#: dist/apps/categories/index.g1kYC16c.js:29
 msgid "Their articles move to the target, and they are deleted."
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:29
+#: dist/apps/categories/index.g1kYC16c.js:29
 #: dist/apps/tools/index.CQiyWl5Q.js:1
 msgid "Merge into"
 msgstr ""
 
 #. translators: %s: category name.
-#: dist/apps/categories/index.BoHKQrvD.js:31
+#: dist/apps/categories/index.g1kYC16c.js:31
 msgid "Move “%s” to the top level?"
 msgstr ""
 
 #. translators: 1: category name, 2: new parent category name.
-#: dist/apps/categories/index.BoHKQrvD.js:33
+#: dist/apps/categories/index.g1kYC16c.js:33
 msgid "Move “%1$s” under “%2$s”?"
 msgstr ""
 
 #. translators: %s: category name.
-#: dist/apps/categories/index.BoHKQrvD.js:35
+#: dist/apps/categories/index.g1kYC16c.js:35
 msgid "Move “%s”"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:35
+#: dist/apps/categories/index.g1kYC16c.js:35
 msgid "New place"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:35
+#: dist/apps/categories/index.g1kYC16c.js:35
 msgid "Under a category"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:35
+#: dist/apps/categories/index.g1kYC16c.js:35
 msgid "New parent category"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:35
+#: dist/apps/categories/index.g1kYC16c.js:35
 msgid "No categories yet"
 msgstr ""
 
-#: dist/apps/categories/index.BoHKQrvD.js:35
+#: dist/apps/categories/index.g1kYC16c.js:35
 msgid "Categories group your articles. Add the first one to get started."
 msgstr ""
 
 #: dist/apps/feedback/index.CRtgA1Eh.js:1
 #: dist/apps/tools/index.CQiyWl5Q.js:1
-#: dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.DNFBDbu5.js:1
+#: dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.SXZgOMjT.js:1
 msgid "The request failed."
 msgstr ""
 
@@ -3418,150 +3428,150 @@ msgid "Every setting goes back to its default. Stored articles, categories and f
 msgstr ""
 
 #. translators: %d: how many tags will be converted.
-#: dist/apps/tags/index.Dv6dwfa-.js:3
+#: dist/apps/tags/index.BlXDf--e.js:3
 msgid "Convert %d tag to a category? The tag is deleted."
 msgid_plural "Convert %d tags to categories? The tags are deleted."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: how many tags were converted.
-#: dist/apps/tags/index.Dv6dwfa-.js:5
+#: dist/apps/tags/index.BlXDf--e.js:5
 msgid "%d tag converted to a category."
 msgid_plural "%d tags converted to categories."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: 1: the tag's name, 2: the existing category's name.
-#: dist/apps/tags/index.Dv6dwfa-.js:7
+#: dist/apps/tags/index.BlXDf--e.js:7
 msgid "“%1$s” was added to the existing category “%2$s”."
 msgstr ""
 
-#: dist/apps/tags/index.Dv6dwfa-.js:7
+#: dist/apps/tags/index.BlXDf--e.js:7
 msgid "Convert to categories"
 msgstr ""
 
-#: dist/apps/tags/index.Dv6dwfa-.js:7
+#: dist/apps/tags/index.BlXDf--e.js:7
 msgid "Convert"
 msgstr ""
 
-#: dist/apps/tags/index.Dv6dwfa-.js:7
+#: dist/apps/tags/index.BlXDf--e.js:7
 msgid "Each tag becomes a category with the same name and slug, or joins the category that already has its slug or the same name under the chosen parent. Its articles keep it as a category, and the tag is deleted."
 msgstr ""
 
 #. translators: %d: how many tags are selected.
-#: dist/apps/tags/index.Dv6dwfa-.js:9
+#: dist/apps/tags/index.BlXDf--e.js:9
 msgid "The articles of the %d selected tag get the tag you choose, then the selected tag is deleted."
 msgid_plural "The articles of the %d selected tags get the tag you choose, then the selected tags are deleted."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: how many tags will be merged.
-#: dist/apps/tags/index.Dv6dwfa-.js:11
+#: dist/apps/tags/index.BlXDf--e.js:11
 msgid "Merge %d tag? It is deleted after its articles move."
 msgid_plural "Merge %d tags? They are deleted after their articles move."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: 1: how many tags were merged, 2: the target tag's name.
-#: dist/apps/tags/index.Dv6dwfa-.js:13
+#: dist/apps/tags/index.BlXDf--e.js:13
 msgid "%1$d tag merged into “%2$s”."
 msgid_plural "%1$d tags merged into “%2$s”."
 msgstr[0] ""
 msgstr[1] ""
 
-#: dist/apps/tags/index.Dv6dwfa-.js:13
+#: dist/apps/tags/index.BlXDf--e.js:13
 msgid "Merge tags"
 msgstr ""
 
-#: dist/apps/tags/index.Dv6dwfa-.js:13
+#: dist/apps/tags/index.BlXDf--e.js:13
 msgid "Search for the tag to keep…"
 msgstr ""
 
-#: dist/apps/tags/index.Dv6dwfa-.js:13
+#: dist/apps/tags/index.BlXDf--e.js:13
 msgid "Tag to merge into"
 msgstr ""
 
-#: dist/apps/tags/index.Dv6dwfa-.js:13
+#: dist/apps/tags/index.BlXDf--e.js:13
 msgid "Actions"
 msgstr ""
 
-#: dist/apps/tags/index.Dv6dwfa-.js:15
+#: dist/apps/tags/index.BlXDf--e.js:15
 msgid "No tags match these filters."
 msgstr ""
 
-#: dist/apps/tags/index.Dv6dwfa-.js:15
+#: dist/apps/tags/index.BlXDf--e.js:15
 msgid "No tags yet. Add your first tag above."
 msgstr ""
 
-#: dist/apps/tags/index.Dv6dwfa-.js:15
+#: dist/apps/tags/index.BlXDf--e.js:15
 msgid "Save the changes to this tag?"
 msgstr ""
 
 #. translators: %s: the tag's slug.
-#: dist/apps/tags/index.Dv6dwfa-.js:17
+#: dist/apps/tags/index.BlXDf--e.js:17
 msgid "Tag saved. Its slug is “%s”."
 msgstr ""
 
 #. translators: %d: how many tags will be deleted.
-#: dist/apps/tags/index.Dv6dwfa-.js:21
+#: dist/apps/tags/index.BlXDf--e.js:21
 msgid "Delete %d tag? Its articles lose it."
 msgid_plural "Delete %d tags? Their articles lose them."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %s: the new tag's name.
-#: dist/apps/tags/index.Dv6dwfa-.js:25
+#: dist/apps/tags/index.BlXDf--e.js:25
 msgid "Tag “%s” added."
 msgstr ""
 
 #. translators: %d: how many tags were deleted.
-#: dist/apps/tags/index.Dv6dwfa-.js:27
+#: dist/apps/tags/index.BlXDf--e.js:27
 msgid "%d tag deleted."
 msgid_plural "%d tags deleted."
 msgstr[0] ""
 msgstr[1] ""
 
-#: dist/apps/tags/index.Dv6dwfa-.js:27
+#: dist/apps/tags/index.BlXDf--e.js:27
 msgid "Add tag"
 msgstr ""
 
-#: dist/apps/tags/index.Dv6dwfa-.js:27
+#: dist/apps/tags/index.BlXDf--e.js:27
 msgid "Slug (optional)"
 msgstr ""
 
-#: dist/apps/tags/index.Dv6dwfa-.js:27
+#: dist/apps/tags/index.BlXDf--e.js:27
 msgid "Description (optional)"
 msgstr ""
 
-#: dist/apps/tags/index.Dv6dwfa-.js:27
+#: dist/apps/tags/index.BlXDf--e.js:27
 msgid "Add this tag?"
 msgstr ""
 
-#: dist/apps/tags/index.Dv6dwfa-.js:27
+#: dist/apps/tags/index.BlXDf--e.js:27
 msgid "Showing one tag."
 msgstr ""
 
-#: dist/apps/tags/index.Dv6dwfa-.js:27
+#: dist/apps/tags/index.BlXDf--e.js:27
 msgid "Show all tags"
 msgstr ""
 
-#: dist/apps/tags/index.Dv6dwfa-.js:27
+#: dist/apps/tags/index.BlXDf--e.js:27
 msgid "Search tags"
 msgstr ""
 
-#: dist/apps/tags/index.Dv6dwfa-.js:27
+#: dist/apps/tags/index.BlXDf--e.js:27
 msgid "Unused only"
 msgstr ""
 
-#: dist/apps/tags/index.Dv6dwfa-.js:27
+#: dist/apps/tags/index.BlXDf--e.js:27
 msgid "Merge into…"
 msgstr ""
 
-#: dist/apps/tags/index.Dv6dwfa-.js:27
+#: dist/apps/tags/index.BlXDf--e.js:27
 msgid "Convert to category"
 msgstr ""
 
-#: dist/apps/tags/index.Dv6dwfa-.js:27
+#: dist/apps/tags/index.BlXDf--e.js:27
 msgid "Select tags below to delete, merge or convert them"
 msgstr ""
 
@@ -4129,23 +4139,23 @@ msgstr ""
 msgid "Knowledge base settings"
 msgstr ""
 
-#: dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.DNFBDbu5.js:1
+#: dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.SXZgOMjT.js:1
 msgid "The server could not be reached. Check your connection and try again."
 msgstr ""
 
-#: dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.DNFBDbu5.js:1
+#: dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.SXZgOMjT.js:1
 msgid "Confirm"
 msgstr ""
 
 #. translators: %s: the name of the term that will be created.
-#: dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.DNFBDbu5.js:3
+#: dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.SXZgOMjT.js:3
 msgid "Create “%s”"
 msgstr ""
 
-#: dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.DNFBDbu5.js:3
+#: dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.SXZgOMjT.js:3
 msgid "Search…"
 msgstr ""
 
-#: dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.DNFBDbu5.js:3
+#: dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.SXZgOMjT.js:3
 msgid "The terms could not be loaded."
 msgstr ""

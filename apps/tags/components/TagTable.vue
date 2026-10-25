@@ -5,9 +5,9 @@
  * Lists the page of tags with server-side sort and paging, row selection for
  * the bulk bar, and inline edit of name, slug and description. Edit opens the
  * row's fields in place; Save asks for confirmation first, and the row keeps
- * the user's input when the server refuses it. The slug the server settled on
- * (made unique if it was taken, or made from the name if the slug was
- * cleared) is shown back once saved.
+ * the user's input when the server refuses it, as it does a slug another tag
+ * already uses. The slug the server settled on (made from the name if the
+ * slug was cleared) is shown back once saved.
  *
  * Focus follows the row: Edit moves it to the Name field, and Cancel,
  * Escape or a save puts it back on the row's Edit button.

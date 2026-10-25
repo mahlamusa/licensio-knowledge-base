@@ -152,7 +152,7 @@ class Licensio_KB_Terms_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * The route takes only the plugin taxonomies and caps the page size.
+     * The route takes only the plugin taxonomies and caps the page size and ID lists.
      *
      * @since 1.0.0
      *
@@ -169,6 +169,7 @@ class Licensio_KB_Terms_REST_Test extends Licensio_KB_Test_Case {
         $this->assertSame( 100, $args['per_page']['maximum'] );
         $this->assertSame( 100, $args['include']['maxItems'] );
         $this->assertSame( 'integer', $args['exclude']['items']['type'] );
+        $this->assertSame( 100, $args['exclude']['maxItems'] );
     }
 
     /**

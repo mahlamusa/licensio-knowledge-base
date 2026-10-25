@@ -519,7 +519,7 @@ class Licensio_KB_Categories_REST_Integration_Test extends Licensio_KB_Analytics
     }
 
     /**
-     * A name a sibling already has is refused with a 400; a cousin may share it.
+     * A name a sibling already has is refused with a 409; a cousin may share it.
      *
      * @since 1.0.0
      *
@@ -537,7 +537,7 @@ class Licensio_KB_Categories_REST_Integration_Test extends Licensio_KB_Analytics
 
         $this->assertInstanceOf( 'WP_Error', $result );
         $this->assertSame( 'term_exists', $result->get_error_code() );
-        $this->assertSame( array( 'status' => 400 ), $result->get_error_data() );
+        $this->assertSame( array( 'status' => 409 ), $result->get_error_data() );
 
         $elsewhere = $this->controller->create_item(
             $this->request(
@@ -590,5 +590,140 @@ class Licensio_KB_Categories_REST_Integration_Test extends Licensio_KB_Analytics
         );
 
         $this->assertSame( array( 'Getting started', 'Added by someone else', 'Billing' ), array_column( $top, 'name' ) );
+    }
+
+    /**
+     * An edit to a slug another category uses is a 409 and writes nothing.
+     *
+     * Core would quietly make the slug unique here, because the edit also
+     * moves the category to another parent.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_edit_to_a_taken_slug_is_refused() {
+        $before = $this->live_snapshot();
+        $result = $this->controller->update_item(
+            $this->request(
+                array(
+                    'id'     => $this->ids['Upgrade'],
+                    'slug'   => 'billing',
+                    'parent' => $this->ids['Billing'],
+                )
+            )
+        );
+
+        $this->assertInstanceOf( 'WP_Error', $result );
+        $this->assertSame( 'licensio_kb_slug_taken', $result->get_error_code() );
+        $this->assertSame( 409, $result->get_error_data()['status'] );
+        $this->assertSame( $before, $this->live_snapshot() );
+    }
+
+    /**
+     * A delete whose final step fails leaves the articles and children where they were.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_delete_that_fails_at_the_end_changes_nothing() {
+        $this->make_article( array( 'categories' => array( $this->ids['Getting started'] ) ) );
+        $this->make_article( array( 'categories' => array( $this->ids['Getting started'], $this->ids['Billing'] ) ) );
+
+        $before = $this->live_snapshot();
+
+        Brain\Monkey\Functions\when( 'wp_delete_term' )->justReturn( false );
+
+        $result = $this->controller->delete_item(
+            $this->request(
+                array(
+                    'id'                => $this->ids['Getting started'],
+                    'reassign_articles' => (string) $this->ids['Billing'],
+                    'reassign_children' => (string) $this->ids['Billing'],
+                )
+            )
+        );
+
+        $this->assertInstanceOf( 'WP_Error', $result );
+        $this->assertSame( 'licensio_kb_category_not_deleted', $result->get_error_code() );
+        $this->assertSame( $before, $this->live_snapshot() );
+    }
+
+    /**
+     * A delete whose second child move fails leaves everything where it was.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_delete_that_fails_moving_a_child_changes_nothing() {
+        $this->make_article( array( 'categories' => array( $this->ids['Getting started'] ) ) );
+
+        $before  = $this->live_snapshot();
+        $failing = $this->ids['Upgrade'];
+        $target  = $this->ids['Billing'];
+
+        Brain\Monkey\Functions\when( 'wp_update_term' )->alias(
+            function ( $term_id, $taxonomy, $args ) use ( $failing, $target ) {
+                if ( $failing === (int) $term_id && isset( $args['parent'] ) && $target === $args['parent'] ) {
+                    return new WP_Error( 'db_update_error', 'Could not update the term.' );
+                }
+
+                return $this->live_update_term( $term_id, $taxonomy, $args );
+            }
+        );
+
+        $result = $this->controller->delete_item(
+            $this->request(
+                array(
+                    'id'                => $this->ids['Getting started'],
+                    'reassign_articles' => (string) $target,
+                    'reassign_children' => (string) $target,
+                )
+            )
+        );
+
+        $this->assertInstanceOf( 'WP_Error', $result );
+        $this->assertSame( $before, $this->live_snapshot() );
+    }
+
+    /**
+     * A merge whose second source fails leaves articles and children where they were.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_merge_that_fails_part_way_changes_nothing() {
+        $this->make_article( array( 'categories' => array( $this->ids['Install'] ) ) );
+        $this->make_article( array( 'categories' => array( $this->ids['Install'], $this->ids['Billing'] ) ) );
+
+        $failing = $this->make_article( array( 'categories' => array( $this->ids['Upgrade'] ) ) );
+        $source  = $this->ids['Upgrade'];
+        $before  = $this->live_snapshot();
+
+        Brain\Monkey\Actions\expectDone( 'licensio_kb_terms_merged' )->never();
+        Brain\Monkey\Functions\when( 'wp_remove_object_terms' )->alias(
+            function ( $object_id, $terms, $taxonomy ) use ( $failing, $source ) {
+                if ( $failing === (int) $object_id && array( $source ) === $terms ) {
+                    return new WP_Error( 'db_delete_error', 'Could not remove the term relationship.' );
+                }
+
+                return $this->live_remove_object_terms( $object_id, $terms, $taxonomy );
+            }
+        );
+
+        $result = $this->controller->merge(
+            $this->request(
+                array(
+                    'sources' => array( $this->ids['Install'], $source ),
+                    'target'  => $this->ids['Billing'],
+                )
+            )
+        );
+
+        $this->assertInstanceOf( 'WP_Error', $result );
+        $this->assertSame( $before, $this->live_snapshot(), 'Requirements is back under Install, and every article has its old categories.' );
     }
 }
