@@ -27,6 +27,14 @@ if ( ! class_exists( 'WP_Term' ) ) {
         public $term_id = 0;
 
         /**
+         * The term taxonomy ID.
+         *
+         * @since 1.0.0
+         * @var int
+         */
+        public $term_taxonomy_id = 0;
+
+        /**
          * The term name.
          *
          * @since 1.0.0
