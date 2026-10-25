@@ -5,7 +5,8 @@
  * Run once against a fresh site by `bin/e2e-env.sh`, through
  * `wp eval-file -`. Gives every spec the content it reads but does not make
  * itself: published articles the search type-ahead finds, a page carrying the
- * search form, and a small BetterDocs data set so the Migration tab is shown.
+ * search form, and a small BetterDocs data set, imported once, so the Migration
+ * tab is shown and its log has a run to read.
  *
  * Every item is looked up before it is made, so running it twice changes
  * nothing.
@@ -115,8 +116,24 @@ register_taxonomy( 'doc_tag', 'docs' );
 $licensio_kb_e2e_doc = licensio_kb_e2e_post(
     'docs',
     'Installing the plugin',
-    array( 'post_content' => '<p>Upload the zip and activate it.</p>' )
+    array(
+        'post_content' => '<p>Upload the zip and activate it.</p>',
+        'meta_input'   => array( '_betterdocs_meta_views' => 12 ),
+    )
 );
 
 wp_set_object_terms( $licensio_kb_e2e_doc, array( licensio_kb_e2e_term( 'doc_category', 'Installation' ) ), 'doc_category' );
 wp_set_object_terms( $licensio_kb_e2e_doc, array( licensio_kb_e2e_term( 'doc_tag', 'setup' ) ), 'doc_tag' );
+
+/*
+ * One real import of that source, so the migration log holds a created
+ * article with its meta and filing. The wizard spec only ever dry-runs, and a
+ * dry run records what it would do rather than what it did.
+ */
+$licensio_kb_e2e_driver = ( new Licensio_KB_Importer() )->get_driver( 'betterdocs' );
+
+if ( $licensio_kb_e2e_driver && ! $licensio_kb_e2e_driver->is_complete() ) {
+    do {
+        $licensio_kb_e2e_progress = $licensio_kb_e2e_driver->run_batch( array( 'batch_size' => 50 ) );
+    } while ( empty( $licensio_kb_e2e_progress['finished'] ) );
+}
