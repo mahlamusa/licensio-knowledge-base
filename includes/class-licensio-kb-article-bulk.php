@@ -673,11 +673,11 @@ class Licensio_KB_Article_Bulk {
      *
      * @param WP_Post              $post   The article.
      * @param string               $target The status to move it back to.
-     * @param array<string, mixed> $fields Optional. Other post fields to put back with the status.
+     * @param array<string, mixed> $fields Other post fields to put back with the status.
      *
      * @return true|WP_Error True on success.
      */
-    private static function restore_status( $post, $target, array $fields = array() ) {
+    private static function restore_status( $post, $target, array $fields ) {
         $id      = (int) $post->ID;
         $current = (string) $post->post_status;
 
