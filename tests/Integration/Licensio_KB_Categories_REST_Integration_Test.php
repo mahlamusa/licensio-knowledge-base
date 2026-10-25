@@ -703,7 +703,6 @@ class Licensio_KB_Categories_REST_Integration_Test extends Licensio_KB_Analytics
         $source  = $this->ids['Upgrade'];
         $before  = $this->live_snapshot();
 
-        Brain\Monkey\Actions\expectDone( 'licensio_kb_terms_merged' )->never();
         $this->live_fail_removal( $source, Licensio_KB_Post_Types::TAXONOMY_CATEGORY, $failing );
 
         $result = $this->controller->merge(
@@ -716,6 +715,7 @@ class Licensio_KB_Categories_REST_Integration_Test extends Licensio_KB_Analytics
         );
 
         $this->assertInstanceOf( 'WP_Error', $result );
+        $this->assertNotContains( 'licensio_kb_terms_merged', $this->fired_actions, 'A failed merge does not announce itself.' );
         $this->assertSame( $before, $this->live_snapshot(), 'Requirements is back under Install, and every article has its old categories.' );
     }
 
@@ -764,6 +764,7 @@ class Licensio_KB_Categories_REST_Integration_Test extends Licensio_KB_Analytics
         );
 
         $this->assertIsArray( $result );
+        $this->assertCount( 1, array_keys( $this->fired_actions, 'licensio_kb_terms_merged', true ), 'Only the merge that succeeded is announced.' );
         $this->assertNull( $this->parent_of( $source ), 'The source is deleted.' );
 
         $target_tt = $this->live_rows( 'SELECT term_taxonomy_id, count FROM ' . $this->table( 'term_taxonomy' ) . ' WHERE term_id = ' . (int) $target );

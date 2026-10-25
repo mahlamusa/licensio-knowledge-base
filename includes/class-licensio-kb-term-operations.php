@@ -29,8 +29,8 @@
  * - `licensio_kb_term_removed` ( int $term_id, string $taxonomy ) fires whenever
  *   a `licensio_category` term is deleted, by this class or by anything else.
  *
- * Consumed by the categories app, the tags app and the per-category article
- * order.
+ * Consumed by the categories app, the tags app, the duplicates tool's term
+ * merge and the per-category article order.
  *
  * @package Licensio_KB
  * @since   1.0.0

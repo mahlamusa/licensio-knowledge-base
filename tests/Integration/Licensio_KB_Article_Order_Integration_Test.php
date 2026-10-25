@@ -553,10 +553,10 @@ class Licensio_KB_Article_Order_Integration_Test extends Licensio_KB_Analytics_D
     /**
      * The duplicates fix carries a duplicate category's order to the kept one.
      *
-     * The fix moves the articles with its own SQL and then deletes the
-     * duplicate, and deleting a category drops its order. The merged hook
-     * must fire between the two, as it does for a merge from the Categories
-     * app, so the kept category ends up with the order. Hooks do not run in
+     * The fix moves the articles and then deletes the duplicate, and
+     * deleting a category drops its order. The merged hook must fire between
+     * the two, as it does for a merge from the Categories app, so the kept
+     * category ends up with the order. Hooks do not run in
      * this suite, so the order class is wired to the merged hook and to the
      * term delete here, the way the plugin wires them.
      *

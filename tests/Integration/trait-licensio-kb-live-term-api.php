@@ -78,8 +78,6 @@ trait Licensio_KB_Live_Term_API {
         Functions\when( 'wp_update_term' )->alias( array( $this, 'live_update_term' ) );
         Functions\when( 'wp_delete_term' )->alias( array( $this, 'live_delete_term' ) );
         Functions\when( 'get_objects_in_term' )->alias( array( $this, 'live_objects_in_term' ) );
-        Functions\when( 'wp_set_object_terms' )->alias( array( $this, 'live_set_object_terms' ) );
-        Functions\when( 'wp_remove_object_terms' )->alias( array( $this, 'live_remove_object_terms' ) );
         Functions\when( 'wp_update_term_count' )->alias( array( $this, 'live_update_term_count' ) );
         Functions\when( 'clean_object_term_cache' )->justReturn( null );
         Functions\when( 'get_term_meta' )->alias( array( $this, 'live_get_term_meta' ) );
@@ -508,63 +506,6 @@ trait Licensio_KB_Live_Term_API {
         $rows = $this->live_rows( 'SELECT object_id FROM ' . $this->table( 'term_relationships' ) . ' WHERE term_taxonomy_id = ' . (int) $row['term_taxonomy_id'] . ' ORDER BY object_id' );
 
         return array_column( $rows, 'object_id' );
-    }
-
-    /**
-     * Stand-in for `wp_set_object_terms()` in append mode.
-     *
-     * @since 1.0.0
-     *
-     * @param int    $object_id The object ID.
-     * @param int[]  $terms     The term IDs to add.
-     * @param string $taxonomy  The taxonomy.
-     * @param bool   $append    Must be true; replacing is not supported here.
-     *
-     * @return int[] The term taxonomy IDs added.
-     */
-    public function live_set_object_terms( $object_id, $terms, $taxonomy, $append = false ) {
-        $this->assertTrue( $append, 'Only appending is supported by this stand-in.' );
-
-        $added = array();
-
-        foreach ( (array) $terms as $term_id ) {
-            $row = $this->live_term_row( (int) $term_id, (string) $taxonomy );
-
-            $this->assertNotNull( $row, 'No term ' . (int) $term_id . ' to assign.' );
-
-            $this->live_query( 'INSERT IGNORE INTO ' . $this->table( 'term_relationships' ) . ' (object_id, term_taxonomy_id) VALUES (' . (int) $object_id . ', ' . (int) $row['term_taxonomy_id'] . ')' );
-            $this->live_recount( (int) $row['term_taxonomy_id'] );
-
-            $added[] = (int) $row['term_taxonomy_id'];
-        }
-
-        return $added;
-    }
-
-    /**
-     * Stand-in for `wp_remove_object_terms()`.
-     *
-     * @since 1.0.0
-     *
-     * @param int    $object_id The object ID.
-     * @param int[]  $terms     The term IDs to remove.
-     * @param string $taxonomy  The taxonomy.
-     *
-     * @return bool True.
-     */
-    public function live_remove_object_terms( $object_id, $terms, $taxonomy ) {
-        foreach ( (array) $terms as $term_id ) {
-            $row = $this->live_term_row( (int) $term_id, (string) $taxonomy );
-
-            if ( null === $row ) {
-                continue;
-            }
-
-            $this->live_query( 'DELETE FROM ' . $this->table( 'term_relationships' ) . ' WHERE object_id = ' . (int) $object_id . ' AND term_taxonomy_id = ' . (int) $row['term_taxonomy_id'] );
-            $this->live_recount( (int) $row['term_taxonomy_id'] );
-        }
-
-        return true;
     }
 
     /**

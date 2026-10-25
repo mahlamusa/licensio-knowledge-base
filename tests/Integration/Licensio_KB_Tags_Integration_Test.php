@@ -506,7 +506,6 @@ class Licensio_KB_Tags_Integration_Test extends Licensio_KB_Analytics_DB_Test_Ca
         $failing = $this->make_article( array( 'tags' => array( $b ) ) );
         $before  = $this->live_snapshot();
 
-        Brain\Monkey\Actions\expectDone( 'licensio_kb_terms_merged' )->never();
         $this->live_fail_removal( $b, Licensio_KB_Post_Types::TAXONOMY_TAG, $failing );
 
         $result = $this->controller->merge(
@@ -521,6 +520,7 @@ class Licensio_KB_Tags_Integration_Test extends Licensio_KB_Analytics_DB_Test_Ca
         );
 
         $this->assertInstanceOf( WP_Error::class, $result );
+        $this->assertNotContains( 'licensio_kb_terms_merged', $this->fired_actions, 'A failed merge does not announce itself.' );
         $this->assertSame( $before, $this->live_snapshot() );
     }
 

@@ -54,6 +54,14 @@ abstract class Licensio_KB_Integration_Test_Case extends PHPUnit\Framework\TestC
     protected $database = '';
 
     /**
+     * The names of the actions fired during the test, in order.
+     *
+     * @since 1.0.0
+     * @var string[]
+     */
+    protected $fired_actions = array();
+
+    /**
      * Connect, or skip with the reason.
      *
      * @since 1.0.0
@@ -108,8 +116,19 @@ abstract class Licensio_KB_Integration_Test_Case extends PHPUnit\Framework\TestC
         Brain\Monkey\setUp();
         $this->monkey_active = true;
 
+        /*
+         * No listeners run here, but every action fired is recorded, so a test
+         * can assert that a hook did or did not fire. Brain Monkey's own
+         * action expectations never see a call once do_action() is stubbed.
+         */
+        $this->fired_actions = array();
+
         Brain\Monkey\Functions\when( 'apply_filters' )->returnArg( 2 );
-        Brain\Monkey\Functions\when( 'do_action' )->justReturn( null );
+        Brain\Monkey\Functions\when( 'do_action' )->alias(
+            function ( $hook ) {
+                $this->fired_actions[] = (string) $hook;
+            }
+        );
     }
 
     /**

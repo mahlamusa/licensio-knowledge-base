@@ -745,10 +745,13 @@ class Licensio_KB_Duplicates {
      * articles filed under it. Both move to the un-suffixed term, and the
      * empty duplicate is deleted: a term has no trash to soft-delete into.
      *
-     * `licensio_kb_terms_merged` fires after the articles move and before the
-     * duplicates are deleted, with the same arguments as a merge from the
-     * Categories or Tags app, so the per-category article order is carried to
-     * the kept term before deleting a duplicate drops the duplicate's order.
+     * The meta is copied first, since the richest member may be a duplicate.
+     * The articles move and the duplicates are deleted through
+     * `Licensio_KB_Term_Operations::merge_terms()`, the merge the Categories
+     * and Tags apps use, so the same hooks fire, the per-category article
+     * order is carried to the kept term and caches, counts and the search
+     * index are refreshed. A merge that fails is put back and the group is
+     * reported as unfixable.
      *
      * @since 1.0.0
      *
@@ -769,7 +772,7 @@ class Licensio_KB_Duplicates {
 
         foreach ( $group['members'] as $member ) {
             if ( (int) $member['id'] !== $canonical ) {
-                $losers[] = $member;
+                $losers[] = (int) $member['id'];
             }
         }
 
@@ -782,99 +785,34 @@ class Licensio_KB_Duplicates {
             }
         }
 
-        $reassigned = 0;
+        $merged = ( new Licensio_KB_Term_Operations() )->merge_terms( $losers, $canonical, $taxonomy );
 
-        foreach ( $losers as $loser ) {
-            $reassigned += $this->move_term_objects( (int) $loser['termTaxonomyId'], (int) $group['canonicalTermTaxonomyId'], $taxonomy );
-        }
-
-        /** This action is documented in includes/class-licensio-kb-term-operations.php */
-        do_action(
-            'licensio_kb_terms_merged',
-            array_map(
-                function ( $loser ) {
-                    return (int) $loser['id'];
-                },
-                $losers
-            ),
-            $canonical,
-            $taxonomy
-        );
-
-        foreach ( $losers as $loser ) {
-            wp_delete_term( (int) $loser['id'], $taxonomy );
+        if ( is_wp_error( $merged ) ) {
+            return null;
         }
 
         return array(
-            'terms_deleted'       => count( $losers ),
+            'terms_deleted'       => count( $merged['deleted'] ),
             'term_meta_copied'    => $term_meta_copied,
-            'articles_reassigned' => $reassigned,
+            'articles_reassigned' => $merged['moved'],
             'note'                => sprintf(
-                'Merged %1$s "%2$s": term #%3$d kept its slug and gained %4$d meta and %5$d article assignments; deleted %6$s.',
+                'Merged %1$s "%2$s": term #%3$d kept its slug, gained %4$d meta and took over %5$d article assignments; deleted %6$s.',
                 $taxonomy,
                 $group['name'],
                 $canonical,
                 $term_meta_copied,
-                $reassigned,
+                $merged['moved'],
                 implode(
                     ', ',
                     array_map(
                         function ( $loser ) {
-                            return '#' . (int) $loser['id'];
+                            return '#' . $loser;
                         },
-                        $losers
+                        $merged['deleted']
                     )
                 )
             ),
         );
-    }
-
-    /**
-     * Re-file every object of one duplicate term under the canonical term.
-     *
-     * The relationship rows move in two statements rather than one core call
-     * per article. The moved articles' term caches are cleaned afterwards, so
-     * a persistent object cache does not keep serving the duplicate term.
-     *
-     * @since 1.0.0
-     *
-     * @param int    $loser_tt     The duplicate term's term_taxonomy_id.
-     * @param int    $canonical_tt The canonical term's term_taxonomy_id.
-     * @param string $taxonomy     The taxonomy both terms belong to.
-     *
-     * @return int How many object relationships moved.
-     */
-    private function move_term_objects( $loser_tt, $canonical_tt, $taxonomy ) {
-        global $wpdb;
-
-        $from = (int) $loser_tt;
-        $to   = (int) $canonical_tt;
-
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $object_ids = array_map( 'intval', (array) $wpdb->get_col( $wpdb->prepare( 'SELECT object_id FROM %i WHERE term_taxonomy_id = %d', $wpdb->term_relationships, $from ) ) );
-
-        if ( array() === $object_ids ) {
-            return 0;
-        }
-
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $moved = (int) $wpdb->query(
-            $wpdb->prepare(
-                'INSERT IGNORE INTO %i ( object_id, term_taxonomy_id ) SELECT object_id, %d FROM %i WHERE term_taxonomy_id = %d',
-                $wpdb->term_relationships,
-                $to,
-                $wpdb->term_relationships,
-                $from
-            )
-        );
-
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE term_taxonomy_id = %d', $wpdb->term_relationships, $from ) );
-
-        clean_object_term_cache( $object_ids, Licensio_KB_Post_Types::POST_TYPE );
-        wp_update_term_count( array( $from, $to ), $taxonomy );
-
-        return $moved;
     }
 
     /**
