@@ -8,8 +8,10 @@
  *
  * Each imported component's own `install` is run against a stand-in app, so a
  * plugin's sub-components (`Form` brings `a-form-item`) count as registered.
- * Apps still on the default `Antd` import are skipped. Shared components in
- * `apps/components` import what they render themselves and are not scanned.
+ * Apps still on the default `Antd` import are skipped, but finding no app
+ * with named imports at all fails, so a changed import style cannot turn the
+ * check into a silent pass. Shared components in `apps/components` import
+ * what they render themselves and are not scanned.
  *
  * Usage: node tools/check-ant-components.mjs [apps-directory]
  *
@@ -71,6 +73,7 @@ function vueFiles( dir ) {
 }
 
 const problems = [];
+let checked = 0;
 
 for ( const app of readdirSync( appsDir ) ) {
 	const entry = join( appsDir, app, 'index.ts' );
@@ -80,15 +83,19 @@ for ( const app of readdirSync( appsDir ) ) {
 	}
 
 	const named = readFileSync( entry, 'utf8' ).match(
-		/import\s*\{([^}]*)\}\s*from\s*'ant-design-vue'/
+		/import\s*\{([^}]*)\}\s*from\s*['"]ant-design-vue['"]/
 	);
 
 	if ( ! named ) {
 		continue;
 	}
 
+	checked++;
+
 	const registered = registeredBy(
-		named[ 1 ].split( ',' ).map( ( name ) => name.trim() )
+		named[ 1 ]
+			.split( ',' )
+			.map( ( name ) => name.split( ' as ' )[ 0 ].trim() )
 	);
 
 	for ( const file of vueFiles( join( appsDir, app ) ) ) {
@@ -115,4 +122,13 @@ if ( problems.length ) {
 	process.exit( 1 );
 }
 
-process.stdout.write( 'Every Ant Design tag in the apps is registered.\n' );
+if ( ! checked ) {
+	process.stderr.write(
+		`No app in ${ appsDir } imports named Ant Design components.\n`
+	);
+	process.exit( 1 );
+}
+
+process.stdout.write(
+	`Every Ant Design tag in the ${ checked } apps checked is registered.\n`
+);

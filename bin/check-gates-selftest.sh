@@ -417,6 +417,12 @@ assert_red 'a tag the entry does not register fails' \
     'demo/Extra.vue  <a-tooltip>' \
     node "${ROOT}/tools/check-ant-components.mjs" "${ANT_DIR}/apps"
 
+rm -r "${ANT_DIR}/apps/demo"
+
+assert_red 'no app with named imports fails rather than passing vacuously' \
+    'imports named Ant Design components' \
+    node "${ROOT}/tools/check-ant-components.mjs" "${ANT_DIR}/apps"
+
 printf '\n%s passed, %s failed.\n' "$passed" "$failed"
 
 if [ "$failed" -gt 0 ]; then
