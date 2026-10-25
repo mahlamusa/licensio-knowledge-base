@@ -193,8 +193,8 @@ class Licensio_KB_Heroic_Schema {
      * Prefix of the post meta key holding an article's order inside one category.
      *
      * ht-knowledge-base.php:2723 — `update_post_meta( $post_id, '_ht_article_order_' . $term_id, $order )`.
-     * Heroic orders an article once per category it belongs to; the target model
-     * has one `menu_order` per article, which is why the migrator has to choose.
+     * Heroic orders an article once per category it belongs to; the migrator
+     * writes each position to the migrated category's `licensio_order_{term_id}`.
      *
      * @since 1.0.0
      * @var string

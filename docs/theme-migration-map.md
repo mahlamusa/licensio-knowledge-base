@@ -81,23 +81,24 @@ the theme reads all of them. Our registry has twelve keys and none of these.
 | `ht_kb_tag` | `licensio_tag` |
 | `hkb-templates/` | `licensio-kb/` |
 
-## Two gaps the migrator already reports
+## A gap the migrator already reports
 
-1. **Category icons have somewhere to go, but nothing carries them yet.**
-   Heroic's `meta_svg` is raw inline SVG; `licensio_icon` is a dashicon name
-   printed into a `class` attribute and `licensio_icon_id` is an attachment ID,
-   so neither can hold markup. `licensio_icon_svg` now can: it stores inline
-   SVG reduced to an allowlist by `Licensio_KB_SVG_Sanitizer`, which is the
-   field the theme's `hkb_has_category_custom_icon()` equivalent reads. The
-   migrator still reports `meta_svg` as unmapped — wiring it across is the
-   remaining step. `meta_svg_color` has no destination and is not getting one:
-   Heroic's importer bakes the colour into the markup and keeps that key as a
-   record of the choice, and an icon drawn with `currentColor` takes the
-   knowledge base colour from the card with nothing stored per category.
-2. **Per-category article ordering cannot cross this migrator.** Heroic stores
-   `_ht_article_order_{term_id}`, one position per category; this migrator
-   collapses them into one `menu_order`. The plugin's built-in Heroic import
-   keeps them, as `licensio_order_{term_id}`.
+**Category icons have somewhere to go, but nothing carries them yet.**
+Heroic's `meta_svg` is raw inline SVG; `licensio_icon` is a dashicon name
+printed into a `class` attribute and `licensio_icon_id` is an attachment ID,
+so neither can hold markup. `licensio_icon_svg` now can: it stores inline
+SVG reduced to an allowlist by `Licensio_KB_SVG_Sanitizer`, which is the
+field the theme's `hkb_has_category_custom_icon()` equivalent reads. The
+migrator still reports `meta_svg` as unmapped — wiring it across is the
+remaining step. `meta_svg_color` has no destination and is not getting one:
+Heroic's importer bakes the colour into the markup and keeps that key as a
+record of the choice, and an icon drawn with `currentColor` takes the
+knowledge base colour from the card with nothing stored per category.
+
+Per-category article ordering is no longer a gap. Heroic stores
+`_ht_article_order_{term_id}`, one position per category; this migrator, like
+the plugin's built-in Heroic import, writes each one to the migrated category
+as `licensio_order_{term_id}`, after any order that category already held.
 
 ## Recommended sequencing
 

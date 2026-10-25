@@ -498,15 +498,16 @@ class Licensio_KB_Heroic_Content_Migrator_Test extends Licensio_KB_Test_Case {
      *
      * @since 1.0.0
      *
-     * @param Licensio_KB_Heroic_Source $source  The batched reader.
-     * @param bool                      $dry_run Whether the migrator may write.
+     * @param Licensio_KB_Heroic_Source     $source  The batched reader.
+     * @param bool                          $dry_run Whether the migrator may write.
+     * @param Licensio_KB_Heroic_State|null $state   The resume state to share, or null for a fresh one.
      *
      * @return Licensio_KB_Heroic_Content_Migrator The migrator under test.
      */
-    private function migrator( $source, $dry_run = false ) {
+    private function migrator( $source, $dry_run = false, $state = null ) {
         return new Licensio_KB_Heroic_Content_Migrator(
             $source,
-            new Licensio_KB_Heroic_State( false ),
+            null === $state ? new Licensio_KB_Heroic_State( false ) : $state,
             new Licensio_KB_Heroic_Redirects( sys_get_temp_dir() . '/licensio-kb-unused', true ),
             $this->report,
             $dry_run
@@ -688,25 +689,49 @@ class Licensio_KB_Heroic_Content_Migrator_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * The kept position comes from the lowest category, and the loss is reported.
+     * Each Heroic position is written to its migrated category, after the order it already held.
+     *
+     * Heroic 12 and 31 were migrated as 501 and 502; 77 was not. Category 502
+     * already orders an article at 40, so the position from 31 follows it.
+     * `menu_order` still comes from the lowest category, as the fallback for
+     * listings not limited to one category.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_the_article_position_is_collapsed_and_the_loss_is_reported() {
+    public function test_each_category_position_is_written_after_the_existing_order() {
+        $this->wpdb->target_terms[ Licensio_KB_Post_Types::TAXONOMY_CATEGORY . ':12' ] = 501;
+        $this->wpdb->target_terms[ Licensio_KB_Post_Types::TAXONOMY_CATEGORY . ':31' ] = 502;
+
+        Brain\Monkey\Functions\when( 'get_posts' )->alias(
+            function ( $args ) {
+                return Licensio_KB_Article_Order::meta_key( 502 ) === $args['meta_key'] ? array( 70 ) : array();
+            }
+        );
+        Brain\Monkey\Functions\when( 'update_meta_cache' )->justReturn( true );
+        Brain\Monkey\Functions\when( 'get_post_meta' )->alias(
+            function ( $post_id, $key = '' ) {
+                return 70 === (int) $post_id && Licensio_KB_Article_Order::meta_key( 502 ) === $key ? '40' : 0;
+            }
+        );
+
         $source = $this->source(
             array(
-                'articles' => array(
+                'articles'   => array(
                     array(
                         'ID'        => 11,
                         'post_name' => 'install',
                     ),
                 ),
-                'orders'   => array(
+                'post_terms' => array(
+                    '11:' . Licensio_KB_Heroic_Schema::TAXONOMY_CATEGORY => array( 12, 31, 77 ),
+                ),
+                'orders'     => array(
                     11 => array(
                         31 => '5',
                         12 => '9',
+                        77 => '2',
                     ),
                 ),
             )
@@ -714,41 +739,119 @@ class Licensio_KB_Heroic_Content_Migrator_Test extends Licensio_KB_Test_Case {
 
         $this->migrator( $source )->migrate_articles_batch( 10 );
 
-        $this->assertSame( 9, $this->inserted_posts[0]['menu_order'], 'The position must come from category 12.' );
-        $this->assertSame( 1, $this->report->get( 'articles_order_collapsed' ) );
-        $this->assertStringContainsString( 'kept 9 from category 12', $this->report->notes( 'article_order' )[0] );
+        $this->assertSame( 9, $this->inserted_posts[0]['menu_order'], 'The fallback position must come from category 12.' );
+        $this->assertSame( 9, $this->post_meta[901]['licensio_order_501'] );
+        $this->assertSame( 46, $this->post_meta[901]['licensio_order_502'] );
+        $this->assertArrayNotHasKey( 'licensio_order_77', $this->post_meta[901] );
     }
 
     /**
-     * An article ordered consistently is not reported as a lossy collapse.
+     * The existing order is read once per run, so the run's own writes do not shift later articles.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_a_consistent_position_is_not_reported_as_a_collapse() {
+    public function test_the_existing_order_is_read_once_per_run() {
+        $this->wpdb->target_terms[ Licensio_KB_Post_Types::TAXONOMY_CATEGORY . ':12' ] = 501;
+
+        $reads = 0;
+
+        Brain\Monkey\Functions\when( 'get_posts' )->alias(
+            function () use ( &$reads ) {
+                ++$reads;
+
+                return array();
+            }
+        );
+
         $source = $this->source(
             array(
-                'articles' => array(
+                'articles'   => array(
                     array(
                         'ID'        => 11,
                         'post_name' => 'install',
                     ),
-                ),
-                'orders'   => array(
-                    11 => array(
-                        31 => '3',
-                        12 => '3',
+                    array(
+                        'ID'        => 12,
+                        'post_name' => 'upgrade',
                     ),
+                ),
+                'post_terms' => array(
+                    '11:' . Licensio_KB_Heroic_Schema::TAXONOMY_CATEGORY => array( 12 ),
+                    '12:' . Licensio_KB_Heroic_Schema::TAXONOMY_CATEGORY => array( 12 ),
+                ),
+                'orders'     => array(
+                    11 => array( 12 => '3' ),
+                    12 => array( 12 => '0' ),
                 ),
             )
         );
 
         $this->migrator( $source )->migrate_articles_batch( 10 );
 
-        $this->assertSame( 3, $this->inserted_posts[0]['menu_order'] );
-        $this->assertSame( 0, $this->report->get( 'articles_order_collapsed' ) );
-        $this->assertSame( array(), $this->report->notes( 'article_order' ) );
+        $this->assertSame( 1, $reads );
+        $this->assertSame( 3, $this->post_meta[901]['licensio_order_501'] );
+        $this->assertSame( 0, $this->post_meta[902]['licensio_order_501'] );
+    }
+
+    /**
+     * A resumed run keeps the Heroic order across the interruption.
+     *
+     * The first process migrates article 11 at 3 and dies. The second process
+     * starts from the same resume state while category 501 now holds that
+     * position, so reading the existing order again would push article 12,
+     * which Heroic put first, after article 11.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_resumed_run_keeps_the_heroic_order() {
+        $this->wpdb->target_terms[ Licensio_KB_Post_Types::TAXONOMY_CATEGORY . ':12' ] = 501;
+
+        Brain\Monkey\Functions\when( 'get_posts' )->justReturn( array() );
+        Brain\Monkey\Functions\when( 'update_meta_cache' )->justReturn( true );
+        Brain\Monkey\Functions\when( 'get_post_meta' )->alias(
+            function ( $post_id, $key = '' ) {
+                return 901 === (int) $post_id && Licensio_KB_Article_Order::meta_key( 501 ) === $key ? '3' : 0;
+            }
+        );
+
+        $data  = array(
+            'articles'   => array(
+                array(
+                    'ID'        => 11,
+                    'post_name' => 'install',
+                ),
+            ),
+            'post_terms' => array(
+                '11:' . Licensio_KB_Heroic_Schema::TAXONOMY_CATEGORY => array( 12 ),
+                '12:' . Licensio_KB_Heroic_Schema::TAXONOMY_CATEGORY => array( 12 ),
+            ),
+            'orders'     => array(
+                11 => array( 12 => '3' ),
+                12 => array( 12 => '0' ),
+            ),
+        );
+        $state = new Licensio_KB_Heroic_State( false );
+
+        $this->migrator( $this->source( $data ), false, $state )->migrate_articles_batch( 10 );
+
+        // The second process sees the position the first one wrote.
+        Brain\Monkey\Functions\when( 'get_posts' )->justReturn( array( 901 ) );
+
+        $data['articles'] = array(
+            array(
+                'ID'        => 12,
+                'post_name' => 'upgrade',
+            ),
+        );
+
+        $this->migrator( $this->source( $data ), false, $state )->migrate_articles_batch( 10 );
+
+        $this->assertSame( 3, $this->post_meta[901]['licensio_order_501'] );
+        $this->assertSame( 0, $this->post_meta[902]['licensio_order_501'], 'The resumed article must keep its place before the first.' );
     }
 
     /**
