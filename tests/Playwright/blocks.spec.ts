@@ -17,10 +17,9 @@
  */
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { logIn, password, user } from './helpers/session';
 
 const enabled = process.env.LICENSIO_KB_E2E === '1';
-const user = process.env.LICENSIO_KB_ADMIN_USER ?? '';
-const password = process.env.LICENSIO_KB_ADMIN_PASSWORD ?? '';
 
 type BlockFixture = {
 	name: string;
@@ -55,14 +54,6 @@ const BLOCKS: BlockFixture[] = [
 		marker: 'licensio-kb-block--faq',
 	},
 ];
-
-async function logIn( page: Page ): Promise< void > {
-	await page.goto( '/wp-login.php' );
-	await page.fill( '#user_login', user );
-	await page.fill( '#user_pass', password );
-	await page.click( '#wp-submit' );
-	await expect( page.locator( '#wpadminbar' ) ).toBeVisible();
-}
 
 async function newPost( page: Page ): Promise< void > {
 	// A new post rather than a new page: a page opens the starter pattern

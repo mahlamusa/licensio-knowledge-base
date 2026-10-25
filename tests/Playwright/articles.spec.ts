@@ -22,27 +22,9 @@ import {
 	contentManagerUrl,
 	openContentManager,
 } from './helpers/content-manager';
+import { logIn, password, user } from './helpers/session';
 
 const enabled = process.env.LICENSIO_KB_E2E === '1';
-const user = process.env.LICENSIO_KB_ADMIN_USER ?? '';
-const password = process.env.LICENSIO_KB_ADMIN_PASSWORD ?? '';
-
-/**
- * Sign in as the administrator.
- *
- * @since 1.0.0
- *
- * @param {Page} page The browser page.
- *
- * @return {Promise<void>} Resolves once the admin bar is visible.
- */
-async function logIn( page: Page ): Promise< void > {
-	await page.goto( '/wp-login.php' );
-	await page.fill( '#user_login', user );
-	await page.fill( '#user_pass', password );
-	await page.click( '#wp-submit' );
-	await expect( page.locator( '#wpadminbar' ) ).toBeVisible();
-}
 
 /**
  * Collect every write the app sends to its REST routes.
