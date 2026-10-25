@@ -103,6 +103,16 @@ trait Licensio_KB_Article_Import_Stubs {
      *
      * @return void
      */
+    /**
+     * Stub the core functions the article import writes through.
+     *
+     * The post and post meta writers unslash what they are given before
+     * storing it, as core does.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
     protected function stub_article_writes() {
         Brain\Monkey\Functions\when( 'is_wp_error' )->alias(
             function ( $thing ) {
