@@ -81,6 +81,8 @@ function editCategory( item: CategoryItem ): void {
 /**
  * Run an action the tree handed over.
  *
+ * Merge and delete ask first when the article order has unsaved changes.
+ *
  * @since 1.0.0
  *
  * @param {TreeAction}   action The action.
@@ -89,6 +91,14 @@ function editCategory( item: CategoryItem ): void {
  * @return {void}
  */
 function onAction( action: TreeAction, item: CategoryItem ): void {
+	// A merge or delete can move articles and reload the order pane.
+	if (
+		( 'merge' === action || 'delete' === action ) &&
+		! store.confirmDiscardOrder()
+	) {
+		return;
+	}
+
 	returnTo = item.id;
 
 	if ( 'edit' === action ) {

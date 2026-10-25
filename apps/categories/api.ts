@@ -48,7 +48,12 @@ declare global {
  */
 export function settings(): CategoriesConfig {
 	return (
-		window.licensioKbCategories ?? { root: '', nonce: '', settingsUrl: '' }
+		window.licensioKbCategories ?? {
+			root: '',
+			nonce: '',
+			settingsUrl: '',
+			articlesUrl: '',
+		}
 	);
 }
 

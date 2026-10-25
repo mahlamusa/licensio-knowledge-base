@@ -173,6 +173,9 @@ class Licensio_KB_Tags_Admin {
     /**
      * The configuration the app reads.
      *
+     * `articlesUrl` is the Articles app, which the article counts link to,
+     * filtered by the term.
+     *
      * @since 1.0.0
      *
      * @return array<string, mixed> The localised configuration.
@@ -183,6 +186,7 @@ class Licensio_KB_Tags_Admin {
             'nonce'       => wp_create_nonce( 'wp_rest' ),
             'perPage'     => self::PER_PAGE,
             'settingsUrl' => Licensio_KB_Admin_Page::settings_url(),
+            'articlesUrl' => Licensio_KB_Content_Manager::page_url( Licensio_KB_Content_Manager::ARTICLES_SLUG ),
         );
     }
 }

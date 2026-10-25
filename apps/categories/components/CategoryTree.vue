@@ -10,7 +10,8 @@
  * a refused move the tree is loaded again from the server.
  *
  * The other actions (edit, add child, move to, merge, delete) are handed to
- * the app, which owns the drawer and dialogs.
+ * the app, which owns the drawer and dialogs. A category's article count
+ * links to the Articles app filtered by that category.
  *
  * @since 1.0.0
  */
@@ -20,6 +21,7 @@ import { message } from 'ant-design-vue';
 import { __, sprintf } from '../../components/i18n';
 import { usePopoverFocus } from '../../components/popover-focus';
 import { errorMessage } from '../../components/rest';
+import { settings } from '../api';
 import {
 	applyMove,
 	childIds,
@@ -59,6 +61,7 @@ const emit = defineEmits< {
 } >();
 
 const store = useCategoriesStore();
+const { articlesUrl } = settings();
 
 const pending = ref< PendingMove | null >( null );
 const saving = ref( false );
@@ -151,6 +154,9 @@ function onExpand( keys: Array< string | number > ): void {
 /**
  * Select a category for the article order pane.
  *
+ * Clicking the selected category again unselects it. Either way an unsaved
+ * article order is only thrown away once the user agreed.
+ *
  * @since 1.0.0
  *
  * @param {Array<string|number>} keys The selected keys.
@@ -158,7 +164,13 @@ function onExpand( keys: Array< string | number > ): void {
  * @return {void}
  */
 function onSelect( keys: Array< string | number > ): void {
-	store.selectedId = keys.length ? Number( keys[ 0 ] ) : null;
+	const next = keys.length ? Number( keys[ 0 ] ) : null;
+
+	if ( next === store.selectedId || ! store.confirmDiscardOrder() ) {
+		return;
+	}
+
+	store.selectedId = next;
 }
 
 /**
@@ -636,18 +648,21 @@ function onMenu( item: CategoryItem, key: string ): void {
 					<template #title="node">
 						<span class="lkb-tree__node">
 							<span class="lkb-tree__name">{{ itemOf( node ).name }}</span>
-							<span class="lkb-tree__count" aria-hidden="true">
-								{{ itemOf( node ).count }}
-							</span>
-							<span class="screen-reader-text">
-								{{
+							<a
+								class="lkb-tree__count"
+								draggable="false"
+								:href="`${ articlesUrl }&category=${ itemOf( node ).id }`"
+								:aria-label="
 									sprintf(
 										/* translators: %d: number of articles. */
 										__( 'Articles: %d', 'licensio-knowledge-base' ),
 										itemOf( node ).count
 									)
-								}}
-							</span>
+								"
+								@click.stop
+							>
+								{{ itemOf( node ).count }}
+							</a>
 
 							<a-dropdown
 								:trigger="[ 'click' ]"
@@ -756,6 +771,12 @@ function onMenu( item: CategoryItem, key: string ): void {
 	color: var(--lkb-ink-muted);
 	font-size: 12px;
 	text-align: center;
+	text-decoration: none;
+}
+
+.lkb-tree__count:hover,
+.lkb-tree__count:focus {
+	text-decoration: underline;
 }
 
 .lkb-tree__actions {

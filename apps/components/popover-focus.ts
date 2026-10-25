@@ -64,6 +64,9 @@ function inOpenPicker( target: HTMLElement ): boolean {
  *
  * Asked before the control has handled the key: an open select still
  * reports itself expanded, and an open picker still shows its calendar.
+ * Only a combobox (the input of a select, tree select or autocomplete) and a
+ * date picker count. Other expanded elements, such as a tree node or a
+ * collapse header, do not use Escape, so it still closes the dialog.
  *
  * @since 1.0.0
  *
@@ -72,10 +75,14 @@ function inOpenPicker( target: HTMLElement ): boolean {
  * @return {boolean} True for an open select or date picker.
  */
 function ownsEscape( target: EventTarget | null ): boolean {
+	if ( ! ( target instanceof HTMLElement ) ) {
+		return false;
+	}
+
 	return (
-		target instanceof HTMLElement &&
-		( 'true' === target.getAttribute( 'aria-expanded' ) ||
-			inOpenPicker( target ) )
+		( 'combobox' === target.getAttribute( 'role' ) &&
+			'true' === target.getAttribute( 'aria-expanded' ) ) ||
+		inOpenPicker( target )
 	);
 }
 

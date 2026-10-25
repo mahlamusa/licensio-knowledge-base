@@ -15,6 +15,7 @@ import { computed, nextTick } from 'vue';
 import { LockOutlined } from '@ant-design/icons-vue';
 import ConfirmButton from '../../components/ConfirmButton.vue';
 import { __, sprintf } from '../../components/i18n';
+import { statusLabel } from '../../components/status';
 import { config } from '../api';
 import { confirmTitle, performAction } from '../actions';
 import { useArticlesStore } from '../store';
@@ -24,20 +25,10 @@ import type {
 	ArticleColumn,
 	ArticleItem,
 	ArticleOrderBy,
-	ArticleStatus,
 } from '../types';
 
 const store = useArticlesStore();
 const settings = config();
-
-const STATUS_LABELS: Record< ArticleStatus, string > = {
-	publish: __( 'Published', 'licensio-knowledge-base' ),
-	future: __( 'Scheduled', 'licensio-knowledge-base' ),
-	draft: __( 'Draft', 'licensio-knowledge-base' ),
-	pending: __( 'Pending', 'licensio-knowledge-base' ),
-	private: __( 'Private', 'licensio-knowledge-base' ),
-	trash: __( 'Trash', 'licensio-knowledge-base' ),
-};
 
 /**
  * The current sort of a column, in Ant's terms.
@@ -232,7 +223,7 @@ const expandedKeys = computed( () =>
 			@change="onChange"
 		>
 			<template #emptyText>
-				<div v-if="! store.loading" class="lkb-empty">
+				<div v-if="! store.loading && store.loaded && ! store.error" class="lkb-empty">
 					<template v-if="store.isFiltered">
 						<p>{{ __( 'No articles match these filters.', 'licensio-knowledge-base' ) }}</p>
 						<a-button @click="store.clearFilters()">
@@ -259,7 +250,7 @@ const expandedKeys = computed( () =>
 						</span>
 
 						<a-tag v-if="'publish' !== record.status" class="lkb-title__status">
-							{{ STATUS_LABELS[ record.status as ArticleStatus ] }}
+							{{ statusLabel( record.status ) }}
 						</a-tag>
 
 						<a-tag v-if="record.has_password" class="lkb-title__status">

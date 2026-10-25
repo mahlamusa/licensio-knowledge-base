@@ -114,4 +114,6 @@ export interface CategoriesConfig {
 	root: string;
 	nonce: string;
 	settingsUrl: string;
+	/** The Articles app, which the article counts link to. */
+	articlesUrl: string;
 }

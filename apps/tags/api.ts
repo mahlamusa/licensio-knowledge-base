@@ -40,6 +40,7 @@ export function settings(): TagsConfig {
 			nonce: '',
 			perPage: PER_PAGE,
 			settingsUrl: '',
+			articlesUrl: '',
 		}
 	);
 }

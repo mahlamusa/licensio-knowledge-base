@@ -94,4 +94,6 @@ export interface TagsConfig {
 	nonce: string;
 	perPage: number;
 	settingsUrl: string;
+	/** The Articles app, which the article counts link to. */
+	articlesUrl: string;
 }
