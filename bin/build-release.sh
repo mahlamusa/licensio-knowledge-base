@@ -318,6 +318,8 @@ printf 'Extracted %s strings.\n' "$( grep -c '^msgid ' "$POT_FILE" )"
 command -v node > /dev/null 2>&1 || abort 'node is required to check the Vue app strings.'
 node "${ROOT}/tools/check-app-strings.mjs" "$POT_FILE" \
     || abort 'Vue app strings are missing from the .pot (listed above).'
+node "${ROOT}/tools/check-ant-components.mjs" \
+    || abort 'A Vue app uses Ant Design tags its entry does not register (listed above).'
 
 # Copy the allowlisted paths into a staging directory.
 #
