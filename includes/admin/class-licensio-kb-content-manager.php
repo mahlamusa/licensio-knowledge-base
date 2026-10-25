@@ -372,10 +372,13 @@ class Licensio_KB_Content_Manager {
     /**
      * Mark an app's menu item as the current one.
      *
-     * The apps open at `admin.php?page={slug}`, and so does the Knowledge
-     * Base menu's own link once All Articles is its first item. On that URL
-     * core opens the right menu but does not mark the app's item as current,
-     * because the item's parent is a post type screen, not `admin.php`.
+     * Core links the apps' menu items to
+     * `edit.php?post_type=licensio_article&page={slug}`, as they sit under the
+     * article post type's menu, and the apps also open at
+     * `admin.php?page={slug}`, where redirects and the Knowledge Base menu's
+     * own link send them. On that URL core opens the right menu but does not
+     * mark the app's item as current, because the item's parent is a post
+     * type screen, not `admin.php`.
      * Naming the app as the current submenu file is the comparison core
      * makes. Hooked to `submenu_file`.
      *
