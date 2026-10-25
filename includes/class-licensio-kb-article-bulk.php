@@ -666,10 +666,8 @@ class Licensio_KB_Article_Bulk {
      * one call.
      *
      * Other post fields to put back are written with the status. The trash
-     * functions cannot carry them, so they get a write of their own: before
-     * leaving the trash, so the article is never public without them, and
-     * after moving into it, because core clears the password of a private
-     * article on every write.
+     * functions cannot carry them, so they get a write of their own before
+     * leaving the trash, so the article is never public without them.
      *
      * @since 1.0.0
      *
@@ -688,7 +686,7 @@ class Licensio_KB_Article_Bulk {
         }
 
         if ( 'trash' === $target ) {
-            return self::after_trash_move( $id, wp_trash_post( $id ), $fields );
+            return self::outcome( wp_trash_post( $id ) );
         }
 
         if ( 'trash' === $current ) {
@@ -712,27 +710,6 @@ class Licensio_KB_Article_Bulk {
         }
 
         return self::update( $id, array_merge( array( 'post_status' => $target ), $fields ) );
-    }
-
-    /**
-     * Finish a move into the trash, writing any other fields after it.
-     *
-     * @since 1.0.0
-     *
-     * @param int                  $id      The article ID.
-     * @param mixed                $outcome What the trash function returned.
-     * @param array<string, mixed> $fields  Other post fields to put back.
-     *
-     * @return true|WP_Error True on success.
-     */
-    private static function after_trash_move( $id, $outcome, array $fields ) {
-        $moved = self::outcome( $outcome );
-
-        if ( is_wp_error( $moved ) || empty( $fields ) ) {
-            return $moved;
-        }
-
-        return self::update( $id, $fields );
     }
 
     /**
