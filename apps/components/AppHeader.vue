@@ -16,6 +16,7 @@
 import { onMounted, onUnmounted, ref } from 'vue';
 import { Button as AButton, Tooltip as ATooltip } from 'ant-design-vue';
 import { SettingOutlined } from '@ant-design/icons-vue';
+import { __ } from './i18n';
 
 /**
  * The settings screen this header links to.
@@ -66,7 +67,9 @@ onUnmounted( () => {
 
 <template>
 	<header class="lkb-header" :class="{ 'is-scrolled': hasScrolled }">
-		<a class="lkb-header__skip" href="#lkb-main">Skip to content</a>
+		<a class="lkb-header__skip" href="#lkb-main">{{
+			__( 'Skip to content', 'licensio-knowledge-base' )
+		}}</a>
 
 		<div class="lkb-header__inner lkb-measure">
 			<span class="lkb-header__brand">
@@ -87,12 +90,18 @@ onUnmounted( () => {
 			</span>
 
 			<div class="lkb-header__actions">
-				<ATooltip v-if="props.settingsUrl" title="Knowledge base settings" placement="bottom">
+				<ATooltip
+					v-if="props.settingsUrl"
+					:title="__( 'Knowledge base settings', 'licensio-knowledge-base' )"
+					placement="bottom"
+				>
 					<AButton
 						type="text"
 						class="lkb-header__btn"
 						:href="props.settingsUrl"
-						aria-label="Knowledge base settings"
+						:aria-label="
+							__( 'Knowledge base settings', 'licensio-knowledge-base' )
+						"
 					>
 						<template #icon><SettingOutlined /></template>
 					</AButton>
