@@ -2029,8 +2029,8 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
         );
 
         $this->assert_error( 'licensio_kb_category_not_deleted', 500, $result );
-        $this->assertSame( array( 101 ), $this->objects[1] );
-        $this->assertSame( array( 104 ), $this->objects[4] );
+        $this->assertSame( array( 101 ), $this->assignments[1] );
+        $this->assertSame( array( 104 ), $this->assignments[4] );
         $this->assertSame( 1, $this->terms[2]['parent'] );
     }
 
@@ -2056,8 +2056,8 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
         );
 
         $this->assert_error( 'db_update_error', 400, $result );
-        $this->assertSame( array( 101 ), $this->objects[1] );
-        $this->assertSame( array( 104 ), $this->objects[4] );
+        $this->assertSame( array( 101 ), $this->assignments[1] );
+        $this->assertSame( array( 104 ), $this->assignments[4] );
     }
 
     /**
@@ -2077,7 +2077,7 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
                 }
 
                 foreach ( $terms as $term_id ) {
-                    $this->objects[ $term_id ] = array_values( array_diff( $this->objects[ $term_id ], array( $object_id ) ) );
+                    $this->assignments[ $term_id ] = array_values( array_diff( $this->assignments[ $term_id ], array( $object_id ) ) );
                 }
 
                 return true;
@@ -2095,7 +2095,7 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
 
         $this->assertInstanceOf( 'WP_Error', $result );
         $this->assertSame( 2, $this->terms[3]['parent'] );
-        $this->assertEqualsCanonicalizing( array( 102, 103 ), $this->objects[2] );
-        $this->assertSame( array( 104 ), $this->objects[4] );
+        $this->assertEqualsCanonicalizing( array( 102, 103 ), $this->assignments[2] );
+        $this->assertSame( array( 104 ), $this->assignments[4] );
     }
 }
