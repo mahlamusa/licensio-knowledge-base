@@ -2,7 +2,8 @@
  * The Categories app, end to end.
  *
  * Drag and drop with Cancel and Confirm, a keyboard move answered with
- * Escape and then Move, the add drawer opening on its Name field,
+ * Escape and then Move, the add drawer opening on its Name field unless
+ * the user already tabbed on, the merge dialog opening on its first field,
  * delete with reassignment, merge, the article order pane against the live
  * order routes (a drag saved and shown on the category archive, and a saved
  * first page of a long list), and the phone-width layout. Every write must wait for its
@@ -501,6 +502,21 @@ test.describe( 'Categories app', () => {
 		expect( delta?.icon_svg ).not.toContain( 'script' );
 	} );
 
+	test( 'the drawer keeps focus where the user tabbed while it opened', async ( { page } ) => {
+		await page.getByRole( 'button', { name: 'Add category' } ).first().click();
+		await page.keyboard.press( 'Tab' );
+
+		const drawer = page.locator( '.ant-drawer-content' );
+		const close = page.locator( '.lkb-category-drawer .ant-drawer-close' );
+
+		await expect( close ).toBeFocused();
+
+		// Longer than the drawer takes to slide in.
+		await page.waitForTimeout( 1000 );
+		await expect( close ).toBeFocused();
+		await expect( drawer.getByLabel( 'Name' ) ).not.toBeFocused();
+	} );
+
 	test( 'delete moves the children to the chosen category', async ( { page } ) => {
 		await act( page, 'Gamma', 'Delete…' );
 
@@ -532,6 +548,8 @@ test.describe( 'Categories app', () => {
 
 		const dialog = page.locator( '.ant-modal-content' );
 
+		// The dialog opens with focus on its first field.
+		await expect( dialog.getByLabel( 'Categories to merge' ) ).toBeFocused();
 		await dialog.getByLabel( 'Merge into' ).click();
 		await page
 			.locator( '.ant-select-item-option' )

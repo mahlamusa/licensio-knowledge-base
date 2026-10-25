@@ -137,6 +137,9 @@ onBeforeUnmount( () => {
 /**
  * Focus the Name field once the drawer has opened, or report it closed.
  *
+ * A user who already tabbed to a control while the drawer slid in keeps
+ * their place.
+ *
  * @since 1.0.0
  *
  * @param {boolean} open Whether the drawer is now open.
@@ -144,11 +147,18 @@ onBeforeUnmount( () => {
  * @return {void}
  */
 function onAfterOpenChange( open: boolean ): void {
-	if ( open ) {
-		document.getElementById( 'lkb-category-name' )?.focus();
-	} else {
+	if ( ! open ) {
 		emit( 'closed' );
+		return;
 	}
+
+	const active = document.activeElement;
+
+	if ( active?.closest( '.lkb-category-drawer' ) && active.matches( FOCUSABLE ) ) {
+		return;
+	}
+
+	document.getElementById( 'lkb-category-name' )?.focus();
 }
 
 /**
