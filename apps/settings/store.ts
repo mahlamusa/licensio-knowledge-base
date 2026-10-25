@@ -69,7 +69,12 @@ export const useSettingsStore = defineStore( 'licensioKbSettings', {
 		 * A group whose category the server does not declare would otherwise
 		 * vanish from the navigation while its settings stayed stored, so any
 		 * such group is collected under a trailing block rather than dropped.
-		 * @param state
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param {SettingsState} state The store state.
+		 *
+		 * @return {CategoryBlock[]} The sidebar blocks, empty ones left out.
 		 */
 		categoryBlocks( state ): CategoryBlock[] {
 			const declared = Object.keys( state.categories );
