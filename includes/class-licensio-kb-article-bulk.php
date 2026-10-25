@@ -18,7 +18,10 @@
  * user who took it. Revert accepts only those fields, only with a token that
  * matches that exact snapshot for this user, only in the last 15 minutes, only
  * terms that exist in their taxonomy, and checks every article's permission
- * and lock again. Author and comment
+ * and lock again. Making a password-protected article private clears its
+ * password, so that snapshot holds the password too and revert puts it back
+ * in the same write as the status; the snapshot goes only to the user who
+ * made the change, who could already edit the article. Author and comment
  * changes are deliberately not undoable: their earlier values are rarely
  * wanted and would widen what revert has to trust.
  *
@@ -86,10 +89,13 @@ class Licensio_KB_Article_Bulk {
     /**
      * The fields a snapshot may hold; anything else is refused by revert.
      *
+     * `password` is held only with `status`, when making an article private
+     * cleared its password.
+     *
      * @since 1.0.0
      * @var string[]
      */
-    const REVERTIBLE_FIELDS = array( 'status', 'terms' );
+    const REVERTIBLE_FIELDS = array( 'status', 'terms', 'password' );
 
     /**
      * The term modes.
@@ -259,6 +265,9 @@ class Licensio_KB_Article_Bulk {
     /**
      * What an article is now, in the fields an action is about to change.
      *
+     * Making an article private clears its password, so a status change to
+     * private records a non-empty password beside the status.
+     *
      * @since 1.0.0
      *
      * @param WP_Post              $post   The article.
@@ -279,7 +288,13 @@ class Licensio_KB_Article_Bulk {
             );
         }
 
-        return array( 'status' => (string) $post->post_status );
+        $snapshot = array( 'status' => (string) $post->post_status );
+
+        if ( 'status' === $action && 'private' === $args['status'] && '' !== (string) $post->post_password ) {
+            $snapshot['password'] = (string) $post->post_password;
+        }
+
+        return $snapshot;
     }
 
     /**
@@ -416,7 +431,8 @@ class Licensio_KB_Article_Bulk {
      * Check a snapshot before anything is reverted.
      *
      * The snapshot must hold at most `MAX_IDS` articles and only the
-     * revertible fields with well-formed values. Its token must match this
+     * revertible fields with well-formed values; a password must be a
+     * non-empty string and come with a status. Its token must match this
      * exact snapshot, its time and the current user, so a changed snapshot or
      * one taken by someone else is refused. It must be no more than 15
      * minutes old, and every term in it must exist in its taxonomy.
@@ -455,6 +471,10 @@ class Licensio_KB_Article_Bulk {
 
             if ( isset( $snapshot['terms'] ) && ! self::valid_terms( $snapshot['terms'] ) ) {
                 return self::invalid( 'previous', __( 'The terms to undo to are not valid.', 'licensio-knowledge-base' ) );
+            }
+
+            if ( array_key_exists( 'password', $snapshot ) && ( ! isset( $snapshot['status'] ) || ! is_string( $snapshot['password'] ) || '' === $snapshot['password'] ) ) {
+                return self::invalid( 'previous', __( 'A password to undo to is not valid.', 'licensio-knowledge-base' ) );
             }
         }
 
@@ -548,6 +568,10 @@ class Licensio_KB_Article_Bulk {
             return 'forbidden';
         }
 
+        if ( isset( $snapshot['password'] ) && ! current_user_can( 'edit_post', $id ) ) {
+            return 'forbidden';
+        }
+
         if ( isset( $snapshot['terms'] ) ) {
             if ( ! current_user_can( 'edit_post', $id ) ) {
                 return 'forbidden';
@@ -598,6 +622,9 @@ class Licensio_KB_Article_Bulk {
     /**
      * Put one article's snapshot back.
      *
+     * A password goes back in the same write as the status, so the article
+     * is never published without it in between.
+     *
      * @since 1.0.0
      *
      * @param WP_Post              $post     The article.
@@ -609,7 +636,8 @@ class Licensio_KB_Article_Bulk {
         $id = (int) $post->ID;
 
         if ( isset( $snapshot['status'] ) ) {
-            $restored = self::restore_status( $post, (string) $snapshot['status'] );
+            $fields   = isset( $snapshot['password'] ) ? array( 'post_password' => (string) $snapshot['password'] ) : array();
+            $restored = self::restore_status( $post, (string) $snapshot['status'], $fields );
 
             if ( is_wp_error( $restored ) ) {
                 return $restored;
@@ -637,23 +665,28 @@ class Licensio_KB_Article_Bulk {
      * back to is known, so `wp_untrash_post_status` is filtered to it for the
      * one call.
      *
+     * Other post fields to put back are written with the status. The trash
+     * functions cannot carry them, so after a trash move they get a write of
+     * their own.
+     *
      * @since 1.0.0
      *
-     * @param WP_Post $post   The article.
-     * @param string  $target The status to move it back to.
+     * @param WP_Post              $post   The article.
+     * @param string               $target The status to move it back to.
+     * @param array<string, mixed> $fields Optional. Other post fields to put back with the status.
      *
      * @return true|WP_Error True on success.
      */
-    private static function restore_status( $post, $target ) {
+    private static function restore_status( $post, $target, array $fields = array() ) {
         $id      = (int) $post->ID;
         $current = (string) $post->post_status;
 
         if ( $current === $target ) {
-            return true;
+            return empty( $fields ) ? true : self::update( $id, $fields );
         }
 
         if ( 'trash' === $target ) {
-            return self::outcome( wp_trash_post( $id ) );
+            return self::after_trash_move( $id, wp_trash_post( $id ), $fields );
         }
 
         if ( 'trash' === $current ) {
@@ -665,10 +698,31 @@ class Licensio_KB_Article_Bulk {
             $untrashed = wp_untrash_post( $id );
             remove_filter( 'wp_untrash_post_status', $to_target, 99 );
 
-            return self::outcome( $untrashed );
+            return self::after_trash_move( $id, $untrashed, $fields );
         }
 
-        return self::update( $id, array( 'post_status' => $target ) );
+        return self::update( $id, array_merge( array( 'post_status' => $target ), $fields ) );
+    }
+
+    /**
+     * Finish a move into or out of the trash, writing any other fields after it.
+     *
+     * @since 1.0.0
+     *
+     * @param int                  $id      The article ID.
+     * @param mixed                $outcome What the trash function returned.
+     * @param array<string, mixed> $fields  Other post fields to put back.
+     *
+     * @return true|WP_Error True on success.
+     */
+    private static function after_trash_move( $id, $outcome, array $fields ) {
+        $moved = self::outcome( $outcome );
+
+        if ( is_wp_error( $moved ) || empty( $fields ) ) {
+            return $moved;
+        }
+
+        return self::update( $id, $fields );
     }
 
     /**

@@ -158,17 +158,19 @@ class Licensio_KB_Article_Bulk_Test extends Licensio_KB_Test_Case {
      *
      * @since 1.0.0
      *
-     * @param int    $id     The ID.
-     * @param string $status The status.
+     * @param int    $id       The ID.
+     * @param string $status   The status.
+     * @param string $password Optional. The post password.
      *
      * @return void
      */
-    private function article( $id, $status = 'publish' ) {
+    private function article( $id, $status = 'publish', $password = '' ) {
         $this->posts[ $id ] = new WP_Post(
             array(
-                'ID'          => $id,
-                'post_type'   => 'licensio_article',
-                'post_status' => $status,
+                'ID'            => $id,
+                'post_type'     => 'licensio_article',
+                'post_status'   => $status,
+                'post_password' => $password,
             )
         );
     }
@@ -634,6 +636,180 @@ class Licensio_KB_Article_Bulk_Test extends Licensio_KB_Test_Case {
                 'wp_untrash_post:1',
                 'wp_trash_post:2',
                 'wp_update_post:3:{"post_status":"pending"}',
+            ),
+            $this->core_writes
+        );
+    }
+
+    /**
+     * Making a protected article private keeps its password in the snapshot,
+     * and Undo writes the status and the password back in one write.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_undoing_make_private_restores_the_password() {
+        $this->article( 1, 'publish', 'open sesame' );
+        $this->article( 2, 'publish' );
+
+        $bulk   = new Licensio_KB_Article_Bulk();
+        $result = $bulk->run( array( 1, 2 ), 'status', array( 'status' => 'private' ) );
+
+        $this->assertSame(
+            array(
+                1 => array(
+                    'status'   => 'publish',
+                    'password' => 'open sesame',
+                ),
+                2 => array( 'status' => 'publish' ),
+            ),
+            $result['previous']
+        );
+        $this->assertTrue( Licensio_KB_Article_Bulk::validate_snapshot( $result['previous'], $result['snapshot_at'], $result['token'] ) );
+
+        $this->article( 1, 'private' );
+        $this->article( 2, 'private' );
+        $this->core_writes = array();
+
+        $reverted = $bulk->revert( $result['previous'], $result['snapshot_at'], $result['token'] );
+
+        $this->assertSame( array( 1, 2 ), $reverted['done'] );
+        $this->assertSame(
+            array(
+                'wp_update_post:1:{"post_status":"publish","post_password":"open sesame"}',
+                'wp_update_post:2:{"post_status":"publish"}',
+            ),
+            $this->core_writes
+        );
+    }
+
+    /**
+     * Only a change to private records the password; other statuses keep it
+     * on the article, so it stays out of their snapshot.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_other_statuses_do_not_record_the_password() {
+        $this->article( 1, 'publish', 'open sesame' );
+
+        $result = ( new Licensio_KB_Article_Bulk() )->run( array( 1 ), 'status', array( 'status' => 'draft' ) );
+
+        $this->assertSame( array( 1 => array( 'status' => 'publish' ) ), $result['previous'] );
+    }
+
+    /**
+     * A password in a snapshot must be a non-empty string beside a status,
+     * and is bound to the token like every other field.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_revert_checks_the_password() {
+        $now = time();
+        $bad = array(
+            'empty'     => array(
+                1 => array(
+                    'status'   => 'publish',
+                    'password' => '',
+                ),
+            ),
+            'number'    => array(
+                1 => array(
+                    'status'   => 'publish',
+                    'password' => 5,
+                ),
+            ),
+            'no status' => array( 1 => array( 'password' => 'open sesame' ) ),
+        );
+
+        foreach ( $bad as $label => $previous ) {
+            $result = Licensio_KB_Article_Bulk::validate_snapshot( $previous, $now, Licensio_KB_Article_Bulk::snapshot_token( $now, $previous ) );
+
+            $this->assertInstanceOf( 'WP_Error', $result, $label );
+            $this->assertSame( 'rest_invalid_param', $result->get_error_code(), $label );
+        }
+
+        $previous = array(
+            1 => array(
+                'status'   => 'publish',
+                'password' => 'open sesame',
+            ),
+        );
+        $token    = Licensio_KB_Article_Bulk::snapshot_token( $now, $previous );
+        $changed  = array(
+            1 => array(
+                'status'   => 'publish',
+                'password' => 'something else',
+            ),
+        );
+        $result   = Licensio_KB_Article_Bulk::validate_snapshot( $changed, $now, $token );
+
+        $this->assertTrue( Licensio_KB_Article_Bulk::validate_snapshot( $previous, $now, $token ) );
+        $this->assertSame( 'licensio_kb_snapshot_invalid', $result->get_error_code() );
+    }
+
+    /**
+     * A user who may not edit the article cannot put its password back.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_revert_of_a_password_needs_edit_post() {
+        $this->article( 1, 'private' );
+
+        $this->denied = array( 'edit_post' );
+
+        $now      = time();
+        $previous = array(
+            1 => array(
+                'status'   => 'publish',
+                'password' => 'open sesame',
+            ),
+        );
+        $result   = ( new Licensio_KB_Article_Bulk() )->revert( $previous, $now, Licensio_KB_Article_Bulk::snapshot_token( $now, $previous ) );
+
+        $this->assertSame( array(), $result['done'] );
+        $this->assertSame( array( 1 => 'forbidden' ), array_column( $result['skipped'], 'reason', 'id' ) );
+        $this->assertSame( array(), $this->core_writes );
+    }
+
+    /**
+     * When the article has been trashed since, Undo restores it and then
+     * writes the password, and an article already back in its status still
+     * gets its password.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_revert_writes_the_password_after_a_trash_move_or_alone() {
+        $this->article( 1, 'trash' );
+        $this->article( 2, 'publish' );
+
+        $now      = time();
+        $previous = array(
+            1 => array(
+                'status'   => 'publish',
+                'password' => 'one',
+            ),
+            2 => array(
+                'status'   => 'publish',
+                'password' => 'two',
+            ),
+        );
+        $result   = ( new Licensio_KB_Article_Bulk() )->revert( $previous, $now, Licensio_KB_Article_Bulk::snapshot_token( $now, $previous ) );
+
+        $this->assertSame( array( 1, 2 ), $result['done'] );
+        $this->assertSame(
+            array(
+                'wp_untrash_post:1',
+                'wp_update_post:1:{"post_password":"one"}',
+                'wp_update_post:2:{"post_password":"two"}',
             ),
             $this->core_writes
         );
