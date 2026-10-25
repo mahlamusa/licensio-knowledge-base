@@ -80,6 +80,8 @@ trait Licensio_KB_Live_Term_API {
         Functions\when( 'get_objects_in_term' )->alias( array( $this, 'live_objects_in_term' ) );
         Functions\when( 'wp_set_object_terms' )->alias( array( $this, 'live_set_object_terms' ) );
         Functions\when( 'wp_remove_object_terms' )->alias( array( $this, 'live_remove_object_terms' ) );
+        Functions\when( 'wp_update_term_count' )->alias( array( $this, 'live_update_term_count' ) );
+        Functions\when( 'clean_object_term_cache' )->justReturn( null );
         Functions\when( 'get_term_meta' )->alias( array( $this, 'live_get_term_meta' ) );
         Functions\when( 'update_term_meta' )->alias( array( $this, 'live_update_term_meta' ) );
     }
@@ -560,6 +562,26 @@ trait Licensio_KB_Live_Term_API {
 
             $this->live_query( 'DELETE FROM ' . $this->table( 'term_relationships' ) . ' WHERE object_id = ' . (int) $object_id . ' AND term_taxonomy_id = ' . (int) $row['term_taxonomy_id'] );
             $this->live_recount( (int) $row['term_taxonomy_id'] );
+        }
+
+        return true;
+    }
+
+    /**
+     * Stand-in for `wp_update_term_count()`.
+     *
+     * @since 1.0.0
+     *
+     * @param int[]|int $tt_ids   The term taxonomy IDs to recount.
+     * @param string    $taxonomy The taxonomy.
+     *
+     * @return bool True.
+     */
+    public function live_update_term_count( $tt_ids, $taxonomy ) {
+        unset( $taxonomy );
+
+        foreach ( (array) $tt_ids as $tt_id ) {
+            $this->live_recount( (int) $tt_id );
         }
 
         return true;

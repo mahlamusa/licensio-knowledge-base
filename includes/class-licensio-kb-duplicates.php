@@ -745,6 +745,11 @@ class Licensio_KB_Duplicates {
      * articles filed under it. Both move to the un-suffixed term, and the
      * empty duplicate is deleted: a term has no trash to soft-delete into.
      *
+     * `licensio_kb_terms_merged` fires after the articles move and before the
+     * duplicates are deleted, with the same arguments as a merge from the
+     * Categories or Tags app, so the per-category article order is carried to
+     * the kept term before deleting a duplicate drops the duplicate's order.
+     *
      * @since 1.0.0
      *
      * @param array<string, mixed> $group A fixable group from describe_term_group().
@@ -783,6 +788,19 @@ class Licensio_KB_Duplicates {
             $reassigned += $this->move_term_objects( (int) $loser['termTaxonomyId'], (int) $group['canonicalTermTaxonomyId'], $taxonomy );
         }
 
+        /** This action is documented in includes/class-licensio-kb-term-operations.php */
+        do_action(
+            'licensio_kb_terms_merged',
+            array_map(
+                function ( $loser ) {
+                    return (int) $loser['id'];
+                },
+                $losers
+            ),
+            $canonical,
+            $taxonomy
+        );
+
         foreach ( $losers as $loser ) {
             wp_delete_term( (int) $loser['id'], $taxonomy );
         }
@@ -814,6 +832,10 @@ class Licensio_KB_Duplicates {
     /**
      * Re-file every object of one duplicate term under the canonical term.
      *
+     * The relationship rows move in two statements rather than one core call
+     * per article. The moved articles' term caches are cleaned afterwards, so
+     * a persistent object cache does not keep serving the duplicate term.
+     *
      * @since 1.0.0
      *
      * @param int    $loser_tt     The duplicate term's term_taxonomy_id.
@@ -829,17 +851,28 @@ class Licensio_KB_Duplicates {
         $to   = (int) $canonical_tt;
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $object_ids = array_map( 'intval', (array) $wpdb->get_col( $wpdb->prepare( 'SELECT object_id FROM %i WHERE term_taxonomy_id = %d', $wpdb->term_relationships, $from ) ) );
+
+        if ( array() === $object_ids ) {
+            return 0;
+        }
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $moved = (int) $wpdb->query(
-            "INSERT IGNORE INTO {$wpdb->term_relationships} ( object_id, term_taxonomy_id )
-             SELECT object_id, {$to} FROM {$wpdb->term_relationships} WHERE term_taxonomy_id = {$from}" // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- Both values are integer term_taxonomy_ids.
+            $wpdb->prepare(
+                'INSERT IGNORE INTO %i ( object_id, term_taxonomy_id ) SELECT object_id, %d FROM %i WHERE term_taxonomy_id = %d',
+                $wpdb->term_relationships,
+                $to,
+                $wpdb->term_relationships,
+                $from
+            )
         );
 
-        if ( $moved > 0 ) {
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-            $wpdb->query( "DELETE FROM {$wpdb->term_relationships} WHERE term_taxonomy_id = {$from}" );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE term_taxonomy_id = %d', $wpdb->term_relationships, $from ) );
 
-            wp_update_term_count( $to, $taxonomy );
-        }
+        clean_object_term_cache( $object_ids, Licensio_KB_Post_Types::POST_TYPE );
+        wp_update_term_count( array( $from, $to ), $taxonomy );
 
         return $moved;
     }
