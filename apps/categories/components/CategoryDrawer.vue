@@ -7,7 +7,8 @@
  * (`data.params`) is shown on its field; any other error above the form.
  *
  * Ant Design's drawer does not keep focus inside itself, so while it is open
- * Tab and Shift+Tab wrap around its fields and buttons.
+ * Tab and Shift+Tab wrap around its fields and buttons. It opens with focus
+ * on the Name field rather than on its panel.
  *
  * @since 1.0.0
  */
@@ -132,6 +133,33 @@ watch(
 onBeforeUnmount( () => {
 	document.removeEventListener( 'keydown', trapFocus );
 } );
+
+/**
+ * Focus the Name field once the drawer has opened, or report it closed.
+ *
+ * A user who already tabbed to a control while the drawer slid in keeps
+ * their place.
+ *
+ * @since 1.0.0
+ *
+ * @param {boolean} open Whether the drawer is now open.
+ *
+ * @return {void}
+ */
+function onAfterOpenChange( open: boolean ): void {
+	if ( ! open ) {
+		emit( 'closed' );
+		return;
+	}
+
+	const active = document.activeElement;
+
+	if ( active?.closest( '.lkb-category-drawer' ) && active.matches( FOCUSABLE ) ) {
+		return;
+	}
+
+	document.getElementById( 'lkb-category-name' )?.focus();
+}
 
 /**
  * Fill the form from the category being edited, or blank it for a new one.
@@ -293,7 +321,7 @@ async function save(): Promise< void > {
 		root-class-name="lkb-category-drawer"
 		destroy-on-close
 		@close="emit( 'close' )"
-		@after-open-change="( open: boolean ) => ! open && emit( 'closed' )"
+		@after-open-change="onAfterOpenChange"
 	>
 		<a-alert
 			v-if="formError"

@@ -159,7 +159,7 @@ class Licensio_KB_Articles_Admin {
             return;
         }
 
-        if ( ! licensio_kb()->assets()->enqueue_app( self::APP_HANDLE, self::APP_ENTRY, array( 'wp-i18n' ) ) ) {
+        if ( ! licensio_kb()->assets()->enqueue_app( self::APP_HANDLE, self::APP_ENTRY, array( 'wp-i18n', 'wp-a11y' ) ) ) {
             return;
         }
 

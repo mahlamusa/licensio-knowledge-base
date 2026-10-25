@@ -20,8 +20,9 @@
  *         v-on:open-change="setOpen"
  *     >
  *
- * Consumed by ConfirmButton and the articles app's filters and columns
- * popovers. `FOCUSABLE` is shared with the category drawer's focus trap.
+ * Consumed by ConfirmButton, the articles app's filters and columns
+ * popovers and the category tree's move Popconfirm. `FOCUSABLE` is shared
+ * with the category drawer's focus trap.
  *
  * @since 1.0.0
  */

@@ -323,6 +323,10 @@ test.describe( 'Articles bulk actions', () => {
 		await expect( toast ).toContainText(
 			`${ ARTICLES - 1 } articles moved to the trash.`
 		);
+		await expect(
+			page.locator( '#a11y-speak-polite' ),
+			'Focus did not move to Undo, so the message is announced.'
+		).toContainText( `${ ARTICLES - 1 } articles moved to the trash.` );
 		await toast.getByRole( 'button', { name: 'Undo' } ).click();
 		await expect( page.locator( '.ant-message' ) ).toContainText(
 			`${ ARTICLES - 1 } articles put back.`,

@@ -6,7 +6,8 @@
  * nothing, that an edit to a slug another tag uses is refused with a message
  * and keeps the input, and that merge and convert to
  * category work on the selected tags, and that focus lands on the page title
- * once a bulk delete takes the Delete button away. The category the convert
+ * once a bulk delete takes the Delete button away. Escape closes the Add tag
+ * form and an inline edit, sending nothing. The category the convert
  * creates is deleted again through the core REST API.
  *
  * The suite needs a running WordPress with this plugin active and an
@@ -296,4 +297,48 @@ test( 'tags are edited, merged and converted only after confirmation', async ( {
 	// The Delete button went with the selection, so focus is on the title.
 	await expect( page.locator( '.lkb-page__title' ) ).toBeFocused();
 	expect( await deleteCategory( page, categoryId ) ).toBe( 200 );
+} );
+
+test( 'Escape closes the Add tag form and an inline edit', async ( {
+	page,
+} ) => {
+	const writes = recordWrites( page );
+	const name = `Escape ${ suffix }`;
+
+	await logIn( page );
+	await openContentManager( page, 'tags' );
+
+	// Escape in the Add tag form closes it and puts focus back on Add tag.
+	await page.getByRole( 'button', { name: 'Add tag' } ).click();
+	await page.locator( '.lkb-tags__add' ).getByLabel( 'Name' ).fill( name );
+	await page.keyboard.press( 'Escape' );
+	await expect( page.locator( '.lkb-tags__add' ) ).toBeHidden();
+	await expect(
+		page.getByRole( 'button', { name: 'Add tag' } )
+	).toBeFocused();
+	expect( writes ).toHaveLength( 0 );
+
+	await addTag( page, name );
+	await search( page, name );
+
+	// Escape in an open row closes it and puts focus back on its Edit button.
+	const before = writes.length;
+
+	await row( page, name ).getByRole( 'button', { name: 'Edit' } ).click();
+	await page.getByLabel( 'Name', { exact: true } ).last().fill( 'Changed' );
+	await page.keyboard.press( 'Escape' );
+	await expect(
+		row( page, name ).getByRole( 'button', { name: 'Edit' } )
+	).toBeFocused();
+	await expect( row( page, name ) ).toContainText( name );
+	expect( writes.length ).toBe( before );
+
+	// Clean up.
+	await row( page, name ).locator( '.ant-checkbox-input' ).check();
+	await page
+		.locator( '.lkb-bulk' )
+		.getByRole( 'button', { name: 'Delete' } )
+		.click();
+	await confirmPopconfirm( page );
+	await expect( page.locator( '.ant-table-row' ) ).toHaveCount( 0 );
 } );
