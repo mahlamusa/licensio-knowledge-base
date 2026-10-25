@@ -6,10 +6,16 @@
  * engines. Moving one without redirects breaks every one of those links, so an
  * import produces two things:
  *
- * - `{source}-url-map.csv`, the audit record: one row per moved URL, with the
- *   IDs on both sides and a note when the slug had to change. It is written as
- *   the import goes, so an interrupted run still leaves a usable map of what it
- *   got through, and it is downloadable from the wizard.
+ * - `{source}-url-map-{random}.csv`, the audit record: one row per moved URL,
+ *   with the IDs on both sides and a note when the slug had to change. It is
+ *   written as the import goes, so an interrupted run still leaves a usable map
+ *   of what it got through, and it is downloadable from the wizard. Its rows
+ *   name draft and private articles, so it must not be fetchable from the
+ *   uploads URL: the file name carries a random part, kept in the
+ *   `licensio_import_url_map_files` option and renewed at every real run, and
+ *   the directory carries a deny `index.php` and `.htaccess`. The random name is the real protection, since
+ *   a server that ignores `.htaccess` (nginx) would otherwise serve it; the
+ *   wizard downloads it through a capability and nonce checked request.
  * - The redirect map itself, old path to new URL, stored in the
  *   `licensio_import_redirects` option and served by
  *   `Licensio_KB_Import_Redirect_Server` on requests that would otherwise 404.
@@ -38,7 +44,7 @@ defined( 'ABSPATH' ) || exit;
 class Licensio_KB_Import_Redirects {
 
     /**
-     * Suffix of the audit file, after the source id.
+     * Suffix of the name a downloaded audit file is offered under, after the source id.
      *
      * @since 1.0.0
      * @var string
@@ -52,6 +58,25 @@ class Licensio_KB_Import_Redirects {
      * @var string
      */
     const OPTION = 'licensio_import_redirects';
+
+    /**
+     * The option the audit file names are kept in, source id to file name.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    const FILES_OPTION = 'licensio_import_url_map_files';
+
+    /**
+     * Contents of the deny files written into the output directory, by file name.
+     *
+     * @since 1.0.0
+     * @var array<string, string>
+     */
+    const DENY_FILES = array(
+        'index.php' => "<?php\n// Silence is golden.\n",
+        '.htaccess' => "<IfModule mod_authz_core.c>\n\tRequire all denied\n</IfModule>\n<IfModule !mod_authz_core.c>\n\tDeny from all\n</IfModule>\n",
+    );
 
     /**
      * Column headings of the audit file.
@@ -125,7 +150,7 @@ class Licensio_KB_Import_Redirects {
      */
     public function __construct( $source, $directory = '', $dry_run = false ) {
         $this->source    = sanitize_key( (string) $source );
-        $this->directory = '' === (string) $directory ? self::upload_directory() : rtrim( (string) $directory, '/\\' );
+        $this->directory = self::resolve_directory( $directory );
         $this->dry_run   = (bool) $dry_run;
     }
 
@@ -203,43 +228,119 @@ class Licensio_KB_Import_Redirects {
     /**
      * The audit file's path.
      *
+     * A real run gives the source its random file name the first time it is
+     * asked for, and every later request of the run reads the same name back.
+     * A dry run never names a file.
+     *
      * @since 1.0.0
      *
-     * @return string The absolute file path.
+     * @return string The absolute file path, or an empty string for a dry run with no file yet.
      */
     public function map_path() {
+        if ( ! $this->dry_run && '' === self::map_file_name( $this->source ) ) {
+            $this->new_map_file_name();
+        }
+
         return self::map_path_for( $this->source, $this->directory );
     }
 
     /**
      * A source's audit file path.
      *
+     * Read only: it never names a file, so it is safe on a download request.
+     *
      * @since 1.0.0
      *
      * @param string $source    The source driver id.
      * @param string $directory The directory; defaults to the uploads directory.
      *
-     * @return string The absolute file path.
+     * @return string The absolute file path, or an empty string when the source has no file yet.
      */
     public static function map_path_for( $source, $directory = '' ) {
-        $directory = '' === (string) $directory ? self::upload_directory() : rtrim( (string) $directory, '/\\' );
+        $name = self::map_file_name( $source );
 
-        return $directory . '/' . sanitize_key( (string) $source ) . self::MAP_FILE_SUFFIX;
+        if ( '' === $name ) {
+            return '';
+        }
+
+        $directory = self::resolve_directory( $directory );
+
+        return $directory . '/' . $name;
+    }
+
+    /**
+     * The file name a download of a source's audit file is offered under.
+     *
+     * Leaves the random part out, so it never reaches the download.
+     *
+     * @since 1.0.0
+     *
+     * @param string $source The source driver id.
+     *
+     * @return string The file name.
+     */
+    public static function download_file_name( $source ) {
+        return sanitize_key( (string) $source ) . self::MAP_FILE_SUFFIX;
+    }
+
+    /**
+     * Delete the output directory and everything in it.
+     *
+     * Used by the uninstaller when the site owner asked for everything to be
+     * deleted. Only files are removed; a directory that still holds anything
+     * else afterwards is left in place.
+     *
+     * @since 1.0.0
+     *
+     * @param string $directory The directory; defaults to the uploads directory.
+     *
+     * @return void
+     */
+    public static function delete_directory( $directory = '' ) {
+        $directory = self::resolve_directory( $directory );
+
+        if ( ! is_dir( $directory ) ) {
+            return;
+        }
+
+        $entries = scandir( $directory );
+
+        foreach ( is_array( $entries ) ? $entries : array() as $entry ) {
+            if ( is_file( $directory . '/' . $entry ) ) {
+                wp_delete_file( $directory . '/' . $entry );
+            }
+        }
+
+        $left = scandir( $directory );
+
+        if ( is_array( $left ) && 2 >= count( $left ) ) {
+            rmdir( $directory ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- The plugin's own, now empty, output directory; the files in it were deleted with wp_delete_file().
+        }
     }
 
     /**
      * Start a fresh audit file for a new real run.
+     *
+     * Deletes the previous run's file and gives the source a new random name,
+     * so a name that leaked stops working at the next run. A dry run leaves
+     * both alone.
      *
      * @since 1.0.0
      *
      * @return void
      */
     public function start() {
-        if ( $this->dry_run || ! file_exists( $this->map_path() ) ) {
+        if ( $this->dry_run ) {
             return;
         }
 
-        wp_delete_file( $this->map_path() );
+        $previous = self::map_path_for( $this->source, $this->directory );
+
+        if ( '' !== $previous && file_exists( $previous ) ) {
+            wp_delete_file( $previous );
+        }
+
+        $this->new_map_file_name();
     }
 
     /**
@@ -467,16 +568,85 @@ class Licensio_KB_Import_Redirects {
     }
 
     /**
-     * Create the output directory if it does not exist.
+     * Create the output directory if it does not exist, with its deny files.
+     *
+     * The deny files are added to a directory that lacks them too, so a
+     * directory made before they existed is covered as well.
      *
      * @since 1.0.0
      *
      * @return void
      */
     private function ensure_directory() {
-        if ( '' !== $this->directory && ! is_dir( $this->directory ) ) {
+        if ( '' === $this->directory ) {
+            return;
+        }
+
+        if ( ! is_dir( $this->directory ) ) {
             wp_mkdir_p( $this->directory );
         }
+
+        foreach ( self::DENY_FILES as $name => $contents ) {
+            if ( ! file_exists( $this->directory . '/' . $name ) ) {
+                $this->put( $this->directory . '/' . $name, $contents );
+            }
+        }
+    }
+
+    /**
+     * The given directory without a trailing slash, or the uploads directory.
+     *
+     * @since 1.0.0
+     *
+     * @param string $directory The directory; empty for the uploads directory.
+     *
+     * @return string The absolute directory path, without a trailing slash.
+     */
+    private static function resolve_directory( $directory ) {
+        return '' === (string) $directory ? self::upload_directory() : rtrim( (string) $directory, '/\\' );
+    }
+
+    /**
+     * Give the source a new random audit file name and keep it.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    private function new_map_file_name() {
+        $files                  = self::map_file_names();
+        $files[ $this->source ] = $this->source . '-url-map-' . wp_generate_password( 20, false, false ) . '.csv';
+
+        update_option( self::FILES_OPTION, $files, false );
+    }
+
+    /**
+     * Every source's audit file name.
+     *
+     * @since 1.0.0
+     *
+     * @return array<string, string> Source id to file name.
+     */
+    private static function map_file_names() {
+        $files = get_option( self::FILES_OPTION, array() );
+
+        return is_array( $files ) ? $files : array();
+    }
+
+    /**
+     * One source's audit file name.
+     *
+     * @since 1.0.0
+     *
+     * @param string $source The source driver id.
+     *
+     * @return string The file name, or an empty string when the source has none yet.
+     */
+    private static function map_file_name( $source ) {
+        $files  = self::map_file_names();
+        $source = sanitize_key( (string) $source );
+
+        return isset( $files[ $source ] ) ? basename( (string) $files[ $source ] ) : '';
     }
 
     /**

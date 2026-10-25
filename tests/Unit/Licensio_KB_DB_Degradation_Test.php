@@ -39,6 +39,7 @@ class Licensio_KB_DB_Degradation_Test extends Licensio_KB_Test_Case {
         $GLOBALS['wpdb']                    = new Licensio_KB_Test_WPDB(); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 
         Functions\when( 'wp_clear_scheduled_hook' )->justReturn( 1 );
+        Functions\when( 'wp_set_option_autoload' )->justReturn( true );
     }
 
     /**

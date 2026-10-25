@@ -388,7 +388,7 @@ class Licensio_KB_Settings_Schema {
             'delete_data_on_uninstall'   => array(
                 'group'       => 'privacy',
                 'label'       => __( 'Delete everything on uninstall', 'licensio-knowledge-base' ),
-                'description' => __( 'On, deleting the plugin drops its tables, options and articles. Off, the data survives so a reinstall picks up where it left off.', 'licensio-knowledge-base' ),
+                'description' => __( 'On, deleting the plugin drops its tables (feedback and votes, the search index, search and view history, and the import log) and deletes its settings (including the permalink slugs), the import redirects and the import URL map files. Off, all of that survives so a reinstall picks up where it left off. Articles, categories and tags are never deleted.', 'licensio-knowledge-base' ),
                 'control'     => 'toggle',
             ),
         );

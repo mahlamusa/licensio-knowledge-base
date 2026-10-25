@@ -173,6 +173,7 @@ abstract class Licensio_KB_BetterDocs_Import_DB_Test_Case extends Licensio_KB_In
                 post_author bigint(20) unsigned NOT NULL DEFAULT 0,
                 post_date datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
                 post_title text NOT NULL,
+                post_content longtext,
                 post_name varchar(200) NOT NULL DEFAULT '',
                 post_type varchar(20) NOT NULL DEFAULT 'post',
                 post_status varchar(20) NOT NULL DEFAULT 'publish',
