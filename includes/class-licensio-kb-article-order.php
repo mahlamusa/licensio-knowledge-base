@@ -6,8 +6,8 @@
  * `licensio_order_{term_id}`, an integer where lower comes first. Each
  * category has its own key, so an article filed in three categories can sit
  * at a different place in each. The keys are written only by the order REST
- * route, a category merge and the importers, and are not registered for core
- * REST.
+ * route, a category merge, the importers and the Heroic migration tool, and
+ * are not registered for core REST.
  *
  * This class owns the storage rules and the query support:
  *
@@ -23,8 +23,9 @@
  *   cannot express "missing last" through `orderby` alone, since a missing
  *   position sorts as NULL, which MySQL puts first.
  * - `order => DESC` reverses the order, the `menu_order`, title and ID
- *   tie-breaks included; articles without a position still come last. Note that `get_posts()` defaults `order` to DESC, so a
- *   `get_posts()` caller that wants the curated order passes `ASC`.
+ *   tie-breaks included; articles without a position still come last. Note
+ *   that `get_posts()` defaults `order` to DESC, so a `get_posts()` caller
+ *   that wants the curated order passes `ASC`.
  * - Any other query asking for `licensio_order` falls back to `menu_order`,
  *   then title.
  * - The main query of a category archive on the front end uses the order
