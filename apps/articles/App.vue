@@ -14,7 +14,7 @@
  */
 
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { PlusOutlined } from '@ant-design/icons-vue';
+import { PlusOutlined, SearchOutlined } from '@ant-design/icons-vue';
 import { lkbTheme } from '../styles/theme';
 import AppHeader from '../components/AppHeader.vue';
 import { __ } from '../components/i18n';
@@ -107,7 +107,7 @@ onBeforeUnmount( () => clearTimeout( searchTimer ) );
 						{{ __( 'Articles', 'licensio-knowledge-base' ) }}
 					</h1>
 					<a-button type="primary" :href="settings.newUrl">
-						<template #icon><PlusOutlined /></template>
+						<template #icon><PlusOutlined aria-hidden="true" /></template>
 						{{ __( 'New article', 'licensio-knowledge-base' ) }}
 					</a-button>
 				</div>
@@ -154,7 +154,13 @@ onBeforeUnmount( () => clearTimeout( searchTimer ) );
 							:aria-label="__( 'Search articles by title', 'licensio-knowledge-base' )"
 							@change="( event: Event ) => onSearch( ( event.target as HTMLInputElement ).value )"
 							@search="onSearch"
-						/>
+						>
+							<template #enterButton>
+								<a-button :aria-label="__( 'Search', 'licensio-knowledge-base' )">
+									<template #icon><SearchOutlined /></template>
+								</a-button>
+							</template>
+						</a-input-search>
 
 						<FilterBar />
 

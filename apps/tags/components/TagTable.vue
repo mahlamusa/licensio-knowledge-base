@@ -9,8 +9,8 @@
  * (made unique if it was taken, or made from the name if the slug was
  * cleared) is shown back once saved.
  *
- * Focus follows the row: Edit moves it to the Name field, and Cancel or a
- * save puts it back on the row's Edit button.
+ * Focus follows the row: Edit moves it to the Name field, and Cancel,
+ * Escape or a save puts it back on the row's Edit button.
  *
  * Names and descriptions are rendered as text, never as HTML. A description
  * is sent on save only when it was changed, so a stored one round-trips
@@ -257,7 +257,7 @@ watch(
 </script>
 
 <template>
-	<div class="lkb-tablecard">
+	<div class="lkb-tablecard" @keydown.esc="cancelEdit">
 		<a-table
 			row-key="id"
 			:columns="columns"

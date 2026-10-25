@@ -5,7 +5,8 @@
  * WordPress can answer: the pills match the database, a Popconfirm stands
  * before every write and Cancel sends nothing, a quick edit is saved only
  * once confirmed, and the list state lives in the URL, with back and forward
- * stepping through it.
+ * stepping through it. A keyboard trash moves focus to the Undo toast, whose
+ * countdown waits while it has focus.
  *
  * Needs a running WordPress with this plugin active, an administrator
  * account and at least one article, so it is skipped unless
@@ -21,11 +22,15 @@ import {
 	confirmPopconfirm,
 	contentManagerUrl,
 	openContentManager,
+	openPopconfirm,
 } from './helpers/content-manager';
 
 const enabled = process.env.LICENSIO_KB_E2E === '1';
 const user = process.env.LICENSIO_KB_ADMIN_USER ?? '';
 const password = process.env.LICENSIO_KB_ADMIN_PASSWORD ?? '';
+
+/** How long the Undo toast stays, as `UNDO_SECONDS` in the app's UndoToast. */
+const UNDO_SECONDS = 10;
 
 /**
  * Sign in as the administrator.
@@ -68,6 +73,58 @@ function recordWrites( page: Page ): Request[] {
 	} );
 
 	return writes;
+}
+
+/**
+ * Create or delete an article through the core REST API, as the signed-in user.
+ *
+ * @since 1.0.0
+ *
+ * @param {Page}   page   The browser page, on the Articles app.
+ * @param {string} method POST to create, DELETE to delete for good.
+ * @param {string} path   The route after `licensio_articles`.
+ * @param {Object} data   The fields to send.
+ *
+ * @return {Promise<{id: number}>} The response body.
+ */
+async function articleRequest(
+	page: Page,
+	method: string,
+	path: string,
+	data: Record< string, string > = {}
+): Promise< { id: number } > {
+	return page.evaluate(
+		async ( { verb, route, body } ) => {
+			const config = (
+				window as unknown as {
+					licensioKbArticles: { root: string; nonce: string };
+				}
+			 ).licensioKbArticles;
+			const base =
+				config.root.replace( 'licensio-kb/v1', 'wp/v2' ) +
+				'licensio_articles' +
+				route;
+			const response = await fetch(
+				base +
+					( 'DELETE' === verb
+						? ( base.includes( '?' ) ? '&' : '?' ) + 'force=true'
+						: '' ),
+				{
+					method: verb,
+					headers: {
+						'X-WP-Nonce': config.nonce,
+						'Content-Type': 'application/json',
+					},
+					credentials: 'same-origin',
+					body:
+						'DELETE' === verb ? undefined : JSON.stringify( body ),
+				}
+			);
+
+			return response.json();
+		},
+		{ verb: method, route: path, body: data }
+	);
 }
 
 test.describe( 'Articles app', () => {
@@ -198,5 +255,56 @@ test.describe( 'Articles app', () => {
 
 		await page.goForward();
 		await expect( active ).toContainText( 'Drafts' );
+	} );
+
+	test( 'a keyboard trash hands focus to Undo and waits while it has focus', async ( {
+		page,
+	} ) => {
+		test.setTimeout( 60_000 );
+
+		const app = await openContentManager( page, 'articles' );
+		const title = `Undo E2E ${ Date.now() }`;
+		const { id } = await articleRequest( page, 'POST', '', {
+			title,
+			status: 'publish',
+		} );
+
+		try {
+			await page.reload();
+			await app.getByLabel( 'Search articles by title' ).fill( title );
+			await app.getByLabel( 'Search articles by title' ).press( 'Enter' );
+
+			const row = app.locator( '.ant-table-row', { hasText: title } );
+
+			await expect( row ).toBeVisible();
+			await row.getByRole( 'button', { name: 'Trash' } ).focus();
+			await page.keyboard.press( 'Enter' );
+			await expect(
+				openPopconfirm( page ).getByRole( 'button', { name: 'Cancel' } )
+			).toBeFocused();
+			await page.keyboard.press( 'Tab' );
+			await page.keyboard.press( 'Enter' );
+
+			const toast = page.locator( '.ant-notification-notice' );
+			const undo = toast.getByRole( 'button', { name: 'Undo' } );
+
+			await expect( undo ).toBeFocused();
+			await expect( undo ).toHaveAccessibleDescription(
+				'1 article moved to the trash.'
+			);
+
+			// The countdown is paused while Undo has focus.
+			await page.waitForTimeout( UNDO_SECONDS * 1000 + 1500 );
+			await expect( undo ).toBeVisible();
+
+			await page.keyboard.press( 'Enter' );
+			await expect( toast ).toBeHidden();
+			await expect(
+				page.getByText( '1 article put back.' )
+			).toBeVisible();
+			await expect( page.locator( '.lkb-page__title' ) ).toBeFocused();
+		} finally {
+			await articleRequest( page, 'DELETE', '/' + id );
+		}
 	} );
 } );

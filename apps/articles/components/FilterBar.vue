@@ -159,7 +159,7 @@ const attentionHelp = sprintf(
 
 		<a-badge :count="store.activeFilterCount" :offset="[ -4, 4 ]">
 			<a-button>
-				<template #icon><FilterOutlined /></template>
+				<template #icon><FilterOutlined aria-hidden="true" /></template>
 				{{ __( 'Filters', 'licensio-knowledge-base' ) }}
 			</a-button>
 		</a-badge>

@@ -4,7 +4,8 @@
  *
  * The control is chosen by the server, not by the key, so a setting a third
  * party adds to the registry gets an editor here without this file knowing it
- * exists.
+ * exists. The label names the control through its `for` and the
+ * control's id.
  *
  * @since 1.0.0
  */
@@ -62,12 +63,14 @@ function update( value: SettingValue ): void {
 			<div class="lkb-field__input">
 		<a-switch
 			v-if="field.control === 'toggle'"
+			:id="'lkb-' + field.key"
 			:checked="value === true"
 			@update:checked="update( $event )"
 		/>
 
 		<a-input-number
 			v-else-if="field.control === 'number'"
+			:id="'lkb-' + field.key"
 			:value="typeof value === 'number' ? value : null"
 			:min="field.min ?? undefined"
 			:max="field.max ?? undefined"
@@ -77,6 +80,7 @@ function update( value: SettingValue ): void {
 
 		<a-select
 			v-else-if="field.control === 'select'"
+			:id="'lkb-' + field.key"
 			:value="String( value ?? '' )"
 			style="min-width: 14rem"
 			@update:value="update( String( $event ) )"
@@ -98,6 +102,7 @@ function update( value: SettingValue ): void {
 				@input="update( ( $event.target as HTMLInputElement ).value )"
 			/>
 			<a-input
+				:id="'lkb-' + field.key"
 				:value="String( value ?? '' )"
 				style="max-width: 9rem"
 				@update:value="update( String( $event ) )"
@@ -106,6 +111,7 @@ function update( value: SettingValue ): void {
 
 		<a-input
 			v-else
+			:id="'lkb-' + field.key"
 			:value="String( value ?? '' )"
 			@update:value="update( String( $event ) )"
 		/>
