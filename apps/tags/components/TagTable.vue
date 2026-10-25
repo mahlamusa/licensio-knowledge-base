@@ -12,9 +12,14 @@
  * Focus follows the row: Edit moves it to the Name field, and Cancel,
  * Escape or a save puts it back on the row's Edit button.
  *
- * Names and descriptions are rendered as text, never as HTML. A description
- * is sent on save only when it was changed, so a stored one round-trips
- * untouched.
+ * Names and descriptions are rendered as text, never as HTML. The table
+ * shows a description as plain text, without its markup and with entities
+ * decoded, as the core tag list reads; the edit field keeps the stored value.
+ * A description is sent on save only when it was changed, so a stored one
+ * round-trips untouched.
+ *
+ * A save closes its row only if that row is still the one open: the user may
+ * have cancelled and opened another tag while the request was on its way.
  *
  * @since 1.0.0
  */
@@ -33,6 +38,26 @@ const draft = reactive( { name: '', slug: '', description: '' } );
 
 // Whether the tag the page was opened for has been opened for editing.
 let openedFromUrl = false;
+
+/**
+ * A stored description as the plain text a reader sees.
+ *
+ * The markup is parsed into a detached document, which runs no scripts and
+ * loads nothing, and only its text is kept.
+ *
+ * @since 1.0.0
+ *
+ * @param {string} html The stored description.
+ *
+ * @return {string} The text, with entities decoded and whitespace collapsed.
+ */
+function plainText( html: string ): string {
+	const text =
+		new DOMParser().parseFromString( html, 'text/html' ).body.textContent ??
+		'';
+
+	return text.replace( /\s+/g, ' ' ).trim();
+}
 
 /**
  * The Ant Design sort order of a column.
@@ -200,8 +225,12 @@ async function save( tag: TagItem ): Promise< void > {
 	try {
 		const updated = await store.update( tag.id, changes( tag ) );
 
-		editingId.value = null;
-		focusRow( tag.id );
+		// Leave another row the user opened while this one was saving.
+		if ( editingId.value === tag.id ) {
+			editingId.value = null;
+			focusRow( tag.id );
+		}
+
 		message.success(
 			sprintf(
 				/* translators: %s: the tag's slug. */
@@ -268,7 +297,7 @@ watch(
 				selectedRowKeys: store.selected,
 				onChange: ( keys: unknown[] ) => ( store.selected = keys as number[] ),
 				getCheckboxProps: ( record: TagItem ) => ( {
-					/* translators: %s: tag name. */
+					/* translators: %s: the tag's name. */
 					'aria-label': sprintf( __( 'Select “%s”', 'licensio-knowledge-base' ), record.name ),
 				} ),
 			}"
@@ -312,7 +341,7 @@ watch(
 						:aria-label="__( 'Description', 'licensio-knowledge-base' )"
 					/>
 					<span v-else class="lkb-tags__description">{{
-						record.description || '—'
+						plainText( record.description ) || '—'
 					}}</span>
 				</template>
 

@@ -116,8 +116,17 @@ function words( value: string ): string {
  * @return {string} The status label.
  */
 function statusLabel( entry: LogEntry ): string {
-	if ( entry.dry_run && [ 'created', 'adopted', 'merged', 'updated' ].includes( entry.status ) ) {
-		return __( 'would be', 'licensio-knowledge-base' ) + ' ' + entry.status;
+	if ( entry.dry_run ) {
+		const wouldBe: Record< string, string > = {
+			created: __( 'would be created', 'licensio-knowledge-base' ),
+			adopted: __( 'would be adopted', 'licensio-knowledge-base' ),
+			merged: __( 'would be merged', 'licensio-knowledge-base' ),
+			updated: __( 'would be updated', 'licensio-knowledge-base' ),
+		};
+
+		if ( wouldBe[ entry.status ] ) {
+			return wouldBe[ entry.status ];
+		}
 	}
 
 	return words( entry.status );

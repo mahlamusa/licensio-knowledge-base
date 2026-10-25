@@ -18,6 +18,7 @@ import { computed, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import ConfirmButton from '../../components/ConfirmButton.vue';
 import TermSelect from '../../components/TermSelect.vue';
+import { useEscapeClose } from '../../components/popover-focus';
 import { __, _n, sprintf } from '../../components/i18n';
 import type { TermValue } from '../../components/types/terms';
 import { useTagsStore } from '../store';
@@ -27,6 +28,9 @@ const props = defineProps< { open: boolean } >();
 const emit = defineEmits< {
 	( event: 'update:open', value: boolean ): void;
 } >();
+
+// Escape on an open select closes only the select, not the dialog.
+useEscapeClose( () => props.open, '.lkb-tag-convert-dialog', close );
 
 const store = useTagsStore();
 const parent = ref< TermValue | TermValue[] | null >( null );
@@ -128,6 +132,8 @@ async function convert(): Promise< void > {
 	<a-modal
 		:open="props.open"
 		:title="__( 'Convert to categories', 'licensio-knowledge-base' )"
+		wrap-class-name="lkb-tag-convert-dialog"
+		:keyboard="false"
 		@cancel="close"
 	>
 		<p>

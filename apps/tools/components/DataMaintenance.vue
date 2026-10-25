@@ -13,7 +13,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { maintenanceStatus, pruneAnalytics, recountScores } from '../api';
 import type { MaintenanceStatus } from '../types';
-import { __ } from '../../components/i18n';
+import { __, _n, sprintf } from '../../components/i18n';
 
 /** A backlog bigger than this many sweeps is a job for WP-CLI, not a browser. */
 const MAX_SWEEPS = 50;
@@ -30,7 +30,11 @@ const prunedTotal = ref( 0 );
 const prunedTables = ref< Record< string, number > >( {} );
 
 const retentionSummary = computed( () =>
-	__( 'Rows older than', 'licensio-knowledge-base' ) + ' ' + ( status.value?.cutoff ?? '—' )
+	sprintf(
+		/* translators: %s: the date before which rows are deleted. */
+		__( 'Rows older than %s', 'licensio-knowledge-base' ),
+		status.value?.cutoff ?? '—'
+	)
 );
 
 /**
@@ -161,11 +165,11 @@ onMounted( load );
 
 				<p v-if="recounted" class="licensio-kb-data-maintenance__done">
 					{{
-						__( 'Recounted the score of', 'licensio-knowledge-base' ) +
-							' ' +
-							recounted +
-							' ' +
-							__( 'articles.', 'licensio-knowledge-base' )
+						sprintf(
+							/* translators: %d: how many articles had their score recounted. */
+							_n( 'Recounted the score of %d article.', 'Recounted the score of %d articles.', recounted, 'licensio-knowledge-base' ),
+							recounted
+						)
 					}}
 				</p>
 			</a-card>
@@ -187,7 +191,15 @@ onMounted( load );
 				<dl class="licensio-kb-data-maintenance__stats">
 					<div>
 						<dt>{{ __( 'Retention window', 'licensio-knowledge-base' ) }}</dt>
-						<dd>{{ status.retentionDays }} {{ __( 'days', 'licensio-knowledge-base' ) }}</dd>
+						<dd>
+							{{
+								sprintf(
+									/* translators: %d: how many days analytics rows are kept. */
+									_n( '%d day', '%d days', status.retentionDays, 'licensio-knowledge-base' ),
+									status.retentionDays
+								)
+							}}
+						</dd>
 					</div>
 					<div>
 						<dt>{{ __( 'Article views', 'licensio-knowledge-base' ) }}</dt>
@@ -221,8 +233,13 @@ onMounted( load );
 
 				<template v-if="prunedTotal > 0 || Object.keys( prunedTables ).length > 0">
 					<p class="licensio-kb-data-maintenance__done">
-						{{ __( 'Deleted', 'licensio-knowledge-base' ) }} {{ prunedTotal }}
-						{{ __( 'rows:', 'licensio-knowledge-base' ) }}
+						{{
+							sprintf(
+								/* translators: %d: how many expired rows were deleted. */
+								_n( 'Deleted %d row:', 'Deleted %d rows:', prunedTotal, 'licensio-knowledge-base' ),
+								prunedTotal
+							)
+						}}
 					</p>
 					<ul class="licensio-kb-data-maintenance__deleted">
 						<li v-for="( rows, table ) in prunedTables" :key="table">

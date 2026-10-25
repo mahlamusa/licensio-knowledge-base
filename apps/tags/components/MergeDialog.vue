@@ -6,6 +6,9 @@
  * of its Merge button, so closing the dialog or cancelling the Popconfirm
  * sends nothing. The selected tags cannot be picked as the target.
  *
+ * The toast counts every selected tag as merged, since its articles moved,
+ * and warns apart about any the server could not delete afterwards.
+ *
  * @since 1.0.0
  */
 
@@ -13,6 +16,7 @@ import { computed, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import ConfirmButton from '../../components/ConfirmButton.vue';
 import TermSelect from '../../components/TermSelect.vue';
+import { useEscapeClose } from '../../components/popover-focus';
 import { __, _n, sprintf } from '../../components/i18n';
 import type { TermValue } from '../../components/types/terms';
 import { useTagsStore } from '../store';
@@ -22,6 +26,9 @@ const props = defineProps< { open: boolean } >();
 const emit = defineEmits< {
 	( event: 'update:open', value: boolean ): void;
 } >();
+
+// Escape on an open select closes only the select, not the dialog.
+useEscapeClose( () => props.open, '.lkb-tag-merge-dialog', close );
 
 const store = useTagsStore();
 const target = ref< TermValue | TermValue[] | null >( null );
@@ -84,8 +91,14 @@ function close(): void {
  * @return {Promise<void>} Resolves once merged, or once the error is shown.
  */
 async function merge(): Promise< void > {
+	// Counted before the merge, which re-reads the page and the selection.
+	const merged = store.selected.filter(
+		( id ) => id !== targetId.value
+	).length;
+
 	try {
 		const result = await store.mergeSelected( targetId.value );
+		const kept = merged - result.deleted.length;
 
 		close();
 		message.success(
@@ -94,13 +107,28 @@ async function merge(): Promise< void > {
 				_n(
 					'%1$d tag merged into “%2$s”.',
 					'%1$d tags merged into “%2$s”.',
-					result.deleted.length,
+					merged,
 					'licensio-knowledge-base'
 				),
-				result.deleted.length,
+				merged,
 				result.target?.name ?? ''
 			)
 		);
+
+		if ( kept > 0 ) {
+			message.warning(
+				sprintf(
+					/* translators: %d: how many merged tags could not be deleted. */
+					_n(
+						'%d merged tag could not be deleted. Its articles have the chosen tag; delete it from the list.',
+						'%d merged tags could not be deleted. Their articles have the chosen tag; delete them from the list.',
+						kept,
+						'licensio-knowledge-base'
+					),
+					kept
+				)
+			);
+		}
 	} catch {
 		// The store shows the error.
 	}
@@ -111,6 +139,8 @@ async function merge(): Promise< void > {
 	<a-modal
 		:open="props.open"
 		:title="__( 'Merge tags', 'licensio-knowledge-base' )"
+		wrap-class-name="lkb-tag-merge-dialog"
+		:keyboard="false"
 		@cancel="close"
 	>
 		<p>{{ intro }}</p>

@@ -4,11 +4,12 @@
  *
  * Opening it sends nothing. Save is a `ConfirmButton`, so the category is
  * written only after the user confirms. A field error from the server
- * (`data.params`) is shown on its field; any other error above the form.
+ * (`data.params`) is shown on its field only; any other error above the form.
  *
  * Ant Design's drawer does not keep focus inside itself, so while it is open
  * Tab and Shift+Tab wrap around its fields and buttons. It opens with focus
- * on the Name field rather than on its panel.
+ * on the Name field rather than on its panel. Escape closes it, except on an
+ * open select, where it closes only the select.
  *
  * @since 1.0.0
  */
@@ -17,7 +18,7 @@ import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import ConfirmButton from '../../components/ConfirmButton.vue';
 import TermSelect from '../../components/TermSelect.vue';
-import { FOCUSABLE } from '../../components/popover-focus';
+import { FOCUSABLE, useEscapeClose } from '../../components/popover-focus';
 import { errorMessage, RestError } from '../../components/rest';
 import { __, sprintf } from '../../components/i18n';
 import type { TermValue } from '../../components/types/terms';
@@ -55,6 +56,9 @@ const form = reactive( {
 	imageUrl: '',
 } );
 
+/** The fields that show the server's error for them under the field. */
+const FIELDS = [ 'name', 'slug', 'parent', 'description' ];
+
 const saving = ref( false );
 const formError = ref( '' );
 const fieldErrors = ref< Record< string, string > >( {} );
@@ -74,6 +78,9 @@ const exclude = computed( () =>
 );
 
 const nameMissing = computed( () => '' === form.name.trim() );
+
+// Escape on an open select closes only the select, not the drawer.
+useEscapeClose( () => props.open, '.lkb-category-drawer', () => emit( 'close' ) );
 
 /**
  * Keep Tab and Shift+Tab inside the open drawer.
@@ -305,7 +312,14 @@ async function save(): Promise< void > {
 		emit( 'close' );
 	} catch ( error ) {
 		fieldErrors.value = paramsOf( error );
-		formError.value = errorMessage( error );
+
+		// When every message is shown on its field, none is repeated above the form.
+		const fields = Object.keys( fieldErrors.value );
+
+		formError.value =
+			fields.length > 0 && fields.every( ( field ) => FIELDS.includes( field ) )
+				? ''
+				: errorMessage( error );
 	} finally {
 		saving.value = false;
 	}
@@ -318,6 +332,7 @@ async function save(): Promise< void > {
 		:title="title"
 		width="min( 520px, 100vw )"
 		root-class-name="lkb-category-drawer"
+		:keyboard="false"
 		destroy-on-close
 		@close="emit( 'close' )"
 		@after-open-change="onAfterOpenChange"

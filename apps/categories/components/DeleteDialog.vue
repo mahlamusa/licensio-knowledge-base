@@ -14,6 +14,7 @@ import { computed, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import ConfirmButton from '../../components/ConfirmButton.vue';
 import TermSelect from '../../components/TermSelect.vue';
+import { useEscapeClose } from '../../components/popover-focus';
 import { __, sprintf } from '../../components/i18n';
 import type { TermValue } from '../../components/types/terms';
 import { errorMessage } from '../../components/rest';
@@ -35,6 +36,9 @@ const emit = defineEmits< {
 	( event: 'close' ): void;
 	( event: 'closed' ): void;
 } >();
+
+// Escape on an open select closes only the select, not the dialog.
+useEscapeClose( () => props.open, '.lkb-delete-dialog', () => emit( 'close' ) );
 
 const store = useCategoriesStore();
 
@@ -156,6 +160,8 @@ async function remove(): Promise< void > {
 	<a-modal
 		:open="props.open"
 		:title="__( 'Delete category', 'licensio-knowledge-base' )"
+		wrap-class-name="lkb-delete-dialog"
+		:keyboard="false"
 		@cancel="emit( 'close' )"
 		:after-close="() => emit( 'closed' )"
 	>

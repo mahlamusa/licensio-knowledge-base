@@ -56,7 +56,7 @@ const deleteTitle = computed( () =>
 const selectedLabel = computed( () =>
 	sprintf(
 		/* translators: %d: how many tags are selected. */
-		__( '%d selected', 'licensio-knowledge-base' ),
+		_n( '%d selected', '%d selected', store.selected.length, 'licensio-knowledge-base' ),
 		store.selected.length
 	)
 );

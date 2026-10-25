@@ -169,6 +169,30 @@ export function confirmTitle(
 				);
 			}
 
+			if ( 0 === ( args.term_ids ?? [] ).length ) {
+				return 'licensio_tag' === args.taxonomy
+					? sprintf(
+							/* translators: %d: number of articles. */
+							_n(
+								'Remove every tag from %d article? No tags are chosen to replace them.',
+								'Remove every tag from %d articles? No tags are chosen to replace them.',
+								count,
+								'licensio-knowledge-base'
+							),
+							count
+					  )
+					: sprintf(
+							/* translators: %d: number of articles. */
+							_n(
+								'Remove every category from %d article? No categories are chosen to replace them.',
+								'Remove every category from %d articles? No categories are chosen to replace them.',
+								count,
+								'licensio-knowledge-base'
+							),
+							count
+					  );
+			}
+
 			return sprintf(
 				/* translators: %d: number of articles. */
 				_n(

@@ -21,7 +21,7 @@
 import { computed, ref } from 'vue';
 import { fixDuplicates, scanDuplicates } from '../api';
 import type { DuplicateFixReport, DuplicateGroup, DuplicateTermGroup } from '../types';
-import { __ } from '../../components/i18n';
+import { __, _n, sprintf } from '../../components/i18n';
 
 const loading = ref( false );
 const error = ref( '' );
@@ -115,17 +115,61 @@ const resultLines = computed( () => {
 	}
 
 	return [
-		__( 'Article groups merged', 'licensio-knowledge-base' ) + ': ' + result.value.groups_merged,
-		__( 'Duplicates moved to trash', 'licensio-knowledge-base' ) + ': ' + result.value.posts_trashed,
-		__( 'Meta keys copied', 'licensio-knowledge-base' ) + ': ' + result.value.meta_copied,
-		__( 'Votes moved', 'licensio-knowledge-base' ) + ': ' + result.value.votes_moved,
-		__( 'Views moved', 'licensio-knowledge-base' ) + ': ' + result.value.views_moved,
-		__( 'Migration sources cleaned', 'licensio-knowledge-base' ) + ': ' + result.value.source_groups_cleaned,
-		__( 'Source posts moved to trash', 'licensio-knowledge-base' ) + ': ' + result.value.sources_trashed,
-		__( 'Term groups merged', 'licensio-knowledge-base' ) + ': ' + result.value.term_groups_merged,
-		__( 'Terms deleted', 'licensio-knowledge-base' ) + ': ' + result.value.terms_deleted,
-		__( 'Term meta keys copied', 'licensio-knowledge-base' ) + ': ' + result.value.term_meta_copied,
-		__( 'Article assignments moved', 'licensio-knowledge-base' ) + ': ' + result.value.articles_reassigned,
+		sprintf(
+			/* translators: %d: a count from the merge report. */
+			__( 'Article groups merged: %d', 'licensio-knowledge-base' ),
+			result.value.groups_merged
+		),
+		sprintf(
+			/* translators: %d: a count from the merge report. */
+			__( 'Duplicates moved to trash: %d', 'licensio-knowledge-base' ),
+			result.value.posts_trashed
+		),
+		sprintf(
+			/* translators: %d: a count from the merge report. */
+			__( 'Meta keys copied: %d', 'licensio-knowledge-base' ),
+			result.value.meta_copied
+		),
+		sprintf(
+			/* translators: %d: a count from the merge report. */
+			__( 'Votes moved: %d', 'licensio-knowledge-base' ),
+			result.value.votes_moved
+		),
+		sprintf(
+			/* translators: %d: a count from the merge report. */
+			__( 'Views moved: %d', 'licensio-knowledge-base' ),
+			result.value.views_moved
+		),
+		sprintf(
+			/* translators: %d: a count from the merge report. */
+			__( 'Migration sources cleaned: %d', 'licensio-knowledge-base' ),
+			result.value.source_groups_cleaned
+		),
+		sprintf(
+			/* translators: %d: a count from the merge report. */
+			__( 'Source posts moved to trash: %d', 'licensio-knowledge-base' ),
+			result.value.sources_trashed
+		),
+		sprintf(
+			/* translators: %d: a count from the merge report. */
+			__( 'Term groups merged: %d', 'licensio-knowledge-base' ),
+			result.value.term_groups_merged
+		),
+		sprintf(
+			/* translators: %d: a count from the merge report. */
+			__( 'Terms deleted: %d', 'licensio-knowledge-base' ),
+			result.value.terms_deleted
+		),
+		sprintf(
+			/* translators: %d: a count from the merge report. */
+			__( 'Term meta keys copied: %d', 'licensio-knowledge-base' ),
+			result.value.term_meta_copied
+		),
+		sprintf(
+			/* translators: %d: a count from the merge report. */
+			__( 'Article assignments moved: %d', 'licensio-knowledge-base' ),
+			result.value.articles_reassigned
+		),
 	];
 } );
 </script>
@@ -149,16 +193,29 @@ const resultLines = computed( () => {
 			<a-popconfirm
 				v-if="scanned && fixableCount > 0"
 				:title="
-					__( 'Merge', 'licensio-knowledge-base' ) +
-					' ' + fixableCount + ' ' +
-					__( 'group(s)? Duplicated articles and migration source posts are moved to the trash; duplicated terms are deleted.', 'licensio-knowledge-base' )
+					sprintf(
+						/* translators: %d: how many duplicate groups will be merged. */
+						_n(
+							'Merge %d group? Duplicated articles and migration source posts are moved to the trash; duplicated terms are deleted.',
+							'Merge %d groups? Duplicated articles and migration source posts are moved to the trash; duplicated terms are deleted.',
+							fixableCount,
+							'licensio-knowledge-base'
+						),
+						fixableCount
+					)
 				"
 				:ok-text="__( 'Merge', 'licensio-knowledge-base' )"
 				:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
 				@confirm="fix"
 			>
 				<a-button type="primary" danger :loading="fixing" :disabled="loading">
-					{{ __( 'Merge duplicates', 'licensio-knowledge-base' ) }} ({{ fixableCount }})
+					{{
+						sprintf(
+							/* translators: %d: how many duplicate groups can be merged. */
+							__( 'Merge duplicates (%d)', 'licensio-knowledge-base' ),
+							fixableCount
+						)
+					}}
 				</a-button>
 			</a-popconfirm>
 		</div>
@@ -180,7 +237,7 @@ const resultLines = computed( () => {
 				</ul>
 
 				<p v-if="result.notes.length" class="licensio-kb-duplicates__notes">
-					{{ __( 'What was done', 'licensio-knowledge-base' ) }}:
+					{{ __( 'What was done:', 'licensio-knowledge-base' ) }}
 				</p>
 				<ul class="licensio-kb-duplicates__report">
 					<li v-for="note in result.notes" :key="note">{{ note }}</li>
@@ -214,7 +271,13 @@ const resultLines = computed( () => {
 							{{ __( 'provides the content', 'licensio-knowledge-base' ) }}
 						</a-tag>
 						<span class="licensio-kb-duplicates__meta-count">
-							{{ member.metaCount }} {{ __( 'meta', 'licensio-knowledge-base' ) }}
+							{{
+								sprintf(
+									/* translators: %d: how many meta keys the duplicate has. */
+									_n( '%d meta key', '%d meta keys', member.metaCount, 'licensio-knowledge-base' ),
+									member.metaCount
+								)
+							}}
 						</span>
 					</li>
 				</ul>
@@ -289,8 +352,21 @@ const resultLines = computed( () => {
 							{{ __( 'provides the meta', 'licensio-knowledge-base' ) }}
 						</a-tag>
 						<span class="licensio-kb-duplicates__meta-count">
-							{{ member.metaCount }} {{ __( 'meta', 'licensio-knowledge-base' ) }} ·
-							{{ member.count }} {{ __( 'articles', 'licensio-knowledge-base' ) }}
+							{{
+								sprintf(
+									/* translators: %d: how many meta keys the duplicate has. */
+									_n( '%d meta key', '%d meta keys', member.metaCount, 'licensio-knowledge-base' ),
+									member.metaCount
+								)
+							}}
+							·
+							{{
+								sprintf(
+									/* translators: %d: how many articles have the duplicate term. */
+									_n( '%d article', '%d articles', member.count, 'licensio-knowledge-base' ),
+									member.count
+								)
+							}}
 						</span>
 					</li>
 				</ul>

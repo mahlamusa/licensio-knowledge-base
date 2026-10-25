@@ -22,12 +22,13 @@
  *
  * Consumed by ConfirmButton, the articles app's filters and columns
  * popovers and the category tree's move Popconfirm. `FOCUSABLE` is shared
- * with the category drawer's focus trap.
+ * with the category drawer's focus trap. `useEscapeClose()` applies the same
+ * rule for open selects to a drawer or dialog.
  *
  * @since 1.0.0
  */
 
-import { nextTick, onBeforeUnmount, ref, useId } from 'vue';
+import { nextTick, onBeforeUnmount, onMounted, ref, useId } from 'vue';
 import type { Ref } from 'vue';
 
 /** What a keyboard user can tab to. */
@@ -56,6 +57,106 @@ function inOpenPicker( target: HTMLElement ): boolean {
 	return Array.from(
 		document.querySelectorAll< HTMLElement >( '.ant-picker-dropdown' )
 	).some( ( dropdown ) => dropdown.getClientRects().length > 0 );
+}
+
+/**
+ * Whether Escape on a control closes a list or calendar of its own.
+ *
+ * Asked before the control has handled the key: an open select still
+ * reports itself expanded, and an open picker still shows its calendar.
+ *
+ * @since 1.0.0
+ *
+ * @param {EventTarget|null} target The element the key was pressed on.
+ *
+ * @return {boolean} True for an open select or date picker.
+ */
+function ownsEscape( target: EventTarget | null ): boolean {
+	return (
+		target instanceof HTMLElement &&
+		( 'true' === target.getAttribute( 'aria-expanded' ) ||
+			inOpenPicker( target ) )
+	);
+}
+
+/**
+ * Close a drawer or dialog on Escape, but not while a select in it is open.
+ *
+ * Ant Design's drawer and modal close on any Escape pressed inside them,
+ * even one that an open select uses to close its list, so the user loses
+ * what they typed. Give the drawer or modal `:keyboard="false"` and call
+ * this instead: Escape on an open select or date picker closes only that,
+ * and any other Escape inside `container` calls `close`.
+ *
+ * Whether the control owns the key is noted in the capture phase, before it
+ * handles it; the drawer or dialog closes in the bubble phase, so an open
+ * popover or Popconfirm that stopped the key (see `usePopoverFocus`) closes
+ * alone.
+ *
+ * Consumed by the category drawer and the Categories and Tags dialogs.
+ *
+ * @since 1.0.0
+ *
+ * @param {Function} isOpen    Whether the drawer or dialog is open now.
+ * @param {string}   container A selector matching the drawer's or dialog's root.
+ * @param {Function} close     Closes it.
+ *
+ * @return {void}
+ */
+export function useEscapeClose(
+	isOpen: () => boolean,
+	container: string,
+	close: () => void
+): void {
+	let owned = false;
+
+	/**
+	 * Note whether the control the key was pressed on uses Escape itself.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param {KeyboardEvent} event The key press.
+	 *
+	 * @return {void}
+	 */
+	function onCapture( event: KeyboardEvent ): void {
+		owned = 'Escape' === event.key && ownsEscape( event.target );
+	}
+
+	/**
+	 * Close on an Escape nothing inside used.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param {KeyboardEvent} event The key press.
+	 *
+	 * @return {void}
+	 */
+	function onBubble( event: KeyboardEvent ): void {
+		if ( 'Escape' !== event.key || owned || ! isOpen() ) {
+			return;
+		}
+
+		const root = document.querySelector( container );
+
+		if (
+			root &&
+			event.target instanceof Node &&
+			root.contains( event.target )
+		) {
+			close();
+		}
+	}
+
+	onMounted( () => {
+		document.addEventListener( 'keydown', onCapture, true );
+		document.addEventListener( 'keydown', onBubble );
+	} );
+
+	onBeforeUnmount( () => {
+		document.removeEventListener( 'keydown', onCapture, true );
+		document.removeEventListener( 'keydown', onBubble );
+	} );
 }
 
 /**
@@ -98,11 +199,7 @@ export function usePopoverFocus(): {
 		 * The listener runs in the capture phase, before the select has
 		 * handled the key, so it still reports itself expanded.
 		 */
-		if (
-			event.target instanceof HTMLElement &&
-			( 'true' === event.target.getAttribute( 'aria-expanded' ) ||
-				inOpenPicker( event.target ) )
-		) {
+		if ( ownsEscape( event.target ) ) {
 			return;
 		}
 
