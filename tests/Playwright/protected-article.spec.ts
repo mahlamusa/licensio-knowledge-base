@@ -3,8 +3,9 @@
  *
  * Proves the article behaves like a core post: the password form is shown in
  * place of the body, a wrong password keeps it locked, and the right one
- * reveals the body. The feedback widget stays hidden until the article is
- * unlocked, as core hides the comments of a protected post.
+ * reveals the body. The feedback widget stays hidden, the feedback endpoint
+ * refuses a vote and no view is counted until the article is unlocked, as
+ * core hides the comments of a protected post.
  *
  * The spec seeds its own article with wp-cli and deletes it afterwards, so
  * besides `LICENSIO_KB_E2E=1` it needs `LICENSIO_KB_WP_CLI`, the command that
@@ -39,6 +40,23 @@ function wpEval( php: string ): string {
 	return execFileSync( 'sh', [ '-c', `${ wpCli } eval "$0"`, php ], {
 		encoding: 'utf8',
 	} ).trim();
+}
+
+/**
+ * How many views the analytics table holds for an article.
+ *
+ * @since 1.0.0
+ *
+ * @param {number} id The article ID.
+ *
+ * @return {number} The view count.
+ */
+function viewCount( id: number ): number {
+	return Number(
+		wpEval(
+			`global $wpdb; echo (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE article_id = %d', $wpdb->prefix . 'licensio_article_views', ${ id } ) );`
+		)
+	);
 }
 
 /**
@@ -99,17 +117,56 @@ test.describe( 'Password-protected article', () => {
 		await expect( form ).toBeVisible();
 		await expect( page.getByText( BODY ) ).toHaveCount( 0 );
 		await expect( feedback ).toHaveCount( 0 );
+		expect( viewCount( articleId ) ).toBe( 0 );
 
 		await submitPassword( page, 'not-the-password' );
 
 		await expect( form ).toBeVisible();
 		await expect( page.getByText( BODY ) ).toHaveCount( 0 );
 		await expect( feedback ).toHaveCount( 0 );
+		expect( viewCount( articleId ) ).toBe( 0 );
 
 		await submitPassword( page, SECRET );
 
 		await expect( page.getByText( BODY ) ).toBeVisible();
 		await expect( form ).toHaveCount( 0 );
 		await expect( feedback ).toBeVisible();
+		expect( viewCount( articleId ) ).toBeGreaterThan( 0 );
+	} );
+
+	test( 'a vote is refused until the visitor has unlocked the article', async ( {
+		page,
+		request,
+	} ) => {
+		await page.goto( `/?post_type=licensio_article&p=${ articleId }` );
+		await submitPassword( page, SECRET );
+
+		const settings = await page.evaluate( () => {
+			const data = (
+				window as unknown as {
+					licensioKBFeedbackData: { endpoint: string; nonce: string };
+				}
+			 ).licensioKBFeedbackData;
+
+			return { endpoint: data.endpoint, nonce: data.nonce };
+		} );
+
+		const vote = {
+			headers: { 'X-WP-Nonce': settings.nonce },
+			data: { article_id: articleId, vote: 1 },
+		};
+
+		// A separate request context carries no password cookie.
+		const locked = await request.post( settings.endpoint, vote );
+
+		expect( locked.status() ).toBe( 403 );
+		expect( ( await locked.json() ).code ).toBe(
+			'licensio_article_locked'
+		);
+
+		const unlocked = await page.request.post( settings.endpoint, vote );
+
+		expect( unlocked.status() ).toBe( 200 );
+		expect( ( await unlocked.json() ).recorded ).toBe( true );
 	} );
 } );
