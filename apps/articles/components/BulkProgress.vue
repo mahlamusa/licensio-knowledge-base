@@ -54,8 +54,14 @@ const titleById = computed( () => {
  * @return {string} Its title when it is on screen, else its ID.
  */
 function nameOf( id: number ): string {
-	/* translators: %d: article ID. */
-	return titleById.value[ id ] || sprintf( __( 'Article #%d', 'licensio-knowledge-base' ), id );
+	return (
+		titleById.value[ id ] ||
+		sprintf(
+			/* translators: %d: article ID. */
+			__( 'Article #%d', 'licensio-knowledge-base' ),
+			id
+		)
+	);
 }
 </script>
 

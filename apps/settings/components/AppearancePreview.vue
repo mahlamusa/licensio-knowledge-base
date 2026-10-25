@@ -12,9 +12,9 @@
  */
 
 import { computed } from 'vue';
-import { translate } from '../api';
 import { previewProperties } from '../preview';
 import type { Field, SettingsMap } from '../types';
+import { __ } from '../../components/i18n';
 
 const props = defineProps< {
 	fields: Field[];
@@ -33,19 +33,20 @@ const declarations = computed( () =>
 <template>
 	<div class="licensio-kb licensio-kb-settings__preview" :style="style">
 		<div class="licensio-kb-settings__preview-card">
-			<h3>{{ translate( 'Resetting your password' ) }}</h3>
+			<h3>{{ __( 'Resetting your password', 'licensio-knowledge-base' ) }}</h3>
 			<p>
 				{{
-					translate(
-						'A sample article card, drawn with the values above.'
+					__(
+						'A sample article card, drawn with the values above.',
+						'licensio-knowledge-base'
 					)
 				}}
 			</p>
 			<a class="licensio-kb-settings__preview-link" href="#preview">
-				{{ translate( 'Read the article' ) }}
+				{{ __( 'Read the article', 'licensio-knowledge-base' ) }}
 			</a>
 			<span class="licensio-kb-settings__preview-button">
-				{{ translate( 'Was this helpful?' ) }}
+				{{ __( 'Was this helpful?', 'licensio-knowledge-base' ) }}
 			</span>
 		</div>
 

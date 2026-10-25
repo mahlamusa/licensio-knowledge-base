@@ -9,7 +9,8 @@
  * keep to the plugin's own namespace rather than core's `wp/v2` routes.
  *
  * Query: `taxonomy` (required, `licensio_category` or `licensio_tag`),
- * `search`, `include[]`, `exclude[]` and `per_page` (1 to 100, default 20).
+ * `search`, `include[]` and `exclude[]` (up to 100 IDs each) and `per_page`
+ * (1 to 100, default 20).
  * Answers an array of `{ id, name, slug, parent, count, path }`, where `path`
  * lists the names of the term's ancestors, top first, so a picker can label a
  * subcategory "Parent › Child". It is always empty for tags. Names are plain
@@ -106,9 +107,13 @@ class Licensio_KB_Terms_REST_Controller extends Licensio_KB_REST_Controller {
                     'description' => __( 'Return only these term IDs.', 'licensio-knowledge-base' ),
                 )
             ),
+            // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude -- Term IDs for get_terms(), not a post query, capped at 100.
             'exclude'  => array_merge(
                 $ids,
-                array( 'description' => __( 'Leave these term IDs out.', 'licensio-knowledge-base' ) )
+                array(
+                    'maxItems'    => self::MAX_PER_PAGE,
+                    'description' => __( 'Leave these term IDs out.', 'licensio-knowledge-base' ),
+                )
             ),
             'per_page' => array(
                 'type'              => 'integer',
@@ -143,6 +148,7 @@ class Licensio_KB_Terms_REST_Controller extends Licensio_KB_REST_Controller {
             'number'                 => empty( $include ) ? $per_page : count( $include ),
             'search'                 => (string) $request->get_param( 'search' ),
             'include'                => $include,
+            // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude -- A short, capped list of term IDs; get_terms() does not run the slow post__not_in query this warns about.
             'exclude'                => array_map( 'absint', (array) $request->get_param( 'exclude' ) ),
 
             // Nothing here reads term meta.

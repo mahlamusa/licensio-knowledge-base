@@ -303,16 +303,16 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * A new slug that is taken is made unique; the current slug is left alone.
+     * An edit to a slug another tag uses is a 409; the current slug is left alone.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_an_edited_slug_is_made_unique() {
+    public function test_an_edit_to_a_taken_slug_is_a_conflict() {
         $updates = array();
 
-        Functions\expect( 'wp_unique_term_slug' )->once()->with( 'invoices', $this->terms['licensio_tag'][10] )->andReturn( 'invoices-2' );
+        Functions\expect( 'wp_unique_term_slug' )->never();
         Functions\when( 'wp_update_term' )->alias(
             function ( $id, $taxonomy, $args ) use ( &$updates ) {
                 $updates[] = array( $id, $taxonomy, $args );
@@ -332,10 +332,11 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
             )
         );
 
-        $this->assertSame( 'invoices-2', $edited['slug'] );
-        $this->assertSame( array( array( 10, 'licensio_tag', array( 'slug' => 'invoices-2' ) ) ), $updates );
-
-        $updates = array();
+        $this->assertInstanceOf( WP_Error::class, $edited );
+        $this->assertSame( 'licensio_kb_slug_taken', $edited->get_error_code() );
+        $this->assertSame( 409, $edited->get_error_data()['status'] );
+        $this->assertSame( 'Another tag already uses the slug “invoices”. Choose a different slug.', $edited->get_error_message() );
+        $this->assertSame( array(), $updates, 'Nothing is written.' );
 
         $this->call(
             '/tags/(?P<id>[\d]+)',
@@ -640,6 +641,54 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
 
         $this->assertSame( 'licensio_kb_invalid_parent', $result->get_error_code() );
         $this->assertSame( array(), $this->calls );
+    }
+
+    /**
+     * A tag that cannot be deleted is left as it was.
+     *
+     * Its articles lose the category again, and the category the convert
+     * created for it is deleted.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_convert_puts_back_a_tag_that_cannot_be_deleted() {
+        Functions\when( 'get_objects_in_term' )->alias(
+            function ( $term_id ) {
+                return 30 === (int) $term_id ? array() : array( '100', '101' );
+            }
+        );
+        Functions\when( 'wp_remove_object_terms' )->alias(
+            function ( ...$args ) {
+                $this->calls[] = array_merge( array( 'remove' ), $args );
+
+                return true;
+            }
+        );
+        Functions\when( 'wp_delete_term' )->alias(
+            function ( $id, $taxonomy ) {
+                $this->calls[] = array( 'delete', (int) $id, $taxonomy );
+
+                return 'licensio_category' === $taxonomy;
+            }
+        );
+
+        $result = $this->call( '/tags/convert', 'POST', array( 'ids' => array( 11 ) ) );
+
+        $this->assertSame( array(), $result['converted'] );
+        $this->assertSame( array( 11 ), array_column( $result['failed'], 'id' ) );
+        $this->assertSame(
+            array(
+                array( 'set', 100, array( 30 ), 'licensio_category', true ),
+                array( 'set', 101, array( 30 ), 'licensio_category', true ),
+                array( 'delete', 11, 'licensio_tag' ),
+                array( 'remove', 101, array( 30 ), 'licensio_category' ),
+                array( 'remove', 100, array( 30 ), 'licensio_category' ),
+                array( 'delete', 30, 'licensio_category' ),
+            ),
+            array_slice( $this->calls, 1 )
+        );
     }
 
     /**

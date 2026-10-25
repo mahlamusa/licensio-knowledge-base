@@ -14,15 +14,17 @@
  *   articles and which the front end reads, is left untouched. The single-tag
  *   answers of the write routes carry core's count; the app reads counts only
  *   from this list, which it reloads after every write.
- * - `POST /tags` and `PATCH /tags/{id}`: `name`, `slug`, `description`. A slug
- *   that is taken is made unique the way core does it.
+ * - `POST /tags` and `PATCH /tags/{id}`: `name`, `slug`, `description`. As in
+ *   core, a new tag with a taken slug gets a unique one; editing a tag to a
+ *   slug another tag uses, or adding one with a name a tag has, is refused
+ *   with a 409.
  * - `POST /tags/bulk-delete`: `{ ids[] }`.
  * - `POST /tags/merge`: `{ sources[], target }`, through
  *   `Licensio_KB_Term_Operations::merge_terms()`.
  * - `POST /tags/convert`: `{ ids[], parent }`. Each tag becomes a category
  *   with the same slug under `parent`, or reuses the category that already
  *   has that slug, or the child of `parent` that already has that name, keeps
- *   its articles, and is then deleted.
+ *   its articles, and is then deleted. A tag that fails is left as it was.
  *
  * Every route needs `manage_licensio_kb` and the matching capability of the
  * taxonomy it changes. Term names are answered as plain text: core stores `&`
@@ -272,7 +274,7 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
             'slug'        => array(
                 'type'              => 'string',
                 'sanitize_callback' => array( $this, 'sanitize_slug' ),
-                'description'       => __( 'The tag slug. A slug that is taken gets a number added; an empty slug is made from the name.', 'licensio-knowledge-base' ),
+                'description'       => __( 'The tag slug. A new tag with a taken slug gets a unique one; an edit to a slug another tag uses is refused. An empty slug is made from the name.', 'licensio-knowledge-base' ),
             ),
             'description' => array(
                 'type'              => 'string',
@@ -599,11 +601,10 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
     /**
      * Edit a tag's name, slug or description.
      *
-     * Only the fields sent are changed. Core's `wp_update_term()` refuses a
-     * slug another term already has, so a new slug is first made unique with
-     * `wp_unique_term_slug()`, which adds a number the way core does for a new
-     * term. A slug sent empty is regenerated from the name by
-     * `wp_update_term()`, made unique the same way.
+     * Only the fields sent are changed. A slug another tag already uses is
+     * refused with a 409 before anything is written, as the Categories routes
+     * do. A slug sent empty is regenerated from the name by
+     * `wp_update_term()`, which makes it unique.
      *
      * @since 1.0.0
      *
@@ -633,10 +634,14 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
         if ( null !== $request->get_param( 'slug' ) ) {
             $slug = sanitize_title( (string) $request->get_param( 'slug' ) );
 
-            if ( '' === $slug ) {
-                $args['slug'] = '';
-            } elseif ( $slug !== $term->slug ) {
-                $args['slug'] = wp_unique_term_slug( $slug, $term );
+            $free = $this->term_operations->check_slug( (int) $term->term_id, $slug, Licensio_KB_Post_Types::TAXONOMY_TAG );
+
+            if ( is_wp_error( $free ) ) {
+                return $free;
+            }
+
+            if ( $slug !== $term->slug ) {
+                $args['slug'] = $slug;
             }
         }
 
@@ -750,12 +755,9 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
      * For each tag: the category with the tag's slug is reused if there is
      * one, wherever it sits in the tree, and is left where it is. Otherwise a
      * category is created under `parent` with the tag's name, slug and
-     * description. Every article with the tag gains the category, then the
-     * tag is deleted. A tag whose category or assignments fail is kept, and
-     * reported as failed.
-     *
-     * `Licensio_KB_Term_Operations` only moves assignments within one
-     * taxonomy, so the category is assigned here with `wp_set_object_terms()`.
+     * description. Every article with the tag gains the category, through
+     * `Licensio_KB_Term_Operations::copy_assignments()`, then the tag is
+     * deleted. A tag that fails is kept as it was, and reported as failed.
      *
      * @since 1.0.0
      *
@@ -809,6 +811,10 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
      * second category of the same name under the same parent. A new category
      * is created only when neither exists.
      *
+     * If the articles cannot all be given the category, or the tag cannot be
+     * deleted, the articles lose the category again and a category created
+     * here is deleted, so the tag is left as it was.
+     *
      * @since 1.0.0
      *
      * @param int $id        The tag ID.
@@ -853,23 +859,24 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
             }
         }
 
-        $articles = get_objects_in_term( (int) $tag->term_id, Licensio_KB_Post_Types::TAXONOMY_TAG );
+        $record   = array();
+        $articles = $this->term_operations->copy_assignments(
+            (int) $tag->term_id,
+            Licensio_KB_Post_Types::TAXONOMY_TAG,
+            (int) $category->term_id,
+            Licensio_KB_Post_Types::TAXONOMY_CATEGORY,
+            $record
+        );
 
-        if ( is_wp_error( $articles ) ) {
-            return $articles;
-        }
-
-        foreach ( (array) $articles as $article_id ) {
-            $assigned = wp_set_object_terms( (int) $article_id, array( (int) $category->term_id ), Licensio_KB_Post_Types::TAXONOMY_CATEGORY, true );
-
-            if ( is_wp_error( $assigned ) ) {
-                return $assigned;
-            }
-        }
-
-        $deleted = wp_delete_term( (int) $tag->term_id, Licensio_KB_Post_Types::TAXONOMY_TAG );
+        $deleted = is_wp_error( $articles ) ? $articles : wp_delete_term( (int) $tag->term_id, Licensio_KB_Post_Types::TAXONOMY_TAG );
 
         if ( true !== $deleted ) {
+            $this->term_operations->undo( $record );
+
+            if ( ! $reused ) {
+                wp_delete_term( (int) $category->term_id, Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
+            }
+
             return is_wp_error( $deleted ) ? $deleted : new WP_Error( 'licensio_kb_delete_failed', __( 'The tag could not be deleted.', 'licensio-knowledge-base' ) );
         }
 
@@ -882,7 +889,7 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
                 'parent' => (int) $category->parent,
             ),
             'reused'   => $reused,
-            'articles' => count( (array) $articles ),
+            'articles' => (int) $articles,
         );
     }
 
@@ -974,11 +981,14 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
     }
 
     /**
-     * Stored term text as plain text.
+     * A stored term name as plain text.
      *
-     * Core saves term names and descriptions with HTML special characters
-     * encoded, so "Billing & invoices" is stored as "Billing &amp; invoices".
-     * The app shows them as text, never as HTML, so it needs the decoded form.
+     * Core saves term names with HTML special characters encoded, so
+     * "Billing & invoices" is stored as "Billing &amp; invoices". The app
+     * shows them as text, never as HTML. Only names go through this:
+     * descriptions are answered exactly as stored, because decoding one
+     * would turn text such as `&lt;b&gt;` into markup that the next save
+     * strips, or keeps as real HTML.
      *
      * @since 1.0.0
      *
@@ -988,29 +998,6 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
      */
     private static function plain_text( $text ) {
         return html_entity_decode( (string) $text, ENT_QUOTES, 'UTF-8' );
-    }
-
-    /**
-     * A core term error with the HTTP status the REST layer should answer.
-     *
-     * Core's term functions return errors without a status, which the REST
-     * layer would answer as a 500. A clash with an existing term is a 409;
-     * anything else is a bad request.
-     *
-     * @since 1.0.0
-     *
-     * @param WP_Error $error The core error.
-     *
-     * @return WP_Error The error, with a status.
-     */
-    private static function rest_error( WP_Error $error ) {
-        $code = (string) $error->get_error_code();
-
-        return new WP_Error(
-            $code,
-            $error->get_error_message(),
-            array( 'status' => in_array( $code, array( 'term_exists', 'duplicate_term_slug' ), true ) ? 409 : 400 )
-        );
     }
 
     /**
