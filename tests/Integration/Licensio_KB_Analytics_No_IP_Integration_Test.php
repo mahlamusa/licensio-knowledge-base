@@ -71,6 +71,7 @@ class Licensio_KB_Analytics_No_IP_Integration_Test extends Licensio_KB_Analytics
 
         Brain\Monkey\Functions\when( 'wp_unslash' )->returnArg();
         Brain\Monkey\Functions\when( 'wp_rand' )->justReturn( 1234 );
+        Brain\Monkey\Functions\when( 'post_password_required' )->justReturn( false );
 
         Brain\Monkey\Functions\when( 'wp_generate_password' )->alias(
             function ( $length = 12 ) {
