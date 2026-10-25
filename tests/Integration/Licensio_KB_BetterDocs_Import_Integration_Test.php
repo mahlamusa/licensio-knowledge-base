@@ -940,4 +940,57 @@ class Licensio_KB_BetterDocs_Import_Integration_Test extends Licensio_KB_BetterD
         );
         $this->assertSame( array(), $report->notes( 'article_order' ) );
     }
+
+    /**
+     * An imported article keeps every backslash in its title and content.
+     *
+     * Block attributes hold `<` and `>` as `\u003c`-style escapes, and a code
+     * sample holds Windows paths. The stand-in for `wp_insert_post()` unslashes
+     * as core does, so an unslashed source row would arrive without them.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_imported_article_keeps_every_backslash() {
+        $this->stub_article_writes();
+        $content = '<!-- wp:paragraph {"placeholder":"\u003cb\u003e"} --><p>C:\Temp</p><!-- /wp:paragraph -->';
+
+        $this->seed(
+            'posts',
+            array(
+                array(
+                    'ID'           => 21,
+                    'post_title'   => 'Paths C:\Temp',
+                    'post_content' => $content,
+                    'post_name'    => 'paths',
+                    'post_type'    => Licensio_KB_BetterDocs_Import_Schema::POST_TYPE,
+                    'post_status'  => 'publish',
+                ),
+            )
+        );
+
+        $content_import = new Licensio_KB_Import_Content(
+            new Licensio_KB_BetterDocs_Import_Source(),
+            $this->new_state(),
+            new Licensio_KB_Import_Redirects( 'betterdocs', sys_get_temp_dir() . '/licensio-kb-betterdocs-unused', true ),
+            $this->new_report()
+        );
+
+        while ( $content_import->migrate_articles_batch( 2 ) > 0 ) {
+            continue;
+        }
+
+        $rows = $this->db->query( 'SELECT post_title, post_content FROM ' . $this->table( 'posts' ) . " WHERE post_type = 'licensio_article'" )->fetch_all( MYSQLI_ASSOC );
+
+        $this->assertSame(
+            array(
+                array(
+                    'post_title'   => 'Paths C:\Temp',
+                    'post_content' => $content,
+                ),
+            ),
+            $rows
+        );
+    }
 }

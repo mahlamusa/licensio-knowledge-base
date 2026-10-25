@@ -439,7 +439,7 @@ class Licensio_KB_Heroic_Import_Content_Test extends Licensio_KB_Test_Case {
 
         Brain\Monkey\Functions\when( 'wp_insert_post' )->alias(
             function ( $post ) {
-                $this->inserted_posts[] = $post;
+                $this->inserted_posts[] = self::core_unslash( $post );
 
                 return 900 + count( $this->inserted_posts );
             }
@@ -448,9 +448,9 @@ class Licensio_KB_Heroic_Import_Content_Test extends Licensio_KB_Test_Case {
         Brain\Monkey\Functions\when( 'wp_insert_term' )->alias(
             function ( $name, $taxonomy, $args = array() ) {
                 $this->inserted_terms[] = array(
-                    'name'     => $name,
+                    'name'     => self::core_unslash( $name ),
                     'taxonomy' => $taxonomy,
-                    'args'     => $args,
+                    'args'     => self::core_unslash( $args ),
                 );
 
                 return array( 'term_id' => 500 + count( $this->inserted_terms ) );
@@ -481,7 +481,7 @@ class Licensio_KB_Heroic_Import_Content_Test extends Licensio_KB_Test_Case {
 
         Brain\Monkey\Functions\when( 'update_term_meta' )->alias(
             function ( $term_id, $key, $value ) {
-                $this->term_meta[ (int) $term_id ][ (string) $key ] = $value;
+                $this->term_meta[ (int) $term_id ][ (string) $key ] = self::core_unslash( $value );
 
                 return true;
             }
@@ -530,7 +530,7 @@ class Licensio_KB_Heroic_Import_Content_Test extends Licensio_KB_Test_Case {
 
         Brain\Monkey\Functions\when( 'wp_update_post' )->alias(
             function ( $post ) {
-                $this->updated_posts[] = $post;
+                $this->updated_posts[] = self::core_unslash( $post );
 
                 return isset( $post['ID'] ) ? (int) $post['ID'] : 0;
             }
@@ -1718,6 +1718,107 @@ class Licensio_KB_Heroic_Import_Content_Test extends Licensio_KB_Test_Case {
             'Heroic Knowledge Base article 5 could not be created: Could not insert',
             $this->report->notes( 'articles' )[0]
         );
+    }
+
+    /**
+     * Backslashes in an imported article reach the database intact.
+     *
+     * Block attributes hold `<` and `>` as `\u003c`-style escapes, and a code
+     * sample holds Windows paths. Core unslashes the post array, so an
+     * unslashed source row would lose every backslash and break the blocks.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_imported_article_keeps_every_backslash() {
+        $content = '<!-- wp:paragraph {"placeholder":"\u003cb\u003e"} --><p>C:\Temp</p><!-- /wp:paragraph -->';
+        $source  = $this->source(
+            array(
+                'articles' => array(
+                    array(
+                        'ID'           => 11,
+                        'post_title'   => 'Paths C:\Temp',
+                        'post_content' => $content,
+                        'post_excerpt' => 'Use C:\Temp.',
+                        'post_status'  => 'publish',
+                        'post_name'    => 'paths',
+                    ),
+                ),
+            )
+        );
+
+        $this->migrator( $source )->migrate_articles_batch( 10 );
+
+        $this->assertSame( $content, $this->inserted_posts[0]['post_content'] );
+        $this->assertSame( 'Paths C:\Temp', $this->inserted_posts[0]['post_title'] );
+        $this->assertSame( 'Use C:\Temp.', $this->inserted_posts[0]['post_excerpt'] );
+    }
+
+    /**
+     * Backslashes survive when an existing article is adopted and updated.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_adopted_article_keeps_every_backslash() {
+        $this->wpdb->slugs['paths'] = 950;
+
+        $content = '<!-- wp:paragraph {"placeholder":"\u003cb\u003e"} --><p>C:\Temp</p><!-- /wp:paragraph -->';
+        $source  = $this->source(
+            array(
+                'articles' => array(
+                    array(
+                        'ID'           => 12,
+                        'post_title'   => 'Paths',
+                        'post_content' => $content,
+                        'post_status'  => 'publish',
+                        'post_name'    => 'paths',
+                    ),
+                ),
+            )
+        );
+
+        $this->migrator( $source )->migrate_articles_batch( 10 );
+
+        $this->assertSame( $content, $this->updated_posts[0]['post_content'] );
+    }
+
+    /**
+     * Backslashes in an imported term's name, description and meta survive.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_imported_term_keeps_every_backslash() {
+        $source = $this->source(
+            array(
+                'terms'     => array(
+                    Licensio_KB_Heroic_Import_Schema::TAXONOMY_CATEGORY => array(
+                        array(
+                            'term_id'     => 8,
+                            'name'        => 'Paths C:\Temp',
+                            'slug'        => 'paths',
+                            'description' => 'Use C:\Temp.',
+                            'parent'      => 0,
+                        ),
+                    ),
+                ),
+                'term_meta' => array(
+                    8 => array(
+                        'meta_svg' => '<svg viewBox="0 0 24 24"><title>C:\Temp</title></svg>',
+                    ),
+                ),
+            )
+        );
+
+        $this->migrator( $source )->migrate_terms();
+
+        $this->assertSame( 'Paths C:\Temp', $this->inserted_terms[0]['name'] );
+        $this->assertSame( 'Use C:\Temp.', $this->inserted_terms[0]['args']['description'] );
+        $this->assertStringContainsString( '<title>C:\Temp</title>', $this->term_meta[501][ Licensio_KB_Term_Meta::META_ICON_SVG ] );
     }
 }
 

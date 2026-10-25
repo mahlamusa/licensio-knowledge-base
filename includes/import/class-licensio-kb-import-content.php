@@ -187,7 +187,7 @@ class Licensio_KB_Import_Content {
     /**
      * Import one source term.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Slashes the name and arguments so backslashes survive.
      *
      * @param array<string, mixed> $row  The source term row.
      * @param string               $from The source taxonomy the row was read for.
@@ -266,13 +266,16 @@ class Licensio_KB_Import_Content {
             return 0;
         }
 
+        // wp_insert_term() unslashes its input, so the raw source values are slashed first.
         $result = wp_insert_term(
-            '' !== $name ? $name : $slug,
+            wp_slash( '' !== $name ? $name : $slug ),
             $to,
-            array(
-                'slug'        => $slug,
-                'description' => isset( $row['description'] ) ? (string) $row['description'] : '',
-                'parent'      => $target_parent,
+            wp_slash(
+                array(
+                    'slug'        => $slug,
+                    'description' => isset( $row['description'] ) ? (string) $row['description'] : '',
+                    'parent'      => $target_parent,
+                )
             )
         );
 
@@ -405,7 +408,7 @@ class Licensio_KB_Import_Content {
     /**
      * Carry a category's presentation meta across, reporting what cannot cross.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Slashes each value so backslashes survive.
      *
      * @param int                  $source_id The source term ID.
      * @param int                  $term_id   The target term ID.
@@ -421,7 +424,8 @@ class Licensio_KB_Import_Content {
         $mapped = $this->source->map_category_meta( $meta );
 
         foreach ( $mapped['meta'] as $key => $value ) {
-            update_term_meta( $term_id, $key, $value );
+            // update_term_meta() unslashes the value, so a raw source value is slashed first.
+            update_term_meta( $term_id, $key, wp_slash( $value ) );
 
             $this->report->count( 'term_meta_migrated' );
         }
@@ -474,7 +478,7 @@ class Licensio_KB_Import_Content {
      * uniquifies and the importer reports it, so two distinct source articles
      * can never merge into one target.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Slashes the post fields so backslashes in content survive.
      *
      * @param array<string, mixed> $row The source post row.
      *
@@ -553,12 +557,13 @@ class Licensio_KB_Import_Content {
         $fields   = $this->article_fields( $row, (int) $order['order'], $slug );
         $updating = $adopt > 0;
 
+        // Core unslashes the post array, so the raw source row is slashed when it is handed over.
         if ( $updating ) {
             $fields['ID'] = $adopt;
 
-            $article_id = wp_update_post( $fields, true );
+            $article_id = wp_update_post( wp_slash( $fields ), true );
         } else {
-            $article_id = wp_insert_post( $fields, true );
+            $article_id = wp_insert_post( wp_slash( $fields ), true );
         }
 
         if ( is_wp_error( $article_id ) || (int) $article_id <= 0 ) {

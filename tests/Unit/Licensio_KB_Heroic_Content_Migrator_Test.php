@@ -365,7 +365,7 @@ class Licensio_KB_Heroic_Content_Migrator_Test extends Licensio_KB_Test_Case {
 
         Brain\Monkey\Functions\when( 'wp_insert_post' )->alias(
             function ( $post ) {
-                $this->inserted_posts[] = $post;
+                $this->inserted_posts[] = self::core_unslash( $post );
 
                 return 900 + count( $this->inserted_posts );
             }
@@ -374,9 +374,9 @@ class Licensio_KB_Heroic_Content_Migrator_Test extends Licensio_KB_Test_Case {
         Brain\Monkey\Functions\when( 'wp_insert_term' )->alias(
             function ( $name, $taxonomy, $args = array() ) {
                 $this->inserted_terms[] = array(
-                    'name'     => $name,
+                    'name'     => self::core_unslash( $name ),
                     'taxonomy' => $taxonomy,
-                    'args'     => $args,
+                    'args'     => self::core_unslash( $args ),
                 );
 
                 return array( 'term_id' => 500 + count( $this->inserted_terms ) );
@@ -407,7 +407,7 @@ class Licensio_KB_Heroic_Content_Migrator_Test extends Licensio_KB_Test_Case {
 
         Brain\Monkey\Functions\when( 'update_term_meta' )->alias(
             function ( $term_id, $key, $value ) {
-                $this->term_meta[ (int) $term_id ][ (string) $key ] = $value;
+                $this->term_meta[ (int) $term_id ][ (string) $key ] = self::core_unslash( $value );
 
                 return true;
             }
@@ -1250,6 +1250,69 @@ class Licensio_KB_Heroic_Content_Migrator_Test extends Licensio_KB_Test_Case {
             array( Licensio_KB_Post_Types::TAXONOMY_CATEGORY, Licensio_KB_Post_Types::TAXONOMY_TAG ),
             array_column( $this->inserted_terms, 'taxonomy' )
         );
+    }
+
+    /**
+     * Backslashes in a migrated article reach the database intact.
+     *
+     * Block attributes hold `<` and `>` as `\u003c`-style escapes, and a code
+     * sample holds Windows paths. Core unslashes the post array, so an
+     * unslashed Heroic row would lose every backslash and break the blocks.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_migrated_article_keeps_every_backslash() {
+        $content = '<!-- wp:paragraph {"placeholder":"\u003cb\u003e"} --><p>C:\Temp</p><!-- /wp:paragraph -->';
+        $source  = $this->source(
+            array(
+                'articles' => array(
+                    array(
+                        'ID'           => 11,
+                        'post_title'   => 'Paths C:\Temp',
+                        'post_content' => $content,
+                        'post_status'  => 'publish',
+                        'post_name'    => 'paths',
+                    ),
+                ),
+            )
+        );
+
+        $this->migrator( $source )->migrate_articles_batch( 10 );
+
+        $this->assertSame( $content, $this->inserted_posts[0]['post_content'] );
+        $this->assertSame( 'Paths C:\Temp', $this->inserted_posts[0]['post_title'] );
+    }
+
+    /**
+     * Backslashes in a migrated term's name and description survive.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_migrated_term_keeps_every_backslash() {
+        $source = $this->source(
+            array(
+                'terms' => array(
+                    Licensio_KB_Heroic_Schema::TAXONOMY_CATEGORY => array(
+                        array(
+                            'term_id'     => 8,
+                            'name'        => 'Paths C:\Temp',
+                            'slug'        => 'paths',
+                            'description' => 'Use C:\Temp.',
+                            'parent'      => 0,
+                        ),
+                    ),
+                ),
+            )
+        );
+
+        $this->migrator( $source )->migrate_terms();
+
+        $this->assertSame( 'Paths C:\Temp', $this->inserted_terms[0]['name'] );
+        $this->assertSame( 'Use C:\Temp.', $this->inserted_terms[0]['args']['description'] );
     }
 }
 

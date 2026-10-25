@@ -228,6 +228,7 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
         );
         Functions\when( 'update_term_meta' )->alias(
             function ( $term_id, $key, $value ) {
+                $value                                = self::core_unslash( $value );
                 $this->events[]                       = 'meta ' . $term_id . ' ' . $key . '=' . $value;
                 $this->meta[ (int) $term_id ][ $key ] = $value;
 
@@ -265,6 +266,8 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
             function ( $name, $taxonomy, $args ) {
                 $this->assertSame( 'licensio_category', $taxonomy );
 
+                $name                = self::core_unslash( $name );
+                $args                = self::core_unslash( $args );
                 $this->term_writes[] = $args;
                 $term_id             = max( array_keys( $this->terms ) ) + 1;
 
@@ -284,6 +287,7 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
             function ( $term_id, $taxonomy, $args ) {
                 $this->assertSame( 'licensio_category', $taxonomy );
 
+                $args                = self::core_unslash( $args );
                 $this->term_writes[] = $args;
 
                 foreach ( $args as $field => $value ) {
@@ -2097,5 +2101,62 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
         $this->assertSame( 2, $this->terms[3]['parent'] );
         $this->assertEqualsCanonicalizing( array( 102, 103 ), $this->assignments[2] );
         $this->assertSame( array( 104 ), $this->assignments[4] );
+    }
+
+    /**
+     * A backslash in a new category's name, description and SVG icon is kept.
+     *
+     * REST values arrive unslashed and `wp_insert_term()` unslashes again,
+     * so `Paths C:\Temp` would otherwise be stored as `Paths C:Temp`.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_created_category_keeps_every_backslash() {
+        $svg = '<svg viewBox="0 0 24 24"><title>C:\Temp</title></svg>';
+
+        $this->controller->create_item(
+            $this->request(
+                array(
+                    'name'        => 'Paths C:\Temp',
+                    'description' => 'Use C:\Temp.',
+                    'icon_svg'    => $svg,
+                )
+            )
+        );
+
+        $this->assertSame( 'Paths C:\Temp', $this->terms[6]['name'] );
+        $this->assertSame( 'Use C:\Temp.', $this->terms[6]['description'] );
+        $this->assertSame( $svg, $this->meta[6][ Licensio_KB_Term_Meta::META_ICON_SVG ] );
+    }
+
+    /**
+     * A backslash in an edited category's name and description is kept.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_updated_category_keeps_every_backslash() {
+        $this->controller->update_item(
+            $this->request(
+                array(
+                    'id'          => 3,
+                    'name'        => 'Paths C:\Temp',
+                    'description' => 'Use C:\Temp.',
+                )
+            )
+        );
+
+        $this->assertSame(
+            array(
+                array(
+                    'name'        => 'Paths C:\Temp',
+                    'description' => 'Use C:\Temp.',
+                ),
+            ),
+            $this->term_writes
+        );
     }
 }
