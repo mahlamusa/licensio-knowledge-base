@@ -14,9 +14,10 @@ import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import ConfirmButton from '../../components/ConfirmButton.vue';
 import TermSelect from '../../components/TermSelect.vue';
+import { useEscapeClose } from '../../components/popover-focus';
 import { __, _n, sprintf } from '../../components/i18n';
 import type { TermValue } from '../../components/types/terms';
-import { errorMessage } from '../api';
+import { errorMessage } from '../../components/rest';
 import { selfAndDescendantIds, useCategoriesStore } from '../store';
 import type { CategoryItem } from '../types';
 
@@ -33,6 +34,9 @@ const emit = defineEmits< {
 	( event: 'close' ): void;
 	( event: 'closed' ): void;
 } >();
+
+// Escape on an open select closes only the select, not the dialog.
+useEscapeClose( () => props.open, '.lkb-merge-dialog', () => emit( 'close' ) );
 
 const store = useCategoriesStore();
 
@@ -178,6 +182,7 @@ async function merge(): Promise< void > {
 		:open="props.open"
 		:title="__( 'Merge categories', 'licensio-knowledge-base' )"
 		wrap-class-name="lkb-merge-dialog"
+		:keyboard="false"
 		@cancel="emit( 'close' )"
 		:after-close="() => emit( 'closed' )"
 	>

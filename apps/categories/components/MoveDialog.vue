@@ -12,9 +12,10 @@ import { computed, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import ConfirmButton from '../../components/ConfirmButton.vue';
 import TermSelect from '../../components/TermSelect.vue';
+import { useEscapeClose } from '../../components/popover-focus';
 import { __, sprintf } from '../../components/i18n';
 import type { TermValue } from '../../components/types/terms';
-import { errorMessage } from '../api';
+import { errorMessage } from '../../components/rest';
 import { childIds, selfAndDescendantIds, useCategoriesStore } from '../store';
 import type { CategoryItem } from '../types';
 
@@ -29,6 +30,9 @@ const emit = defineEmits< {
 	( event: 'close' ): void;
 	( event: 'closed' ): void;
 } >();
+
+// Escape on an open select closes only the select, not the dialog.
+useEscapeClose( () => props.open, '.lkb-move-dialog', () => emit( 'close' ) );
 
 const store = useCategoriesStore();
 
@@ -138,6 +142,8 @@ async function moveCategory(): Promise< void > {
 				props.category?.name ?? ''
 			)
 		"
+		wrap-class-name="lkb-move-dialog"
+		:keyboard="false"
 		@cancel="emit( 'close' )"
 		:after-close="() => emit( 'closed' )"
 	>

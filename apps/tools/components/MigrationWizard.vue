@@ -29,7 +29,7 @@ import type {
 	TargetCategory,
 } from '../types';
 import MigrationLog from './MigrationLog.vue';
-import { __ } from '../../components/i18n';
+import { __, _n, sprintf } from '../../components/i18n';
 
 /** How many rows one batch may read. */
 const BATCH_SIZE = 50;
@@ -124,7 +124,11 @@ const targetOptions = computed( () => {
 			seen.add( target.id );
 			options.push( {
 				value: target.id,
-				label: __( 'Merge into', 'licensio-knowledge-base' ) + ': ' + '— '.repeat( depth ) + target.name,
+				label: sprintf(
+					/* translators: %s: the target category's name. */
+					__( 'Merge into: %s', 'licensio-knowledge-base' ),
+					'— '.repeat( depth ) + target.name
+				),
 			} );
 			walk( target.id, depth + 1 );
 		}
@@ -135,7 +139,14 @@ const targetOptions = computed( () => {
 	// Orphans whose parent is not in the list still need to be offered.
 	for ( const target of targetCategories.value ) {
 		if ( ! seen.has( target.id ) ) {
-			options.push( { value: target.id, label: __( 'Merge into', 'licensio-knowledge-base' ) + ': ' + target.name } );
+			options.push( {
+				value: target.id,
+				label: sprintf(
+					/* translators: %s: the target category's name. */
+					__( 'Merge into: %s', 'licensio-knowledge-base' ),
+					target.name
+				),
+			} );
 		}
 	}
 
@@ -208,7 +219,11 @@ const phaseLabel = computed( () => {
 		return __( 'Wrapping up…', 'licensio-knowledge-base' );
 	}
 
-	return __( 'Processing phase', 'licensio-knowledge-base' ) + ': ' + humanize( phase.value );
+	return sprintf(
+		/* translators: %s: the name of the import phase being processed. */
+		__( 'Processing phase: %s', 'licensio-knowledge-base' ),
+		humanize( phase.value )
+	);
 } );
 
 /**
@@ -419,7 +434,11 @@ onMounted( detect );
 							type="info"
 							show-icon
 							class="licensio-kb-migration__status"
-							:message="__( 'Last imported', 'licensio-knowledge-base' ) + ' ' + formatTime( item.status.finished_at ) + '. ' + __( 'Importing again adds new content and the analytics recorded since; content already imported is left as it is.', 'licensio-knowledge-base' )"
+							:message="sprintf(
+								/* translators: %s: when the last import finished. */
+								__( 'Last imported %s. Importing again adds new content and the analytics recorded since; content already imported is left as it is.', 'licensio-knowledge-base' ),
+								formatTime( item.status.finished_at )
+							)"
 						/>
 					</a-card>
 				</a-radio-group>
@@ -480,7 +499,11 @@ onMounted( detect );
 										show-search
 										option-filter-prop="label"
 										class="licensio-kb-migration__target"
-										:aria-label="__( 'Import as', 'licensio-knowledge-base' ) + ' ' + category.name"
+										:aria-label="sprintf(
+											/* translators: %s: the source category's name. */
+											__( 'Import “%s” as', 'licensio-knowledge-base' ),
+											category.name
+										)"
 									/>
 								</td>
 							</tr>
@@ -534,7 +557,13 @@ onMounted( detect );
 
 				<p class="licensio-kb-migration__phase">{{ phaseLabel }}</p>
 				<p v-if="running" class="licensio-kb-migration__batch">
-					{{ __( 'Processed', 'licensio-knowledge-base' ) + ' ' + lastBatch + ' ' + __( 'items in the latest batch.', 'licensio-knowledge-base' ) }}
+					{{
+						sprintf(
+							/* translators: %d: how many items the latest batch processed. */
+							_n( 'Processed %d item in the latest batch.', 'Processed %d items in the latest batch.', lastBatch, 'licensio-knowledge-base' ),
+							lastBatch
+						)
+					}}
 				</p>
 
 				<template v-if="summary">

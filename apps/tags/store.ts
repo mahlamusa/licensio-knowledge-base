@@ -23,6 +23,7 @@
  */
 
 import { defineStore } from 'pinia';
+import { errorMessage } from '../components/rest';
 import {
 	convertTags,
 	createTag,
@@ -133,19 +134,6 @@ function writeUrl( state: UrlState, push: boolean ): void {
 	}
 }
 
-/**
- * The message of a failed request.
- *
- * @since 1.0.0
- *
- * @param {unknown} error What was thrown.
- *
- * @return {string} The message.
- */
-function messageOf( error: unknown ): string {
-	return error instanceof Error ? error.message : String( error );
-}
-
 export const useTagsStore = defineStore( 'licensioKBTags', {
 	state: (): State => ( {
 		items: [],
@@ -208,7 +196,7 @@ export const useTagsStore = defineStore( 'licensioKBTags', {
 				);
 			} catch ( error ) {
 				if ( request === latestRequest ) {
-					this.error = messageOf( error );
+					this.error = errorMessage( error );
 				}
 			} finally {
 				if ( request === latestRequest ) {
@@ -304,7 +292,7 @@ export const useTagsStore = defineStore( 'licensioKBTags', {
 
 				return result;
 			} catch ( error ) {
-				this.error = messageOf( error );
+				this.error = errorMessage( error );
 
 				throw error;
 			} finally {

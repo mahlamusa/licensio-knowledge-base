@@ -4,8 +4,10 @@
  * Covers the flows only a real WordPress can answer: a bulk trash over more
  * than one batch runs in batches of 100 with progress, Undo puts every
  * article back, an article another user is editing is skipped and reported,
- * Cancel on the bulk Popconfirm sends nothing, and a slow "Select all
- * matching" answer is dropped once the user has moved to another view.
+ * Cancel on the bulk Popconfirm sends nothing, a slow "Select all
+ * matching" answer is dropped once the user has moved to another view,
+ * unticking a row after "Select all matching" keeps the rest selected, and
+ * Replace with no terms chosen is sent as a request to clear them.
  *
  * The spec seeds its own data with wp-cli and removes it afterwards: 250
  * articles whose titles share a unique word, an editor account, and an edit
@@ -180,6 +182,68 @@ test.describe( 'Articles bulk actions', () => {
 		await page.waitForTimeout( 500 );
 
 		expect( writes ).toHaveLength( 0 );
+	} );
+
+	test( 'unticking a row after Select all matching leaves the rest selected', async ( {
+		page,
+	} ) => {
+		const app = await openSeeded( page );
+
+		await selectPage( app );
+		await app
+			.getByRole( 'button', {
+				name: `Select all ${ ARTICLES } matching`,
+			} )
+			.click();
+		await expect( app.locator( '.lkb-bulk__count' ) ).toHaveText(
+			`${ ARTICLES } selected`
+		);
+
+		await app
+			.locator( '.ant-table-tbody .ant-checkbox-input' )
+			.first()
+			.uncheck();
+		await expect( app.locator( '.lkb-bulk__count' ) ).toHaveText(
+			`${ ARTICLES - 1 } selected`
+		);
+	} );
+
+	test( 'Replace tags with none chosen removes every tag, after saying so', async ( {
+		page,
+	} ) => {
+		const app = await openSeeded( page );
+		const bulk = recordWrites( page, 'bulk' );
+		const rows = await app.locator( '.ant-table-tbody .ant-table-row' ).count();
+
+		await selectPage( app );
+		await chooseAction( page, app, 'Replace tags' );
+
+		const apply = app
+			.locator( '.lkb-bulk' )
+			.getByRole( 'button', { name: 'Apply' } );
+
+		await expect( apply ).toBeEnabled();
+		await apply.click();
+		await expect( page.locator( '.ant-popconfirm' ).last() ).toContainText(
+			`Remove every tag from ${ rows } articles? No tags are chosen to replace them.`
+		);
+
+		const answered = page.waitForResponse( ( response ) =>
+			decodeURIComponent( response.url() ).includes( 'articles/bulk' )
+		);
+
+		await confirmPopconfirm( page );
+		await answered;
+
+		expect( bulk ).toHaveLength( 1 );
+
+		const body = JSON.parse( bulk[ 0 ].postData() ?? '{}' );
+
+		expect( body.args ).toEqual( {
+			taxonomy: 'licensio_tag',
+			mode: 'replace',
+			term_ids: [],
+		} );
 	} );
 
 	test( 'a slow Select all matching is dropped after the view changes', async ( {

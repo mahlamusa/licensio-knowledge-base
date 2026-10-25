@@ -11,6 +11,7 @@
  */
 
 import { defineStore } from 'pinia';
+import { errorMessage, PER_PAGE } from '../components/rest';
 import {
 	config,
 	fetchArticles,
@@ -97,26 +98,13 @@ function emptyRun(): BulkRun {
 	};
 }
 
-/**
- * An error as a message.
- *
- * @since 1.0.0
- *
- * @param {unknown} error The error.
- *
- * @return {string} The message.
- */
-export function messageOf( error: unknown ): string {
-	return error instanceof Error ? error.message : String( error );
-}
-
 export const useArticlesStore = defineStore( 'licensioKbArticles', {
 	state: (): State => {
 		const preferences = config().preferences;
 		const perPage = (
 			[ 20, 50, 100 ].includes( Number( preferences.per_page ) )
 				? Number( preferences.per_page )
-				: 20
+				: PER_PAGE
 		) as PerPage;
 
 		return {
@@ -274,7 +262,7 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 				}
 			} catch ( error ) {
 				if ( ticket === latestLoad ) {
-					this.error = messageOf( error );
+					this.error = errorMessage( error );
 				}
 			} finally {
 				if ( ticket === latestLoad ) {
@@ -497,7 +485,7 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 				this.truncated = result.truncated;
 			} catch ( error ) {
 				if ( ticket === latestSelect ) {
-					this.error = messageOf( error );
+					this.error = errorMessage( error );
 				}
 			} finally {
 				if ( ticket === latestSelect ) {
@@ -583,7 +571,7 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 					this.bulk.results.push( result );
 					this.bulk.processed += batch.length;
 				} catch ( error ) {
-					this.bulk.error = messageOf( error );
+					this.bulk.error = errorMessage( error );
 					break;
 				}
 			}

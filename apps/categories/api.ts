@@ -53,19 +53,6 @@ export function settings(): CategoriesConfig {
 }
 
 /**
- * The message to show for a caught error.
- *
- * @since 1.0.0
- *
- * @param {unknown} error The caught error.
- *
- * @return {string} The message.
- */
-export function errorMessage( error: unknown ): string {
-	return error instanceof Error ? error.message : String( error );
-}
-
-/**
  * Every category, flat, siblings in their order.
  *
  * @since 1.0.0

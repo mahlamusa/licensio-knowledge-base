@@ -11,12 +11,9 @@
 import { watch } from 'vue';
 import { message } from 'ant-design-vue';
 import { __, _n, sprintf } from '../components/i18n';
+import { errorMessage } from '../components/rest';
 import { showUndoToast } from './components/UndoToast';
-import {
-	BATCH_SIZE,
-	messageOf,
-	useArticlesStore as articlesStore,
-} from './store';
+import { BATCH_SIZE, useArticlesStore as articlesStore } from './store';
 import type { BulkAction, BulkArgs, SkipReason } from './types';
 
 /** The actions that can be undone. Author and comments are left out on purpose. */
@@ -170,6 +167,30 @@ export function confirmTitle(
 					),
 					count
 				);
+			}
+
+			if ( 0 === ( args.term_ids ?? [] ).length ) {
+				return 'licensio_tag' === args.taxonomy
+					? sprintf(
+							/* translators: %d: number of articles. */
+							_n(
+								'Remove every tag from %d article? No tags are chosen to replace them.',
+								'Remove every tag from %d articles? No tags are chosen to replace them.',
+								count,
+								'licensio-knowledge-base'
+							),
+							count
+					  )
+					: sprintf(
+							/* translators: %d: number of articles. */
+							_n(
+								'Remove every category from %d article? No categories are chosen to replace them.',
+								'Remove every category from %d articles? No categories are chosen to replace them.',
+								count,
+								'licensio-knowledge-base'
+							),
+							count
+					  );
 			}
 
 			return sprintf(
@@ -371,7 +392,7 @@ export async function performAction(
 					);
 				}
 			} catch ( error ) {
-				message.error( messageOf( error ) );
+				message.error( errorMessage( error ) );
 			}
 		} )
 	);

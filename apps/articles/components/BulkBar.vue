@@ -6,6 +6,8 @@
  * whole page is selected and more articles match, then an action chooser,
  * the action's own argument (a status, terms or an author) and an Apply
  * button that asks before anything is sent, naming the action and the count.
+ * Replace with no terms chosen removes every category or tag, and its
+ * confirmation says so.
  *
  * Ant Design puts an `aria-label` on a select's wrapper, not on the combobox
  * a screen reader announces, so the plain selects are named by visually
@@ -114,8 +116,10 @@ const request = computed< { action: BulkAction; args: BulkArgs } | null >(
 				const ids = terms.value.filter(
 					( value ): value is number => typeof value === 'number'
 				);
+				const mode = choice.value.split( '_' )[ 1 ] as TermsMode;
 
-				if ( 0 === ids.length ) {
+				// Replace with nothing clears the terms; add and remove need some.
+				if ( 0 === ids.length && 'replace' !== mode ) {
 					return null;
 				}
 
@@ -123,7 +127,7 @@ const request = computed< { action: BulkAction; args: BulkArgs } | null >(
 					action: 'terms',
 					args: {
 						taxonomy: taxonomy.value,
-						mode: choice.value.split( '_' )[ 1 ] as TermsMode,
+						mode,
 						term_ids: ids,
 					},
 				};
@@ -290,33 +294,7 @@ watch( inTrash, () => {
 
 <style scoped>
 .lkb-bulk {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
 	gap: 8px var(--lkb-gap);
-	min-height: 46px;
-	margin-bottom: 12px;
-	padding: 8px var(--lkb-gap);
-	border: 1px solid var(--lkb-border-wp);
-	border-radius: var(--lkb-radius);
-	background: var(--lkb-sunken);
-	transition: background 0.12s ease, border-color 0.12s ease;
-}
-
-.lkb-bulk.is-armed {
-	border-color: var(--lkb-accent);
-	background: var(--lkb-brand-tint);
-}
-
-.lkb-bulk__hint {
-	color: var(--lkb-ink-faint);
-	font-size: 13px;
-}
-
-.lkb-bulk__count {
-	color: var(--lkb-accent);
-	font-size: 13px;
-	font-weight: 600;
 }
 
 .lkb-bulk__warning {
@@ -325,10 +303,7 @@ watch( inTrash, () => {
 }
 
 .lkb-bulk__actions {
-	display: flex;
-	flex-wrap: wrap;
 	align-items: center;
-	gap: 8px;
 	margin-left: auto;
 }
 
