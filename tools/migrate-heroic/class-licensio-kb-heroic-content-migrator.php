@@ -244,7 +244,7 @@ class Licensio_KB_Heroic_Content_Migrator {
      *
      * Only categories have this meta; tags carry none.
      *
-     * @since 1.0.0 Slashes each value so backslashes survive.
+     * @since 1.0.0
      *
      * @param int    $source_id The Heroic term ID.
      * @param int    $term_id   The target term ID.
@@ -260,8 +260,7 @@ class Licensio_KB_Heroic_Content_Migrator {
         $mapped = Licensio_KB_Heroic_Map::category_meta( $this->source->term_meta( $source_id ) );
 
         foreach ( $mapped['meta'] as $key => $value ) {
-            // update_term_meta() unslashes the value, so a raw Heroic value is slashed first.
-            update_term_meta( $term_id, $key, wp_slash( $value ) );
+            update_term_meta( $term_id, $key, $value );
 
             $this->report->count( 'term_meta_migrated' );
         }
