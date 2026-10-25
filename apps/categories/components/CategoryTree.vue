@@ -15,9 +15,10 @@
  * @since 1.0.0
  */
 
-import { computed, nextTick, ref } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import { __, sprintf } from '../../components/i18n';
+import { usePopoverFocus } from '../../components/popover-focus';
 import { errorMessage } from '../api';
 import {
 	applyMove,
@@ -63,6 +64,12 @@ const pending = ref< PendingMove | null >( null );
 const saving = ref( false );
 const collapsed = ref< number[] >( [] );
 const menuFor = ref< number | null >( null );
+
+const {
+	open: confirmOpen,
+	overlayClass: confirmClass,
+	setOpen: setConfirmOpen,
+} = usePopoverFocus();
 
 const searching = computed( () => '' !== store.search.trim() );
 
@@ -236,26 +243,8 @@ function propose(
 	// Show where it went, even when that parent was collapsed.
 	collapsed.value = collapsed.value.filter( ( key ) => key !== parent );
 
-	focusConfirm();
-}
-
-/**
- * Move focus into the open Popconfirm, so a keyboard user can answer it.
- *
- * @since 1.0.0
- *
- * @return {void}
- */
-function focusConfirm(): void {
-	nextTick( () => {
-		window.setTimeout( () => {
-			document
-				.querySelector< HTMLElement >(
-					'.lkb-move-confirm .ant-popconfirm-buttons .ant-btn-primary'
-				)
-				?.focus();
-		}, 50 );
-	} );
+	// Opens the Popconfirm with focus on Cancel, and lets Escape answer it.
+	setConfirmOpen( true );
 }
 
 /**
@@ -409,6 +398,7 @@ function confirmMove(): void {
 	const move = pending.value;
 
 	pending.value = null;
+	setConfirmOpen( false );
 
 	if ( ! move ) {
 		return;
@@ -452,9 +442,36 @@ function onOpenChange( open: boolean ): void {
 	}
 
 	pending.value = null;
+	setConfirmOpen( false );
 	store.items = move.snapshot;
 	returnFocus( move.returnTo );
 }
+
+// Escape closes the Popconfirm through `usePopoverFocus`, which is a cancel too.
+watch( confirmOpen, onOpenChange );
+
+/**
+ * Name the tree's hidden keyboard input.
+ *
+ * Ant Design's tree takes keys through a hidden input it labels "for screen
+ * reader" in English, with no prop to change it. Vue leaves the attribute
+ * alone once set, and the input is made again whenever the tree is.
+ *
+ * @since 1.0.0
+ *
+ * @return {void}
+ */
+function nameTreeInput(): void {
+	document
+		.querySelector( '.lkb-tree__body input[aria-label="for screen reader"]' )
+		?.setAttribute(
+			'aria-label',
+			__( 'Category tree', 'licensio-knowledge-base' )
+		);
+}
+
+onMounted( nameTreeInput );
+watch( treeData, nameTreeInput, { flush: 'post' } );
 
 /**
  * The enabled items of the open actions menu.
@@ -583,11 +600,11 @@ function onMenu( item: CategoryItem, key: string ): void {
 		</p>
 
 		<a-popconfirm
-			:open="null !== pending"
+			:open="confirmOpen"
 			:title="pending?.title ?? ''"
 			:ok-text="__( 'Move', 'licensio-knowledge-base' )"
 			:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
-			overlay-class-name="lkb-move-confirm"
+			:overlay-class-name="`lkb-move-confirm ${ confirmClass }`"
 			placement="top"
 			@confirm="confirmMove"
 			@open-change="onOpenChange"

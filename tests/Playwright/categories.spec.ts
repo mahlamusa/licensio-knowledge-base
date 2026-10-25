@@ -1,7 +1,9 @@
 /**
  * The Categories app, end to end.
  *
- * Drag and drop with Cancel and Confirm, a keyboard move, the add drawer,
+ * Drag and drop with Cancel and Confirm, a keyboard move answered with
+ * Escape and then Move, the add drawer opening on its Name field unless
+ * the user already tabbed on, the merge dialog opening on its first field,
  * delete with reassignment, merge, the article order pane against the live
  * order routes (a drag saved and shown on the category archive, and a saved
  * first page of a long list), and the phone-width layout. Every write must wait for its
@@ -431,7 +433,24 @@ test.describe( 'Categories app', () => {
 		await expect( page.getByRole( 'menuitem', { name: 'Move down' } ).locator( 'visible=true' ) ).toBeFocused();
 		await page.keyboard.press( 'Enter' );
 
-		await expect( page.locator( '.lkb-move-confirm .ant-popconfirm-buttons .ant-btn-primary' ) ).toBeFocused();
+		// The move Popconfirm opens on Cancel, like every other, and Escape cancels it.
+		const confirm = page.locator( '.lkb-move-confirm' );
+
+		await expect( confirm.getByRole( 'button', { name: 'Cancel' } ) ).toBeFocused();
+		await expect.poll( () => topLevel( page ) ).toEqual( [ 'Beta', 'Alpha', 'Gamma' ] );
+		await page.keyboard.press( 'Escape' );
+		await expect.poll( () => topLevel( page ) ).toEqual( [ 'Alpha', 'Beta', 'Gamma' ] );
+		await expect( trigger ).toBeFocused();
+		expect( writes ).toHaveLength( 0 );
+
+		await page.keyboard.press( 'Enter' );
+		await expect( edit ).toBeFocused();
+		await page.keyboard.press( 'ArrowDown' );
+		await page.keyboard.press( 'ArrowDown' );
+		await page.keyboard.press( 'Enter' );
+		await expect( confirm.getByRole( 'button', { name: 'Cancel' } ) ).toBeFocused();
+		await page.keyboard.press( 'Tab' );
+		await expect( confirm.getByRole( 'button', { name: 'Move' } ) ).toBeFocused();
 		await page.keyboard.press( 'Enter' );
 		await expect.poll( () => topLevel( page ) ).toEqual( [ 'Beta', 'Alpha', 'Gamma' ] );
 		expect( writes ).toHaveLength( 1 );
@@ -442,6 +461,8 @@ test.describe( 'Categories app', () => {
 
 		const drawer = page.locator( '.ant-drawer-content' );
 
+		// The drawer opens with focus on its Name field.
+		await expect( drawer.getByLabel( 'Name' ) ).toBeFocused();
 		await drawer.getByLabel( 'Name' ).fill( 'Delta & co' );
 		await drawer.getByLabel( 'Icon', { exact: true } ).fill( 'dashicons-book-alt' );
 		await drawer
@@ -461,6 +482,21 @@ test.describe( 'Categories app', () => {
 		expect( delta?.icon ).toBe( 'dashicons-book-alt' );
 		expect( delta?.icon_svg ).toContain( '<path' );
 		expect( delta?.icon_svg ).not.toContain( 'script' );
+	} );
+
+	test( 'the drawer keeps focus where the user tabbed while it opened', async ( { page } ) => {
+		await page.getByRole( 'button', { name: 'Add category' } ).first().click();
+		await page.keyboard.press( 'Tab' );
+
+		const drawer = page.locator( '.ant-drawer-content' );
+		const close = page.locator( '.lkb-category-drawer .ant-drawer-close' );
+
+		await expect( close ).toBeFocused();
+
+		// Longer than the drawer takes to slide in.
+		await page.waitForTimeout( 1000 );
+		await expect( close ).toBeFocused();
+		await expect( drawer.getByLabel( 'Name' ) ).not.toBeFocused();
 	} );
 
 	test( 'delete moves the children to the chosen category', async ( { page } ) => {
@@ -494,6 +530,8 @@ test.describe( 'Categories app', () => {
 
 		const dialog = page.locator( '.ant-modal-content' );
 
+		// The dialog opens with focus on its first field.
+		await expect( dialog.getByLabel( 'Categories to merge' ) ).toBeFocused();
 		await dialog.getByLabel( 'Merge into' ).click();
 		await page
 			.locator( '.ant-select-item-option' )

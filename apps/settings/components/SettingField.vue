@@ -4,7 +4,8 @@
  *
  * The control is chosen by the server, not by the key, so a setting a third
  * party adds to the registry gets an editor here without this file knowing it
- * exists.
+ * exists. The label names the control through its `for` and the
+ * control's id.
  *
  * @since 1.0.0
  */
@@ -22,6 +23,9 @@ const props = defineProps< {
 const emit = defineEmits< {
 	( event: 'update', key: string, value: SettingValue ): void;
 } >();
+
+/** The control's id, which the label's `for` points at. */
+const controlId = computed( () => `lkb-${ props.field.key }` );
 
 const bounds = computed( () => {
 	const { min, max } = props.field;
@@ -54,7 +58,7 @@ function update( value: SettingValue ): void {
 <template>
 	<div class="lkb-field" :class="{ 'is-changed': changed, 'is-invalid': !! error }">
 		<div class="lkb-field__label">
-			<label :for="'lkb-' + field.key">{{ field.label }}</label>
+			<label :for="controlId">{{ field.label }}</label>
 			<span v-if="bounds" class="lkb-field__bounds">{{ bounds }}</span>
 		</div>
 
@@ -62,12 +66,14 @@ function update( value: SettingValue ): void {
 			<div class="lkb-field__input">
 		<a-switch
 			v-if="field.control === 'toggle'"
+			:id="controlId"
 			:checked="value === true"
 			@update:checked="update( $event )"
 		/>
 
 		<a-input-number
 			v-else-if="field.control === 'number'"
+			:id="controlId"
 			:value="typeof value === 'number' ? value : null"
 			:min="field.min ?? undefined"
 			:max="field.max ?? undefined"
@@ -77,6 +83,7 @@ function update( value: SettingValue ): void {
 
 		<a-select
 			v-else-if="field.control === 'select'"
+			:id="controlId"
 			:value="String( value ?? '' )"
 			style="min-width: 14rem"
 			@update:value="update( String( $event ) )"
@@ -98,6 +105,7 @@ function update( value: SettingValue ): void {
 				@input="update( ( $event.target as HTMLInputElement ).value )"
 			/>
 			<a-input
+				:id="controlId"
 				:value="String( value ?? '' )"
 				style="max-width: 9rem"
 				@update:value="update( String( $event ) )"
@@ -106,6 +114,7 @@ function update( value: SettingValue ): void {
 
 		<a-input
 			v-else
+			:id="controlId"
 			:value="String( value ?? '' )"
 			@update:value="update( String( $event ) )"
 		/>

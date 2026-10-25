@@ -383,10 +383,12 @@ class Licensio_KB_Articles_Admin_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * On its own page the app loads with wp-i18n and its translations.
+     * On its own page the app loads with wp-i18n, wp-a11y and its translations.
      *
      * The app translates its strings through the page's wp.i18n, so without
-     * the dependency and the script translations it shows English only.
+     * the dependency and the script translations it shows English only. The
+     * Undo toast announces the change through wp.a11y, so without it screen
+     * reader users are not told what changed.
      *
      * @since 1.0.0
      *
@@ -405,6 +407,7 @@ class Licensio_KB_Articles_Admin_Test extends Licensio_KB_Test_Case {
 
         $this->assertArrayHasKey( Licensio_KB_Articles_Admin::APP_HANDLE, $this->enqueued );
         $this->assertContains( 'wp-i18n', $this->enqueued[ Licensio_KB_Articles_Admin::APP_HANDLE ] );
+        $this->assertContains( 'wp-a11y', $this->enqueued[ Licensio_KB_Articles_Admin::APP_HANDLE ] );
     }
 
     /**

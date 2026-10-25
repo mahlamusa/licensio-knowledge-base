@@ -5,12 +5,12 @@
  * The sources start with the category the dialog was opened from; more can
  * be added, up to 50. The target cannot be a source or below one, so those
  * are excluded from its picker. Merge is a danger `ConfirmButton`; nothing is
- * sent before the user confirms.
+ * sent before the user confirms. It opens with focus on its first field.
  *
  * @since 1.0.0
  */
 
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import ConfirmButton from '../../components/ConfirmButton.vue';
 import TermSelect from '../../components/TermSelect.vue';
@@ -40,6 +40,8 @@ const sources = ref< number[] >( [] );
 const target = ref< number | null >( null );
 const saving = ref( false );
 const error = ref( '' );
+
+let focusTimer = 0;
 
 const tooMany = computed( () => sources.value.length > MAX_SOURCES );
 
@@ -72,14 +74,28 @@ const confirmTitle = computed( () =>
 watch(
 	() => props.open,
 	( open ) => {
+		window.clearTimeout( focusTimer );
+
 		if ( open ) {
 			sources.value = props.category ? [ props.category.id ] : [];
 			target.value = null;
 			error.value = '';
+
+			// The dialog would otherwise focus itself, so the first Tab
+			// lands on its close button rather than a field.
+			nextTick( () => {
+				focusTimer = window.setTimeout( () => {
+					document
+						.querySelector< HTMLElement >( '.lkb-merge-dialog input' )
+						?.focus();
+				}, 50 );
+			} );
 		}
 	},
 	{ immediate: true }
 );
+
+onBeforeUnmount( () => window.clearTimeout( focusTimer ) );
 
 // A target that became a source, or sits below one, is no longer valid.
 watch( targetExclude, ( excluded ) => {
@@ -161,6 +177,7 @@ async function merge(): Promise< void > {
 	<a-modal
 		:open="props.open"
 		:title="__( 'Merge categories', 'licensio-knowledge-base' )"
+		wrap-class-name="lkb-merge-dialog"
 		@cancel="emit( 'close' )"
 		:after-close="() => emit( 'closed' )"
 	>

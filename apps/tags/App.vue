@@ -19,6 +19,7 @@
 
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
+import { SearchOutlined } from '@ant-design/icons-vue';
 import { lkbTheme } from '../styles/theme';
 import AppHeader from '../components/AppHeader.vue';
 import ConfirmButton from '../components/ConfirmButton.vue';
@@ -64,7 +65,7 @@ const selectedLabel = computed( () =>
  * Open or close the Add tag form, clearing it.
  *
  * Focus moves to the Name field when it opens, and back to Add tag when it
- * closes.
+ * closes. Escape in the form closes it like Cancel.
  *
  * @since 1.0.0
  *
@@ -204,7 +205,11 @@ onUnmounted( () => {
 					</template>
 				</a-alert>
 
-				<div v-if="adding" class="lkb-tags__add">
+				<div
+					v-if="adding"
+					class="lkb-tags__add"
+					@keydown.esc="toggleAdd( false )"
+				>
 					<a-input
 						v-model:value="newTag.name"
 						:placeholder="__( 'Name', 'licensio-knowledge-base' )"
@@ -262,7 +267,13 @@ onUnmounted( () => {
 						:placeholder="__( 'Search tags', 'licensio-knowledge-base' )"
 						:aria-label="__( 'Search tags', 'licensio-knowledge-base' )"
 						@search="( value: string ) => store.filter( { search: value.trim() } )"
-					/>
+					>
+						<template #enterButton>
+							<a-button :aria-label="__( 'Search', 'licensio-knowledge-base' )">
+								<template #icon><SearchOutlined /></template>
+							</a-button>
+						</template>
+					</a-input-search>
 
 					<label class="lkb-tags__toggle">
 						<a-switch
