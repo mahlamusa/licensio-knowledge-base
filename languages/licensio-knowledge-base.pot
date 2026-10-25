@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-24T06:08:00+00:00\n"
+"POT-Creation-Date: 2026-10-25T14:20:18+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.7.1\n"
 "X-Domain: licensio-knowledge-base\n"
@@ -1123,19 +1123,29 @@ msgstr ""
 msgid "Manual sort order of the category."
 msgstr ""
 
-#: includes/class-licensio-kb-term-operations.php:191
+#: includes/class-licensio-kb-term-operations.php:383
 msgid "Choose at least one term to merge."
 msgstr ""
 
-#: includes/class-licensio-kb-term-operations.php:256
+#. translators: %s: the slug that is taken.
+#: includes/class-licensio-kb-term-operations.php:459
+msgid "Another tag already uses the slug “%s”. Choose a different slug."
+msgstr ""
+
+#. translators: %s: the slug that is taken.
+#: includes/class-licensio-kb-term-operations.php:461
+msgid "Another category already uses the slug “%s”. Choose a different slug."
+msgstr ""
+
+#: includes/class-licensio-kb-term-operations.php:492
 msgid "That taxonomy is not a knowledge base taxonomy."
 msgstr ""
 
-#: includes/class-licensio-kb-term-operations.php:264
+#: includes/class-licensio-kb-term-operations.php:500
 msgid "A term cannot be moved onto itself."
 msgstr ""
 
-#: includes/class-licensio-kb-term-operations.php:273
+#: includes/class-licensio-kb-term-operations.php:515
 msgid "One of the chosen terms does not exist."
 msgstr ""
 
@@ -1341,96 +1351,96 @@ msgstr ""
 msgid "No article was found with that ID."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:194
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:200
 msgid "The category ID."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:216
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:222
 msgid "The category name."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:223
-msgid "The category slug. Made unique when it is taken."
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:229
+msgid "The category slug. A new category with a taken slug gets a unique one; an edit to a slug another category uses is refused."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:230
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:236
 msgid "The parent category ID, 0 for the top level."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:235
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:241
 msgid "The category description."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:240
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:246
 msgid "A Dashicons name, e.g. dashicons-book-alt."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:247
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:253
 msgid "The attachment ID of an uploaded icon, 0 for none."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:252
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:258
 msgid "Inline SVG icon markup. Reduced to an allowlist on save."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:259
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:265
 msgid "The attachment ID of the category image, 0 for none."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:308
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:314
 msgid "Choose an image from the media library."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:334
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:340
 msgid "Where the articles go: parent, none, or a category ID."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:340
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:346
 msgid "Where the child categories go: parent, or a category ID."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:360
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:366
 msgid "The parent the categories are placed under, 0 for the top level."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:372
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:378
 msgid "The children of the parent, in the new order, first first. Children left out follow them in their current order."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:398
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:404
 msgid "The categories to merge away."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:406
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:412
 msgid "The category that remains."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:816
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:833
 msgid "The category could not be deleted."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:850
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:867
 msgid "A top-level category has no parent to move its articles to. Choose a category, or leave them without one."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:1507
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:1551
 #: includes/rest/class-licensio-kb-category-order-rest-controller.php:341
 msgid "That category does not exist."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:1522
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:1566
 msgid "One of the chosen categories does not exist."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:1537
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:1581
 msgid "A category cannot be moved onto itself."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:1552
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:1596
 msgid "A category cannot be placed inside itself or one of its own subcategories."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:1567
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:1611
 msgid "You are not allowed to change knowledge base categories."
 msgstr ""
 
@@ -1590,114 +1600,114 @@ msgstr ""
 msgid "This value is not accepted for this setting."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:124
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:126
 msgid "The tag ID."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:142
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:144
 msgid "The tags to delete."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:157
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:159
 msgid "The tags to merge away."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:162
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:164
 msgid "The tag that remains."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:178
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:180
 msgid "The tags to convert."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:183
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:185
 msgid "The category the new categories go under, or 0 for the top level."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:204
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:206
 msgid "Limit the tags to names or slugs containing this text."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:209
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:211
 msgid "Only tags no article uses, counting every status but trash and auto-draft."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:219
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:221
 msgid "Return only these tag IDs."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:225
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:227
 msgid "Sort by name or by article count."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:231
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:233
 msgid "The sort direction."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:238
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:240
 msgid "The page to return."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:246
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:248
 msgid "How many tags a page holds."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:270
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:272
 msgid "The tag name."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:275
-msgid "The tag slug. A slug that is taken gets a number added; an empty slug is made from the name."
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:277
+msgid "The tag slug. A new tag with a taken slug gets a unique one; an edit to a slug another tag uses is refused. An empty slug is made from the name."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:280
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:282
 msgid "The tag description."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:420
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:422
 msgid "You are not allowed to change these terms."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:685
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:823
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:1026
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:690
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:829
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:1033
 msgid "The tag does not exist."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:698
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:873
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:703
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:880
 msgid "The tag could not be deleted."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:772
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:774
 msgid "The chosen parent category does not exist."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:852
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:858
 msgid "The category could not be created."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-tags-rest-controller.php:1041
+#: includes/rest/class-licensio-kb-tags-rest-controller.php:1048
 msgid "A tag needs a name."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-terms-rest-controller.php:94
+#: includes/rest/class-licensio-kb-terms-rest-controller.php:95
 msgid "The taxonomy to search."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-terms-rest-controller.php:100
+#: includes/rest/class-licensio-kb-terms-rest-controller.php:101
 msgid "Limit the terms to names or slugs containing this text."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-terms-rest-controller.php:106
+#: includes/rest/class-licensio-kb-terms-rest-controller.php:107
 msgid "Return only these term IDs."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-terms-rest-controller.php:111
+#: includes/rest/class-licensio-kb-terms-rest-controller.php:115
 msgid "Leave these term IDs out."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-terms-rest-controller.php:119
+#: includes/rest/class-licensio-kb-terms-rest-controller.php:124
 msgid "How many terms to return."
 msgstr ""
 
