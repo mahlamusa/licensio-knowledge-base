@@ -17,6 +17,13 @@
  * Production output goes to `dist/`, with the manifest at
  * `dist/.vite/manifest.json`, which `Licensio_KB_Assets` reads.
  *
+ * The built JavaScript is what `wp i18n make-pot` reads, both for the plugin's
+ * own template and on WordPress.org, and the JSON translation files it leads to
+ * are keyed by the built file paths. So the build keeps every translation call
+ * recognisable: `__`, `_x`, `_n` and `_nx` keep their names, translator comments
+ * survive minification, and `keepTranslationCalls()` unwraps the calls in
+ * compiled templates.
+ *
  * @since 1.0.0
  */
 
@@ -65,10 +72,40 @@ export function collectEntries() {
 	return entries;
 }
 
+/**
+ * Keep translation calls in compiled Vue templates plain.
+ *
+ * A template that calls an imported `__()` compiles to `_unref(__)( ... )`,
+ * which `wp i18n make-pot` does not recognise as a translation call. The
+ * helpers in `apps/components/i18n.ts` are plain functions, never refs, so
+ * dropping the `_unref()` wrapper changes nothing at runtime.
+ *
+ * @since 1.0.0
+ *
+ * @return {import('vite').Plugin} The Vite plugin.
+ */
+function keepTranslationCalls() {
+	return {
+		name: 'licensio-kb-keep-translation-calls',
+		apply: 'build',
+		enforce: 'post',
+		transform( code, id ) {
+			if ( ! /\.vue($|\?)/.test( id ) ) {
+				return null;
+			}
+
+			return {
+				code: code.replace( /\b_unref\((__|_x|_n|_nx)\)/g, '$1' ),
+				map: null,
+			};
+		},
+	};
+}
+
 export default defineConfig( ( { command } ) => ( {
 	root,
 	base: 'build' === command ? '' : `http://localhost:${ DEV_SERVER_PORT }/`,
-	plugins: [ vue() ],
+	plugins: [ vue(), keepTranslationCalls() ],
 	resolve: {
 		alias: {
 			'@': path.resolve( root, 'apps' ),
@@ -87,6 +124,14 @@ export default defineConfig( ( { command } ) => ( {
 		emptyOutDir: false,
 		manifest: true,
 		sourcemap: false,
+		minify: 'terser',
+		terserOptions: {
+			// `x ? __( 'a' ) : __( 'b' )` would become `__( x ? 'a' : 'b' )`,
+			// which hides both strings from the extractor.
+			compress: { conditionals: false },
+			mangle: { reserved: [ '__', '_x', '_n', '_nx' ] },
+			format: { comments: /translators:/i },
+		},
 		rollupOptions: {
 			input: collectEntries(),
 			output: {

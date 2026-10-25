@@ -20,15 +20,11 @@ import type {
 	SettingsMap,
 	SettingsResponse,
 } from './types';
+import { __ } from '../components/i18n';
 
 declare global {
 	interface Window {
 		licensioKbSettings?: SettingsConfig;
-		wp?: {
-			i18n?: {
-				__: ( text: string, domain?: string ) => string;
-			};
-		};
 	}
 }
 
@@ -46,28 +42,6 @@ const FALLBACK_CONFIG: SettingsConfig = {
  */
 export function config(): SettingsConfig {
 	return { ...FALLBACK_CONFIG, ...( window.licensioKbSettings ?? {} ) };
-}
-
-/**
- * Translate a string through WordPress, falling back to the original.
- *
- * The app is built by Vite rather than by wp-scripts, so it reads `wp.i18n` off
- * the global that the `wp-i18n` script dependency guarantees is present instead
- * of importing the package. It is deliberately not called `__`: the string
- * extractor and the `@wordpress/i18n-no-variables` lint rule both key on that
- * name, and a wrapper wearing it would be read as a call site whose argument is
- * a variable.
- *
- * @since 1.0.0
- *
- * @param {string} text The untranslated string.
- *
- * @return {string} The translated string.
- */
-export function translate( text: string ): string {
-	const translator = window.wp?.i18n?.__;
-
-	return translator ? translator( text, 'licensio-knowledge-base' ) : text;
 }
 
 /**
@@ -127,7 +101,8 @@ async function request(
 		const error = ( payload ?? {} ) as RestError;
 
 		throw new SaveRejected(
-			error.message || translate( 'The settings request failed.' ),
+			error.message ||
+				__( 'The settings request failed.', 'licensio-knowledge-base' ),
 			error.data?.params ?? {}
 		);
 	}

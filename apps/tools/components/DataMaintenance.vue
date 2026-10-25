@@ -11,13 +11,9 @@
  */
 
 import { computed, onMounted, ref } from 'vue';
-import {
-	maintenanceStatus,
-	pruneAnalytics,
-	recountScores,
-	translate,
-} from '../api';
+import { maintenanceStatus, pruneAnalytics, recountScores } from '../api';
 import type { MaintenanceStatus } from '../types';
+import { __ } from '../../components/i18n';
 
 /** A backlog bigger than this many sweeps is a job for WP-CLI, not a browser. */
 const MAX_SWEEPS = 50;
@@ -34,7 +30,7 @@ const prunedTotal = ref( 0 );
 const prunedTables = ref< Record< string, number > >( {} );
 
 const retentionSummary = computed( () =>
-	translate( 'Rows older than' ) + ' ' + ( status.value?.cutoff ?? '—' )
+	__( 'Rows older than', 'licensio-knowledge-base' ) + ' ' + ( status.value?.cutoff ?? '—' )
 );
 
 /**
@@ -51,7 +47,7 @@ async function load(): Promise< void > {
 	try {
 		status.value = await maintenanceStatus();
 	} catch ( err ) {
-		error.value = err instanceof Error ? err.message : translate( 'Failed to load the status.' );
+		error.value = err instanceof Error ? err.message : __( 'Failed to load the status.', 'licensio-knowledge-base' );
 	} finally {
 		loading.value = false;
 	}
@@ -75,7 +71,7 @@ async function recount(): Promise< void > {
 		recounted.value = response.articles;
 		status.value = response.status;
 	} catch ( err ) {
-		error.value = err instanceof Error ? err.message : translate( 'The recount failed.' );
+		error.value = err instanceof Error ? err.message : __( 'The recount failed.', 'licensio-knowledge-base' );
 	} finally {
 		recounting.value = false;
 	}
@@ -112,10 +108,10 @@ async function prune(): Promise< void > {
 		}
 
 		throw new Error(
-			translate( 'The backlog is too large for the browser; finish it with WP-CLI.' )
+			__( 'The backlog is too large for the browser; finish it with WP-CLI.', 'licensio-knowledge-base' )
 		);
 	} catch ( err ) {
-		error.value = err instanceof Error ? err.message : translate( 'The deletion failed.' );
+		error.value = err instanceof Error ? err.message : __( 'The deletion failed.', 'licensio-knowledge-base' );
 	} finally {
 		pruning.value = false;
 	}
@@ -133,22 +129,23 @@ onMounted( load );
 		<a-alert v-else-if="error" type="error" show-icon :message="error" />
 
 		<template v-else-if="status">
-			<a-card class="licensio-kb-data-maintenance__card" :title="translate( 'Feedback usefulness scores' )">
+			<a-card class="licensio-kb-data-maintenance__card" :title="__( 'Feedback usefulness scores', 'licensio-knowledge-base' )">
 				<p>
 					{{
-						translate(
-							'Each article\'s helpfulness score is a cache over the vote table. Migrated, imported or hand-edited votes can leave it stale; this recounts every article from the raw rows.'
+						__(
+							'Each article\'s helpfulness score is a cache over the vote table. Migrated, imported or hand-edited votes can leave it stale; this recounts every article from the raw rows.',
+							'licensio-knowledge-base'
 						)
 					}}
 				</p>
 
 				<dl class="licensio-kb-data-maintenance__stats">
 					<div>
-						<dt>{{ translate( 'Articles' ) }}</dt>
+						<dt>{{ __( 'Articles', 'licensio-knowledge-base' ) }}</dt>
 						<dd>{{ status.articles }}</dd>
 					</div>
 					<div>
-						<dt>{{ translate( 'Votes recorded' ) }}</dt>
+						<dt>{{ __( 'Votes recorded', 'licensio-knowledge-base' ) }}</dt>
 						<dd>{{ status.feedbackRows }}</dd>
 					</div>
 				</dl>
@@ -159,28 +156,29 @@ onMounted( load );
 					:disabled="recounting || pruning"
 					@click="recount"
 				>
-					{{ translate( 'Recount scores' ) }}
+					{{ __( 'Recount scores', 'licensio-knowledge-base' ) }}
 				</a-button>
 
 				<p v-if="recounted" class="licensio-kb-data-maintenance__done">
 					{{
-						translate( 'Recounted the score of' ) +
+						__( 'Recounted the score of', 'licensio-knowledge-base' ) +
 							' ' +
 							recounted +
 							' ' +
-							translate( 'articles.' )
+							__( 'articles.', 'licensio-knowledge-base' )
 					}}
 				</p>
 			</a-card>
 
 			<a-card
 				class="licensio-kb-data-maintenance__card"
-				:title="translate( 'Analytics retention' )"
+				:title="__( 'Analytics retention', 'licensio-knowledge-base' )"
 			>
 				<p>
 					{{
-						translate(
-							'Analytics rows older than the retention window are deleted by a scheduled job. This runs the same deletion now.'
+						__(
+							'Analytics rows older than the retention window are deleted by a scheduled job. This runs the same deletion now.',
+							'licensio-knowledge-base'
 						)
 					}}
 					{{ retentionSummary }}.
@@ -188,27 +186,27 @@ onMounted( load );
 
 				<dl class="licensio-kb-data-maintenance__stats">
 					<div>
-						<dt>{{ translate( 'Retention window' ) }}</dt>
-						<dd>{{ status.retentionDays }} {{ translate( 'days' ) }}</dd>
+						<dt>{{ __( 'Retention window', 'licensio-knowledge-base' ) }}</dt>
+						<dd>{{ status.retentionDays }} {{ __( 'days', 'licensio-knowledge-base' ) }}</dd>
 					</div>
 					<div>
-						<dt>{{ translate( 'Article views' ) }}</dt>
+						<dt>{{ __( 'Article views', 'licensio-knowledge-base' ) }}</dt>
 						<dd>{{ status.viewRows }}</dd>
 					</div>
 					<div>
-						<dt>{{ translate( 'Searches' ) }}</dt>
+						<dt>{{ __( 'Searches', 'licensio-knowledge-base' ) }}</dt>
 						<dd>{{ status.searchRows }}</dd>
 					</div>
 					<div>
-						<dt>{{ translate( 'Votes' ) }}</dt>
+						<dt>{{ __( 'Votes', 'licensio-knowledge-base' ) }}</dt>
 						<dd>{{ status.feedbackRows }}</dd>
 					</div>
 				</dl>
 
 				<a-popconfirm
-					:title="translate( 'Permanently delete the expired rows?' )"
-					:ok-text="translate( 'Delete' )"
-					:cancel-text="translate( 'Cancel' )"
+					:title="__( 'Permanently delete the expired rows?', 'licensio-knowledge-base' )"
+					:ok-text="__( 'Delete', 'licensio-knowledge-base' )"
+					:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
 					@confirm="prune"
 				>
 					<a-button
@@ -217,14 +215,14 @@ onMounted( load );
 						:loading="pruning"
 						:disabled="recounting || pruning"
 					>
-						{{ translate( 'Delete expired rows' ) }}
+						{{ __( 'Delete expired rows', 'licensio-knowledge-base' ) }}
 					</a-button>
 				</a-popconfirm>
 
 				<template v-if="prunedTotal > 0 || Object.keys( prunedTables ).length > 0">
 					<p class="licensio-kb-data-maintenance__done">
-						{{ translate( 'Deleted' ) }} {{ prunedTotal }}
-						{{ translate( 'rows:' ) }}
+						{{ __( 'Deleted', 'licensio-knowledge-base' ) }} {{ prunedTotal }}
+						{{ __( 'rows:', 'licensio-knowledge-base' ) }}
 					</p>
 					<ul class="licensio-kb-data-maintenance__deleted">
 						<li v-for="( rows, table ) in prunedTables" :key="table">

@@ -3,10 +3,10 @@
 # Self-test for the release gates.
 #
 # A CI step that cannot fail is worse than no step at all: it turns an unchecked
-# assumption into a false assurance. The three gates in this directory are all
-# pattern matching over a tree, which is exactly the kind of thing that goes
-# quietly green - a renamed directory, a pattern that stops compiling, a `find`
-# that walks nothing.
+# assumption into a false assurance. The release gates (the three in this
+# directory and tools/check-app-strings.mjs) are all pattern matching over a
+# tree, which is exactly the kind of thing that goes quietly green - a renamed
+# directory, a pattern that stops compiling, a `find` that walks nothing.
 #
 # So every gate is exercised here against fixtures, in both directions:
 #
@@ -338,6 +338,51 @@ PHP
         env "LICENSIO_KB_ESLINTRC=${WORK_DIR}/no-such-eslintrc.json" \
         bash "${SCRIPT_DIR}/check-i18n.sh" "${I18N_DIR}/good.php"
 fi
+
+# ---------------------------------------------------------------------------
+# Vue app string check
+# ---------------------------------------------------------------------------
+
+printf '\ntools/check-app-strings.mjs\n'
+
+APP_STRINGS_DIR="${WORK_DIR}/app-strings"
+mkdir -p "${APP_STRINGS_DIR}/apps/demo"
+
+cat > "${APP_STRINGS_DIR}/apps/demo/App.vue" <<'VUE'
+<script setup lang="ts">
+/**
+ * Usage: __( 'Only an example in a docblock', 'licensio-knowledge-base' )
+ */
+const title = __( 'Tag saved', 'licensio-knowledge-base' );
+const count = _n( '%d tag', '%d tags', 2, 'licensio-knowledge-base' );
+</script>
+<template>
+	<!-- __( 'Only an example in markup', 'licensio-knowledge-base' ) -->
+	<p>{{ __( 'It\'s here', 'licensio-knowledge-base' ) }}</p>
+</template>
+VUE
+
+cat > "${APP_STRINGS_DIR}/complete.pot" <<'POT'
+msgid "Tag saved"
+msgstr ""
+
+msgid "%d tag"
+msgid_plural "%d tags"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "It's here"
+msgstr ""
+POT
+
+grep -v '%d tags' "${APP_STRINGS_DIR}/complete.pot" > "${APP_STRINGS_DIR}/no-plural.pot"
+
+assert_green 'a template with every app string passes, comments are not calls' \
+    node "${ROOT}/tools/check-app-strings.mjs" "${APP_STRINGS_DIR}/complete.pot" "${APP_STRINGS_DIR}/apps"
+
+assert_red 'a template missing an app plural form fails' \
+    'apps/demo/App.vue:6  %d tags' \
+    node "${ROOT}/tools/check-app-strings.mjs" "${APP_STRINGS_DIR}/no-plural.pot" "${APP_STRINGS_DIR}/apps"
 
 printf '\n%s passed, %s failed.\n' "$passed" "$failed"
 

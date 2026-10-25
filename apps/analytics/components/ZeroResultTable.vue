@@ -10,20 +10,20 @@
  * @since 1.0.0
  */
 
-import { translate } from '../api';
 import type { SearchRow } from '../types';
+import { __ } from '../../components/i18n';
 
 defineProps<{ rows: SearchRow[] }>();
 
 const columns = [
-	{ title: translate( 'Search term' ), dataIndex: 'term', key: 'term' },
+	{ title: __( 'Search term', 'licensio-knowledge-base' ), dataIndex: 'term', key: 'term' },
 	{
-		title: translate( 'Times searched' ),
+		title: __( 'Times searched', 'licensio-knowledge-base' ),
 		dataIndex: 'searches',
 		key: 'searches',
 		width: 160,
 	},
-	{ title: translate( 'Action' ), key: 'action', width: 220 },
+	{ title: __( 'Action', 'licensio-knowledge-base' ), key: 'action', width: 220 },
 ];
 </script>
 
@@ -36,7 +36,7 @@ const columns = [
 		size="small"
 	>
 		<template #emptyText>
-			{{ translate( 'No searches came back empty in this range.' ) }}
+			{{ __( 'No searches came back empty in this range.', 'licensio-knowledge-base' ) }}
 		</template>
 		<template #bodyCell="{ column, record }">
 			<template v-if="column.key === 'action'">
@@ -46,7 +46,7 @@ const columns = [
 					size="small"
 					:href="record.create_article_url"
 				>
-					{{ translate( 'Create an article for this' ) }}
+					{{ __( 'Create an article for this', 'licensio-knowledge-base' ) }}
 				</a-button>
 			</template>
 		</template>

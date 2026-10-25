@@ -14,6 +14,7 @@ import type {
 	FeedbackStatus,
 	InboxSettings,
 } from './types';
+import { __ } from '../components/i18n';
 
 declare global {
 	interface Window {
@@ -70,7 +71,7 @@ async function request(
 		const message =
 			body && typeof body.message === 'string'
 				? body.message
-				: 'The request failed.';
+				: __( 'The request failed.', 'licensio-knowledge-base' );
 
 		throw new Error( message );
 	}

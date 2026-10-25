@@ -15,7 +15,8 @@
  *
  * The page must enqueue its app with the `wp-i18n` script dependency.
  *
- * Consumed by the shared components and the articles, categories and tags apps.
+ * Consumed by the shared components and every admin app. The build keeps
+ * these calls readable by `wp i18n make-pot`; see `vite.config.mjs`.
  *
  * @since 1.0.0
  */

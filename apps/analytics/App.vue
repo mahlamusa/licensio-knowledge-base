@@ -11,7 +11,8 @@ import { lkbTheme } from '../styles/theme';
  */
 
 import { computed, onMounted, ref } from 'vue';
-import { translate, config } from './api';
+import { config } from './api';
+import { __ } from '../components/i18n';
 import { useAnalyticsStore } from './store';
 import ArticleTable from './components/ArticleTable.vue';
 import SearchTable from './components/SearchTable.vue';
@@ -28,12 +29,12 @@ const presets = [ 7, 30, 90 ];
 
 const trend = computed( () => [
 	{
-		label: translate( 'Searches' ),
+		label: __( 'Searches', 'licensio-knowledge-base' ),
 		color: '#247a5c',
 		points: store.overview?.search_trend ?? [],
 	},
 	{
-		label: translate( 'Article views' ),
+		label: __( 'Article views', 'licensio-knowledge-base' ),
 		color: '#16a34a',
 		points: store.overview?.view_trend ?? [],
 	},
@@ -98,7 +99,7 @@ onMounted( () => {
 
 		<div id="lkb-main" class="lkb-page__body lkb-measure">
 			<div class="lkb-page__head">
-				<h1 class="lkb-page__title">{{ translate( 'Analytics' ) }}</h1>
+				<h1 class="lkb-page__title">{{ __( 'Analytics', 'licensio-knowledge-base' ) }}</h1>
 			</div>
 
 		<a-alert
@@ -114,8 +115,9 @@ onMounted( () => {
 			type="warning"
 			show-icon
 			:message="
-				translate(
-					'Analytics collection is switched off, so nothing new is being recorded.'
+				__(
+					'Analytics collection is switched off, so nothing new is being recorded.',
+					'licensio-knowledge-base'
 				)
 			"
 			class="licensio-kb-analytics__notice"
@@ -123,26 +125,26 @@ onMounted( () => {
 
 		<div class="licensio-kb-analytics__range">
 			<label>
-				{{ translate( 'From' ) }}
+				{{ __( 'From', 'licensio-knowledge-base' ) }}
 				<input v-model="start" type="date" />
 			</label>
 			<label>
-				{{ translate( 'To' ) }}
+				{{ __( 'To', 'licensio-knowledge-base' ) }}
 				<input v-model="end" type="date" />
 			</label>
 			<a-button type="primary" @click="applyRange">
-				{{ translate( 'Apply' ) }}
+				{{ __( 'Apply', 'licensio-knowledge-base' ) }}
 			</a-button>
 			<a-button
 				v-for="days in presets"
 				:key="days"
 				@click="applyPreset( days )"
 			>
-				{{ days }} {{ translate( 'days' ) }}
+				{{ days }} {{ __( 'days', 'licensio-knowledge-base' ) }}
 			</a-button>
 			<span class="licensio-kb-analytics__retention">
-				{{ translate( 'Rows are kept for' ) }} {{ settings.retentionDays }}
-				{{ translate( 'days.' ) }}
+				{{ __( 'Rows are kept for', 'licensio-knowledge-base' ) }} {{ settings.retentionDays }}
+				{{ __( 'days.', 'licensio-knowledge-base' ) }}
 			</span>
 		</div>
 
@@ -151,7 +153,7 @@ onMounted( () => {
 				<a-col :span="6">
 					<a-card>
 						<a-statistic
-							:title="translate( 'Searches' )"
+							:title="__( 'Searches', 'licensio-knowledge-base' )"
 							:value="store.overview?.totals.total_searches ?? 0"
 						/>
 					</a-card>
@@ -159,7 +161,7 @@ onMounted( () => {
 				<a-col :span="6">
 					<a-card>
 						<a-statistic
-							:title="translate( 'Search effectiveness' )"
+							:title="__( 'Search effectiveness', 'licensio-knowledge-base' )"
 							:value="store.effectiveness"
 							suffix="%"
 						/>
@@ -168,7 +170,7 @@ onMounted( () => {
 				<a-col :span="6">
 					<a-card>
 						<a-statistic
-							:title="translate( 'Article views' )"
+							:title="__( 'Article views', 'licensio-knowledge-base' )"
 							:value="store.overview?.totals.total_views ?? 0"
 						/>
 					</a-card>
@@ -176,7 +178,7 @@ onMounted( () => {
 				<a-col :span="6">
 					<a-card>
 						<a-statistic
-							:title="translate( 'Empty searches' )"
+							:title="__( 'Empty searches', 'licensio-knowledge-base' )"
 							:value="
 								store.overview?.totals.zero_result_searches ?? 0
 							"
@@ -185,19 +187,19 @@ onMounted( () => {
 				</a-col>
 			</a-row>
 
-			<a-card :title="translate( 'Activity' )" class="licensio-kb-analytics__block">
+			<a-card :title="__( 'Activity', 'licensio-knowledge-base' )" class="licensio-kb-analytics__block">
 				<TrendChart :series="trend" />
 			</a-card>
 
 			<a-card
-				:title="translate( 'Questions with no answer' )"
+				:title="__( 'Questions with no answer', 'licensio-knowledge-base' )"
 				class="licensio-kb-analytics__block"
 			>
 				<ZeroResultTable :rows="store.searches?.zero_results ?? []" />
 			</a-card>
 
 			<a-card
-				:title="translate( 'Top searches' )"
+				:title="__( 'Top searches', 'licensio-knowledge-base' )"
 				class="licensio-kb-analytics__block"
 			>
 				<SearchTable :rows="store.searches?.top ?? []" />
@@ -205,7 +207,7 @@ onMounted( () => {
 
 			<a-row :gutter="16" class="licensio-kb-analytics__block">
 				<a-col :span="12">
-					<a-card :title="translate( 'Most useful articles' )">
+					<a-card :title="__( 'Most useful articles', 'licensio-knowledge-base' )">
 						<ArticleTable
 							:rows="store.articles?.most_useful ?? []"
 							metric="usefulness"
@@ -213,7 +215,7 @@ onMounted( () => {
 					</a-card>
 				</a-col>
 				<a-col :span="12">
-					<a-card :title="translate( 'Least useful articles' )">
+					<a-card :title="__( 'Least useful articles', 'licensio-knowledge-base' )">
 						<ArticleTable
 							:rows="store.articles?.least_useful ?? []"
 							metric="usefulness"
@@ -223,7 +225,7 @@ onMounted( () => {
 			</a-row>
 
 			<a-card
-				:title="translate( 'Most read articles' )"
+				:title="__( 'Most read articles', 'licensio-knowledge-base' )"
 				class="licensio-kb-analytics__block"
 			>
 				<ArticleTable
@@ -233,20 +235,20 @@ onMounted( () => {
 			</a-card>
 
 			<a-card
-				:title="translate( 'Feedback' )"
+				:title="__( 'Feedback', 'licensio-knowledge-base' )"
 				class="licensio-kb-analytics__block"
 			>
 				<a-descriptions bordered size="small" :column="4">
-					<a-descriptions-item :label="translate( 'Votes' )">
+					<a-descriptions-item :label="__( 'Votes', 'licensio-knowledge-base' )">
 						{{ store.feedback?.totals.total ?? 0 }}
 					</a-descriptions-item>
-					<a-descriptions-item :label="translate( 'Helpful' )">
+					<a-descriptions-item :label="__( 'Helpful', 'licensio-knowledge-base' )">
 						{{ store.feedback?.totals.positive ?? 0 }}
 					</a-descriptions-item>
-					<a-descriptions-item :label="translate( 'Not helpful' )">
+					<a-descriptions-item :label="__( 'Not helpful', 'licensio-knowledge-base' )">
 						{{ store.feedback?.totals.negative ?? 0 }}
 					</a-descriptions-item>
-					<a-descriptions-item :label="translate( 'Useful' )">
+					<a-descriptions-item :label="__( 'Useful', 'licensio-knowledge-base' )">
 						{{ store.feedback?.totals.usefulness ?? 0 }}%
 					</a-descriptions-item>
 				</a-descriptions>

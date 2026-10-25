@@ -289,15 +289,35 @@ WP_CLI="$( resolve_wp_cli || true )"
 
 POT_FILE="${WORK_DIR}/${SLUG}.pot"
 
-# shellcheck disable=SC2086
-$WP_CLI i18n make-pot "$ROOT" "$POT_FILE" \
-    --domain="$TEXT_DOMAIN" \
-    --slug="$SLUG" \
-    --exclude='node_modules,vendor,libraries,dist,tests,tools,bin,docs,.github,releases,.tmp,.sandbox' \
-    --headers='{"Report-Msgid-Bugs-To":"https://wordpress.org/support/plugin/licensio-knowledge-base"}' \
-    --allow-root
+# Run make-pot over the plugin into the template.
+#
+# $@ - Extra make-pot arguments, such as the paths to read.
+make_pot() {
+    # shellcheck disable=SC2086
+    $WP_CLI i18n make-pot "$ROOT" "$POT_FILE" \
+        --domain="$TEXT_DOMAIN" \
+        --slug="$SLUG" \
+        --headers='{"Report-Msgid-Bugs-To":"https://wordpress.org/support/plugin/licensio-knowledge-base"}' \
+        --allow-root \
+        "$@"
+}
+
+make_pot --exclude='node_modules,vendor,libraries,dist,tests,tools,bin,docs,.github,releases,.tmp,.sandbox'
+
+# A second pass merges in the built JavaScript in dist/. make-pot cannot read
+# the Vue apps' .vue files, and the JSON translation files are keyed by the
+# built file paths, so the app strings have to be referenced from there. It
+# is a separate pass because make-pot excludes match a name at any depth: the
+# tools exclusion above would also drop dist/apps/tools/. vite.config.mjs
+# keeps the built calls recognisable, and the app string check below fails the
+# build if one goes missing.
+make_pot --include='dist' --merge
 
 printf 'Extracted %s strings.\n' "$( grep -c '^msgid ' "$POT_FILE" )"
+
+command -v node > /dev/null 2>&1 || abort 'node is required to check the Vue app strings.'
+node "${ROOT}/tools/check-app-strings.mjs" "$POT_FILE" \
+    || abort 'Vue app strings are missing from the .pot (listed above).'
 
 # Copy the allowlisted paths into a staging directory.
 #
