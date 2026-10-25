@@ -18,6 +18,9 @@
  *   the name and refuses a slug a sibling has (`duplicate_term_slug`).
  * - Names are stored with `&`, `<` and `>` encoded, and a bare `&` in a
  *   description as `&amp;`, as core's term filters do.
+ * - `wp_insert_term()`, `wp_update_term()` and `update_term_meta()` unslash
+ *   the name, description and meta value before storing them, as core does,
+ *   so a caller that forgets to slash loses its backslashes here too.
  * - `wp_defer_term_counting()` reports counting as never deferred, so every
  *   assignment change recounts at once.
  *
@@ -374,7 +377,7 @@ trait Licensio_KB_Live_Term_API {
      * @return array{term_id: int, term_taxonomy_id: int}|WP_Error The new IDs, or `term_exists`.
      */
     public function live_insert_term( $name, $taxonomy, $args = array() ) {
-        $name      = $this->live_store_name( $name );
+        $name      = $this->live_store_name( stripslashes( (string) $name ) );
         $parent_id = isset( $args['parent'] ) ? (int) $args['parent'] : 0;
         $sibling   = $this->live_rows(
             'SELECT t.term_id FROM ' . $this->table( 'terms' ) . ' t JOIN ' . $this->table( 'term_taxonomy' ) . ' tt ON tt.term_id = t.term_id WHERE t.name = '
@@ -394,7 +397,7 @@ trait Licensio_KB_Live_Term_API {
 
         $this->live_query(
             'INSERT INTO ' . $this->table( 'term_taxonomy' ) . ' (term_id, taxonomy, description, parent) VALUES ('
-            . $term_id . ', ' . $this->live_quote( $taxonomy ) . ', ' . $this->live_quote( $this->live_store_description( isset( $args['description'] ) ? (string) $args['description'] : '' ) ) . ', '
+            . $term_id . ', ' . $this->live_quote( $taxonomy ) . ', ' . $this->live_quote( $this->live_store_description( isset( $args['description'] ) ? stripslashes( (string) $args['description'] ) : '' ) ) . ', '
             . $parent_id . ')'
         );
 
@@ -426,7 +429,7 @@ trait Licensio_KB_Live_Term_API {
             return new WP_Error( 'invalid_term', 'Empty Term.' );
         }
 
-        $name      = isset( $args['name'] ) ? $this->live_store_name( $args['name'] ) : (string) $row['name'];
+        $name      = isset( $args['name'] ) ? $this->live_store_name( stripslashes( (string) $args['name'] ) ) : (string) $row['name'];
         $parent_id = isset( $args['parent'] ) ? (int) $args['parent'] : (int) $row['parent'];
         $empty     = isset( $args['slug'] ) && '' === (string) $args['slug'];
         $slug      = $empty ? $this->live_slug_from( $name ) : ( isset( $args['slug'] ) ? (string) $args['slug'] : (string) $row['slug'] );
@@ -443,7 +446,7 @@ trait Licensio_KB_Live_Term_API {
         $this->live_query( 'UPDATE ' . $this->table( 'terms' ) . ' SET name = ' . $this->live_quote( $name ) . ', slug = ' . $this->live_quote( $slug ) . ' WHERE term_id = ' . (int) $term_id );
 
         if ( isset( $args['description'] ) ) {
-            $this->live_query( 'UPDATE ' . $this->table( 'term_taxonomy' ) . ' SET description = ' . $this->live_quote( $this->live_store_description( $args['description'] ) ) . ' WHERE term_taxonomy_id = ' . (int) $row['term_taxonomy_id'] );
+            $this->live_query( 'UPDATE ' . $this->table( 'term_taxonomy' ) . ' SET description = ' . $this->live_quote( $this->live_store_description( stripslashes( (string) $args['description'] ) ) ) . ' WHERE term_taxonomy_id = ' . (int) $row['term_taxonomy_id'] );
         }
 
         if ( isset( $args['parent'] ) ) {
@@ -610,7 +613,7 @@ trait Licensio_KB_Live_Term_API {
      */
     public function live_update_term_meta( $term_id, $key, $value ) {
         $this->live_query( 'DELETE FROM ' . $this->table( 'termmeta' ) . ' WHERE term_id = ' . (int) $term_id . ' AND meta_key = ' . $this->live_quote( $key ) );
-        $this->live_query( 'INSERT INTO ' . $this->table( 'termmeta' ) . ' (term_id, meta_key, meta_value) VALUES (' . (int) $term_id . ', ' . $this->live_quote( $key ) . ', ' . $this->live_quote( (string) $value ) . ')' );
+        $this->live_query( 'INSERT INTO ' . $this->table( 'termmeta' ) . ' (term_id, meta_key, meta_value) VALUES (' . (int) $term_id . ', ' . $this->live_quote( $key ) . ', ' . $this->live_quote( stripslashes( (string) $value ) ) . ')' );
 
         return true;
     }

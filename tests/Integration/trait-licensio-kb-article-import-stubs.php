@@ -110,17 +110,19 @@ trait Licensio_KB_Article_Import_Stubs {
             }
         );
 
+        // Core's wp_insert_post() and update_post_meta() unslash what they are given.
         Brain\Monkey\Functions\when( 'wp_insert_post' )->alias(
             function ( $post ) {
                 $this->seed(
                     'posts',
                     array(
                         array(
-                            'post_title'  => (string) $post['post_title'],
-                            'post_name'   => (string) $post['post_name'],
-                            'post_type'   => (string) $post['post_type'],
-                            'post_status' => (string) $post['post_status'],
-                            'menu_order'  => (int) $post['menu_order'],
+                            'post_title'   => stripslashes( (string) $post['post_title'] ),
+                            'post_content' => stripslashes( (string) $post['post_content'] ),
+                            'post_name'    => stripslashes( (string) $post['post_name'] ),
+                            'post_type'    => (string) $post['post_type'],
+                            'post_status'  => (string) $post['post_status'],
+                            'menu_order'   => (int) $post['menu_order'],
                         ),
                     )
                 );
@@ -138,7 +140,7 @@ trait Licensio_KB_Article_Import_Stubs {
                         array(
                             'post_id'    => (int) $post_id,
                             'meta_key'   => (string) $key,
-                            'meta_value' => (string) $value,
+                            'meta_value' => stripslashes( (string) $value ),
                         ),
                     )
                 );
