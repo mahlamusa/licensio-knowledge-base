@@ -283,6 +283,9 @@ test.describe( 'Migration wizard', () => {
 				.filter( { has: page.locator( 'td', { hasText: /^article$/ } ) } )
 				.first();
 
+			// The rows of a newly picked run arrive after the picker changes.
+			await article.waitFor( { timeout: 5_000 } ).catch( () => undefined );
+
 			if ( 0 < ( await article.count() ) ) {
 				await article.locator( '.ant-table-row-expand-icon' ).click();
 
