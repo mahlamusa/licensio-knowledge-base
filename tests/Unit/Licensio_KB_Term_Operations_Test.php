@@ -109,6 +109,19 @@ class Licensio_KB_Term_Operations_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * Drop the database double so it cannot leak into another suite.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    protected function tearDown(): void {
+        unset( $GLOBALS['wpdb'] );
+
+        parent::tearDown();
+    }
+
+    /**
      * Assignments move to the target and leave the source empty.
      *
      * @since 1.0.0

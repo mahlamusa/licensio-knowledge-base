@@ -86,6 +86,6 @@ class Licensio_KB_Relationships_WPDB {
             return call_user_func( $this->handler, 'remove', (int) $matches[1], array_map( 'intval', explode( ', ', $matches[2] ) ) );
         }
 
-        throw new UnexpectedValueException( 'Unexpected statement: ' . $query );
+        throw new UnexpectedValueException( 'Unexpected statement: ' . $query ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- A test failure message, never output to a page.
     }
 }

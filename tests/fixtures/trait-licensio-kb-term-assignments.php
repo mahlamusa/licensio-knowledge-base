@@ -61,23 +61,11 @@ trait Licensio_KB_Term_Assignments {
     }
 
     /**
-     * Drop the database double so it cannot leak into another suite.
-     *
-     * @since 1.0.0
-     *
-     * @return void
-     */
-    protected function tearDown(): void {
-        unset( $GLOBALS['wpdb'] );
-
-        parent::tearDown();
-    }
-
-    /**
      * Route the assignment reads and writes to the store.
      *
      * Each write is logged as `assign 1,2 to 30` or `unassign 1,2 from 10`.
-     * Caches and counts are stubbed out; the store has neither.
+     * Caches and counts are stubbed out; the store has neither. A suite using
+     * this unsets `$GLOBALS['wpdb']` in its `tearDown()`.
      *
      * @since 1.0.0
      *

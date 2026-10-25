@@ -718,4 +718,93 @@ class Licensio_KB_Categories_REST_Integration_Test extends Licensio_KB_Analytics
         $this->assertInstanceOf( 'WP_Error', $result );
         $this->assertSame( $before, $this->live_snapshot(), 'Requirements is back under Install, and every article has its old categories.' );
     }
+
+    /**
+     * A merge of a category with more articles than one batch holds.
+     *
+     * Every article reaches the target, the source is gone and the target is
+     * recounted. A second category whose last batch fails is put back whole,
+     * the batches already written included.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_large_merge_moves_in_batches_and_a_late_failure_puts_back_every_batch() {
+        $size   = ( 2 * Licensio_KB_Term_Operations::BATCH_SIZE ) + 1;
+        $source = $this->ids['Upgrade'];
+        $target = $this->ids['Billing'];
+        $ids    = $this->seed_articles( $source, $size );
+
+        $before = $this->live_snapshot();
+
+        $this->live_fail_removal( $source, Licensio_KB_Post_Types::TAXONOMY_CATEGORY, end( $ids ) );
+
+        $failed = $this->controller->merge(
+            $this->request(
+                array(
+                    'sources' => array( $source ),
+                    'target'  => $target,
+                )
+            )
+        );
+
+        $this->assertInstanceOf( 'WP_Error', $failed );
+        $this->assertSame( $before, $this->live_snapshot(), 'The two batches written before the failure are put back.' );
+
+        $GLOBALS['wpdb'] = $this->adapter; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Back to the plain adapter.
+
+        $result = $this->controller->merge(
+            $this->request(
+                array(
+                    'sources' => array( $source ),
+                    'target'  => $target,
+                )
+            )
+        );
+
+        $this->assertIsArray( $result );
+        $this->assertNull( $this->parent_of( $source ), 'The source is deleted.' );
+
+        $target_tt = $this->live_rows( 'SELECT term_taxonomy_id, count FROM ' . $this->table( 'term_taxonomy' ) . ' WHERE term_id = ' . (int) $target );
+
+        $this->assertSame( $size, $this->count_rows( 'term_relationships', 'term_taxonomy_id = ' . (int) $target_tt[0]['term_taxonomy_id'] ) );
+        $this->assertSame( $size, (int) $target_tt[0]['count'], 'The target is recounted.' );
+    }
+
+    /**
+     * Insert many published articles into one category and recount it.
+     *
+     * @since 1.0.0
+     *
+     * @param int $term_id The category.
+     * @param int $count   How many articles.
+     *
+     * @return int[] The article IDs.
+     */
+    private function seed_articles( $term_id, $count ) {
+        $posts = array();
+
+        for ( $i = 0; $i < $count; $i++ ) {
+            $posts[] = "(1, NOW(), NOW(), '', 'Bulk {$i}', '', 'publish', 'open', '', 'bulk-{$i}', '', '', NOW(), NOW(), '', 0, 'licensio_article')";
+        }
+
+        $this->db->query(
+            'INSERT INTO ' . $this->table( 'posts' ) . ' (post_author, post_date, post_date_gmt, post_content, post_title, post_excerpt, post_status, comment_status, post_password, post_name, to_ping, pinged, post_modified, post_modified_gmt, post_content_filtered, menu_order, post_type) VALUES '
+            . implode( ', ', $posts )
+        );
+
+        $ids   = range( (int) $this->db->insert_id, (int) $this->db->insert_id + $count - 1 );
+        $tt_id = (int) $this->live_rows( 'SELECT term_taxonomy_id FROM ' . $this->table( 'term_taxonomy' ) . ' WHERE term_id = ' . (int) $term_id )[0]['term_taxonomy_id'];
+        $rows  = array();
+
+        foreach ( $ids as $id ) {
+            $rows[] = '(' . $id . ', ' . $tt_id . ')';
+        }
+
+        $this->db->query( 'INSERT INTO ' . $this->table( 'term_relationships' ) . ' (object_id, term_taxonomy_id) VALUES ' . implode( ', ', $rows ) );
+        $this->live_recount( $tt_id );
+
+        return $ids;
+    }
 }
