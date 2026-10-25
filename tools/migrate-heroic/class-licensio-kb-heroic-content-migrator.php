@@ -148,7 +148,7 @@ class Licensio_KB_Heroic_Content_Migrator {
     /**
      * Migrate one Heroic term.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Slashes the name and arguments so backslashes survive.
      *
      * @param array<string, mixed> $row      The Heroic term row.
      * @param string               $from     The Heroic taxonomy.
@@ -191,13 +191,16 @@ class Licensio_KB_Heroic_Content_Migrator {
             return 0;
         }
 
+        // wp_insert_term() unslashes its input, so the raw Heroic values are slashed first.
         $result = wp_insert_term(
-            isset( $row['name'] ) ? (string) $row['name'] : $slug,
+            wp_slash( isset( $row['name'] ) ? (string) $row['name'] : $slug ),
             $to,
-            array(
-                'slug'        => $slug,
-                'description' => isset( $row['description'] ) ? (string) $row['description'] : '',
-                'parent'      => $target_parent,
+            wp_slash(
+                array(
+                    'slug'        => $slug,
+                    'description' => isset( $row['description'] ) ? (string) $row['description'] : '',
+                    'parent'      => $target_parent,
+                )
             )
         );
 
@@ -302,7 +305,7 @@ class Licensio_KB_Heroic_Content_Migrator {
     /**
      * Migrate one Heroic article.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Slashes the post fields so backslashes in content survive.
      *
      * @param array<string, mixed> $row The Heroic post row.
      *
@@ -335,22 +338,25 @@ class Licensio_KB_Heroic_Content_Migrator {
 
         $slug = isset( $row['post_name'] ) ? (string) $row['post_name'] : '';
 
+        // wp_insert_post() unslashes the post array, so the raw Heroic row is slashed first.
         $article_id = wp_insert_post(
-            array(
-                'post_type'         => Licensio_KB_Post_Types::POST_TYPE,
-                'post_title'        => isset( $row['post_title'] ) ? (string) $row['post_title'] : '',
-                'post_content'      => isset( $row['post_content'] ) ? (string) $row['post_content'] : '',
-                'post_excerpt'      => isset( $row['post_excerpt'] ) ? (string) $row['post_excerpt'] : '',
-                'post_status'       => isset( $row['post_status'] ) ? (string) $row['post_status'] : 'publish',
-                'post_author'       => isset( $row['post_author'] ) ? (int) $row['post_author'] : 0,
-                'post_name'         => $slug,
-                'post_date'         => isset( $row['post_date'] ) ? (string) $row['post_date'] : '',
-                'post_date_gmt'     => isset( $row['post_date_gmt'] ) ? (string) $row['post_date_gmt'] : '',
-                'post_modified'     => isset( $row['post_modified'] ) ? (string) $row['post_modified'] : '',
-                'post_modified_gmt' => isset( $row['post_modified_gmt'] ) ? (string) $row['post_modified_gmt'] : '',
-                'comment_status'    => isset( $row['comment_status'] ) ? (string) $row['comment_status'] : 'closed',
-                'ping_status'       => isset( $row['ping_status'] ) ? (string) $row['ping_status'] : 'closed',
-                'menu_order'        => (int) $order['order'],
+            wp_slash(
+                array(
+                    'post_type'         => Licensio_KB_Post_Types::POST_TYPE,
+                    'post_title'        => isset( $row['post_title'] ) ? (string) $row['post_title'] : '',
+                    'post_content'      => isset( $row['post_content'] ) ? (string) $row['post_content'] : '',
+                    'post_excerpt'      => isset( $row['post_excerpt'] ) ? (string) $row['post_excerpt'] : '',
+                    'post_status'       => isset( $row['post_status'] ) ? (string) $row['post_status'] : 'publish',
+                    'post_author'       => isset( $row['post_author'] ) ? (int) $row['post_author'] : 0,
+                    'post_name'         => $slug,
+                    'post_date'         => isset( $row['post_date'] ) ? (string) $row['post_date'] : '',
+                    'post_date_gmt'     => isset( $row['post_date_gmt'] ) ? (string) $row['post_date_gmt'] : '',
+                    'post_modified'     => isset( $row['post_modified'] ) ? (string) $row['post_modified'] : '',
+                    'post_modified_gmt' => isset( $row['post_modified_gmt'] ) ? (string) $row['post_modified_gmt'] : '',
+                    'comment_status'    => isset( $row['comment_status'] ) ? (string) $row['comment_status'] : 'closed',
+                    'ping_status'       => isset( $row['ping_status'] ) ? (string) $row['ping_status'] : 'closed',
+                    'menu_order'        => (int) $order['order'],
+                )
             ),
             true
         );

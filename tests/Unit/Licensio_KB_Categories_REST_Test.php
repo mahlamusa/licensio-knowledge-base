@@ -153,6 +153,19 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * Drop the database double so it cannot leak into another suite.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    protected function tearDown(): void {
+        unset( $GLOBALS['wpdb'] );
+
+        parent::tearDown();
+    }
+
+    /**
      * Stub the core functions the controller and term operations call.
      *
      * @since 1.0.0
@@ -228,6 +241,7 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
         );
         Functions\when( 'update_term_meta' )->alias(
             function ( $term_id, $key, $value ) {
+                $value                                = self::core_unslash( $value );
                 $this->events[]                       = 'meta ' . $term_id . ' ' . $key . '=' . $value;
                 $this->meta[ (int) $term_id ][ $key ] = $value;
 
@@ -265,6 +279,8 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
             function ( $name, $taxonomy, $args ) {
                 $this->assertSame( 'licensio_category', $taxonomy );
 
+                $name                = self::core_unslash( $name );
+                $args                = self::core_unslash( $args );
                 $this->term_writes[] = $args;
                 $term_id             = max( array_keys( $this->terms ) ) + 1;
 
@@ -284,6 +300,7 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
             function ( $term_id, $taxonomy, $args ) {
                 $this->assertSame( 'licensio_category', $taxonomy );
 
+                $args                = self::core_unslash( $args );
                 $this->term_writes[] = $args;
 
                 foreach ( $args as $field => $value ) {
@@ -343,8 +360,9 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
             array_merge(
                 $this->terms[ $term_id ],
                 array(
-                    'term_id'  => $term_id,
-                    'taxonomy' => 'licensio_category',
+                    'term_id'          => $term_id,
+                    'term_taxonomy_id' => self::tt_id_of( $term_id ),
+                    'taxonomy'         => 'licensio_category',
                 )
             )
         );
@@ -409,8 +427,20 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
         Functions\expect( 'wp_update_term' )->never();
         Functions\expect( 'wp_delete_term' )->never();
         Functions\expect( 'update_term_meta' )->never();
-        Functions\expect( 'wp_set_object_terms' )->never();
-        Functions\expect( 'wp_remove_object_terms' )->never();
+        $this->forbid_assignment_writes();
+    }
+
+    /**
+     * Fail the test if any article assignment is written.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    private function forbid_assignment_writes() {
+        $this->refuse_write = function () {
+            $this->fail( 'No article assignment may be written.' );
+        };
     }
 
     /**
@@ -1394,10 +1424,8 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
         );
         $this->assertSame(
             array(
-                'assign 102 to 1',
-                'unassign 102 from 2',
-                'assign 103 to 1',
-                'unassign 103 from 2',
+                'assign 102,103 to 1',
+                'unassign 102,103 from 2',
                 'update 3 parent=1',
                 'delete 2',
             ),
@@ -1592,10 +1620,8 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
             array(
                 'update 3 parent=1',
                 'update 5 parent=1',
-                'assign 102 to 1',
-                'unassign 102 from 2',
-                'assign 103 to 1',
-                'unassign 103 from 2',
+                'assign 102,103 to 1',
+                'unassign 102,103 from 2',
                 'assign 104 to 1',
                 'unassign 104 from 4',
                 'merged',
@@ -1834,8 +1860,7 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
     public function test_a_failed_merge_undoes_its_child_moves() {
         $this->fail_parent_change( 5, 1 );
         Actions\expectDone( 'licensio_kb_terms_merged' )->never();
-        Functions\expect( 'wp_set_object_terms' )->never();
-        Functions\expect( 'wp_remove_object_terms' )->never();
+        $this->forbid_assignment_writes();
         Functions\expect( 'wp_delete_term' )->never();
 
         $result = $this->controller->merge(
@@ -2070,19 +2095,9 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
     public function test_a_failed_article_move_in_a_merge_puts_the_children_back() {
         Actions\expectDone( 'licensio_kb_terms_merged' )->never();
         Functions\expect( 'wp_delete_term' )->never();
-        Functions\when( 'wp_remove_object_terms' )->alias(
-            function ( $object_id, $terms ) {
-                if ( 103 === $object_id && array( 2 ) === $terms ) {
-                    return new WP_Error( 'db_delete_error', 'Could not remove the term relationship.' );
-                }
-
-                foreach ( $terms as $term_id ) {
-                    $this->assignments[ $term_id ] = array_values( array_diff( $this->assignments[ $term_id ], array( $object_id ) ) );
-                }
-
-                return true;
-            }
-        );
+        $this->refuse_write = function ( $action, $term_id, $object_ids ) {
+            return 'remove' === $action && 2 === $term_id && in_array( 103, $object_ids, true );
+        };
 
         $result = $this->controller->merge(
             $this->request(
@@ -2097,5 +2112,62 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
         $this->assertSame( 2, $this->terms[3]['parent'] );
         $this->assertEqualsCanonicalizing( array( 102, 103 ), $this->assignments[2] );
         $this->assertSame( array( 104 ), $this->assignments[4] );
+    }
+
+    /**
+     * A backslash in a new category's name, description and SVG icon is kept.
+     *
+     * REST values arrive unslashed and `wp_insert_term()` unslashes again,
+     * so `Paths C:\Temp` would otherwise be stored as `Paths C:Temp`.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_created_category_keeps_every_backslash() {
+        $svg = '<svg viewBox="0 0 24 24"><title>C:\Temp</title></svg>';
+
+        $this->controller->create_item(
+            $this->request(
+                array(
+                    'name'        => 'Paths C:\Temp',
+                    'description' => 'Use C:\Temp.',
+                    'icon_svg'    => $svg,
+                )
+            )
+        );
+
+        $this->assertSame( 'Paths C:\Temp', $this->terms[6]['name'] );
+        $this->assertSame( 'Use C:\Temp.', $this->terms[6]['description'] );
+        $this->assertSame( $svg, $this->meta[6][ Licensio_KB_Term_Meta::META_ICON_SVG ] );
+    }
+
+    /**
+     * A backslash in an edited category's name and description is kept.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_updated_category_keeps_every_backslash() {
+        $this->controller->update_item(
+            $this->request(
+                array(
+                    'id'          => 3,
+                    'name'        => 'Paths C:\Temp',
+                    'description' => 'Use C:\Temp.',
+                )
+            )
+        );
+
+        $this->assertSame(
+            array(
+                array(
+                    'name'        => 'Paths C:\Temp',
+                    'description' => 'Use C:\Temp.',
+                ),
+            ),
+            $this->term_writes
+        );
     }
 }

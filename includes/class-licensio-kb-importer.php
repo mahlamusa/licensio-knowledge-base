@@ -202,12 +202,15 @@ class Licensio_KB_Importer {
     /**
      * Every option the importers keep, for the uninstaller.
      *
+     * The served redirect map and the URL map file names, plus each driver's
+     * state and report options.
+     *
      * @since 1.0.0
      *
      * @return string[] Option names.
      */
     public function option_names() {
-        $names = array( Licensio_KB_Import_Redirects::OPTION );
+        $names = array( Licensio_KB_Import_Redirects::OPTION, Licensio_KB_Import_Redirects::FILES_OPTION );
 
         foreach ( $this->get_drivers() as $driver ) {
             $names = array_merge( $names, $driver->option_names() );

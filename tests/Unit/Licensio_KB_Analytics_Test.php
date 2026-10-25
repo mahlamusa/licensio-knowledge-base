@@ -123,6 +123,7 @@ class Licensio_KB_Analytics_Test extends Licensio_KB_Test_Case {
 
         Functions\when( 'is_search' )->justReturn( false );
         Functions\when( 'get_search_query' )->justReturn( '' );
+        Functions\when( 'post_password_required' )->justReturn( false );
     }
 
     /**
@@ -329,6 +330,27 @@ class Licensio_KB_Analytics_Test extends Licensio_KB_Test_Case {
 
         $this->assertFalse( $analytics->record_article_view( 42 ) );
         $this->assertSame( array(), $this->wpdb->inserts );
+    }
+
+    /**
+     * A protected article is counted only once the visitor has unlocked it.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_locked_protected_article_is_not_counted() {
+        $analytics = $this->analytics();
+
+        Functions\when( 'post_password_required' )->justReturn( true );
+
+        $this->assertFalse( $analytics->record_article_view( 42 ) );
+        $this->assertSame( array(), $this->wpdb->inserted_rows( 'licensio_article_views' ) );
+
+        Functions\when( 'post_password_required' )->justReturn( false );
+
+        $this->assertTrue( $analytics->record_article_view( 42 ) );
+        $this->assertCount( 1, $this->wpdb->inserted_rows( 'licensio_article_views' ) );
     }
 
     /**

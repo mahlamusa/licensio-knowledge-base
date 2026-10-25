@@ -20,7 +20,6 @@
  * @since 1.0.0
  */
 
-import { execFileSync } from 'node:child_process';
 import { expect, test, type Page, type Request } from '@playwright/test';
 import {
 	cancelPopconfirm,
@@ -28,31 +27,15 @@ import {
 	contentManagerUrl,
 } from './helpers/content-manager';
 import { logIn, password, user } from './helpers/session';
+import { wpCli, wpEval } from './helpers/wp-cli';
 
 const enabled = process.env.LICENSIO_KB_E2E === '1';
-const wpCli = process.env.LICENSIO_KB_WP_CLI ?? '';
 
 /** How many articles to seed: three batches. */
 const ARTICLES = 250;
 
 /** A word only the seeded titles contain, so a search shows only them. */
 const WORD = `bulke2e${ Date.now() }`;
-
-/**
- * Run PHP through wp-cli against the site under test.
- *
- * @since 1.0.0
- *
- * @param {string} php The PHP to run, without the opening tag.
- *
- * @return {string} What it printed.
- */
-function wpEval( php: string ): string {
-	// The PHP goes in as a positional argument, so the shell never expands it.
-	return execFileSync( 'sh', [ '-c', `${ wpCli } eval "$0"`, php ], {
-		encoding: 'utf8',
-	} ).trim();
-}
 
 /**
  * Collect the app's requests to one REST route, other than GET.

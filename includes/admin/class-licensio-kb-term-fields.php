@@ -358,7 +358,7 @@ class Licensio_KB_Term_Fields {
      * write, an importer — posts none of them, and writing defaults for the
      * absent ones would erase metadata that call had no intention of touching.
      *
-     * @since 1.0.0 Added the inline SVG icon field.
+     * @since 1.0.0 Added the inline SVG icon field. Slashes the values so backslashes survive.
      *
      * @param int $term_id The term that was created or edited.
      *
@@ -393,7 +393,8 @@ class Licensio_KB_Term_Fields {
             $raw   = wp_unslash( $_POST[ $input ] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized by the callback below.
             $value = call_user_func( $field[1], $raw );
 
-            update_term_meta( (int) $term_id, $field[0], $value );
+            // update_term_meta() unslashes the value, and it was unslashed above already.
+            update_term_meta( (int) $term_id, $field[0], wp_slash( $value ) );
         }
     }
 }

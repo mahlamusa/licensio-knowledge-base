@@ -53,7 +53,6 @@ class Licensio_KB_Tags_Integration_Test extends Licensio_KB_Analytics_DB_Test_Ca
         $this->install_content_schemas();
         $this->stub_category_term_api();
 
-        Brain\Monkey\Functions\when( 'wp_slash' )->returnArg();
         Brain\Monkey\Functions\when( 'rest_sanitize_boolean' )->alias(
             function ( $value ) {
                 return (bool) $value;
@@ -426,6 +425,8 @@ class Licensio_KB_Tags_Integration_Test extends Licensio_KB_Analytics_DB_Test_Ca
     /**
      * Converting creates a category under the parent and keeps the articles.
      *
+     * The articles move off the tag in batches before the tag is deleted.
+     *
      * @since 1.0.0
      *
      * @return void
@@ -438,6 +439,15 @@ class Licensio_KB_Tags_Integration_Test extends Licensio_KB_Analytics_DB_Test_Ca
         $this->db->query( 'UPDATE ' . $this->table( 'term_taxonomy' ) . " SET description = 'Money back' WHERE term_id = " . $refunds );
 
         $article = $this->make_article( array( 'tags' => array( $refunds, $other ) ) );
+        $left    = null;
+
+        Brain\Monkey\Functions\when( 'wp_delete_term' )->alias(
+            function ( $term_id, $taxonomy ) use ( &$left ) {
+                $left = $this->articles_in( (int) $term_id, (string) $taxonomy );
+
+                return $this->live_delete_term( $term_id, $taxonomy );
+            }
+        );
 
         $result = $this->controller->convert(
             new WP_REST_Request(
@@ -461,6 +471,7 @@ class Licensio_KB_Tags_Integration_Test extends Licensio_KB_Analytics_DB_Test_Ca
         $this->assertSame( array( $article ), $this->articles_in( $created->term_id, Licensio_KB_Post_Types::TAXONOMY_CATEGORY ) );
         $this->assertSame( array( 'Other' ), $this->names(), 'Only the converted tag is deleted.' );
         $this->assertSame( array( $article ), $this->articles_in( $other, Licensio_KB_Post_Types::TAXONOMY_TAG ) );
+        $this->assertSame( array(), $left, 'The tag is taken off its articles before it is deleted, so core has none to rewrite one by one.' );
     }
 
     /**
@@ -506,16 +517,7 @@ class Licensio_KB_Tags_Integration_Test extends Licensio_KB_Analytics_DB_Test_Ca
         $failing = $this->make_article( array( 'tags' => array( $b ) ) );
         $before  = $this->live_snapshot();
 
-        Brain\Monkey\Actions\expectDone( 'licensio_kb_terms_merged' )->never();
-        Brain\Monkey\Functions\when( 'wp_remove_object_terms' )->alias(
-            function ( $object_id, $terms, $taxonomy ) use ( $failing, $b ) {
-                if ( $failing === (int) $object_id && array( $b ) === $terms ) {
-                    return new WP_Error( 'db_delete_error', 'Could not remove the term relationship.' );
-                }
-
-                return $this->live_remove_object_terms( $object_id, $terms, $taxonomy );
-            }
-        );
+        $this->live_fail_removal( $b, Licensio_KB_Post_Types::TAXONOMY_TAG, $failing );
 
         $result = $this->controller->merge(
             new WP_REST_Request(
@@ -529,6 +531,7 @@ class Licensio_KB_Tags_Integration_Test extends Licensio_KB_Analytics_DB_Test_Ca
         );
 
         $this->assertInstanceOf( WP_Error::class, $result );
+        $this->assertNotContains( 'licensio_kb_terms_merged', $this->fired_actions, 'A failed merge does not announce itself.' );
         $this->assertSame( $before, $this->live_snapshot() );
     }
 

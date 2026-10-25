@@ -220,10 +220,13 @@ export type SkipReason =
  *
  * `status` is set for trash, restore and status changes; `terms` for term
  * changes, holding the full earlier term ID list of the changed taxonomy.
+ * `password` is set beside `status` when making an article private cleared
+ * its password, so Undo puts it back.
  */
 export interface Snapshot {
 	status?: ArticleStatus;
 	terms?: Partial< Record< TermTaxonomy, number[] > >;
+	password?: string;
 }
 
 /**
@@ -237,7 +240,7 @@ export interface BulkResult extends RevertRequest, RevertResult {}
 
 /**
  * `POST articles/revert` body. At most 100 snapshots, no older than
- * 15 minutes. Only `status` and `terms` are accepted.
+ * 15 minutes. Only `status`, `terms` and `password` are accepted.
  */
 export interface RevertRequest {
 	previous: Record< string, Snapshot >;

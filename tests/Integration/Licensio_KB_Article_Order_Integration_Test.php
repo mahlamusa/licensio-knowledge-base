@@ -551,6 +551,93 @@ class Licensio_KB_Article_Order_Integration_Test extends Licensio_KB_Analytics_D
     }
 
     /**
+     * The duplicates fix carries a duplicate category's order to the kept one.
+     *
+     * The fix moves the articles and then deletes the duplicate, and
+     * deleting a category drops its order. The merged hook must fire between
+     * the two, as it does for a merge from the Categories app, so the kept
+     * category ends up with the order. Hooks do not run in
+     * this suite, so the order class is wired to the merged hook and to the
+     * term delete here, the way the plugin wires them.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_duplicates_fix_carries_the_order_to_the_kept_category() {
+        $kept      = $this->make_term( 'Billing', Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
+        $duplicate = $this->make_term( 'Billing 2', Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
+
+        $this->db->query( 'UPDATE ' . $this->table( 'terms' ) . " SET name = 'Billing' WHERE term_id = " . (int) $duplicate );
+
+        $first  = $this->make_article(
+            array(
+                'title'      => 'First',
+                'categories' => array( $kept ),
+            )
+        );
+        $second = $this->make_article(
+            array(
+                'title'      => 'Second',
+                'categories' => array( $duplicate ),
+            )
+        );
+        $third  = $this->make_article(
+            array(
+                'title'      => 'Third',
+                'categories' => array( $duplicate ),
+            )
+        );
+
+        Licensio_KB_Article_Order::save( $kept, array( $first ) );
+        Licensio_KB_Article_Order::save( $duplicate, array( $third, $second ) );
+
+        $order  = new Licensio_KB_Article_Order();
+        $events = array();
+
+        Brain\Monkey\Functions\when( 'wp_strip_all_tags' )->alias( 'strip_tags' );
+        Brain\Monkey\Functions\when( 'get_term_meta' )->justReturn( array() );
+        Brain\Monkey\Functions\when( 'clean_object_term_cache' )->alias(
+            function ( $object_ids, $object_type ) use ( &$events ) {
+                $events[] = 'clean ' . implode( ',', $object_ids ) . ' ' . $object_type;
+            }
+        );
+        Brain\Monkey\Functions\when( 'do_action' )->alias(
+            function ( $hook, ...$args ) use ( $order, $duplicate, $kept, &$events ) {
+                if ( 'licensio_kb_terms_merged' !== $hook ) {
+                    return;
+                }
+
+                $this->assertSame( array( array( $duplicate ), $kept, Licensio_KB_Post_Types::TAXONOMY_CATEGORY ), $args );
+
+                $events[] = 'merged';
+                $order->append_merged_order( ...$args );
+            }
+        );
+        Brain\Monkey\Functions\when( 'wp_delete_term' )->alias(
+            function ( $term_id, $taxonomy ) use ( $order, &$events ) {
+                $events[] = 'delete ' . $term_id;
+                $order->delete_term_order( $term_id, $taxonomy );
+
+                return $this->live_delete_term( $term_id, $taxonomy );
+            }
+        );
+
+        $report = ( new Licensio_KB_Duplicates() )->fix();
+
+        $this->assertSame( 1, $report['term_groups_merged'] );
+        $this->assertSame(
+            array( 'clean ' . $second . ',' . $third . ' ' . Licensio_KB_Post_Types::POST_TYPE, 'merged', 'delete ' . $duplicate ),
+            $events,
+            'The moved articles\' term caches are cleaned, and the order is carried over before the duplicate is deleted.'
+        );
+        $this->assertSame( '20', $this->meta_value( $third, $kept ) );
+        $this->assertSame( '30', $this->meta_value( $second, $kept ) );
+        $this->assertSame( 0, $this->count_rows( 'postmeta', 'meta_key = ' . $this->live_quote( Licensio_KB_Article_Order::meta_key( $duplicate ) ) ) );
+        $this->assertSame( array( 'First', 'Third', 'Second' ), $this->listed( $kept ) );
+    }
+
+    /**
      * Deleting a category removes its keys from every article and no other key.
      *
      * @since 1.0.0

@@ -821,6 +821,44 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * A new tag typed in the quick edit keeps its backslashes.
+     *
+     * The REST value arrives unslashed, and both `term_exists()` and
+     * `wp_insert_term()` unslash the name, so `Paths C:\Temp` would otherwise be
+     * looked up and created as `Paths C:Temp`.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_new_tag_keeps_every_backslash() {
+        $looked_up = array();
+        $created   = array();
+
+        Functions\when( 'get_post' )->justReturn( $this->post() );
+        Functions\when( 'term_exists' )->alias(
+            function ( $term ) use ( &$looked_up ) {
+                $looked_up[] = self::core_unslash( $term );
+
+                return null;
+            }
+        );
+        Functions\when( 'wp_insert_term' )->alias(
+            function ( $name ) use ( &$created ) {
+                $created[] = self::core_unslash( $name );
+
+                return array( 'term_id' => 40 );
+            }
+        );
+        Functions\when( 'wp_set_object_terms' )->justReturn( new WP_Error( 'stop', 'Stop here.' ) );
+
+        $this->controller->update_item( $this->patch( array( 'tags' => array( array( 'name' => 'Paths C:\Temp' ) ) ) ) );
+
+        $this->assertSame( array( 'Paths C:\Temp' ), $looked_up );
+        $this->assertSame( array( 'Paths C:\Temp' ), $created );
+    }
+
+    /**
      * Publishing, changing the author and creating tags each need their capability.
      *
      * @since 1.0.0

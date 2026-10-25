@@ -402,7 +402,7 @@ class Licensio_KB_Duplicates {
      * does carry overwrites. The slug is deliberately not touched — the
      * target keeps the un-suffixed slug that made it the canonical one.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Slashes the copied fields and meta so backslashes survive.
      *
      * @param int $from The post whose content wins.
      * @param int $to   The post being updated in place.
@@ -416,19 +416,22 @@ class Licensio_KB_Duplicates {
             return 0;
         }
 
+        // Core unslashes what it is given, so the raw stored values are slashed first.
         wp_update_post(
-            array(
-                'ID'             => (int) $to,
-                'post_title'     => $source->post_title,
-                'post_content'   => $source->post_content,
-                'post_excerpt'   => $source->post_excerpt,
-                'post_status'    => $source->post_status,
-                'post_author'    => (int) $source->post_author,
-                'post_date'      => $source->post_date,
-                'post_date_gmt'  => $source->post_date_gmt,
-                'comment_status' => $source->comment_status,
-                'ping_status'    => $source->ping_status,
-                'menu_order'     => (int) $source->menu_order,
+            wp_slash(
+                array(
+                    'ID'             => (int) $to,
+                    'post_title'     => $source->post_title,
+                    'post_content'   => $source->post_content,
+                    'post_excerpt'   => $source->post_excerpt,
+                    'post_status'    => $source->post_status,
+                    'post_author'    => (int) $source->post_author,
+                    'post_date'      => $source->post_date,
+                    'post_date_gmt'  => $source->post_date_gmt,
+                    'comment_status' => $source->comment_status,
+                    'ping_status'    => $source->ping_status,
+                    'menu_order'     => (int) $source->menu_order,
+                )
             ),
             true
         );
@@ -440,7 +443,7 @@ class Licensio_KB_Duplicates {
                 continue;
             }
 
-            update_post_meta( (int) $to, $key, maybe_unserialize( $values[0] ) );
+            update_post_meta( (int) $to, $key, wp_slash( maybe_unserialize( $values[0] ) ) );
             ++$copied;
         }
 
@@ -745,7 +748,15 @@ class Licensio_KB_Duplicates {
      * articles filed under it. Both move to the un-suffixed term, and the
      * empty duplicate is deleted: a term has no trash to soft-delete into.
      *
-     * @since 1.0.0
+     * The meta is copied first, since the richest member may be a duplicate.
+     * The articles move and the duplicates are deleted through
+     * `Licensio_KB_Term_Operations::merge_terms()`, the merge the Categories
+     * and Tags apps use, so the same hooks fire, the per-category article
+     * order is carried to the kept term and caches, counts and the search
+     * index are refreshed. A merge that fails is put back and the group is
+     * reported as unfixable.
+     *
+     * @since 1.0.0 Slashes the copied meta so backslashes survive.
      *
      * @param array<string, mixed> $group A fixable group from describe_term_group().
      *
@@ -764,7 +775,7 @@ class Licensio_KB_Duplicates {
 
         foreach ( $group['members'] as $member ) {
             if ( (int) $member['id'] !== $canonical ) {
-                $losers[] = $member;
+                $losers[] = (int) $member['id'];
             }
         }
 
@@ -772,76 +783,40 @@ class Licensio_KB_Duplicates {
 
         if ( $winner > 0 && $winner !== $canonical ) {
             foreach ( get_term_meta( $winner ) as $key => $values ) {
-                update_term_meta( $canonical, $key, maybe_unserialize( $values[0] ) );
+                // update_term_meta() unslashes the value, so the raw stored value is slashed first.
+                update_term_meta( $canonical, $key, wp_slash( maybe_unserialize( $values[0] ) ) );
                 ++$term_meta_copied;
             }
         }
 
-        $reassigned = 0;
+        $merged = ( new Licensio_KB_Term_Operations() )->merge_terms( $losers, $canonical, $taxonomy );
 
-        foreach ( $losers as $loser ) {
-            $reassigned += $this->move_term_objects( (int) $loser['termTaxonomyId'], (int) $group['canonicalTermTaxonomyId'], $taxonomy );
-        }
-
-        foreach ( $losers as $loser ) {
-            wp_delete_term( (int) $loser['id'], $taxonomy );
+        if ( is_wp_error( $merged ) ) {
+            return null;
         }
 
         return array(
-            'terms_deleted'       => count( $losers ),
+            'terms_deleted'       => count( $merged['deleted'] ),
             'term_meta_copied'    => $term_meta_copied,
-            'articles_reassigned' => $reassigned,
+            'articles_reassigned' => $merged['moved'],
             'note'                => sprintf(
-                'Merged %1$s "%2$s": term #%3$d kept its slug and gained %4$d meta and %5$d article assignments; deleted %6$s.',
+                'Merged %1$s "%2$s": term #%3$d kept its slug, gained %4$d meta and took over %5$d article assignments; deleted %6$s.',
                 $taxonomy,
                 $group['name'],
                 $canonical,
                 $term_meta_copied,
-                $reassigned,
+                $merged['moved'],
                 implode(
                     ', ',
                     array_map(
                         function ( $loser ) {
-                            return '#' . (int) $loser['id'];
+                            return '#' . $loser;
                         },
-                        $losers
+                        $merged['deleted']
                     )
                 )
             ),
         );
-    }
-
-    /**
-     * Re-file every object of one duplicate term under the canonical term.
-     *
-     * @since 1.0.0
-     *
-     * @param int    $loser_tt     The duplicate term's term_taxonomy_id.
-     * @param int    $canonical_tt The canonical term's term_taxonomy_id.
-     * @param string $taxonomy     The taxonomy both terms belong to.
-     *
-     * @return int How many object relationships moved.
-     */
-    private function move_term_objects( $loser_tt, $canonical_tt, $taxonomy ) {
-        global $wpdb;
-
-        $from = (int) $loser_tt;
-        $to   = (int) $canonical_tt;
-
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $moved = (int) $wpdb->query(
-            "INSERT IGNORE INTO {$wpdb->term_relationships} ( object_id, term_taxonomy_id )
-             SELECT object_id, {$to} FROM {$wpdb->term_relationships} WHERE term_taxonomy_id = {$from}" // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- Both values are integer term_taxonomy_ids.
-        );
-
-        if ( $moved > 0 ) {
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-            $wpdb->query( "DELETE FROM {$wpdb->term_relationships} WHERE term_taxonomy_id = {$from}" );
-
-            wp_update_term_count( $to, $taxonomy );
-        }
-
-        return $moved;
     }
 
     /**

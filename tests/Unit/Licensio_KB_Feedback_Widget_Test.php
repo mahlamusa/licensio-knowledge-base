@@ -65,6 +65,7 @@ class Licensio_KB_Feedback_Widget_Test extends Licensio_KB_Test_Case {
         Functions\when( 'locate_template' )->justReturn( '' );
         Functions\when( 'do_blocks' )->returnArg();
         Functions\when( 'is_singular' )->justReturn( true );
+        Functions\when( 'post_password_required' )->justReturn( false );
         Functions\when( 'rest_url' )->alias(
             function ( $path = '' ) {
                 return 'https://example.test/wp-json/' . ltrim( (string) $path, '/' );
@@ -250,6 +251,20 @@ class Licensio_KB_Feedback_Widget_Test extends Licensio_KB_Test_Case {
         );
 
         $this->assertSame( '', (string) ob_get_clean() );
+    }
+
+    /**
+     * A protected article the visitor has not unlocked gets no widget.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_nothing_renders_on_a_locked_protected_article() {
+        Functions\when( 'post_password_required' )->justReturn( true );
+
+        $this->assertSame( '', $this->render( 42 ) );
+        $this->assertFalse( $this->widget->should_render() );
     }
 
     /**

@@ -18,6 +18,9 @@
  *   the name and refuses a slug a sibling has (`duplicate_term_slug`).
  * - Names are stored with `&`, `<` and `>` encoded, and a bare `&` in a
  *   description as `&amp;`, as core's term filters do.
+ * - `wp_insert_term()`, `wp_update_term()` and `update_term_meta()` unslash
+ *   the name, description and meta value before storing them, as core does,
+ *   so a caller that forgets to slash loses its backslashes here too.
  * - `wp_defer_term_counting()` reports counting as never deferred, so every
  *   assignment change recounts at once.
  *
@@ -78,8 +81,8 @@ trait Licensio_KB_Live_Term_API {
         Functions\when( 'wp_update_term' )->alias( array( $this, 'live_update_term' ) );
         Functions\when( 'wp_delete_term' )->alias( array( $this, 'live_delete_term' ) );
         Functions\when( 'get_objects_in_term' )->alias( array( $this, 'live_objects_in_term' ) );
-        Functions\when( 'wp_set_object_terms' )->alias( array( $this, 'live_set_object_terms' ) );
-        Functions\when( 'wp_remove_object_terms' )->alias( array( $this, 'live_remove_object_terms' ) );
+        Functions\when( 'wp_update_term_count' )->alias( array( $this, 'live_update_term_count' ) );
+        Functions\when( 'clean_object_term_cache' )->justReturn( null );
         Functions\when( 'get_term_meta' )->alias( array( $this, 'live_get_term_meta' ) );
         Functions\when( 'update_term_meta' )->alias( array( $this, 'live_update_term_meta' ) );
     }
@@ -374,7 +377,7 @@ trait Licensio_KB_Live_Term_API {
      * @return array{term_id: int, term_taxonomy_id: int}|WP_Error The new IDs, or `term_exists`.
      */
     public function live_insert_term( $name, $taxonomy, $args = array() ) {
-        $name      = $this->live_store_name( $name );
+        $name      = $this->live_store_name( stripslashes( (string) $name ) );
         $parent_id = isset( $args['parent'] ) ? (int) $args['parent'] : 0;
         $sibling   = $this->live_rows(
             'SELECT t.term_id FROM ' . $this->table( 'terms' ) . ' t JOIN ' . $this->table( 'term_taxonomy' ) . ' tt ON tt.term_id = t.term_id WHERE t.name = '
@@ -394,7 +397,7 @@ trait Licensio_KB_Live_Term_API {
 
         $this->live_query(
             'INSERT INTO ' . $this->table( 'term_taxonomy' ) . ' (term_id, taxonomy, description, parent) VALUES ('
-            . $term_id . ', ' . $this->live_quote( $taxonomy ) . ', ' . $this->live_quote( $this->live_store_description( isset( $args['description'] ) ? (string) $args['description'] : '' ) ) . ', '
+            . $term_id . ', ' . $this->live_quote( $taxonomy ) . ', ' . $this->live_quote( $this->live_store_description( isset( $args['description'] ) ? stripslashes( (string) $args['description'] ) : '' ) ) . ', '
             . $parent_id . ')'
         );
 
@@ -426,7 +429,7 @@ trait Licensio_KB_Live_Term_API {
             return new WP_Error( 'invalid_term', 'Empty Term.' );
         }
 
-        $name      = isset( $args['name'] ) ? $this->live_store_name( $args['name'] ) : (string) $row['name'];
+        $name      = isset( $args['name'] ) ? $this->live_store_name( stripslashes( (string) $args['name'] ) ) : (string) $row['name'];
         $parent_id = isset( $args['parent'] ) ? (int) $args['parent'] : (int) $row['parent'];
         $empty     = isset( $args['slug'] ) && '' === (string) $args['slug'];
         $slug      = $empty ? $this->live_slug_from( $name ) : ( isset( $args['slug'] ) ? (string) $args['slug'] : (string) $row['slug'] );
@@ -443,7 +446,7 @@ trait Licensio_KB_Live_Term_API {
         $this->live_query( 'UPDATE ' . $this->table( 'terms' ) . ' SET name = ' . $this->live_quote( $name ) . ', slug = ' . $this->live_quote( $slug ) . ' WHERE term_id = ' . (int) $term_id );
 
         if ( isset( $args['description'] ) ) {
-            $this->live_query( 'UPDATE ' . $this->table( 'term_taxonomy' ) . ' SET description = ' . $this->live_quote( $this->live_store_description( $args['description'] ) ) . ' WHERE term_taxonomy_id = ' . (int) $row['term_taxonomy_id'] );
+            $this->live_query( 'UPDATE ' . $this->table( 'term_taxonomy' ) . ' SET description = ' . $this->live_quote( $this->live_store_description( stripslashes( (string) $args['description'] ) ) ) . ' WHERE term_taxonomy_id = ' . (int) $row['term_taxonomy_id'] );
         }
 
         if ( isset( $args['parent'] ) ) {
@@ -509,57 +512,79 @@ trait Licensio_KB_Live_Term_API {
     }
 
     /**
-     * Stand-in for `wp_set_object_terms()` in append mode.
+     * Make the relationship delete of one term fail for one object.
+     *
+     * Swaps `$wpdb` for an adapter that refuses the batched `DELETE` taking
+     * the term off a batch holding the object, as a failing server would;
+     * every other statement runs as usual.
      *
      * @since 1.0.0
      *
-     * @param int    $object_id The object ID.
-     * @param int[]  $terms     The term IDs to add.
-     * @param string $taxonomy  The taxonomy.
-     * @param bool   $append    Must be true; replacing is not supported here.
+     * @param int    $term_id   The term whose relationship delete fails.
+     * @param string $taxonomy  The term's taxonomy.
+     * @param int    $object_id The object whose batch fails.
      *
-     * @return int[] The term taxonomy IDs added.
+     * @return void
      */
-    public function live_set_object_terms( $object_id, $terms, $taxonomy, $append = false ) {
-        $this->assertTrue( $append, 'Only appending is supported by this stand-in.' );
+    protected function live_fail_removal( $term_id, $taxonomy, $object_id ) {
+        $tt_id   = (int) $this->live_term_row( (int) $term_id, (string) $taxonomy )['term_taxonomy_id'];
+        $pattern = '/^DELETE FROM \S+ WHERE term_taxonomy_id = ' . $tt_id . ' AND object_id IN \(.*\b' . (int) $object_id . '\b/';
 
-        $added = array();
+        $GLOBALS['wpdb'] = new class( $this->db, self::PREFIX, $pattern ) extends Licensio_KB_Live_WPDB { // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- The suite's database adapter.
 
-        foreach ( (array) $terms as $term_id ) {
-            $row = $this->live_term_row( (int) $term_id, (string) $taxonomy );
+            /**
+             * The statement to refuse.
+             *
+             * @since 1.0.0
+             * @var string
+             */
+            private $refused;
 
-            $this->assertNotNull( $row, 'No term ' . (int) $term_id . ' to assign.' );
+            /**
+             * Build the adapter.
+             *
+             * @since 1.0.0
+             *
+             * @param mysqli $db      A live connection.
+             * @param string $prefix  The table prefix in use.
+             * @param string $refused A pattern matching the statement to refuse.
+             */
+            public function __construct( $db, $prefix, $refused ) {
+                parent::__construct( $db, $prefix );
 
-            $this->live_query( 'INSERT IGNORE INTO ' . $this->table( 'term_relationships' ) . ' (object_id, term_taxonomy_id) VALUES (' . (int) $object_id . ', ' . (int) $row['term_taxonomy_id'] . ')' );
-            $this->live_recount( (int) $row['term_taxonomy_id'] );
+                $this->refused = $refused;
+            }
 
-            $added[] = (int) $row['term_taxonomy_id'];
-        }
-
-        return $added;
+            /**
+             * Run a statement, unless it is the refused one.
+             *
+             * @since 1.0.0
+             *
+             * @param string $query The SQL statement.
+             *
+             * @return int|false Rows affected, or false for the refused statement.
+             */
+            public function query( $query ) {
+                return preg_match( $this->refused, (string) $query ) ? false : parent::query( $query );
+            }
+        };
     }
 
     /**
-     * Stand-in for `wp_remove_object_terms()`.
+     * Stand-in for `wp_update_term_count()`.
      *
      * @since 1.0.0
      *
-     * @param int    $object_id The object ID.
-     * @param int[]  $terms     The term IDs to remove.
-     * @param string $taxonomy  The taxonomy.
+     * @param int[]|int $tt_ids   The term taxonomy IDs to recount.
+     * @param string    $taxonomy The taxonomy.
      *
      * @return bool True.
      */
-    public function live_remove_object_terms( $object_id, $terms, $taxonomy ) {
-        foreach ( (array) $terms as $term_id ) {
-            $row = $this->live_term_row( (int) $term_id, (string) $taxonomy );
+    public function live_update_term_count( $tt_ids, $taxonomy ) {
+        unset( $taxonomy );
 
-            if ( null === $row ) {
-                continue;
-            }
-
-            $this->live_query( 'DELETE FROM ' . $this->table( 'term_relationships' ) . ' WHERE object_id = ' . (int) $object_id . ' AND term_taxonomy_id = ' . (int) $row['term_taxonomy_id'] );
-            $this->live_recount( (int) $row['term_taxonomy_id'] );
+        foreach ( (array) $tt_ids as $tt_id ) {
+            $this->live_recount( (int) $tt_id );
         }
 
         return true;
@@ -610,7 +635,7 @@ trait Licensio_KB_Live_Term_API {
      */
     public function live_update_term_meta( $term_id, $key, $value ) {
         $this->live_query( 'DELETE FROM ' . $this->table( 'termmeta' ) . ' WHERE term_id = ' . (int) $term_id . ' AND meta_key = ' . $this->live_quote( $key ) );
-        $this->live_query( 'INSERT INTO ' . $this->table( 'termmeta' ) . ' (term_id, meta_key, meta_value) VALUES (' . (int) $term_id . ', ' . $this->live_quote( $key ) . ', ' . $this->live_quote( (string) $value ) . ')' );
+        $this->live_query( 'INSERT INTO ' . $this->table( 'termmeta' ) . ' (term_id, meta_key, meta_value) VALUES (' . (int) $term_id . ', ' . $this->live_quote( $key ) . ', ' . $this->live_quote( stripslashes( (string) $value ) ) . ')' );
 
         return true;
     }
