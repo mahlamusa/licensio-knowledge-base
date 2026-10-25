@@ -12,8 +12,9 @@
  */
 
 import { computed, onMounted, ref } from 'vue';
-import { indexChunk, indexStart, indexStatus, translate } from '../api';
+import { indexChunk, indexStart, indexStatus } from '../api';
 import type { IndexStatus } from '../types';
+import { __ } from '../../components/i18n';
 
 /** Pause between chunks, so the progress can be read as it moves. */
 const CHUNK_PAUSE_MS = 300;
@@ -56,7 +57,7 @@ async function load(): Promise< void > {
 	try {
 		status.value = await indexStatus();
 	} catch ( err ) {
-		error.value = err instanceof Error ? err.message : translate( 'Failed to load the index status.' );
+		error.value = err instanceof Error ? err.message : __( 'Failed to load the index status.', 'licensio-knowledge-base' );
 	} finally {
 		loading.value = false;
 	}
@@ -82,7 +83,7 @@ async function driveChunks(): Promise< void > {
 		await new Promise( ( resolve ) => setTimeout( resolve, CHUNK_PAUSE_MS ) );
 	}
 
-	throw new Error( translate( 'The rebuild did not finish.' ) );
+	throw new Error( __( 'The rebuild did not finish.', 'licensio-knowledge-base' ) );
 }
 
 /**
@@ -102,7 +103,7 @@ async function rebuild(): Promise< void > {
 		await driveChunks();
 		finishedAt.value = new Date().toLocaleTimeString();
 	} catch ( err ) {
-		error.value = err instanceof Error ? err.message : translate( 'The rebuild failed.' );
+		error.value = err instanceof Error ? err.message : __( 'The rebuild failed.', 'licensio-knowledge-base' );
 	} finally {
 		running.value = false;
 	}
@@ -124,7 +125,7 @@ async function resume(): Promise< void > {
 		await driveChunks();
 		finishedAt.value = new Date().toLocaleTimeString();
 	} catch ( err ) {
-		error.value = err instanceof Error ? err.message : translate( 'The rebuild failed.' );
+		error.value = err instanceof Error ? err.message : __( 'The rebuild failed.', 'licensio-knowledge-base' );
 	} finally {
 		running.value = false;
 	}
@@ -144,25 +145,26 @@ onMounted( load );
 		<template v-else-if="status">
 			<p class="licensio-kb-search-index__lede">
 				{{
-					translate(
-						'The search index holds one row per article. It is kept in sync automatically; rebuild it after bulk edits outside the editor, or when search results look stale.'
+					__(
+						'The search index holds one row per article. It is kept in sync automatically; rebuild it after bulk edits outside the editor, or when search results look stale.',
+						'licensio-knowledge-base'
 					)
 				}}
 			</p>
 
 			<dl class="licensio-kb-search-index__stats">
 				<div>
-					<dt>{{ translate( 'Indexed articles' ) }}</dt>
+					<dt>{{ __( 'Indexed articles', 'licensio-knowledge-base' ) }}</dt>
 					<dd>{{ indexed }}</dd>
 				</div>
 				<div>
-					<dt>{{ translate( 'Articles' ) }}</dt>
+					<dt>{{ __( 'Articles', 'licensio-knowledge-base' ) }}</dt>
 					<dd>{{ articles }}</dd>
 				</div>
 			</dl>
 
 			<a-tag v-if="rebuilding" color="orange">
-				{{ translate( 'A rebuild is part-way through' ) }}
+				{{ __( 'A rebuild is part-way through', 'licensio-knowledge-base' ) }}
 			</a-tag>
 
 			<a-progress
@@ -172,23 +174,23 @@ onMounted( load );
 			/>
 
 			<p v-if="finishedAt" class="licensio-kb-search-index__done">
-				{{ translate( 'The index was rebuilt.' ) }}
+				{{ __( 'The index was rebuilt.', 'licensio-knowledge-base' ) }}
 			</p>
 
 			<div class="licensio-kb-search-index__actions">
 				<a-popconfirm
-					:title="translate( 'Empty the index and re-index every article?' )"
-					:ok-text="translate( 'Rebuild' )"
-					:cancel-text="translate( 'Cancel' )"
+					:title="__( 'Empty the index and re-index every article?', 'licensio-knowledge-base' )"
+					:ok-text="__( 'Rebuild', 'licensio-knowledge-base' )"
+					:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
 					@confirm="rebuild"
 				>
 					<a-button type="primary" :disabled="running">
-						{{ translate( 'Rebuild index' ) }}
+						{{ __( 'Rebuild index', 'licensio-knowledge-base' ) }}
 					</a-button>
 				</a-popconfirm>
 
 				<a-button v-if="rebuilding" :disabled="running" @click="resume">
-					{{ translate( 'Resume rebuild' ) }}
+					{{ __( 'Resume rebuild', 'licensio-knowledge-base' ) }}
 				</a-button>
 			</div>
 		</template>

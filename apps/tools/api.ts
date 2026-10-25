@@ -27,15 +27,11 @@ import type {
 	TargetCategory,
 	ToolsConfig,
 } from './types';
+import { __ } from '../components/i18n';
 
 declare global {
 	interface Window {
 		licensioKbTools?: ToolsConfig;
-		wp?: {
-			i18n?: {
-				__: ( text: string, domain?: string ) => string;
-			};
-		};
 	}
 }
 
@@ -48,30 +44,6 @@ declare global {
  */
 export function config(): ToolsConfig {
 	return window.licensioKbTools ?? {};
-}
-
-/**
- * Translate a string through WordPress, falling back to the original.
- *
- * The app is built by Vite rather than by wp-scripts, so it reads `wp.i18n`
- * off the global that the `wp-i18n` script dependency guarantees is present
- * instead of importing the package. It is deliberately not called `__`: the
- * string extractor and the `@wordpress/i18n-no-variables` lint rule both key on
- * that name, and a wrapper wearing it would be read as a call site whose
- * argument is a variable.
- *
- * @since 1.0.0
- *
- * @param {string} text The untranslated string.
- *
- * @return {string} The translated string.
- */
-export function translate( text: string ): string {
-	// Read off as a reference rather than called as `i18n.__()`: the extractor
-	// and the lint rule both treat that spelling as a translation call site.
-	const translator = window.wp?.i18n?.__;
-
-	return translator ? translator( text, 'licensio-knowledge-base' ) : text;
 }
 
 /**
@@ -108,7 +80,9 @@ interface ToolEndpoint {
  */
 function requireEndpoint( endpoint: ToolEndpoint | undefined ): ToolEndpoint {
 	if ( ! endpoint || ! endpoint.ajaxUrl ) {
-		throw new Error( translate( 'This tool is not available.' ) );
+		throw new Error(
+			__( 'This tool is not available.', 'licensio-knowledge-base' )
+		);
 	}
 
 	return endpoint;
@@ -143,7 +117,7 @@ async function postAction(
 		throw new Error(
 			typeof envelope.data === 'string'
 				? envelope.data
-				: translate( 'The request failed.' )
+				: __( 'The request failed.', 'licensio-knowledge-base' )
 		);
 	}
 
