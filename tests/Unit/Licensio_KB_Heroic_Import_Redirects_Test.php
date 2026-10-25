@@ -477,11 +477,66 @@ class Licensio_KB_Heroic_Import_Redirects_Test extends Licensio_KB_Test_Case {
         $redirects = $this->redirects();
         $this->add_article( $redirects, 12, 900, 'install' );
 
-        $this->assertFileExists( $redirects->map_path() );
+        $previous = $redirects->map_path();
+
+        $this->assertFileExists( $previous );
 
         $this->redirects()->start();
 
-        $this->assertFileDoesNotExist( $redirects->map_path() );
+        $this->assertFileDoesNotExist( $previous );
+    }
+
+    /**
+     * Starting a real run gives the audit file a new random name.
+     *
+     * A name that leaked must stop working at the next run, and the download
+     * must follow the new file.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_start_gives_the_audit_file_a_new_name() {
+        Brain\Monkey\Functions\when( 'wp_delete_file' )->alias(
+            function ( $file ) {
+                unlink( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Scratch file this test created.
+            }
+        );
+
+        $this->permalinks[900] = 'https://example.test/docs/install/';
+
+        $this->add_article( $this->redirects(), 12, 900, 'install' );
+
+        $previous = Licensio_KB_Import_Redirects::map_path_for( 'heroic', $this->directory );
+
+        Brain\Monkey\Functions\when( 'wp_generate_password' )->justReturn( 'bbbbbbbbbbbbbbbbbbbb' );
+
+        $this->redirects()->start();
+
+        $current = Licensio_KB_Import_Redirects::map_path_for( 'heroic', $this->directory );
+
+        $this->assertSame( $this->directory . '/heroic-url-map-bbbbbbbbbbbbbbbbbbbb.csv', $current );
+        $this->assertNotSame( $previous, $current );
+        $this->assertFileDoesNotExist( $previous );
+
+        $redirects = $this->redirects();
+        $this->add_article( $redirects, 13, 900, 'install' );
+
+        $this->assertSame( $current, $redirects->map_path(), 'Every request of the new run must write to the new name.' );
+        $this->assertFileExists( $current );
+    }
+
+    /**
+     * The first real run of a source names its audit file at the start.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_start_names_the_audit_file_of_a_first_run() {
+        $this->redirects()->start();
+
+        $this->assertMatchesRegularExpression( '#/heroic-url-map-[A-Za-z0-9]{20}\.csv$#', Licensio_KB_Import_Redirects::map_path_for( 'heroic', $this->directory ) );
     }
 
     /**
@@ -497,9 +552,14 @@ class Licensio_KB_Heroic_Import_Redirects_Test extends Licensio_KB_Test_Case {
         $redirects = $this->redirects();
         $this->add_article( $redirects, 12, 900, 'install' );
 
+        $previous = $redirects->map_path();
+
+        Brain\Monkey\Functions\when( 'wp_generate_password' )->justReturn( 'bbbbbbbbbbbbbbbbbbbb' );
+
         $this->redirects( true )->start();
 
-        $this->assertFileExists( $redirects->map_path() );
+        $this->assertFileExists( $previous );
+        $this->assertSame( $previous, Licensio_KB_Import_Redirects::map_path_for( 'heroic', $this->directory ), 'A dry run must keep the name.' );
     }
 
     /**

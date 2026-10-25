@@ -402,6 +402,39 @@ class Licensio_KB_Activation_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * A first install through the upgrade path autoloads the settings again.
+     *
+     * A subsite of a large network is never activated directly, so after an
+     * uninstall that kept the settings this is the only place their autoload
+     * can be turned back on.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_first_install_through_the_upgrade_path_autoloads_the_settings_again() {
+        Licensio_KB_Lifecycle::maybe_upgrade();
+
+        $this->assertSame( array( Licensio_KB_Settings::OPTION_NAME => true ), $this->autoload );
+    }
+
+    /**
+     * An upgrade from an earlier version leaves settings autoload alone.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_upgrade_from_an_earlier_version_leaves_settings_autoload_alone() {
+        $this->options[ Licensio_KB_Lifecycle::VERSION_OPTION ] = '0.0.1';
+
+        Licensio_KB_Lifecycle::maybe_upgrade();
+
+        $this->assertSame( LICENSIO_KB_VERSION, $this->options[ Licensio_KB_Lifecycle::VERSION_OPTION ] );
+        $this->assertSame( array(), $this->autoload );
+    }
+
+    /**
      * The lock is released once the upgrade completes.
      *
      * @since 1.0.0

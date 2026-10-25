@@ -12,8 +12,8 @@
  *   of what it got through, and it is downloadable from the wizard. Its rows
  *   name draft and private articles, so it must not be fetchable from the
  *   uploads URL: the file name carries a random part, kept in the
- *   `licensio_import_url_map_files` option, and the directory carries a deny
- *   `index.php` and `.htaccess`. The random name is the real protection, since
+ *   `licensio_import_url_map_files` option and renewed at every real run, and
+ *   the directory carries a deny `index.php` and `.htaccess`. The random name is the real protection, since
  *   a server that ignores `.htaccess` (nginx) would otherwise serve it; the
  *   wizard downloads it through a capability and nonce checked request.
  * - The redirect map itself, old path to new URL, stored in the
@@ -238,10 +238,7 @@ class Licensio_KB_Import_Redirects {
      */
     public function map_path() {
         if ( ! $this->dry_run && '' === self::map_file_name( $this->source ) ) {
-            $files                  = self::map_file_names();
-            $files[ $this->source ] = $this->source . '-url-map-' . wp_generate_password( 20, false, false ) . '.csv';
-
-            update_option( self::FILES_OPTION, $files, false );
+            $this->new_map_file_name();
         }
 
         return self::map_path_for( $this->source, $this->directory );
@@ -324,16 +321,26 @@ class Licensio_KB_Import_Redirects {
     /**
      * Start a fresh audit file for a new real run.
      *
+     * Deletes the previous run's file and gives the source a new random name,
+     * so a name that leaked stops working at the next run. A dry run leaves
+     * both alone.
+     *
      * @since 1.0.0
      *
      * @return void
      */
     public function start() {
-        if ( $this->dry_run || ! file_exists( $this->map_path() ) ) {
+        if ( $this->dry_run ) {
             return;
         }
 
-        wp_delete_file( $this->map_path() );
+        $previous = self::map_path_for( $this->source, $this->directory );
+
+        if ( '' !== $previous && file_exists( $previous ) ) {
+            wp_delete_file( $previous );
+        }
+
+        $this->new_map_file_name();
     }
 
     /**
@@ -597,6 +604,20 @@ class Licensio_KB_Import_Redirects {
      */
     private static function resolve_directory( $directory ) {
         return '' === (string) $directory ? self::upload_directory() : rtrim( (string) $directory, '/\\' );
+    }
+
+    /**
+     * Give the source a new random audit file name and keep it.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    private function new_map_file_name() {
+        $files                  = self::map_file_names();
+        $files[ $this->source ] = $this->source . '-url-map-' . wp_generate_password( 20, false, false ) . '.csv';
+
+        update_option( self::FILES_OPTION, $files, false );
     }
 
     /**

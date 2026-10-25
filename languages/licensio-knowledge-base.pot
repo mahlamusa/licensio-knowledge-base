@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-25T17:47:51+00:00\n"
+"POT-Creation-Date: 2026-10-25T17:55:37+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.7.1\n"
 "X-Domain: licensio-knowledge-base\n"
@@ -550,12 +550,12 @@ msgid "You have already given feedback on this article."
 msgstr ""
 
 #. translators: 1: required PHP version, 2: running PHP version
-#: includes/class-licensio-kb-lifecycle.php:297
+#: includes/class-licensio-kb-lifecycle.php:306
 msgid "Licensio Knowledge Base requires PHP %1$s or newer. This site runs PHP %2$s."
 msgstr ""
 
 #. translators: 1: required WordPress version, 2: running WordPress version
-#: includes/class-licensio-kb-lifecycle.php:308
+#: includes/class-licensio-kb-lifecycle.php:317
 msgid "Licensio Knowledge Base requires WordPress %1$s or newer. This site runs WordPress %2$s."
 msgstr ""
 
