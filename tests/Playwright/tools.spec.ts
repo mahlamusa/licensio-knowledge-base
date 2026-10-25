@@ -12,11 +12,10 @@
  * @since 1.0.0
  */
 
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { logIn, password, user } from './helpers/session';
 
 const enabled = process.env.LICENSIO_KB_E2E === '1';
-const user = process.env.LICENSIO_KB_ADMIN_USER ?? '';
-const password = process.env.LICENSIO_KB_ADMIN_PASSWORD ?? '';
 
 const TOOLS_URL =
 	'/wp-admin/edit.php?post_type=licensio_article&page=licensio-kb-tools';
@@ -25,23 +24,6 @@ test.skip(
 	! enabled || ! user || ! password,
 	'Set LICENSIO_KB_E2E=1 and the admin credentials to run.'
 );
-
-/**
- * Sign in as the administrator.
- *
- * @since 1.0.0
- *
- * @param {Page} page The browser page.
- *
- * @return {Promise<void>} Resolves once the admin bar is visible.
- */
-async function logIn( page: Page ): Promise< void > {
-	await page.goto( '/wp-login.php' );
-	await page.fill( '#user_login', user );
-	await page.fill( '#user_pass', password );
-	await page.click( '#wp-submit' );
-	await expect( page.locator( '#wpadminbar' ) ).toBeVisible();
-}
 
 test( 'the recount report reads as one sentence for a single article', async ( {
 	page,

@@ -59,6 +59,14 @@ function plainText( html: string ): string {
 	return text.replace( /\s+/g, ' ' ).trim();
 }
 
+// Parsed once per page of tags, not on every render of a row.
+const descriptions = computed(
+	() =>
+		new Map(
+			store.items.map( ( tag ) => [ tag.id, plainText( tag.description ) ] )
+		)
+);
+
 /**
  * The Ant Design sort order of a column.
  *
@@ -341,7 +349,7 @@ watch(
 						:aria-label="__( 'Description', 'licensio-knowledge-base' )"
 					/>
 					<span v-else class="lkb-tags__description">{{
-						plainText( record.description ) || '—'
+						descriptions.get( record.id ) || '—'
 					}}</span>
 				</template>
 
