@@ -18,6 +18,11 @@
  *   the name and refuses a slug a sibling has (`duplicate_term_slug`).
  * - Names are stored with `&`, `<` and `>` encoded, and a bare `&` in a
  *   description as `&amp;`, as core's term filters do.
+ * - `wp_defer_term_counting()` reports counting as never deferred, so every
+ *   assignment change recounts at once.
+ *
+ * `live_snapshot()` reads every term row and assignment, so a test can show
+ * that a failed write left the data exactly as it was.
  *
  * Use it with Licensio_KB_Content_Fixtures in a subclass of
  * Licensio_KB_Analytics_DB_Test_Case and call `stub_category_term_api()` from `setUp()`.
@@ -64,6 +69,7 @@ trait Licensio_KB_Live_Term_API {
         Functions\when( 'wp_get_attachment_url' )->justReturn( false );
         Functions\when( '_prime_post_caches' )->justReturn( null );
         Functions\when( '_prime_term_caches' )->justReturn( null );
+        Functions\when( 'wp_defer_term_counting' )->justReturn( false );
 
         Functions\when( 'get_terms' )->alias( array( $this, 'live_get_terms' ) );
         Functions\when( 'get_term' )->alias( array( $this, 'live_get_term' ) );
@@ -108,6 +114,21 @@ trait Licensio_KB_Live_Term_API {
         $result = $this->live_query( $sql );
 
         return $result instanceof mysqli_result ? $result->fetch_all( MYSQLI_ASSOC ) : array();
+    }
+
+    /**
+     * Every term, term taxonomy row and assignment, for before and after checks.
+     *
+     * @since 1.0.0
+     *
+     * @return array<string, array<int, array<string, string>>> The rows, keyed by table, in a stable order.
+     */
+    protected function live_snapshot() {
+        return array(
+            'terms'         => $this->live_rows( 'SELECT term_id, name, slug FROM ' . $this->table( 'terms' ) . ' ORDER BY term_id' ),
+            'term_taxonomy' => $this->live_rows( 'SELECT term_taxonomy_id, term_id, taxonomy, description, parent, count FROM ' . $this->table( 'term_taxonomy' ) . ' ORDER BY term_taxonomy_id' ),
+            'relationships' => $this->live_rows( 'SELECT object_id, term_taxonomy_id FROM ' . $this->table( 'term_relationships' ) . ' ORDER BY object_id, term_taxonomy_id' ),
+        );
     }
 
     /**
