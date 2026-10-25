@@ -143,6 +143,9 @@ class Licensio_KB_Lifecycle {
 
         update_option( self::VERSION_OPTION, LICENSIO_KB_VERSION, true );
 
+        // A previous uninstall that kept the settings stopped them autoloading.
+        wp_set_option_autoload( Licensio_KB_Settings::OPTION_NAME, true );
+
         flush_rewrite_rules();
 
         /**
@@ -215,6 +218,8 @@ class Licensio_KB_Lifecycle {
      * was too large to walk. The version marker is only written once the install
      * actually succeeded, so a site whose database library is missing retries on
      * the next admin request instead of recording a version it never reached.
+     * A first install here also turns settings autoload back on, as activation
+     * does, for settings an earlier uninstall kept.
      *
      * @since 1.0.0
      *
@@ -266,6 +271,13 @@ class Licensio_KB_Lifecycle {
              * permastructs are registered, so request one for `init` instead.
              */
             Licensio_KB_Settings::request_rewrite_flush();
+
+            /*
+             * A previous uninstall that kept the settings stopped them
+             * autoloading. Activation turns that back on, but a subsite of a
+             * large network is never activated directly and only gets here.
+             */
+            wp_set_option_autoload( Licensio_KB_Settings::OPTION_NAME, true );
         }
 
         delete_option( self::UPGRADE_LOCK_OPTION );
