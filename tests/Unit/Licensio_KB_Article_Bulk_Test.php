@@ -779,15 +779,16 @@ class Licensio_KB_Article_Bulk_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * When the article has been trashed since, Undo restores it and then
-     * writes the password, and an article already back in its status still
-     * gets its password.
+     * When the article has been trashed since, Undo writes the password while
+     * it is still in the trash and only then restores it, so it is never
+     * public without it. An article already back in its status still gets its
+     * password.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_revert_writes_the_password_after_a_trash_move_or_alone() {
+    public function test_revert_writes_the_password_before_leaving_the_trash_or_alone() {
         $this->article( 1, 'trash' );
         $this->article( 2, 'publish' );
 
@@ -807,8 +808,8 @@ class Licensio_KB_Article_Bulk_Test extends Licensio_KB_Test_Case {
         $this->assertSame( array( 1, 2 ), $result['done'] );
         $this->assertSame(
             array(
-                'wp_untrash_post:1',
                 'wp_update_post:1:{"post_password":"one"}',
+                'wp_untrash_post:1',
                 'wp_update_post:2:{"post_password":"two"}',
             ),
             $this->core_writes

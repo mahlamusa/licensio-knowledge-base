@@ -152,4 +152,47 @@ class Licensio_KB_Article_Bulk_Integration_Test extends Licensio_KB_Analytics_DB
         $this->assertSame( array( 'publish', "it's a s3cret & more" ), $this->state( $protected ) );
         $this->assertSame( array( 'publish', '' ), $this->state( $public ) );
     }
+
+    /**
+     * Protected, then bulk Make private, then trashed, then Undo: the password
+     * is already back when the article leaves the trash, so it is never
+     * published without it.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_undo_after_trashing_restores_the_password_before_publishing() {
+        $protected = $this->make_article( array( 'password' => 'kept' ) );
+        $bulk      = new Licensio_KB_Article_Bulk();
+        $published = array();
+
+        Functions\when( 'wp_untrash_post' )->alias(
+            function ( $id ) use ( &$published ) {
+                $published[] = $this->state( $id );
+
+                return $this->live_update_post(
+                    array(
+                        'ID'          => $id,
+                        'post_status' => 'publish',
+                    )
+                );
+            }
+        );
+
+        $result = $bulk->run( array( $protected ), 'status', array( 'status' => 'private' ) );
+
+        $this->live_update_post(
+            array(
+                'ID'          => $protected,
+                'post_status' => 'trash',
+            )
+        );
+
+        $reverted = $bulk->revert( $result['previous'], $result['snapshot_at'], $result['token'] );
+
+        $this->assertSame( array( $protected ), $reverted['done'] );
+        $this->assertSame( array( array( 'trash', 'kept' ) ), $published );
+        $this->assertSame( array( 'publish', 'kept' ), $this->state( $protected ) );
+    }
 }

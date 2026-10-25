@@ -622,8 +622,8 @@ class Licensio_KB_Article_Bulk {
     /**
      * Put one article's snapshot back.
      *
-     * A password goes back in the same write as the status, so the article
-     * is never published without it in between.
+     * A password goes back no later than the status, so the article is never
+     * published without it in between.
      *
      * @since 1.0.0
      *
@@ -666,8 +666,10 @@ class Licensio_KB_Article_Bulk {
      * one call.
      *
      * Other post fields to put back are written with the status. The trash
-     * functions cannot carry them, so after a trash move they get a write of
-     * their own.
+     * functions cannot carry them, so they get a write of their own: before
+     * leaving the trash, so the article is never public without them, and
+     * after moving into it, because core clears the password of a private
+     * article on every write.
      *
      * @since 1.0.0
      *
@@ -690,6 +692,14 @@ class Licensio_KB_Article_Bulk {
         }
 
         if ( 'trash' === $current ) {
+            if ( ! empty( $fields ) ) {
+                $written = self::update( $id, $fields );
+
+                if ( is_wp_error( $written ) ) {
+                    return $written;
+                }
+            }
+
             $to_target = static function () use ( $target ) {
                 return $target;
             };
@@ -698,14 +708,14 @@ class Licensio_KB_Article_Bulk {
             $untrashed = wp_untrash_post( $id );
             remove_filter( 'wp_untrash_post_status', $to_target, 99 );
 
-            return self::after_trash_move( $id, $untrashed, $fields );
+            return self::outcome( $untrashed );
         }
 
         return self::update( $id, array_merge( array( 'post_status' => $target ), $fields ) );
     }
 
     /**
-     * Finish a move into or out of the trash, writing any other fields after it.
+     * Finish a move into the trash, writing any other fields after it.
      *
      * @since 1.0.0
      *
