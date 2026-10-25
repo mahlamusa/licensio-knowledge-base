@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-25T17:29:27+00:00\n"
+"POT-Creation-Date: 2026-10-25T17:47:51+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.7.1\n"
 "X-Domain: licensio-knowledge-base\n"
@@ -435,41 +435,45 @@ msgstr ""
 msgid "Status"
 msgstr ""
 
-#: includes/class-licensio-kb-article-bulk.php:327
+#: includes/class-licensio-kb-article-bulk.php:342
 msgid "Unknown bulk action."
 msgstr ""
 
-#: includes/class-licensio-kb-article-bulk.php:434
+#: includes/class-licensio-kb-article-bulk.php:450
 msgid "Send between 1 and 100 articles to undo."
 msgstr ""
 
-#: includes/class-licensio-kb-article-bulk.php:439
+#: includes/class-licensio-kb-article-bulk.php:455
 msgid "Each article to undo needs its earlier values."
 msgstr ""
 
 #. translators: %s: the field names that cannot be undone.
-#: includes/class-licensio-kb-article-bulk.php:448
+#: includes/class-licensio-kb-article-bulk.php:464
 msgid "These fields cannot be undone: %s."
 msgstr ""
 
-#: includes/class-licensio-kb-article-bulk.php:453
+#: includes/class-licensio-kb-article-bulk.php:469
 msgid "A status to undo to is not valid."
 msgstr ""
 
-#: includes/class-licensio-kb-article-bulk.php:457
 #: includes/class-licensio-kb-article-bulk.php:473
+#: includes/class-licensio-kb-article-bulk.php:493
 msgid "The terms to undo to are not valid."
 msgstr ""
 
-#: includes/class-licensio-kb-article-bulk.php:462
+#: includes/class-licensio-kb-article-bulk.php:477
+msgid "A password to undo to is not valid."
+msgstr ""
+
+#: includes/class-licensio-kb-article-bulk.php:482
 msgid "This undo is not valid for your account."
 msgstr ""
 
-#: includes/class-licensio-kb-article-bulk.php:468
+#: includes/class-licensio-kb-article-bulk.php:488
 msgid "This change is too old to undo."
 msgstr ""
 
-#: includes/class-licensio-kb-article-bulk.php:706
+#: includes/class-licensio-kb-article-bulk.php:747
 msgid "The article could not be changed."
 msgstr ""
 
