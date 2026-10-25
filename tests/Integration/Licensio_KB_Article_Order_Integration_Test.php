@@ -12,7 +12,8 @@
  *
  * The writes go through the class and the REST controller as in production;
  * the post meta and term functions they call are backed by plain SQL on the
- * scratch tables, so each test reads back rows that are really there.
+ * scratch tables (the term functions by the shared live term API), so each
+ * test reads back rows that are really there.
  *
  * @package Licensio_KB
  * @since   1.0.0
@@ -26,6 +27,7 @@
 
 require_once __DIR__ . '/Licensio_KB_Analytics_DB_Test_Case.php';
 require_once __DIR__ . '/trait-licensio-kb-content-fixtures.php';
+require_once __DIR__ . '/trait-licensio-kb-live-term-api.php';
 
 /**
  * Exercises the per-category order on real rows.
@@ -35,6 +37,7 @@ require_once __DIR__ . '/trait-licensio-kb-content-fixtures.php';
 class Licensio_KB_Article_Order_Integration_Test extends Licensio_KB_Analytics_DB_Test_Case {
 
     use Licensio_KB_Content_Fixtures;
+    use Licensio_KB_Live_Term_API;
 
     /**
      * Add the core tables and back the meta and term functions with SQL.
@@ -48,35 +51,16 @@ class Licensio_KB_Article_Order_Integration_Test extends Licensio_KB_Analytics_D
 
         $this->install_content_schemas();
 
-        Brain\Monkey\Functions\when( 'absint' )->alias(
-            function ( $value ) {
-                return abs( (int) $value );
-            }
-        );
-        Brain\Monkey\Functions\when( 'is_wp_error' )->alias(
-            function ( $thing ) {
-                return $thing instanceof WP_Error;
-            }
-        );
-        Brain\Monkey\Functions\when( 'rest_ensure_response' )->returnArg();
+        // The SQL-backed term API the category suites share.
+
+        $this->stub_category_term_api();
         Brain\Monkey\Functions\when( 'rest_authorization_required_code' )->justReturn( 403 );
         Brain\Monkey\Functions\when( 'current_user_can' )->justReturn( true );
         Brain\Monkey\Functions\when( 'update_meta_cache' )->justReturn( array() );
 
-        Brain\Monkey\Functions\when( 'get_term' )->alias(
-            function ( $term_id, $taxonomy ) {
-                $row = $this->row(
-                    'SELECT term_id FROM ' . $this->table( 'term_taxonomy' )
-                    . ' WHERE term_id = ' . (int) $term_id . " AND taxonomy = '" . $this->db->real_escape_string( (string) $taxonomy ) . "'"
-                );
-
-                return null === $row ? null : new WP_Term( array( 'term_id' => (int) $row[0] ) );
-            }
-        );
-
         Brain\Monkey\Functions\when( 'get_post_meta' )->alias(
             function ( $post_id, $key ) {
-                $row = $this->row( 'SELECT meta_value FROM ' . $this->table( 'postmeta' ) . ' WHERE post_id = ' . (int) $post_id . ' AND meta_key = ' . $this->quote( $key ) . ' LIMIT 1' );
+                $row = $this->row( 'SELECT meta_value FROM ' . $this->table( 'postmeta' ) . ' WHERE post_id = ' . (int) $post_id . ' AND meta_key = ' . $this->live_quote( $key ) . ' LIMIT 1' );
 
                 return null === $row ? '' : (string) $row[0];
             }
@@ -94,7 +78,7 @@ class Licensio_KB_Article_Order_Integration_Test extends Licensio_KB_Analytics_D
             function ( $type, $object_id, $key, $value, $delete_all ) {
                 $this->assertSame( array( 'post', 0, '', true ), array( $type, $object_id, $value, $delete_all ) );
 
-                return (bool) $this->db->query( 'DELETE FROM ' . $this->table( 'postmeta' ) . ' WHERE meta_key = ' . $this->quote( $key ) );
+                return (bool) $this->db->query( 'DELETE FROM ' . $this->table( 'postmeta' ) . ' WHERE meta_key = ' . $this->live_quote( $key ) );
             }
         );
 
@@ -120,7 +104,7 @@ class Licensio_KB_Article_Order_Integration_Test extends Licensio_KB_Analytics_D
         $status = in_array( 'trash', (array) $args['post_status'], true ) ? '1=1' : "p.post_status <> 'trash'";
 
         if ( isset( $args['meta_key'] ) ) {
-            $sql = "SELECT p.ID FROM {$posts} p INNER JOIN " . $this->table( 'postmeta' ) . ' m ON (p.ID = m.post_id AND m.meta_key = ' . $this->quote( $args['meta_key'] ) . ")
+            $sql = "SELECT p.ID FROM {$posts} p INNER JOIN " . $this->table( 'postmeta' ) . ' m ON (p.ID = m.post_id AND m.meta_key = ' . $this->live_quote( $args['meta_key'] ) . ")
                 WHERE {$status} ORDER BY CAST(m.meta_value AS SIGNED) ASC, p.ID ASC";
         } else {
             $term = (int) $args['tax_query'][0]['terms'];
@@ -586,7 +570,7 @@ class Licensio_KB_Article_Order_Integration_Test extends Licensio_KB_Analytics_D
 
         ( new Licensio_KB_Article_Order() )->delete_term_order( $gone, Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
 
-        $this->assertSame( 0, $this->count_rows( 'postmeta', 'meta_key = ' . $this->quote( Licensio_KB_Article_Order::meta_key( $gone ) ) ) );
+        $this->assertSame( 0, $this->count_rows( 'postmeta', 'meta_key = ' . $this->live_quote( Licensio_KB_Article_Order::meta_key( $gone ) ) ) );
         $this->assertSame( '10', $this->meta_value( $a, $kept ) );
     }
 
@@ -623,7 +607,7 @@ class Licensio_KB_Article_Order_Integration_Test extends Licensio_KB_Analytics_D
      * @return void
      */
     private function set_order_row( $post_id, $key, $value ) {
-        $this->db->query( 'DELETE FROM ' . $this->table( 'postmeta' ) . ' WHERE post_id = ' . (int) $post_id . ' AND meta_key = ' . $this->quote( $key ) );
+        $this->db->query( 'DELETE FROM ' . $this->table( 'postmeta' ) . ' WHERE post_id = ' . (int) $post_id . ' AND meta_key = ' . $this->live_quote( $key ) );
 
         $this->seed(
             'postmeta',
@@ -648,22 +632,9 @@ class Licensio_KB_Article_Order_Integration_Test extends Licensio_KB_Analytics_D
      * @return string|null The stored value, or null when there is none.
      */
     private function meta_value( $post_id, $term_id ) {
-        $row = $this->row( 'SELECT meta_value FROM ' . $this->table( 'postmeta' ) . ' WHERE post_id = ' . (int) $post_id . ' AND meta_key = ' . $this->quote( Licensio_KB_Article_Order::meta_key( $term_id ) ) );
+        $row = $this->row( 'SELECT meta_value FROM ' . $this->table( 'postmeta' ) . ' WHERE post_id = ' . (int) $post_id . ' AND meta_key = ' . $this->live_quote( Licensio_KB_Article_Order::meta_key( $term_id ) ) );
 
         return null === $row ? null : (string) $row[0];
-    }
-
-    /**
-     * A string as a quoted SQL literal.
-     *
-     * @since 1.0.0
-     *
-     * @param mixed $value The value.
-     *
-     * @return string The literal.
-     */
-    private function quote( $value ) {
-        return "'" . $this->db->real_escape_string( (string) $value ) . "'";
     }
 
     /**
