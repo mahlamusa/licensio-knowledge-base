@@ -99,13 +99,6 @@ trait Licensio_KB_Article_Import_Stubs {
     /**
      * Back the core write functions the article phase calls with SQL.
      *
-     * @since 1.0.0
-     *
-     * @return void
-     */
-    /**
-     * Stub the core functions the article import writes through.
-     *
      * The post and post meta writers unslash what they are given before
      * storing it, as core does.
      *
