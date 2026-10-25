@@ -470,4 +470,124 @@ class Licensio_KB_Duplicates_Test extends Licensio_KB_Test_Case {
         $this->assertTrue( $group['fixable'], 'The fix trashes the source post; the article stays as it is.' );
         $this->assertSame( 515, $group['canonical'], 'The knowledge base article is the replacement.' );
     }
+
+    /**
+     * Call one of the detector's private methods.
+     *
+     * The fix paths are private because only `fix()` uses them, but `fix()`
+     * starts with a database scan, and what they hand to core is worth proving
+     * on its own.
+     *
+     * @since 1.0.0
+     *
+     * @param string       $name The method name.
+     * @param array<mixed> $args The arguments.
+     *
+     * @return mixed What the method returned.
+     */
+    private function call_private( $name, array $args ) {
+        $method = new ReflectionMethod( 'Licensio_KB_Duplicates', $name );
+
+        $method->setAccessible( true );
+
+        return $method->invokeArgs( $this->duplicates, $args );
+    }
+
+    /**
+     * Copying the winner onto the canonical post keeps every backslash.
+     *
+     * The stored content and meta are raw, and `wp_update_post()` and
+     * `update_post_meta()` unslash what they get, so block escapes such as
+     * `\u003c` and JSON `\/` escapes would otherwise be destroyed.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_copying_a_post_keeps_every_backslash() {
+        $content = '<!-- wp:paragraph {"placeholder":"\u003cb\u003e"} --><p>C:\Temp</p><!-- /wp:paragraph -->';
+        $json    = '{"url":"https:\/\/example.test\/"}';
+        $updated = array();
+        $meta    = array();
+
+        Brain\Monkey\Functions\when( 'get_post' )->justReturn(
+            new WP_Post(
+                array(
+                    'ID'           => 11,
+                    'post_title'   => 'Paths C:\Temp',
+                    'post_content' => $content,
+                )
+            )
+        );
+        Brain\Monkey\Functions\when( 'wp_update_post' )->alias(
+            function ( $post ) use ( &$updated ) {
+                $updated = self::core_unslash( $post );
+
+                return (int) $post['ID'];
+            }
+        );
+        Brain\Monkey\Functions\when( 'get_post_meta' )->justReturn(
+            array(
+                'licensio_links' => array( $json ),
+                'licensio_list'  => array( serialize( array( 'C:\Temp' ) ) ), // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize -- Meta is stored serialized.
+            )
+        );
+        Brain\Monkey\Functions\when( 'maybe_unserialize' )->alias(
+            function ( $value ) {
+                return is_string( $value ) && 0 === strpos( $value, 'a:' ) ? unserialize( $value ) : $value; // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_unserialize -- Stand-in for core.
+            }
+        );
+        Brain\Monkey\Functions\when( 'update_post_meta' )->alias(
+            function ( $post_id, $key, $value ) use ( &$meta ) {
+                $meta[ $key ] = self::core_unslash( $value );
+
+                return true;
+            }
+        );
+
+        $this->call_private( 'copy_content', array( 11, 10 ) );
+
+        $this->assertSame( 10, $updated['ID'] );
+        $this->assertSame( $content, $updated['post_content'] );
+        $this->assertSame( 'Paths C:\Temp', $updated['post_title'] );
+        $this->assertSame( $json, $meta['licensio_links'] );
+        $this->assertSame( array( 'C:\Temp' ), $meta['licensio_list'] );
+    }
+
+    /**
+     * Merging a term group keeps every backslash in the copied term meta.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_merging_terms_keeps_every_backslash_in_the_meta() {
+        $svg  = '<svg viewBox="0 0 24 24"><title>C:\Temp</title></svg>';
+        $meta = array();
+
+        Brain\Monkey\Functions\when( 'get_term_meta' )->justReturn( array( 'licensio_icon_svg' => array( $svg ) ) );
+        Brain\Monkey\Functions\when( 'maybe_unserialize' )->returnArg();
+        Brain\Monkey\Functions\when( 'update_term_meta' )->alias(
+            function ( $term_id, $key, $value ) use ( &$meta ) {
+                $meta[ $term_id ][ $key ] = self::core_unslash( $value );
+
+                return true;
+            }
+        );
+
+        $this->call_private(
+            'fix_term_group',
+            array(
+                array(
+                    'canonical' => 5,
+                    'winner'    => 6,
+                    'taxonomy'  => Licensio_KB_Post_Types::TAXONOMY_CATEGORY,
+                    'name'      => 'Paths',
+                    'members'   => array( array( 'id' => 5 ) ),
+                ),
+            )
+        );
+
+        $this->assertSame( $svg, $meta[5]['licensio_icon_svg'] );
+    }
 }

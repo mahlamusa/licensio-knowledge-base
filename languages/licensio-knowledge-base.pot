@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-25T17:22:07+00:00\n"
+"POT-Creation-Date: 2026-10-25T17:47:54+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.7.1\n"
 "X-Domain: licensio-knowledge-base\n"
@@ -473,7 +473,7 @@ msgstr ""
 msgid "This change is too old to undo."
 msgstr ""
 
-#: includes/class-licensio-kb-article-bulk.php:770
+#: includes/class-licensio-kb-article-bulk.php:747
 msgid "The article could not be changed."
 msgstr ""
 
@@ -1392,39 +1392,39 @@ msgstr ""
 msgid "One of the categories does not exist."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1355
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1356
 msgid "You are not allowed to edit this article."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1381
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1382
 msgid "Send between 1 and 100 article IDs."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1408
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1409
 msgid "Choose a status to set."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1419
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1420
 msgid "Choose a taxonomy, a mode and the terms."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1425
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1426
 msgid "Choose at least one term."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1430
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1431
 msgid "One of the terms does not exist."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1444
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1445
 msgid "Choose a user who can write articles."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1453
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1454
 msgid "Choose open or closed."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1638
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1639
 msgid "No article was found with that ID."
 msgstr ""
 
@@ -1492,32 +1492,32 @@ msgstr ""
 msgid "The category that remains."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:833
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:835
 msgid "The category could not be deleted."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:867
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:869
 msgid "A top-level category has no parent to move its articles to. Choose a category, or leave them without one."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:1528
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:1532
 #: includes/rest/class-licensio-kb-category-order-rest-controller.php:339
 msgid "That category does not exist."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:1543
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:1547
 msgid "One of the chosen categories does not exist."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:1558
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:1562
 msgid "A category cannot be moved onto itself."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:1573
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:1577
 msgid "A category cannot be placed inside itself or one of its own subcategories."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:1588
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:1592
 msgid "You are not allowed to change knowledge base categories."
 msgstr ""
 

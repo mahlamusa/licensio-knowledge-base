@@ -1284,7 +1284,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      *
      * A new name that matches an existing tag uses that tag.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Slashes the new name so backslashes survive.
      *
      * @param string       $taxonomy The taxonomy.
      * @param array<mixed> $values   Term IDs, or `{ name }` for terms to create.
@@ -1300,7 +1300,8 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
                 continue;
             }
 
-            $name     = sanitize_text_field( (string) $value['name'] );
+            // term_exists() and wp_insert_term() unslash the name; a REST value arrives unslashed.
+            $name     = wp_slash( sanitize_text_field( (string) $value['name'] ) );
             $existing = term_exists( $name, $taxonomy );
 
             if ( is_array( $existing ) ) {
