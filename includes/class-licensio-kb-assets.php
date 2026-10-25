@@ -343,7 +343,8 @@ class Licensio_KB_Assets {
      *
      * In HMR mode this enqueues the Vite client and the raw source entry from
      * the dev server. Otherwise it reads the manifest and enqueues the built
-     * chunk plus any CSS Vite extracted for it.
+     * chunk plus any CSS Vite extracted for it. An app that depends on
+     * `wp-i18n` also gets the translations of the shared chunks it imports.
      *
      * @since 1.0.0
      *
@@ -380,7 +381,93 @@ class Licensio_KB_Assets {
             wp_enqueue_style( $handle . '-' . $index, LICENSIO_KB_DIST_URL . $css, array(), LICENSIO_KB_VERSION );
         }
 
+        if ( in_array( 'wp-i18n', (array) $deps, true ) ) {
+            $this->add_chunk_translations( $handle, $entry );
+        }
+
         return true;
+    }
+
+    /**
+     * Every JavaScript chunk an entry imports, at any depth.
+     *
+     * @since 1.0.0
+     *
+     * @param string $entry Source path relative to the plugin root.
+     *
+     * @return string[] Chunk paths relative to `dist/`, deduplicated.
+     */
+    public function entry_chunks( $entry ) {
+        $chunks  = array();
+        $pending = array( (string) $entry );
+        $seen    = array();
+
+        while ( $pending ) {
+            $key = (string) array_shift( $pending );
+
+            if ( isset( $seen[ $key ] ) ) {
+                continue;
+            }
+
+            $seen[ $key ] = true;
+            $chunk        = $this->manifest_entry( $key );
+
+            if ( $key !== $entry && ! empty( $chunk['file'] ) ) {
+                $chunks[] = (string) $chunk['file'];
+            }
+
+            if ( ! empty( $chunk['imports'] ) && is_array( $chunk['imports'] ) ) {
+                foreach ( $chunk['imports'] as $import ) {
+                    $pending[] = (string) $import;
+                }
+            }
+        }
+
+        return array_values( array_unique( $chunks ) );
+    }
+
+    /**
+     * Load the translations of the chunks an app imports.
+     *
+     * `wp_set_script_translations()` only loads the JSON file of the handle's
+     * own script. Vite moves code that several apps share, such as the shared
+     * components, into chunks the entry imports itself, and WordPress.org
+     * writes one JSON file per built file, so the strings in those chunks
+     * would never be translated. Each chunk is registered just long enough for
+     * WordPress to find its JSON file from its URL, and the translations are
+     * printed before the app the same way WordPress prints the entry's own.
+     *
+     * @since 1.0.0
+     *
+     * @param string $handle The app's script handle.
+     * @param string $entry  Source path relative to the plugin root.
+     *
+     * @return void
+     */
+    private function add_chunk_translations( $handle, $entry ) {
+        $domain = 'licensio-knowledge-base';
+
+        foreach ( $this->entry_chunks( $entry ) as $index => $file ) {
+            $chunk_handle = $handle . '-chunk-' . $index;
+
+            wp_register_script( $chunk_handle, LICENSIO_KB_DIST_URL . $file, array(), LICENSIO_KB_VERSION, true );
+            $translations = load_script_textdomain( $chunk_handle, $domain );
+            wp_deregister_script( $chunk_handle );
+
+            if ( ! is_string( $translations ) || '' === $translations ) {
+                continue;
+            }
+
+            wp_add_inline_script(
+                $handle,
+                sprintf(
+                    '( function( domain, translations ) { var localeData = translations.locale_data[ domain ] || translations.locale_data.messages; localeData[""].domain = domain; wp.i18n.setLocaleData( localeData, domain ); } )( "%s", %s );',
+                    $domain,
+                    $translations
+                ),
+                'before'
+            );
+        }
     }
 
     /**
