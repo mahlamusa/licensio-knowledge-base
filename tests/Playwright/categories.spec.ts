@@ -517,6 +517,59 @@ test.describe( 'Categories app', () => {
 		await expect( drawer.getByLabel( 'Name' ) ).not.toBeFocused();
 	} );
 
+	test( 'Escape on an open select closes only the select, not the drawer', async ( { page } ) => {
+		await page.getByRole( 'button', { name: 'Add category' } ).first().click();
+
+		const drawer = page.locator( '.ant-drawer-content' );
+		const list = page.locator( '.ant-select-dropdown:not(.ant-select-dropdown-hidden)' );
+
+		await drawer.getByLabel( 'Name' ).fill( 'Kept name' );
+		await drawer.getByLabel( 'Parent category' ).click();
+		await expect( list ).toBeVisible();
+		await page.keyboard.press( 'Escape' );
+		await expect( list ).toBeHidden();
+		await expect( drawer ).toBeVisible();
+		await expect( drawer.getByLabel( 'Name' ) ).toHaveValue( 'Kept name' );
+
+		// A second Escape closes the drawer.
+		await page.keyboard.press( 'Escape' );
+		await expect( drawer ).toBeHidden();
+	} );
+
+	test( 'a slug another category uses is shown once, on the Slug field', async ( { page } ) => {
+		await act( page, 'Beta', 'Edit' );
+
+		const drawer = page.locator( '.ant-drawer-content' );
+		const message = 'Another category already uses the slug “alpha”. Choose a different slug.';
+
+		await drawer.getByLabel( 'Slug' ).fill( 'alpha' );
+		await drawer.getByRole( 'button', { name: 'Save' } ).click();
+		await confirmPopconfirm( page );
+
+		await expect( drawer.locator( '.ant-form-item-explain-error' ) ).toHaveText( message );
+		await expect( drawer.getByText( message ) ).toHaveCount( 1 );
+		await expect( drawer.locator( '.lkb-drawer__error' ) ).toHaveCount( 0 );
+	} );
+
+	test( 'Escape on an open select closes only the select, not the merge dialog', async ( { page } ) => {
+		await act( page, 'Gamma', 'Merge…' );
+
+		const dialog = page.locator( '.ant-modal-content' );
+		const list = page.locator( '.ant-select-dropdown:visible' );
+
+		for ( const label of [ 'Categories to merge', 'Merge into' ] ) {
+			await dialog.getByLabel( label ).click();
+			await expect( list ).toBeVisible();
+			await page.keyboard.press( 'Escape' );
+			await expect( list ).toHaveCount( 0 );
+			await expect( dialog, `Escape on ${ label } leaves the dialog open.` ).toBeVisible();
+		}
+
+		// A second Escape closes the dialog.
+		await page.keyboard.press( 'Escape' );
+		await expect( dialog ).toBeHidden();
+	} );
+
 	test( 'delete moves the children to the chosen category', async ( { page } ) => {
 		await act( page, 'Gamma', 'Delete…' );
 

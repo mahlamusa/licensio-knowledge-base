@@ -342,3 +342,236 @@ test( 'Escape closes the Add tag form and an inline edit', async ( {
 	await confirmPopconfirm( page );
 	await expect( page.locator( '.ant-table-row' ) ).toHaveCount( 0 );
 } );
+
+/**
+ * Delete every tag the table lists, through the bulk bar.
+ *
+ * @since 1.0.0
+ *
+ * @param {Page} page The browser page, filtered to this test's tags.
+ *
+ * @return {Promise<void>} Resolves once the table is empty.
+ */
+async function deleteListed( page: Page ): Promise< void > {
+	await page.locator( '.ant-table-thead .ant-checkbox-input' ).check();
+	await page
+		.locator( '.lkb-bulk' )
+		.getByRole( 'button', { name: 'Delete' } )
+		.click();
+	await confirmPopconfirm( page );
+	await expect( page.locator( '.ant-table-row' ) ).toHaveCount( 0 );
+}
+
+test( 'a description shows as plain text and is edited as stored', async ( {
+	page,
+} ) => {
+	const name = `Plain ${ suffix }`;
+	const stored = 'Tom &amp; <em>Jerry</em>';
+
+	await logIn( page );
+	await openContentManager( page, 'tags' );
+
+	await page.getByRole( 'button', { name: 'Add tag' } ).click();
+
+	const form = page.locator( '.lkb-tags__add' );
+
+	await form.getByLabel( 'Name' ).fill( name );
+	await form.getByLabel( 'Description' ).fill( stored );
+	await form.getByRole( 'button', { name: 'Add tag' } ).click();
+	await confirmPopconfirm( page );
+	await search( page, name );
+
+	await expect(
+		row( page, name ).locator( '.lkb-tags__description' )
+	).toHaveText( 'Tom & Jerry' );
+
+	await row( page, name ).getByRole( 'button', { name: 'Edit' } ).click();
+
+	// The open row shows inputs, not its name, so it is found by its field.
+	await expect(
+		page.locator( '.ant-table-row' ).getByLabel( 'Description' )
+	).toHaveValue( stored );
+	await page.keyboard.press( 'Escape' );
+
+	await deleteListed( page );
+} );
+
+test( 'a slow save leaves the row the user opened next alone', async ( {
+	page,
+} ) => {
+	const first = `Slow ${ suffix }`;
+	const second = `Next ${ suffix }`;
+
+	await logIn( page );
+	await openContentManager( page, 'tags' );
+	await addTag( page, first );
+	await addTag( page, second );
+	await search( page, suffix );
+
+	let release: () => void = () => undefined;
+	const held = new Promise< void >( ( resolve ) => {
+		release = resolve;
+	} );
+
+	const oneTag = ( url: URL ) => /tags(%2F|\/)\d+/.test( url.href );
+
+	await page.route( oneTag, async ( route ) => {
+		if ( 'PATCH' !== route.request().method() ) {
+			await route.continue();
+			return;
+		}
+
+		await held;
+		await route.continue();
+	} );
+
+	const saved = page.waitForResponse(
+		( response ) => 'PATCH' === response.request().method()
+	);
+
+	// The open row shows inputs, not its name, so it is found by its field.
+	const openName = page
+		.locator( '.ant-table-row' )
+		.getByLabel( 'Name', { exact: true } );
+
+	await row( page, first ).getByRole( 'button', { name: 'Edit' } ).click();
+	await openName.fill( `${ first } renamed` );
+	await page.getByRole( 'button', { name: 'Save' } ).first().click();
+	await confirmPopconfirm( page );
+
+	// While the save is held, cancel it and open the other tag.
+	await page
+		.locator( '.ant-table-row' )
+		.getByRole( 'button', { name: 'Cancel' } )
+		.click();
+	await row( page, second ).getByRole( 'button', { name: 'Edit' } ).click();
+	await expect( openName ).toHaveValue( second );
+
+	release();
+	await saved;
+
+	// The save is done once it reports the slug.
+	await expect(
+		page.locator( '.ant-message-notice', { hasText: 'Tag saved.' } )
+	).toBeVisible();
+	await expect(
+		openName,
+		'The other row is still open for editing.'
+	).toHaveValue( second );
+
+	await page.keyboard.press( 'Escape' );
+	await page.unroute( oneTag );
+	await deleteListed( page );
+} );
+
+test( 'a merge reports the tags it could not delete apart from those it merged', async ( {
+	page,
+} ) => {
+	const target = `Keep ${ suffix }`;
+	const sources = [ `Away one ${ suffix }`, `Away two ${ suffix }` ];
+
+	await logIn( page );
+	await openContentManager( page, 'tags' );
+
+	for ( const name of [ target, ...sources ] ) {
+		await addTag( page, name );
+	}
+
+	await search( page, suffix );
+
+	// The server merges for real; the answer says neither source was deleted.
+	await page.route( /tags(%2F|\/)merge/, async ( route ) => {
+		const response = await route.fetch();
+		const body = await response.json();
+
+		await route.fulfill( { response, json: { ...body, deleted: [] } } );
+	} );
+
+	for ( const name of sources ) {
+		await row( page, name ).locator( '.ant-checkbox-input' ).check();
+	}
+
+	await page.getByRole( 'button', { name: 'Merge into…' } ).click();
+
+	const merge = page.locator( '.ant-modal', { hasText: 'Merge tags' } );
+
+	await merge.getByLabel( 'Tag to merge into' ).click();
+	await page.keyboard.type( target );
+	await page
+		.locator( '.ant-select-item-option', { hasText: target } )
+		.click();
+	await merge.getByRole( 'button', { name: 'Merge' } ).click();
+	await confirmPopconfirm( page );
+
+	await expect(
+		page.locator( '.ant-message-notice', {
+			hasText: `2 tags merged into “${ target }”.`,
+		} )
+	).toBeVisible();
+	await expect(
+		page.locator( '.ant-message-notice', {
+			hasText: '2 merged tags could not be deleted.',
+		} )
+	).toBeVisible();
+
+	await page.unroute( /tags(%2F|\/)merge/ );
+	await search( page, suffix );
+	await deleteListed( page );
+} );
+
+test( 'a success answer that is not JSON is reported as an error', async ( {
+	page,
+} ) => {
+	await logIn( page );
+	await page.route(
+		( url ) => /licensio-kb(%2F|\/)v1(%2F|\/)tags/.test( url.href ),
+		async ( route ) => {
+			if ( 'GET' !== route.request().method() ) {
+				await route.continue();
+				return;
+			}
+
+			await route.fulfill( {
+				status: 200,
+				contentType: 'text/html',
+				body: '<b>Notice</b>: something printed before the answer.',
+			} );
+		}
+	);
+	await openContentManager( page, 'tags' );
+
+	await expect( page.locator( '.lkb-tags__notice' ) ).toContainText(
+		'The server sent an answer that could not be read.'
+	);
+} );
+
+test( 'Escape on the open target list closes only the list, not the merge dialog', async ( {
+	page,
+} ) => {
+	const name = `Esc merge ${ suffix }`;
+
+	await logIn( page );
+	await openContentManager( page, 'tags' );
+	await addTag( page, name );
+	await search( page, name );
+
+	await row( page, name ).locator( '.ant-checkbox-input' ).check();
+	await page.getByRole( 'button', { name: 'Merge into…' } ).click();
+
+	const merge = page.locator( '.ant-modal', { hasText: 'Merge tags' } );
+	const list = page.locator(
+		'.ant-select-dropdown:not(.ant-select-dropdown-hidden)'
+	);
+
+	await merge.getByLabel( 'Tag to merge into' ).click();
+	await expect( list ).toBeVisible();
+	await page.keyboard.press( 'Escape' );
+	await expect( list ).toBeHidden();
+	await expect( merge ).toBeVisible();
+
+	// A second Escape closes the dialog.
+	await page.keyboard.press( 'Escape' );
+	await expect( merge ).toBeHidden();
+
+	await deleteListed( page );
+} );
