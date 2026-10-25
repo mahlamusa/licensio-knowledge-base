@@ -86,17 +86,6 @@ class Licensio_KB_Heroic_Content_Migrator {
     private $dry_run = false;
 
     /**
-     * Per target category, the highest position it held before this run wrote to it.
-     *
-     * Read once per category and run, so the positions written by earlier
-     * batches do not move the later ones further down.
-     *
-     * @since 1.0.0
-     * @var array<int, int>
-     */
-    private $position_bases = array();
-
-    /**
      * Constructor.
      *
      * @since 1.0.0
@@ -453,9 +442,12 @@ class Licensio_KB_Heroic_Content_Migrator {
      * against the category it was migrated as, the key the plugin's own order
      * screen and the importers write. The positions follow any the category
      * already held before this run, so migrating into a category that was
-     * ordered by hand never interleaves with that order. A category that was
-     * not migrated has no key to write. Should two Heroic categories lead to
-     * one target, the lower Heroic term ID wins.
+     * ordered by hand never interleaves with that order. That existing
+     * highest position is recorded in the run state the first time the
+     * migration reaches the category, so a resumed run places its articles
+     * after the same positions, not after the ones it already wrote. A
+     * category that was not migrated has no key to write. Should two Heroic
+     * categories lead to one target, the lower Heroic term ID wins.
      *
      * @since 1.0.0
      *
@@ -474,14 +466,16 @@ class Licensio_KB_Heroic_Content_Migrator {
             }
 
             $target = $categories[ $heroic_term_id ];
+            $base   = $this->state->position_base( $target );
 
-            if ( ! isset( $this->position_bases[ $target ] ) ) {
+            if ( null === $base ) {
                 $current = Licensio_KB_Article_Order::positions( $target );
+                $base    = empty( $current ) ? -1 : max( $current );
 
-                $this->position_bases[ $target ] = empty( $current ) ? -1 : max( $current );
+                $this->state->set_position_base( $target, $base );
             }
 
-            $saved[ $target ] = $this->position_bases[ $target ] + 1 + (int) $position;
+            $saved[ $target ] = $base + 1 + (int) $position;
 
             update_post_meta( $article_id, Licensio_KB_Article_Order::meta_key( $target ), $saved[ $target ] );
         }

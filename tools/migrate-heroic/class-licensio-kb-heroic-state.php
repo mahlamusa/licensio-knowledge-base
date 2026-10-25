@@ -196,6 +196,49 @@ class Licensio_KB_Heroic_State {
     }
 
     /**
+     * The highest position a category held before this migration first wrote to it.
+     *
+     * Recorded once by the article phase, so every batch and a resumed run
+     * place the migrated positions after the same existing ones instead of
+     * after the positions the migration already wrote.
+     *
+     * @since 1.0.0
+     *
+     * @param int $term_id The target category term ID.
+     *
+     * @return int|null The highest position, -1 when the category had none, or null when not recorded yet.
+     */
+    public function position_base( $term_id ) {
+        $term_id = (int) $term_id;
+
+        if ( ! isset( $this->state['position_bases'] ) || ! is_array( $this->state['position_bases'] ) || ! isset( $this->state['position_bases'][ $term_id ] ) ) {
+            return null;
+        }
+
+        return (int) $this->state['position_bases'][ $term_id ];
+    }
+
+    /**
+     * Record the highest position a category held before this migration.
+     *
+     * @since 1.0.0
+     *
+     * @param int $term_id The target category term ID.
+     * @param int $base    The highest position, -1 when the category had none.
+     *
+     * @return void
+     */
+    public function set_position_base( $term_id, $base ) {
+        if ( ! isset( $this->state['position_bases'] ) || ! is_array( $this->state['position_bases'] ) ) {
+            $this->state['position_bases'] = array();
+        }
+
+        $this->state['position_bases'][ (int) $term_id ] = (int) $base;
+
+        $this->save();
+    }
+
+    /**
      * Whether a migration is part-way through.
      *
      * @since 1.0.0

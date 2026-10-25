@@ -104,9 +104,9 @@ Heroic orders an article once per category it belongs to, in a separate
 category as `licensio_order_{term_id}`, the per-category order the plugin's
 order screen and its built-in importers use. The positions follow any order the
 category already held before the run, so migrating into a category ordered by
-hand never interleaves with it. That existing order is read once per run; a run
-resumed in a new process reads it again, so its articles still follow the
-existing order, only further down. `menu_order` is still set, as the fallback
+hand never interleaves with it. Where that existing order ends is recorded in the
+resume state the first time the migration reaches the category, so a resumed run
+keeps the Heroic order across the interruption. `menu_order` is still set, as the fallback
 for listings not limited to one category: the position recorded against the
 lowest Heroic category term ID.
 

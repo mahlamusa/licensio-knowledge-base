@@ -5,8 +5,8 @@
  * A counter bag with one rule behind it: nothing is allowed to be lossy in
  * silence. Every mapping this tool cannot make faithfully increments a named
  * counter and, where the detail matters, records a line the operator can act
- * on. A run that discards a category icon or collapses three article positions
- * into one says so on the way out, with numbers.
+ * on. A run that discards a category icon or files an article under a term
+ * that was not migrated says so on the way out, with numbers.
  *
  * @package Licensio_KB
  * @since   1.0.0
