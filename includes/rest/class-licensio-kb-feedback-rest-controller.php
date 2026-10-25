@@ -251,6 +251,9 @@ class Licensio_KB_Feedback_REST_Controller extends Licensio_KB_REST_Controller {
     /**
      * Record a vote.
      *
+     * Refuses a vote on a password-protected article the visitor has not
+     * unlocked.
+     *
      * @since 1.0.0
      *
      * @param WP_REST_Request $request The request.
@@ -282,6 +285,19 @@ class Licensio_KB_Feedback_REST_Controller extends Licensio_KB_REST_Controller {
                 'licensio_unknown_article',
                 __( 'That article could not be found.', 'licensio-knowledge-base' ),
                 array( 'status' => 404 )
+            );
+        }
+
+        /*
+         * A protected article can only be rated by a visitor who has unlocked
+         * it. The password cookie travels with the REST request, so this is
+         * the same check the article page made when it hid the widget.
+         */
+        if ( post_password_required( $article_id ) ) {
+            return new WP_Error(
+                'licensio_article_locked',
+                __( 'Enter the article password before giving feedback.', 'licensio-knowledge-base' ),
+                array( 'status' => 403 )
             );
         }
 
