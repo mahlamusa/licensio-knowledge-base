@@ -4,7 +4,9 @@
  *
  * Server-side paging and sort, the optional columns the user picked, row
  * selection for the bulk bar, and the row actions: Edit · Quick edit · View ·
- * Trash, or Restore · Delete permanently in the Trash view. Quick edit opens
+ * Trash, or Restore · Delete permanently in the Trash view. Titles use the
+ * size and weight of core's list row titles, and the row actions show on
+ * hover or keyboard focus, as on core's list screens. Quick edit opens
  * in place under the row. A locked row shows who is editing it and cannot be
  * quick edited.
  *
@@ -388,6 +390,7 @@ const expandedKeys = computed( () =>
 }
 
 .lkb-title__link {
+	font-size: 14px;
 	font-weight: 600;
 }
 
@@ -416,6 +419,27 @@ const expandedKeys = computed( () =>
 	height: auto;
 	padding: 0;
 	font-size: 12px;
+}
+
+/*
+ * As on core's list screens, the row actions show when the row is hovered or
+ * when focus is inside them, and always on touch and narrow screens. They are
+ * only made transparent, so they stay in the layout and the accessibility
+ * tree, and Tab still reaches them.
+ */
+.lkb-rowactions {
+	opacity: 0;
+}
+
+.ant-table-row:hover .lkb-rowactions,
+.lkb-rowactions:focus-within {
+	opacity: 1;
+}
+
+@media ( hover: none ), ( max-width: 782px ) {
+	.lkb-rowactions {
+		opacity: 1;
+	}
 }
 
 .lkb-muted {

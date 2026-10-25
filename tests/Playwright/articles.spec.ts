@@ -331,6 +331,50 @@ test.describe( 'Articles app', () => {
 		}
 	} );
 
+	test( 'titles match core and row actions show on hover, focus and phone width', async ( {
+		page,
+	} ) => {
+		const style = ( element: Element ) => {
+			const computed = window.getComputedStyle( element );
+
+			return [ computed.fontSize, computed.fontWeight ];
+		};
+
+		await page.goto( '/wp-admin/edit.php' );
+
+		const core = await page.locator( '.row-title' ).first().evaluate( style );
+		const app = await openContentManager( page, 'articles' );
+		const row = app.locator( '.ant-table-row' ).first();
+		const actions = row.locator( '.lkb-rowactions' );
+
+		expect( core ).toEqual( [ '14px', '600' ] );
+		expect(
+			await row.locator( '.lkb-title__link' ).evaluate( style )
+		).toEqual( core );
+
+		// Hidden only visually: still in the accessibility tree.
+		await page.mouse.move( 0, 0 );
+		await expect( actions ).toHaveCSS( 'opacity', '0' );
+		await expect(
+			row.getByRole( 'button', { name: 'Quick edit' } )
+		).toBeAttached();
+
+		await row.hover();
+		await expect( actions ).toHaveCSS( 'opacity', '1' );
+		await page.mouse.move( 0, 0 );
+		await expect( actions ).toHaveCSS( 'opacity', '0' );
+
+		await row.getByRole( 'link', { name: 'Edit', exact: true } ).focus();
+		await expect( actions ).toHaveCSS( 'opacity', '1' );
+		await row
+			.getByRole( 'link', { name: 'Edit', exact: true } )
+			.evaluate( ( link ) => ( link as HTMLElement ).blur() );
+		await expect( actions ).toHaveCSS( 'opacity', '0' );
+
+		await page.setViewportSize( { width: 390, height: 844 } );
+		await expect( actions ).toHaveCSS( 'opacity', '1' );
+	} );
+
 	test( 'a keyboard trash hands focus to Undo and waits while it has focus', async ( {
 		page,
 	} ) => {
