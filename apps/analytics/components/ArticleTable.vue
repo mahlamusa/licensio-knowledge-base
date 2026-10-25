@@ -10,20 +10,20 @@
  */
 
 import { computed } from 'vue';
-import { translate } from '../api';
 import type { ArticleRow } from '../types';
+import { __ } from '../../components/i18n';
 
 const props = defineProps<{ rows: ArticleRow[]; metric: 'views' | 'usefulness' }>();
 
 const columns = computed( () => {
-	const title = { title: translate( 'Article' ), key: 'article' };
+	const title = { title: __( 'Article', 'licensio-knowledge-base' ), key: 'article' };
 
 	if ( props.metric === 'views' ) {
 		return [
 			title,
-			{ title: translate( 'Views' ), dataIndex: 'views', key: 'views', width: 120 },
+			{ title: __( 'Views', 'licensio-knowledge-base' ), dataIndex: 'views', key: 'views', width: 120 },
 			{
-				title: translate( 'Unique visitors' ),
+				title: __( 'Unique visitors', 'licensio-knowledge-base' ),
 				dataIndex: 'visitors',
 				key: 'visitors',
 				width: 160,
@@ -34,13 +34,13 @@ const columns = computed( () => {
 	return [
 		title,
 		{
-			title: translate( 'Useful' ),
+			title: __( 'Useful', 'licensio-knowledge-base' ),
 			dataIndex: 'usefulness',
 			key: 'usefulness',
 			width: 120,
 		},
-		{ title: translate( 'Yes' ), dataIndex: 'positive', key: 'positive', width: 90 },
-		{ title: translate( 'No' ), dataIndex: 'negative', key: 'negative', width: 90 },
+		{ title: __( 'Yes', 'licensio-knowledge-base' ), dataIndex: 'positive', key: 'positive', width: 90 },
+		{ title: __( 'No', 'licensio-knowledge-base' ), dataIndex: 'negative', key: 'negative', width: 90 },
 	];
 } );
 </script>
@@ -54,7 +54,7 @@ const columns = computed( () => {
 		size="small"
 	>
 		<template #emptyText>
-			{{ translate( 'There is nothing to report for this range yet.' ) }}
+			{{ __( 'There is nothing to report for this range yet.', 'licensio-knowledge-base' ) }}
 		</template>
 		<template #bodyCell="{ column, record }">
 			<template v-if="column.key === 'article'">

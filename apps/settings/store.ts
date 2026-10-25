@@ -22,6 +22,7 @@ import {
 	resetSettings,
 	saveSettings,
 } from './api';
+import { __ } from '../components/i18n';
 import type {
 	CategoryBlock,
 	Field,
@@ -68,7 +69,12 @@ export const useSettingsStore = defineStore( 'licensioKbSettings', {
 		 * A group whose category the server does not declare would otherwise
 		 * vanish from the navigation while its settings stayed stored, so any
 		 * such group is collected under a trailing block rather than dropped.
-		 * @param state
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param {SettingsState} state The store state.
+		 *
+		 * @return {CategoryBlock[]} The sidebar blocks, empty ones left out.
 		 */
 		categoryBlocks( state ): CategoryBlock[] {
 			const declared = Object.keys( state.categories );
@@ -85,7 +91,11 @@ export const useSettingsStore = defineStore( 'licensioKbSettings', {
 			);
 
 			if ( orphans.length > 0 ) {
-				blocks.push( { id: 'other', label: 'Other', groups: orphans } );
+				blocks.push( {
+					id: 'other',
+					label: __( 'Other', 'licensio-knowledge-base' ),
+					groups: orphans,
+				} );
 			}
 
 			return blocks.filter( ( block ) => block.groups.length > 0 );

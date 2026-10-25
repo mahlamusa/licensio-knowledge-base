@@ -10,16 +10,11 @@
  */
 
 import type { AnalyticsConfig } from './types';
+import { __ } from '../components/i18n';
 
 declare global {
 	interface Window {
 		licensioKbAnalytics?: AnalyticsConfig;
-		wp?: {
-			i18n?: {
-				__: ( text: string, domain?: string ) => string;
-				sprintf: ( format: string, ...args: unknown[] ) => string;
-			};
-		};
 	}
 }
 
@@ -41,30 +36,6 @@ const FALLBACK_CONFIG: AnalyticsConfig = {
  */
 export function config(): AnalyticsConfig {
 	return { ...FALLBACK_CONFIG, ...( window.licensioKbAnalytics ?? {} ) };
-}
-
-/**
- * Translate a string through WordPress, falling back to the original.
- *
- * The app is built by Vite rather than by wp-scripts, so it reads `wp.i18n`
- * off the global that the `wp-i18n` script dependency guarantees is present
- * instead of importing the package. It is deliberately not called `__`: the
- * string extractor and the `@wordpress/i18n-no-variables` lint rule both key on
- * that name, and a wrapper wearing it would be read as a call site whose
- * argument is a variable.
- *
- * @since 1.0.0
- *
- * @param {string} text The untranslated string.
- *
- * @return {string} The translated string.
- */
-export function translate( text: string ): string {
-	// Read off as a reference rather than called as `i18n.__()`: the extractor
-	// and the lint rule both treat that spelling as a translation call site.
-	const translator = window.wp?.i18n?.__;
-
-	return translator ? translator( text, 'licensio-knowledge-base' ) : text;
 }
 
 /**
@@ -100,9 +71,10 @@ export async function fetchReport< T >(
 
 	if ( ! response.ok ) {
 		throw new Error(
-			`${ translate( 'The analytics request failed.' ) } (${
-				response.status
-			})`
+			`${ __(
+				'The analytics request failed.',
+				'licensio-knowledge-base'
+			) } (${ response.status })`
 		);
 	}
 

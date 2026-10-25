@@ -19,8 +19,9 @@
  */
 
 import { computed, ref } from 'vue';
-import { fixDuplicates, scanDuplicates, translate } from '../api';
+import { fixDuplicates, scanDuplicates } from '../api';
 import type { DuplicateFixReport, DuplicateGroup, DuplicateTermGroup } from '../types';
+import { __ } from '../../components/i18n';
 
 const loading = ref( false );
 const error = ref( '' );
@@ -80,7 +81,7 @@ async function scan(): Promise< void > {
 		termGroups.value = found.terms;
 		scanned.value = true;
 	} catch ( err ) {
-		error.value = err instanceof Error ? err.message : translate( 'The scan failed.' );
+		error.value = err instanceof Error ? err.message : __( 'The scan failed.', 'licensio-knowledge-base' );
 	} finally {
 		loading.value = false;
 	}
@@ -102,7 +103,7 @@ async function fix(): Promise< void > {
 		postGroups.value = [];
 		termGroups.value = [];
 	} catch ( err ) {
-		error.value = err instanceof Error ? err.message : translate( 'The fix failed.' );
+		error.value = err instanceof Error ? err.message : __( 'The fix failed.', 'licensio-knowledge-base' );
 	} finally {
 		fixing.value = false;
 	}
@@ -114,17 +115,17 @@ const resultLines = computed( () => {
 	}
 
 	return [
-		translate( 'Article groups merged' ) + ': ' + result.value.groups_merged,
-		translate( 'Duplicates moved to trash' ) + ': ' + result.value.posts_trashed,
-		translate( 'Meta keys copied' ) + ': ' + result.value.meta_copied,
-		translate( 'Votes moved' ) + ': ' + result.value.votes_moved,
-		translate( 'Views moved' ) + ': ' + result.value.views_moved,
-		translate( 'Migration sources cleaned' ) + ': ' + result.value.source_groups_cleaned,
-		translate( 'Source posts moved to trash' ) + ': ' + result.value.sources_trashed,
-		translate( 'Term groups merged' ) + ': ' + result.value.term_groups_merged,
-		translate( 'Terms deleted' ) + ': ' + result.value.terms_deleted,
-		translate( 'Term meta keys copied' ) + ': ' + result.value.term_meta_copied,
-		translate( 'Article assignments moved' ) + ': ' + result.value.articles_reassigned,
+		__( 'Article groups merged', 'licensio-knowledge-base' ) + ': ' + result.value.groups_merged,
+		__( 'Duplicates moved to trash', 'licensio-knowledge-base' ) + ': ' + result.value.posts_trashed,
+		__( 'Meta keys copied', 'licensio-knowledge-base' ) + ': ' + result.value.meta_copied,
+		__( 'Votes moved', 'licensio-knowledge-base' ) + ': ' + result.value.votes_moved,
+		__( 'Views moved', 'licensio-knowledge-base' ) + ': ' + result.value.views_moved,
+		__( 'Migration sources cleaned', 'licensio-knowledge-base' ) + ': ' + result.value.source_groups_cleaned,
+		__( 'Source posts moved to trash', 'licensio-knowledge-base' ) + ': ' + result.value.sources_trashed,
+		__( 'Term groups merged', 'licensio-knowledge-base' ) + ': ' + result.value.term_groups_merged,
+		__( 'Terms deleted', 'licensio-knowledge-base' ) + ': ' + result.value.terms_deleted,
+		__( 'Term meta keys copied', 'licensio-knowledge-base' ) + ': ' + result.value.term_meta_copied,
+		__( 'Article assignments moved', 'licensio-knowledge-base' ) + ': ' + result.value.articles_reassigned,
 	];
 } );
 </script>
@@ -133,30 +134,31 @@ const resultLines = computed( () => {
 	<div class="licensio-kb-duplicates">
 		<p class="licensio-kb-duplicates__lede">
 			{{
-				translate(
-					'Duplicate articles share a title, a slug once any -2 style suffix is stripped, a date and the opening lines of their content; duplicate categories and tags share a name, a slug and a description. Merging keeps the member without a suffix: for articles the duplicate with the most meta provides the content and the rest go to the trash, for terms the meta and article assignments move across and the empty duplicate is deleted. Anything the knowledge base does not own is listed for you to resolve by hand.'
+				__(
+					'Duplicate articles share a title, a slug once any -2 style suffix is stripped, a date and the opening lines of their content; duplicate categories and tags share a name, a slug and a description. Merging keeps the member without a suffix: for articles the duplicate with the most meta provides the content and the rest go to the trash, for terms the meta and article assignments move across and the empty duplicate is deleted. Anything the knowledge base does not own is listed for you to resolve by hand.',
+					'licensio-knowledge-base'
 				)
 			}}
 		</p>
 
 		<div class="licensio-kb-duplicates__actions">
 			<a-button type="primary" :loading="loading" :disabled="fixing" @click="scan">
-				{{ translate( 'Scan for duplicates' ) }}
+				{{ __( 'Scan for duplicates', 'licensio-knowledge-base' ) }}
 			</a-button>
 
 			<a-popconfirm
 				v-if="scanned && fixableCount > 0"
 				:title="
-					translate( 'Merge' ) +
+					__( 'Merge', 'licensio-knowledge-base' ) +
 					' ' + fixableCount + ' ' +
-					translate( 'group(s)? Duplicated articles and migration source posts are moved to the trash; duplicated terms are deleted.' )
+					__( 'group(s)? Duplicated articles and migration source posts are moved to the trash; duplicated terms are deleted.', 'licensio-knowledge-base' )
 				"
-				:ok-text="translate( 'Merge' )"
-				:cancel-text="translate( 'Cancel' )"
+				:ok-text="__( 'Merge', 'licensio-knowledge-base' )"
+				:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
 				@confirm="fix"
 			>
 				<a-button type="primary" danger :loading="fixing" :disabled="loading">
-					{{ translate( 'Merge duplicates' ) }} ({{ fixableCount }})
+					{{ __( 'Merge duplicates', 'licensio-knowledge-base' ) }} ({{ fixableCount }})
 				</a-button>
 			</a-popconfirm>
 		</div>
@@ -167,18 +169,18 @@ const resultLines = computed( () => {
 			v-if="nothingFound"
 			type="success"
 			show-icon
-			:message="translate( 'No duplicate articles, categories or tags detected.' )"
+			:message="__( 'No duplicate articles, categories or tags detected.', 'licensio-knowledge-base' )"
 			class="licensio-kb-duplicates__error"
 		/>
 
 		<template v-if="result">
-			<a-card :title="translate( 'Merge report' )" class="licensio-kb-duplicates__card">
+			<a-card :title="__( 'Merge report', 'licensio-knowledge-base' )" class="licensio-kb-duplicates__card">
 				<ul class="licensio-kb-duplicates__report">
 					<li v-for="line in resultLines" :key="line">{{ line }}</li>
 				</ul>
 
 				<p v-if="result.notes.length" class="licensio-kb-duplicates__notes">
-					{{ translate( 'What was done' ) }}:
+					{{ __( 'What was done', 'licensio-knowledge-base' ) }}:
 				</p>
 				<ul class="licensio-kb-duplicates__report">
 					<li v-for="note in result.notes" :key="note">{{ note }}</li>
@@ -188,7 +190,7 @@ const resultLines = computed( () => {
 
 		<a-card
 			v-if="mergeablePosts.length > 0"
-			:title="translate( 'Mergeable article groups' )"
+			:title="__( 'Mergeable article groups', 'licensio-knowledge-base' )"
 			class="licensio-kb-duplicates__card"
 		>
 			<div
@@ -206,13 +208,13 @@ const resultLines = computed( () => {
 						#{{ member.id }}
 						{{ member.slug }}
 						<a-tag v-if="member.id === group.canonical" color="green">
-							{{ translate( 'keeps the slug' ) }}
+							{{ __( 'keeps the slug', 'licensio-knowledge-base' ) }}
 						</a-tag>
 						<a-tag v-if="member.id === group.winner" color="blue">
-							{{ translate( 'provides the content' ) }}
+							{{ __( 'provides the content', 'licensio-knowledge-base' ) }}
 						</a-tag>
 						<span class="licensio-kb-duplicates__meta-count">
-							{{ member.metaCount }} {{ translate( 'meta' ) }}
+							{{ member.metaCount }} {{ __( 'meta', 'licensio-knowledge-base' ) }}
 						</span>
 					</li>
 				</ul>
@@ -221,13 +223,14 @@ const resultLines = computed( () => {
 
 		<a-card
 			v-if="sourcePosts.length > 0"
-			:title="translate( 'Migration sources to clean up' )"
+			:title="__( 'Migration sources to clean up', 'licensio-knowledge-base' )"
 			class="licensio-kb-duplicates__card"
 		>
 			<p class="licensio-kb-duplicates__flagged-note">
 				{{
-					translate(
-						'Each pair is an article and the migration source post it replaced. Merging moves the source post to the trash; the article is left exactly as the site serves it.'
+					__(
+						'Each pair is an article and the migration source post it replaced. Merging moves the source post to the trash; the article is left exactly as the site serves it.',
+						'licensio-knowledge-base'
 					)
 				}}
 			</p>
@@ -250,10 +253,10 @@ const resultLines = computed( () => {
 						</a-tag>
 						{{ member.slug }}
 						<a-tag v-if="member.id === group.canonical" color="green">
-							{{ translate( 'stays' ) }}
+							{{ __( 'stays', 'licensio-knowledge-base' ) }}
 						</a-tag>
 						<a-tag v-else color="orange">
-							{{ translate( 'moves to trash' ) }}
+							{{ __( 'moves to trash', 'licensio-knowledge-base' ) }}
 						</a-tag>
 					</li>
 				</ul>
@@ -262,7 +265,7 @@ const resultLines = computed( () => {
 
 		<a-card
 			v-if="fixableTerms.length > 0"
-			:title="translate( 'Mergeable term groups' )"
+			:title="__( 'Mergeable term groups', 'licensio-knowledge-base' )"
 			class="licensio-kb-duplicates__card"
 		>
 			<div
@@ -280,14 +283,14 @@ const resultLines = computed( () => {
 						#{{ member.id }}
 						{{ member.slug }}
 						<a-tag v-if="member.id === group.canonical" color="green">
-							{{ translate( 'keeps the slug' ) }}
+							{{ __( 'keeps the slug', 'licensio-knowledge-base' ) }}
 						</a-tag>
 						<a-tag v-if="member.id === group.winner" color="blue">
-							{{ translate( 'provides the meta' ) }}
+							{{ __( 'provides the meta', 'licensio-knowledge-base' ) }}
 						</a-tag>
 						<span class="licensio-kb-duplicates__meta-count">
-							{{ member.metaCount }} {{ translate( 'meta' ) }} ·
-							{{ member.count }} {{ translate( 'articles' ) }}
+							{{ member.metaCount }} {{ __( 'meta', 'licensio-knowledge-base' ) }} ·
+							{{ member.count }} {{ __( 'articles', 'licensio-knowledge-base' ) }}
 						</span>
 					</li>
 				</ul>
@@ -296,13 +299,14 @@ const resultLines = computed( () => {
 
 		<a-card
 			v-if="flaggedPosts.length > 0 || flaggedTerms.length > 0"
-			:title="translate( 'Flagged for manual review' )"
+			:title="__( 'Flagged for manual review', 'licensio-knowledge-base' )"
 			class="licensio-kb-duplicates__card"
 		>
 			<p class="licensio-kb-duplicates__flagged-note">
 				{{
-					translate(
-						'These groups involve a post type the knowledge base does not own, or have no un-suffixed member to merge into. Nothing was changed.'
+					__(
+						'These groups involve a post type the knowledge base does not own, or have no un-suffixed member to merge into. Nothing was changed.',
+						'licensio-knowledge-base'
 					)
 				}}
 			</p>

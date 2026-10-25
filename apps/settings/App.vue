@@ -12,7 +12,8 @@ import { lkbTheme } from '../styles/theme';
  */
 
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import { config, translate } from './api';
+import { config } from './api';
+import { __ } from '../components/i18n';
 import { useSettingsStore } from './store';
 import AppHeader from '../components/AppHeader.vue';
 import AppearancePreview from './components/AppearancePreview.vue';
@@ -72,11 +73,11 @@ function changedIn( id: string ): number {
 
 const notice = computed( () => {
 	if ( store.notice === 'saved' ) {
-		return translate( 'Settings saved.' );
+		return __( 'Settings saved.', 'licensio-knowledge-base' );
 	}
 
 	if ( store.notice === 'reset' ) {
-		return translate( 'Every setting is back to its default.' );
+		return __( 'Every setting is back to its default.', 'licensio-knowledge-base' );
 	}
 
 	return '';
@@ -137,8 +138,9 @@ function guardNavigation( event: MouseEvent ): void {
 
 	// eslint-disable-next-line no-alert
 	const leave = window.confirm(
-		translate(
-			'You have unsaved knowledge base settings. Leave this page and lose them?'
+		__(
+			'You have unsaved knowledge base settings. Leave this page and lose them?',
+			'licensio-knowledge-base'
 		)
 	);
 
@@ -197,7 +199,7 @@ onBeforeUnmount( () => {
 		<div id="lkb-main" class="lkb-page__body lkb-measure">
 			<div class="lkb-page__head">
 				<h1 class="lkb-page__title">
-					{{ translate( 'Settings' ) }}
+					{{ __( 'Settings', 'licensio-knowledge-base' ) }}
 				</h1>
 
 				<a-button
@@ -207,13 +209,13 @@ onBeforeUnmount( () => {
 					target="_blank"
 					rel="noreferrer noopener"
 				>
-					{{ translate( 'View documentation' ) }}
+					{{ __( 'View documentation', 'licensio-knowledge-base' ) }}
 				</a-button>
 			</div>
 
 		<a-spin :spinning="store.loading || store.saving">
 			<div v-if="store.loaded" class="lkb-settings__layout">
-				<nav class="lkb-nav" :aria-label="translate( 'Settings sections' )">
+				<nav class="lkb-nav" :aria-label="__( 'Settings sections', 'licensio-knowledge-base' )">
 					<ul class="lkb-nav__list">
 						<li v-for="group in groups" :key="group.id">
 							<button
@@ -290,11 +292,11 @@ onBeforeUnmount( () => {
 		<footer class="lkb-bar" :class="{ 'is-dirty': store.dirty }">
 			<p class="lkb-bar__status">
 				<template v-if="store.dirty">
-					{{ translate( 'Unsaved changes' ) }}
+					{{ __( 'Unsaved changes', 'licensio-knowledge-base' ) }}
 					<span class="lkb-bar__count">{{ changedCount }}</span>
 				</template>
 				<template v-else-if="store.loaded">
-					{{ translate( 'All changes saved.' ) }}
+					{{ __( 'All changes saved.', 'licensio-knowledge-base' ) }}
 				</template>
 			</p>
 
@@ -303,11 +305,11 @@ onBeforeUnmount( () => {
 					:disabled="! store.dirty || store.saving"
 					@click="store.revert()"
 				>
-					{{ translate( 'Discard' ) }}
+					{{ __( 'Discard', 'licensio-knowledge-base' ) }}
 				</a-button>
 
 				<a-button danger :disabled="store.saving" @click="confirmingReset = true">
-					{{ translate( 'Reset all' ) }}
+					{{ __( 'Reset all', 'licensio-knowledge-base' ) }}
 				</a-button>
 
 				<a-button
@@ -316,23 +318,24 @@ onBeforeUnmount( () => {
 					:loading="store.saving"
 					@click="store.save()"
 				>
-					{{ translate( 'Save changes' ) }}
+					{{ __( 'Save changes', 'licensio-knowledge-base' ) }}
 				</a-button>
 			</div>
 		</footer>
 
 		<a-modal
 			v-model:open="confirmingReset"
-			:title="translate( 'Reset every setting?' )"
-			:ok-text="translate( 'Reset everything' )"
-			:cancel-text="translate( 'Cancel' )"
+			:title="__( 'Reset every setting?', 'licensio-knowledge-base' )"
+			:ok-text="__( 'Reset everything', 'licensio-knowledge-base' )"
+			:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
 			ok-type="danger"
 			@ok="confirmReset"
 		>
 			<p>
 				{{
-					translate(
-						'Every setting goes back to its default. Stored articles, categories and feedback are untouched.'
+					__(
+						'Every setting goes back to its default. Stored articles, categories and feedback are untouched.',
+						'licensio-knowledge-base'
 					)
 				}}
 			</p>

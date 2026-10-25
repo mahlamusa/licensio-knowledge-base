@@ -12,8 +12,9 @@
  */
 
 import { computed, onMounted, ref, watch } from 'vue';
-import { clearLog, fetchLogEntries, fetchLogRuns, translate } from '../api';
+import { clearLog, fetchLogEntries, fetchLogRuns } from '../api';
 import type { LogEntry, LogMeta, LogRun, LogTerm } from '../types';
+import { __ } from '../../components/i18n';
 
 const props = defineProps< {
 	/** A run to open first, e.g. the one the wizard just finished. */
@@ -55,25 +56,25 @@ const run = computed( () =>
 );
 
 const statusOptions = computed( () => [
-	{ value: '', label: translate( 'All' ) },
-	{ value: 'failed', label: translate( 'Failed' ) },
-	{ value: 'warning', label: translate( 'Warnings' ) },
-	{ value: 'orphaned', label: translate( 'Orphaned' ) },
-	{ value: 'created', label: translate( 'Created' ) },
-	{ value: 'adopted', label: translate( 'Adopted' ) },
-	{ value: 'merged', label: translate( 'Merged' ) },
-	{ value: 'updated', label: translate( 'Updated' ) },
-	{ value: 'skipped', label: translate( 'Skipped' ) },
-	{ value: 'info', label: translate( 'Info' ) },
+	{ value: '', label: __( 'All', 'licensio-knowledge-base' ) },
+	{ value: 'failed', label: __( 'Failed', 'licensio-knowledge-base' ) },
+	{ value: 'warning', label: __( 'Warnings', 'licensio-knowledge-base' ) },
+	{ value: 'orphaned', label: __( 'Orphaned', 'licensio-knowledge-base' ) },
+	{ value: 'created', label: __( 'Created', 'licensio-knowledge-base' ) },
+	{ value: 'adopted', label: __( 'Adopted', 'licensio-knowledge-base' ) },
+	{ value: 'merged', label: __( 'Merged', 'licensio-knowledge-base' ) },
+	{ value: 'updated', label: __( 'Updated', 'licensio-knowledge-base' ) },
+	{ value: 'skipped', label: __( 'Skipped', 'licensio-knowledge-base' ) },
+	{ value: 'info', label: __( 'Info', 'licensio-knowledge-base' ) },
 ] );
 
 const columns = computed( () => [
-	{ title: translate( 'Status' ), key: 'status', width: 110 },
-	{ title: translate( 'Type' ), dataIndex: 'item_type', key: 'item_type', width: 120 },
-	{ title: translate( 'Title' ), key: 'title' },
-	{ title: translate( 'Source ID' ), dataIndex: 'source_id', key: 'source_id', width: 100 },
-	{ title: translate( 'New ID' ), dataIndex: 'target_id', key: 'target_id', width: 90 },
-	{ title: translate( 'Details' ), dataIndex: 'message', key: 'message' },
+	{ title: __( 'Status', 'licensio-knowledge-base' ), key: 'status', width: 110 },
+	{ title: __( 'Type', 'licensio-knowledge-base' ), dataIndex: 'item_type', key: 'item_type', width: 120 },
+	{ title: __( 'Title', 'licensio-knowledge-base' ), key: 'title' },
+	{ title: __( 'Source ID', 'licensio-knowledge-base' ), dataIndex: 'source_id', key: 'source_id', width: 100 },
+	{ title: __( 'New ID', 'licensio-knowledge-base' ), dataIndex: 'target_id', key: 'target_id', width: 90 },
+	{ title: __( 'Details', 'licensio-knowledge-base' ), dataIndex: 'message', key: 'message' },
 ] );
 
 /**
@@ -86,10 +87,10 @@ const columns = computed( () => [
  * @return {string} The label.
  */
 function runLabel( item: LogRun ): string {
-	const kind = item.dry_run ? translate( 'Dry run' ) : translate( 'Import' );
-	const failed = item.failed > 0 ? ` · ${ item.failed } ${ translate( 'failed' ) }` : '';
+	const kind = item.dry_run ? __( 'Dry run', 'licensio-knowledge-base' ) : __( 'Import', 'licensio-knowledge-base' );
+	const failed = item.failed > 0 ? ` · ${ item.failed } ${ __( 'failed', 'licensio-knowledge-base' ) }` : '';
 
-	return `${ item.started_at } UTC · ${ item.source } · ${ kind } · ${ item.entries } ${ translate( 'entries' ) }${ failed }`;
+	return `${ item.started_at } UTC · ${ item.source } · ${ kind } · ${ item.entries } ${ __( 'entries', 'licensio-knowledge-base' ) }${ failed }`;
 }
 
 /**
@@ -116,7 +117,7 @@ function words( value: string ): string {
  */
 function statusLabel( entry: LogEntry ): string {
 	if ( entry.dry_run && [ 'created', 'adopted', 'merged', 'updated' ].includes( entry.status ) ) {
-		return translate( 'would be' ) + ' ' + entry.status;
+		return __( 'would be', 'licensio-knowledge-base' ) + ' ' + entry.status;
 	}
 
 	return words( entry.status );
@@ -133,8 +134,8 @@ function statusLabel( entry: LogEntry ): string {
  */
 function termsOf( entry: LogEntry ): Array< LogTerm & { group: string } > {
 	return [
-		...( entry.details.categories ?? [] ).map( ( term ) => ( { ...term, group: translate( 'Category' ) } ) ),
-		...( entry.details.tags ?? [] ).map( ( term ) => ( { ...term, group: translate( 'Tag' ) } ) ),
+		...( entry.details.categories ?? [] ).map( ( term ) => ( { ...term, group: __( 'Category', 'licensio-knowledge-base' ) } ) ),
+		...( entry.details.tags ?? [] ).map( ( term ) => ( { ...term, group: __( 'Tag', 'licensio-knowledge-base' ) } ) ),
 	];
 }
 
@@ -199,7 +200,7 @@ async function loadRuns(): Promise< void > {
 
 		selectedRun.value = wanted ? ( props.runId as string ) : runs.value[ 0 ]?.run_id ?? '';
 	} catch ( caught ) {
-		error.value = caught instanceof Error ? caught.message : translate( 'The log could not be loaded.' );
+		error.value = caught instanceof Error ? caught.message : __( 'The log could not be loaded.', 'licensio-knowledge-base' );
 	}
 }
 
@@ -226,7 +227,7 @@ async function loadEntries(): Promise< void > {
 		entries.value = result.items;
 		total.value = result.total;
 	} catch ( caught ) {
-		error.value = caught instanceof Error ? caught.message : translate( 'The log could not be loaded.' );
+		error.value = caught instanceof Error ? caught.message : __( 'The log could not be loaded.', 'licensio-knowledge-base' );
 	} finally {
 		loading.value = false;
 	}
@@ -246,7 +247,7 @@ async function clear( everything: boolean ): Promise< void > {
 		await clearLog( everything ? '' : selectedRun.value );
 		await loadRuns();
 	} catch ( caught ) {
-		error.value = caught instanceof Error ? caught.message : translate( 'The log could not be cleared.' );
+		error.value = caught instanceof Error ? caught.message : __( 'The log could not be cleared.', 'licensio-knowledge-base' );
 	}
 }
 
@@ -286,7 +287,7 @@ defineExpose( { reload: loadRuns } );
 
 		<a-empty
 			v-if="! runs.length && ! error"
-			:description="translate( 'No imports have been logged yet.' )"
+			:description="__( 'No imports have been logged yet.', 'licensio-knowledge-base' )"
 		/>
 
 		<template v-else-if="runs.length">
@@ -294,7 +295,7 @@ defineExpose( { reload: loadRuns } );
 				<a-select
 					v-model:value="selectedRun"
 					class="licensio-kb-migration-log__run"
-					:aria-label="translate( 'Run' )"
+					:aria-label="__( 'Run', 'licensio-knowledge-base' )"
 				>
 					<a-select-option v-for="item in runs" :key="item.run_id" :value="item.run_id">
 						{{ runLabel( item ) }}
@@ -305,29 +306,29 @@ defineExpose( { reload: loadRuns } );
 					v-model:value="status"
 					class="licensio-kb-migration-log__status"
 					:options="statusOptions"
-					:aria-label="translate( 'Status' )"
+					:aria-label="__( 'Status', 'licensio-knowledge-base' )"
 				/>
 
 				<a-button v-if="run" :href="run.download_url">
-					{{ translate( 'Download CSV' ) }}
+					{{ __( 'Download CSV', 'licensio-knowledge-base' ) }}
 				</a-button>
 
 				<a-popconfirm
-					:title="translate( 'Delete this run\'s log entries? The imported content is not affected.' )"
-					:ok-text="translate( 'Delete' )"
-					:cancel-text="translate( 'Cancel' )"
+					:title="__( 'Delete this run\'s log entries? The imported content is not affected.', 'licensio-knowledge-base' )"
+					:ok-text="__( 'Delete', 'licensio-knowledge-base' )"
+					:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
 					@confirm="clear( false )"
 				>
-					<a-button>{{ translate( 'Delete this run\'s log' ) }}</a-button>
+					<a-button>{{ __( 'Delete this run\'s log', 'licensio-knowledge-base' ) }}</a-button>
 				</a-popconfirm>
 
 				<a-popconfirm
-					:title="translate( 'Clear the whole migration log? The imported content is not affected.' )"
-					:ok-text="translate( 'Clear log' )"
-					:cancel-text="translate( 'Cancel' )"
+					:title="__( 'Clear the whole migration log? The imported content is not affected.', 'licensio-knowledge-base' )"
+					:ok-text="__( 'Clear log', 'licensio-knowledge-base' )"
+					:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
 					@confirm="clear( true )"
 				>
-					<a-button danger>{{ translate( 'Clear all logs' ) }}</a-button>
+					<a-button danger>{{ __( 'Clear all logs', 'licensio-knowledge-base' ) }}</a-button>
 				</a-popconfirm>
 			</div>
 
@@ -343,7 +344,7 @@ defineExpose( { reload: loadRuns } );
 				@change="onTableChange"
 			>
 				<template #emptyText>
-					{{ translate( 'No entries match this filter.' ) }}
+					{{ __( 'No entries match this filter.', 'licensio-knowledge-base' ) }}
 				</template>
 
 				<template #bodyCell="{ column, record }">
@@ -363,7 +364,7 @@ defineExpose( { reload: loadRuns } );
 				<template #expandedRowRender="{ record }">
 					<div class="licensio-kb-migration-log__details">
 						<section v-if="termsOf( record ).length">
-							<h4>{{ translate( 'Categories and tags' ) }}</h4>
+							<h4>{{ __( 'Categories and tags', 'licensio-knowledge-base' ) }}</h4>
 							<ul>
 								<li v-for="term in termsOf( record )" :key="term.group + term.source_id">
 									{{ term.group }}: <strong>{{ term.name || term.source_id }}</strong>
@@ -374,14 +375,14 @@ defineExpose( { reload: loadRuns } );
 						</section>
 
 						<section v-if="metaOf( record ).length">
-							<h4>{{ translate( 'Meta' ) }}</h4>
+							<h4>{{ __( 'Meta', 'licensio-knowledge-base' ) }}</h4>
 							<table class="licensio-kb-migration-log__meta">
 								<thead>
 									<tr>
-										<th>{{ translate( 'Key' ) }}</th>
-										<th>{{ translate( 'Value' ) }}</th>
-										<th>{{ translate( 'Outcome' ) }}</th>
-										<th>{{ translate( 'Where' ) }}</th>
+										<th>{{ __( 'Key', 'licensio-knowledge-base' ) }}</th>
+										<th>{{ __( 'Value', 'licensio-knowledge-base' ) }}</th>
+										<th>{{ __( 'Outcome', 'licensio-knowledge-base' ) }}</th>
+										<th>{{ __( 'Where', 'licensio-knowledge-base' ) }}</th>
 									</tr>
 								</thead>
 								<tbody>
