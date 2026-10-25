@@ -415,9 +415,10 @@ async function save(): Promise< void > {
 .lkb-order__item {
 	display: flex;
 	align-items: center;
-	gap: 8px;
+	gap: 12px;
 	margin: 0 0 6px;
-	padding: 6px 8px;
+	padding: 8px 10px;
+	line-height: 1.5;
 	border: 1px solid var(--lkb-border-wp);
 	border-radius: 6px;
 	background: var(--lkb-surface);
@@ -436,10 +437,13 @@ async function save(): Promise< void > {
 	flex: 1;
 	min-width: 0;
 	overflow-wrap: anywhere;
+	font-size: 14px;
+	font-weight: 600;
 }
 
 .lkb-order__status {
 	margin-left: 6px;
+	font-weight: 400;
 }
 
 .lkb-order__buttons {

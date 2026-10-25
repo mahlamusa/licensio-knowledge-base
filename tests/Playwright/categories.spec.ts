@@ -837,6 +837,46 @@ test.describe( 'Categories app', () => {
 		] );
 	} );
 
+	test( 'tree rows are sized like a core list table row', async ( { page } ) => {
+		const alpha = await categoryId( page, 'Alpha' );
+
+		await makeArticles( page, alpha, [ 'E2E order size' ] );
+		await page.reload();
+		await node( page, 'Alpha' ).locator( '.lkb-tree__name' ).click();
+
+		const name = node( page, 'Alpha' ).locator( '.lkb-tree__name' );
+		const item = page.locator( '.lkb-order__item' ).first();
+
+		await expect( name ).toHaveCSS( 'font-size', '14px' );
+		await expect( name ).toHaveCSS( 'font-weight', '600' );
+		await expect( item.locator( '.lkb-order__name' ) ).toHaveCSS( 'font-size', '14px' );
+
+		for ( const width of [ 1280, 390 ] ) {
+			await page.setViewportSize( { width, height: 900 } );
+
+			const row = ( await node( page, 'Alpha' ).boundingBox() )?.height ?? 0;
+			const child = node( page, 'Gamma child' ).locator( '.lkb-tree__name' );
+			const parent = node( page, 'Gamma' ).locator( '.lkb-tree__name' );
+			const indent =
+				( ( await child.boundingBox() )?.x ?? 0 ) -
+				( ( await parent.boundingBox() )?.x ?? 0 );
+
+			expect( row, `row height at ${ width }px` ).toBeGreaterThanOrEqual( 37 );
+			expect( row, `row height at ${ width }px` ).toBeLessThanOrEqual( 56 );
+			expect( indent, `child indent at ${ width }px` ).toBeGreaterThanOrEqual( 20 );
+			expect(
+				( await item.boundingBox() )?.height ?? 0,
+				`order row height at ${ width }px`
+			).toBeGreaterThanOrEqual( 37 );
+		}
+
+		await node( page, 'Beta' ).hover();
+		await expect( node( page, 'Beta' ) ).not.toHaveCSS(
+			'background-color',
+			'rgba(0, 0, 0, 0)'
+		);
+	} );
+
 	test( 'the panes stack at phone width', async ( { page } ) => {
 		await page.setViewportSize( { width: 390, height: 844 } );
 

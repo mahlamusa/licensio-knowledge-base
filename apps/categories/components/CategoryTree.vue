@@ -750,10 +750,38 @@ function onMenu( item: CategoryItem, key: string ): void {
 	font-size: 12px;
 }
 
+/*
+ * Rows sized like a core list table row: 8px 10px padding, a 1.5 line height
+ * and a 14px, weight 600 name, as core's row titles. Child levels are
+ * indented a full step and a row shows a background on hover.
+ */
+.lkb-tree__body :deep( .ant-tree-treenode ) {
+	align-items: center;
+	padding: 0 0 2px;
+	border-radius: 6px;
+}
+
+.lkb-tree__body :deep( .ant-tree-treenode:hover ) {
+	background: var(--lkb-hover);
+}
+
+.lkb-tree__body :deep( .ant-tree-node-content-wrapper ) {
+	padding: 8px 10px;
+	line-height: 1.5;
+}
+
+.lkb-tree__body :deep( .ant-tree-switcher ) {
+	align-self: center;
+}
+
+.lkb-tree__body :deep( .ant-tree-indent-unit ) {
+	width: 24px;
+}
+
 .lkb-tree__node {
 	display: flex;
 	align-items: center;
-	gap: 8px;
+	gap: 12px;
 	min-width: 0;
 }
 
@@ -761,11 +789,13 @@ function onMenu( item: CategoryItem, key: string ): void {
 	flex: 1;
 	min-width: 0;
 	overflow-wrap: anywhere;
+	font-size: 14px;
+	font-weight: 600;
 }
 
 .lkb-tree__count {
-	min-width: 24px;
-	padding: 0 6px;
+	min-width: 28px;
+	padding: 0 8px;
 	border-radius: 10px;
 	background: var(--lkb-sunken);
 	color: var(--lkb-ink-muted);
