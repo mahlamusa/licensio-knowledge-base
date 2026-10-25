@@ -15,7 +15,8 @@
 # $GITHUB_ENV in CI, or export them locally:
 #
 #   bin/e2e-env.sh start releases/licensio-knowledge-base-wporg.zip > .tmp/e2e.env
-#   set -a; . .tmp/e2e.env; set +a; npx playwright test
+#   while IFS= read -r line; do export "$line"; done < .tmp/e2e.env
+#   npx playwright test
 #
 # @since 1.0.0
 

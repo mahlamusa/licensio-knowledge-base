@@ -8,13 +8,13 @@
  *
  * The suite needs a running WordPress with this plugin active and an
  * administrator account, so it is skipped unless `LICENSIO_KB_E2E=1` and the
- * two credential variables are present. CI has no such site and runs Playwright
- * with `--pass-with-no-tests`.
+ * two credential variables are present. CI provides both through
+ * `bin/e2e-env.sh`.
  *
  * @since 1.0.0
  */
 
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 const enabled = process.env.LICENSIO_KB_E2E === '1';
 const user = process.env.LICENSIO_KB_ADMIN_USER ?? '';
@@ -54,8 +54,40 @@ async function logIn( page: Page ): Promise< void > {
 async function openSettings( page: Page ): Promise< void > {
 	await page.goto( SETTINGS_URL );
 	await expect(
-		page.getByRole( 'heading', { name: 'Knowledge Base Settings' } )
+		page.getByRole( 'heading', { name: 'Settings', exact: true } )
 	).toBeVisible();
+	await expect( sectionButton( page, 'General' ) ).toBeVisible();
+}
+
+/**
+ * The sidebar button that opens a settings section.
+ *
+ * @since 1.0.0
+ *
+ * @param {Page}   page  The browser page.
+ * @param {string} label The section label.
+ *
+ * @return {Locator} The button.
+ */
+function sectionButton( page: Page, label: string ): Locator {
+	return page
+		.getByRole( 'navigation', { name: 'Settings sections' } )
+		.getByRole( 'button', { name: label, exact: true } );
+}
+
+/**
+ * The text input of the brand colour row.
+ *
+ * @since 1.0.0
+ *
+ * @param {Page} page The browser page.
+ *
+ * @return {Locator} The input.
+ */
+function brandField( page: Page ): Locator {
+	return page
+		.locator( '.lkb-field', { hasText: 'Brand colour' } )
+		.locator( 'input.ant-input' );
 }
 
 /**
@@ -69,17 +101,18 @@ async function openSettings( page: Page ): Promise< void > {
  * @return {Promise<void>} Resolves once the field holds the value.
  */
 async function setBrandColour( page: Page, value: string ): Promise< void > {
-	await page.getByRole( 'tab', { name: 'Appearance' } ).click();
+	await sectionButton( page, 'Appearance' ).click();
 
-	const field = page
-		.locator( '.ant-form-item', { hasText: 'Brand colour' } )
-		.locator( 'input.ant-input' );
+	const field = brandField( page );
 
 	await field.fill( value );
 	await field.blur();
 }
 
 test.describe( 'Knowledge base settings', () => {
+	// Every test writes the same stored settings, so they cannot overlap.
+	test.describe.configure( { mode: 'serial' } );
+
 	test.skip(
 		! enabled || ! user || ! password,
 		'Set LICENSIO_KB_E2E=1, LICENSIO_KB_ADMIN_USER and LICENSIO_KB_ADMIN_PASSWORD to run.'
@@ -90,13 +123,18 @@ test.describe( 'Knowledge base settings', () => {
 	} );
 
 	test.afterEach( async ( { page } ) => {
+		// A test may leave unsaved edits behind; let the guard wave this through.
+		page.on( 'dialog', ( dialog ) => dialog.accept().catch( () => undefined ) );
+
 		await openSettings( page );
-		await page.getByRole( 'button', { name: 'Reset to defaults' } ).click();
+		await page.getByRole( 'button', { name: 'Reset all' } ).click();
 		await page
 			.getByRole( 'dialog' )
-			.getByRole( 'button', { name: 'Reset to defaults' } )
+			.getByRole( 'button', { name: 'Reset everything' } )
 			.click();
-		await expect( page.getByText( 'Every setting is back to' ) ).toBeVisible();
+		await expect(
+			page.getByText( 'Every setting is back to its default.' )
+		).toBeVisible();
 	} );
 
 	test( 'a brand colour saved here reaches the front end', async ( {
@@ -126,11 +164,13 @@ test.describe( 'Knowledge base settings', () => {
 		await openSettings( page );
 		await setBrandColour( page, '#0f766e' );
 
-		await expect( page.getByText( 'You have unsaved changes.' ) ).toBeVisible();
+		await expect( page.locator( '.lkb-bar__status' ) ).toContainText(
+			'Unsaved changes'
+		);
 
 		let asked = false;
 
-		page.on( 'dialog', async ( dialog ) => {
+		page.once( 'dialog', async ( dialog ) => {
 			asked = true;
 
 			await dialog.dismiss();
@@ -139,9 +179,8 @@ test.describe( 'Knowledge base settings', () => {
 		await page.getByRole( 'link', { name: 'Dashboard' } ).first().click();
 
 		await expect.poll( () => asked ).toBe( true );
-		await expect(
-			page.getByRole( 'heading', { name: 'Knowledge Base Settings' } )
-		).toBeVisible();
+		await expect( page ).toHaveURL( /page=licensio-kb-settings/ );
+		await expect( brandField( page ) ).toHaveValue( '#0f766e' );
 	} );
 
 	test( 'an invalid value is refused per field and nothing is saved', async ( {
@@ -149,32 +188,34 @@ test.describe( 'Knowledge base settings', () => {
 	} ) => {
 		await openSettings( page );
 
-		await page.getByRole( 'tab', { name: 'General' } ).click();
-
+		// The number control clamps to its bounds in the browser, so the
+		// invalid value goes into the free-text side of the colour row.
 		const perPage = page
-			.locator( '.ant-form-item', { hasText: 'Articles per page' } )
+			.locator( '.lkb-field', { hasText: 'Articles per page' } )
 			.locator( 'input' );
 
-		await perPage.fill( '0' );
-		await setBrandColour( page, '#123456' );
+		await perPage.fill( '7' );
+		await perPage.blur();
+		await setBrandColour( page, 'not-a-colour' );
 
 		await page.getByRole( 'button', { name: 'Save changes' } ).click();
 
 		await expect(
 			page.getByText( 'One or more settings are invalid' )
 		).toBeVisible();
+		await expect(
+			page.locator( '.lkb-field.is-invalid', { hasText: 'Brand colour' } )
+		).toBeVisible();
 
 		// The good field in the same payload was not written either.
+		page.on( 'dialog', ( dialog ) => dialog.accept().catch( () => undefined ) );
 		await page.reload();
-		await expect(
-			page.getByRole( 'heading', { name: 'Knowledge Base Settings' } )
-		).toBeVisible();
-		await page.getByRole( 'tab', { name: 'Appearance' } ).click();
+		await expect( sectionButton( page, 'General' ) ).toBeVisible();
 
 		await expect(
 			page
-				.locator( '.ant-form-item', { hasText: 'Brand colour' } )
-				.locator( 'input.ant-input' )
-		).not.toHaveValue( '#123456' );
+				.locator( '.lkb-field', { hasText: 'Articles per page' } )
+				.locator( 'input' )
+		).not.toHaveValue( '7' );
 	} );
 } );
