@@ -78,7 +78,9 @@ function licensio_kb_e2e_term( $taxonomy, $name ) {
 }
 
 // Plain permalinks, so every spec proves the REST root as a query string.
-update_option( 'permalink_structure', '' );
+// Set it on the rewrite object too, or the flush stores the old pretty rules.
+global $wp_rewrite;
+$wp_rewrite->set_permalink_structure( '' );
 flush_rewrite_rules();
 
 // Articles for the search type-ahead and every list the apps show.

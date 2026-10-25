@@ -162,7 +162,7 @@ test.describe( 'Knowledge base blocks', () => {
 			.map( ( cookie ) => `${ cookie.name }=${ cookie.value }` )
 			.join( '; ' );
 
-		const created = await request.post( '/wp-json/wp/v2/pages', {
+		const created = await request.post( '/?rest_route=/wp/v2/pages', {
 			headers: {
 				'X-WP-Nonce': nonce,
 				Cookie: cookieHeader,

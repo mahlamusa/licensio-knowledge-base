@@ -247,14 +247,14 @@ jobs:
         run: bash bin/e2e-env.sh start "${RUNNER_TEMP}/release/licensio-knowledge-base-wporg.zip" >> "$GITHUB_ENV"
 
       # Every spec skips itself when its site variables are missing, and a
-      # skipped suite still reports success. The grep turns a skip into a
-      # failure, the same guard the integration job uses.
+      # skipped suite still reports success. The grep turns a skip, or a test
+      # that only passed on retry, into a failure.
       - name: End-to-end tests (Playwright)
         run: |
           set -o pipefail
           npx playwright test --reporter=list,github,html | tee /tmp/e2e.log
-          if grep -qE "^ +[0-9]+ skipped|No tests found" /tmp/e2e.log; then
-            echo "::error::End-to-end specs were skipped."
+          if grep -qE "^ +[0-9]+ (skipped|flaky)|No tests found" /tmp/e2e.log; then
+            echo "::error::End-to-end specs were skipped or flaky."
             exit 1
           fi
 

@@ -189,7 +189,8 @@ test.describe( 'Knowledge base settings', () => {
 			page.locator( '.lkb-field.is-invalid', { hasText: 'Brand colour' } )
 		).toBeVisible();
 
-		// The good field in the same payload was not written either.
+		// The good field in the same payload was not written either; the
+		// previous test's Reset all left it on its default of 20.
 		page.on( 'dialog', ( dialog ) => dialog.accept().catch( () => undefined ) );
 		await page.reload();
 		await expect( sectionButton( page, 'General' ) ).toBeVisible();
@@ -198,6 +199,6 @@ test.describe( 'Knowledge base settings', () => {
 			page
 				.locator( '.lkb-field', { hasText: 'Articles per page' } )
 				.locator( 'input' )
-		).not.toHaveValue( '7' );
+		).toHaveValue( '20' );
 	} );
 } );
