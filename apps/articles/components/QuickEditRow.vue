@@ -14,10 +14,10 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import ConfirmButton from '../../components/ConfirmButton.vue';
 import TermSelect from '../../components/TermSelect.vue';
-import { RestError } from '../../components/rest';
+import { errorMessage, RestError } from '../../components/rest';
 import { __, sprintf } from '../../components/i18n';
 import { updateArticle } from '../api';
-import { messageOf, useArticlesStore } from '../store';
+import { useArticlesStore } from '../store';
 import AuthorSelect from './AuthorSelect.vue';
 import type { TermValue } from '../../components/types/terms';
 import type { ArticleItem, ArticleLock, QuickEditPayload } from '../types';
@@ -227,7 +227,7 @@ async function save(): Promise< void > {
 			}
 		}
 
-		error.value = messageOf( caught );
+		error.value = errorMessage( caught );
 	} finally {
 		saving.value = false;
 	}

@@ -14,11 +14,8 @@ import { message } from 'ant-design-vue';
 import ConfirmButton from '../../components/ConfirmButton.vue';
 import { __, sprintf } from '../../components/i18n';
 import type { CategoryOrderArticle } from '../../components/types/category-order';
-import {
-	errorMessage,
-	fetchCategoryArticles,
-	saveArticleOrder,
-} from '../api';
+import { errorMessage } from '../../components/rest';
+import { fetchCategoryArticles, saveArticleOrder } from '../api';
 import type { CategoryItem } from '../types';
 
 const props = defineProps< {

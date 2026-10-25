@@ -7,7 +7,7 @@
  * @since 1.0.0
  */
 
-import { get, patch, post } from '../components/rest';
+import { get, patch, post, PER_PAGE } from '../components/rest';
 import type {
 	BulkDeleteResult,
 	ConvertResult,
@@ -38,7 +38,7 @@ export function settings(): TagsConfig {
 		window.licensioKbTags ?? {
 			root: '',
 			nonce: '',
-			perPage: 20,
+			perPage: PER_PAGE,
 			settingsUrl: '',
 		}
 	);

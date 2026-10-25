@@ -18,12 +18,12 @@ import { defineStore } from 'pinia';
 import {
 	createCategory,
 	deleteCategory,
-	errorMessage,
 	fetchCategories,
 	mergeCategories,
 	saveCategoryOrder,
 	updateCategory,
 } from './api';
+import { errorMessage } from '../components/rest';
 import type {
 	ArticleReassignment,
 	CategoryDeleted,

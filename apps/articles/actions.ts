@@ -11,12 +11,9 @@
 import { watch } from 'vue';
 import { message } from 'ant-design-vue';
 import { __, _n, sprintf } from '../components/i18n';
+import { errorMessage } from '../components/rest';
 import { showUndoToast } from './components/UndoToast';
-import {
-	BATCH_SIZE,
-	messageOf,
-	useArticlesStore as articlesStore,
-} from './store';
+import { BATCH_SIZE, useArticlesStore as articlesStore } from './store';
 import type { BulkAction, BulkArgs, SkipReason } from './types';
 
 /** The actions that can be undone. Author and comments are left out on purpose. */
@@ -371,7 +368,7 @@ export async function performAction(
 					);
 				}
 			} catch ( error ) {
-				message.error( messageOf( error ) );
+				message.error( errorMessage( error ) );
 			}
 		} )
 	);

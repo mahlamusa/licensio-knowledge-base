@@ -16,7 +16,7 @@ import ConfirmButton from '../../components/ConfirmButton.vue';
 import TermSelect from '../../components/TermSelect.vue';
 import { __, sprintf } from '../../components/i18n';
 import type { TermValue } from '../../components/types/terms';
-import { errorMessage } from '../api';
+import { errorMessage } from '../../components/rest';
 import { childIds, selfAndDescendantIds, useCategoriesStore } from '../store';
 import type {
 	ArticleReassignment,

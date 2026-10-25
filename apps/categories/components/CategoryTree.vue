@@ -19,7 +19,7 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import { __, sprintf } from '../../components/i18n';
 import { usePopoverFocus } from '../../components/popover-focus';
-import { errorMessage } from '../api';
+import { errorMessage } from '../../components/rest';
 import {
 	applyMove,
 	childIds,

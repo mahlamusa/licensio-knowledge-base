@@ -5,7 +5,9 @@
  * request carries the `X-WP-Nonce` header, sends and reads JSON, and turns an
  * error response into a `RestError` that keeps the server's error code, HTTP
  * status and data, so a caller can tell a locked article (409) or a field
- * error (400 with `data.params`) from any other failure.
+ * error (400 with `data.params`) from any other failure. A success answer
+ * that is not JSON is an error too. `errorMessage()` gives the text to show
+ * for anything a request threw.
  *
  * Each app calls `configure()` once, from its `index.ts`, with the root and
  * nonce its PHP page localised:
@@ -45,6 +47,9 @@ export type QueryValue =
 	| undefined;
 
 export type Query = Record< string, QueryValue >;
+
+/** The rows per page of a list app, when the page set no other. */
+export const PER_PAGE = 20;
 
 /**
  * A request the server refused, with what it said about it.
@@ -87,6 +92,19 @@ export class RestError extends Error {
 }
 
 let config: RestConfig = { root: '', nonce: '' };
+
+/**
+ * The message to show for a failed request.
+ *
+ * @since 1.0.0
+ *
+ * @param {unknown} error What was thrown.
+ *
+ * @return {string} The error's message, or the thrown value as text.
+ */
+export function errorMessage( error: unknown ): string {
+	return error instanceof Error ? error.message : String( error );
+}
 
 /**
  * Set the root and nonce every later request uses.
@@ -153,6 +171,8 @@ export function url( path: string, query: Query = {} ): string {
  * @param {unknown} body   The JSON body, if any.
  *
  * @return {Promise<T>} The decoded body; undefined for an empty answer.
+ * @throws {RestError} When the request fails, the server refuses it, or a
+ *                     success answer is not JSON.
  */
 async function request< T >(
 	method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE',
@@ -196,6 +216,19 @@ async function request< T >(
 		try {
 			payload = JSON.parse( text );
 		} catch {
+			// A success answer that is not JSON is a PHP notice or a page
+			// some other code printed, not data the caller can use.
+			if ( response.ok ) {
+				throw new RestError(
+					__(
+						'The server sent an answer that could not be read. Reload the page and try again.',
+						'licensio-knowledge-base'
+					),
+					'licensio_kb_invalid_response',
+					response.status
+				);
+			}
+
 			payload = null;
 		}
 	}

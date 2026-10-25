@@ -357,14 +357,6 @@ onUnmounted( () => {
 	gap: 8px;
 }
 
-.lkb-toolbar {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: var(--lkb-gap);
-	margin-bottom: 12px;
-}
-
 .lkb-tags__search {
 	max-width: 320px;
 }
@@ -375,42 +367,6 @@ onUnmounted( () => {
 	gap: 8px;
 	color: var(--lkb-ink-wp-secondary);
 	cursor: pointer;
-}
-
-.lkb-bulk {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: var(--lkb-gap);
-	min-height: 46px;
-	margin-bottom: 12px;
-	padding: 8px var(--lkb-gap);
-	border: 1px solid var(--lkb-border-wp);
-	border-radius: var(--lkb-radius);
-	background: var(--lkb-sunken);
-	transition: background 0.12s ease, border-color 0.12s ease;
-}
-
-.lkb-bulk.is-armed {
-	border-color: var(--lkb-accent);
-	background: var(--lkb-brand-tint);
-}
-
-.lkb-bulk__hint {
-	color: var(--lkb-ink-faint);
-	font-size: 13px;
-}
-
-.lkb-bulk__count {
-	color: var(--lkb-accent);
-	font-size: 13px;
-	font-weight: 600;
-}
-
-.lkb-bulk__actions {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 8px;
 }
 
 @media ( max-width: 782px ) {

@@ -8,7 +8,7 @@
  * @since 1.0.0
  */
 
-import { get, patch, post, put } from '../components/rest';
+import { get, patch, PER_PAGE, post, put } from '../components/rest';
 import type { Query } from '../components/rest';
 import type {
 	ArticleFilters,
@@ -49,7 +49,7 @@ const FALLBACK_CONFIG: ArticlesConfig = {
 			'reading_time',
 			'date',
 		],
-		per_page: 20,
+		per_page: PER_PAGE,
 	},
 	lowRating: { threshold: 50, minVotes: 5 },
 };
