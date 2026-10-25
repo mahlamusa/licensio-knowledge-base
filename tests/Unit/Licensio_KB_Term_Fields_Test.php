@@ -72,9 +72,10 @@ class Licensio_KB_Term_Fields_Test extends Licensio_KB_Test_Case {
             }
         );
 
+        // Core's update_term_meta() unslashes the value before storing it.
         Functions\when( 'update_term_meta' )->alias(
             function ( $term_id, $key, $value ) {
-                $this->written[ $term_id . '|' . $key ] = $value;
+                $this->written[ $term_id . '|' . $key ] = is_string( $value ) ? stripslashes( $value ) : $value;
 
                 return true;
             }
@@ -172,6 +173,28 @@ class Licensio_KB_Term_Fields_Test extends Licensio_KB_Test_Case {
 
         $this->assertSame(
             '<svg viewBox="0 0 24 24"><path d="M4 4h16"/></svg>',
+            $this->written['3|licensio_icon_svg']
+        );
+    }
+
+    /**
+     * A backslash the user typed into the SVG is stored, not lost.
+     *
+     * The request is unslashed once, and `update_term_meta()` unslashes again,
+     * so the value has to be slashed for that second pass.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_backslash_in_the_svg_survives_the_save() {
+        $_POST['licensio_icon_svg'] = wp_slash( '<svg viewBox="0 0 24 24"><title>C:\\Temp</title></svg>' );
+
+        $fields = new Licensio_KB_Term_Fields();
+        $fields->save_fields( 3 );
+
+        $this->assertSame(
+            '<svg viewBox="0 0 24 24"><title>C:\\Temp</title></svg>',
             $this->written['3|licensio_icon_svg']
         );
     }

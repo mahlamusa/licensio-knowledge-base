@@ -672,7 +672,7 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
     /**
      * Create a category.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Slashes the name and arguments so backslashes survive.
      *
      * @param WP_REST_Request $request The request.
      *
@@ -686,7 +686,8 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
             return self::invalid_category();
         }
 
-        $result = wp_insert_term( (string) $request->get_param( 'name' ), Licensio_KB_Post_Types::TAXONOMY_CATEGORY, $args );
+        // REST values arrive unslashed and wp_insert_term() unslashes its input.
+        $result = wp_insert_term( wp_slash( (string) $request->get_param( 'name' ) ), Licensio_KB_Post_Types::TAXONOMY_CATEGORY, wp_slash( $args ) );
 
         if ( is_wp_error( $result ) ) {
             return self::rest_error( $result );
@@ -706,7 +707,7 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      * category already uses is refused with a 409 before anything is
      * written.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Slashes the arguments so backslashes survive.
      *
      * @param WP_REST_Request $request The request.
      *
@@ -746,7 +747,8 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
         }
 
         if ( ! empty( $args ) ) {
-            $result = wp_update_term( $id, Licensio_KB_Post_Types::TAXONOMY_CATEGORY, $args );
+            // REST values arrive unslashed and wp_update_term() unslashes its input.
+            $result = wp_update_term( $id, Licensio_KB_Post_Types::TAXONOMY_CATEGORY, wp_slash( $args ) );
 
             if ( is_wp_error( $result ) ) {
                 return self::rest_error( $result );
@@ -1303,9 +1305,11 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      * Write the icon and image fields present in a request.
      *
      * The values were already sanitised by the argument schema, and
-     * `update_term_meta()` runs the registered sanitisers again.
+     * `update_term_meta()` runs the registered sanitisers again. They are
+     * slashed because `update_term_meta()` unslashes what it is given, and a
+     * REST value arrives unslashed.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Slashes the values so backslashes survive.
      *
      * @param int                  $term_id The category.
      * @param array<string, mixed> $params  The request parameters.
@@ -1315,7 +1319,7 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
     private function save_meta( $term_id, array $params ) {
         foreach ( self::META_FIELDS as $field => $meta_key ) {
             if ( array_key_exists( $field, $params ) && null !== $params[ $field ] ) {
-                update_term_meta( (int) $term_id, $meta_key, $params[ $field ] );
+                update_term_meta( (int) $term_id, $meta_key, wp_slash( $params[ $field ] ) );
             }
         }
     }
