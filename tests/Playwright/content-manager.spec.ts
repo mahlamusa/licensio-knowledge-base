@@ -16,7 +16,10 @@
  */
 
 import { expect, test, type Page } from '@playwright/test';
+import { failOnUnresolvedComponents } from './helpers/ant-components';
 import { logIn, password, user } from './helpers/session';
+
+failOnUnresolvedComponents();
 
 const enabled = process.env.LICENSIO_KB_E2E === '1';
 
