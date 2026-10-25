@@ -75,7 +75,7 @@ class Licensio_KB_Term_Fields_Test extends Licensio_KB_Test_Case {
         // Core's update_term_meta() unslashes the value before storing it.
         Functions\when( 'update_term_meta' )->alias(
             function ( $term_id, $key, $value ) {
-                $this->written[ $term_id . '|' . $key ] = is_string( $value ) ? stripslashes( $value ) : $value;
+                $this->written[ $term_id . '|' . $key ] = self::core_unslash( $value );
 
                 return true;
             }
