@@ -17,6 +17,7 @@
  */
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { switchOffWelcomeGuides } from './helpers/editor';
 import { logIn, password, user } from './helpers/session';
 
 const enabled = process.env.LICENSIO_KB_E2E === '1';
@@ -60,19 +61,7 @@ async function newPost( page: Page ): Promise< void > {
 	// chooser over the editor, and the blocks are the same in either.
 	await page.goto( '/wp-admin/post-new.php' );
 
-	// The welcome guide opens over the editor some time after load. It is not
-	// under test, so it is switched off through the editor's own preferences.
-	await page.waitForFunction(
-		() =>
-			// eslint-disable-next-line no-undef
-			!! ( window as any ).wp?.data?.dispatch( 'core/preferences' )
-	);
-	await page.evaluate( () => {
-		// eslint-disable-next-line no-undef
-		const preferences = ( window as any ).wp.data.dispatch( 'core/preferences' );
-
-		preferences.set( 'core/edit-post', 'welcomeGuide', false );
-	} );
+	await switchOffWelcomeGuides( page, 'core/edit-post', [ 'welcomeGuide' ] );
 
 	await expect(
 		page.getByRole( 'button', { name: /Block Inserter|Toggle block inserter/ } )

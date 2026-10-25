@@ -14,6 +14,7 @@
 # `start` prints the variables the specs need as KEY=value lines. Append them to
 # $GITHUB_ENV in CI, or export them locally:
 #
+#   mkdir -p .tmp
 #   bin/e2e-env.sh start releases/licensio-knowledge-base-wporg.zip > .tmp/e2e.env
 #   while IFS= read -r line; do export "$line"; done < .tmp/e2e.env
 #   npx playwright test

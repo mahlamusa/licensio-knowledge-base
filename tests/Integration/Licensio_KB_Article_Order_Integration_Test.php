@@ -52,7 +52,6 @@ class Licensio_KB_Article_Order_Integration_Test extends Licensio_KB_Analytics_D
         $this->install_content_schemas();
 
         // The SQL-backed term API the category suites share.
-
         $this->stub_category_term_api();
         Brain\Monkey\Functions\when( 'rest_authorization_required_code' )->justReturn( 403 );
         Brain\Monkey\Functions\when( 'current_user_can' )->justReturn( true );

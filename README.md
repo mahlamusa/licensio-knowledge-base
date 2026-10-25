@@ -45,6 +45,7 @@ The Playwright specs need a WordPress to run against. `bin/e2e-env.sh` boots one
 
 ```bash
 bash bin/build-release.sh
+mkdir -p .tmp
 bin/e2e-env.sh start releases/licensio-knowledge-base-wporg.zip > .tmp/e2e.env
 while IFS= read -r line; do export "$line"; done < .tmp/e2e.env
 npx playwright test

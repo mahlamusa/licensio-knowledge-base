@@ -15,6 +15,7 @@
  */
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { switchOffWelcomeGuides } from './helpers/editor';
 import { logIn, password, user } from './helpers/session';
 
 const enabled = process.env.LICENSIO_KB_E2E === '1';
@@ -81,19 +82,10 @@ test.describe( 'Knowledge base block templates in the Site Editor', () => {
 
 		await templateCard( page, 'Single Article' ).click();
 
-		// The welcome guides open over the editor and are not under test.
-		await page.waitForFunction(
-			() =>
-				// eslint-disable-next-line no-undef
-				!! ( window as any ).wp?.data?.dispatch( 'core/preferences' )
-		);
-		await page.evaluate( () => {
-			// eslint-disable-next-line no-undef
-			const preferences = ( window as any ).wp.data.dispatch( 'core/preferences' );
-
-			preferences.set( 'core/edit-site', 'welcomeGuide', false );
-			preferences.set( 'core/edit-site', 'welcomeGuideTemplate', false );
-		} );
+		await switchOffWelcomeGuides( page, 'core/edit-site', [
+			'welcomeGuide',
+			'welcomeGuideTemplate',
+		] );
 
 		const canvas = page.frameLocator( 'iframe[name="editor-canvas"]' );
 
