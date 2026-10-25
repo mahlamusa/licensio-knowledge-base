@@ -56,10 +56,30 @@ async function submitPassword( page: Page, value: string ): Promise< void > {
 	const form = page.locator( '.post-password-form' );
 
 	await form.locator( 'input[name="post_password"]' ).fill( value );
+
+	// The next load event, not the current state: the page has already loaded,
+	// so waiting on the state would return before the form is even sent.
 	await Promise.all( [
-		page.waitForLoadState( 'load' ),
+		page.waitForEvent( 'load' ),
 		form.locator( '[type="submit"]' ).click(),
 	] );
+}
+
+/**
+ * Whether the browser holds core's post password cookie.
+ *
+ * @since 1.0.0
+ *
+ * @param {Page} page The browser page.
+ *
+ * @return {Promise<boolean>} True once a password has been submitted.
+ */
+async function hasPasswordCookie( page: Page ): Promise< boolean > {
+	const cookies = await page.context().cookies();
+
+	return cookies.some( ( cookie ) =>
+		cookie.name.startsWith( 'wp-postpass_' )
+	);
 }
 
 test.describe( 'Password-protected article', () => {
@@ -99,12 +119,16 @@ test.describe( 'Password-protected article', () => {
 		await expect( page.locator( '#wpadminbar' ) ).toHaveCount( 0 );
 		await expect( form ).toBeVisible();
 		await expect( page.getByText( BODY ) ).toHaveCount( 0 );
+		expect( await page.content() ).not.toContain( BODY );
 		await expect( feedback ).toHaveCount( 0 );
 		expect( viewCount( articleId ) ).toBe( 0 );
 
 		await submitPassword( page, 'not-the-password' );
 
+		// The wrong password was sent and remembered, and still opens nothing.
+		expect( await hasPasswordCookie( page ) ).toBe( true );
 		await expect( form ).toBeVisible();
+		expect( await page.content() ).not.toContain( BODY );
 		await expect( page.getByText( BODY ) ).toHaveCount( 0 );
 		await expect( feedback ).toHaveCount( 0 );
 		expect( viewCount( articleId ) ).toBe( 0 );
@@ -123,6 +147,7 @@ test.describe( 'Password-protected article', () => {
 	} ) => {
 		await page.goto( `/?post_type=licensio_article&p=${ articleId }` );
 		await submitPassword( page, SECRET );
+		await expect( page.locator( '.licensio-kb-feedback' ) ).toBeVisible();
 
 		const settings = await page.evaluate( () => {
 			const data = (
