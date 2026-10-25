@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-25T19:16:44+00:00\n"
+"POT-Creation-Date: 2026-10-25T20:04:35+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.7.1\n"
 "X-Domain: licensio-knowledge-base\n"
@@ -44,8 +44,8 @@ msgid "Attachment(s)"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-admin-columns.php:205
-#: dist/apps/articles/index.xS8kdufy.js:39
-#: dist/apps/articles/index.xS8kdufy.js:61
+#: dist/apps/articles/index.ChrKnj4y.js:39
+#: dist/apps/articles/index.ChrKnj4y.js:61
 msgid "Rating"
 msgstr ""
 
@@ -53,8 +53,8 @@ msgstr ""
 #: includes/import/class-licensio-kb-betterdocs-import-driver.php:85
 #: includes/import/class-licensio-kb-heroic-import-driver.php:84
 #: dist/apps/analytics/index.BdtTBdHM.js:1
-#: dist/apps/articles/index.xS8kdufy.js:39
-#: dist/apps/articles/index.xS8kdufy.js:61
+#: dist/apps/articles/index.ChrKnj4y.js:39
+#: dist/apps/articles/index.ChrKnj4y.js:61
 msgid "Views"
 msgstr ""
 
@@ -63,10 +63,10 @@ msgid "Reading Time"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-admin-columns.php:236
-#: dist/apps/articles/index.xS8kdufy.js:38
-#: dist/apps/articles/index.xS8kdufy.js:39
-#: dist/apps/articles/index.xS8kdufy.js:61
-#: dist/apps/articles/index.xS8kdufy.js:63
+#: dist/apps/articles/index.ChrKnj4y.js:38
+#: dist/apps/articles/index.ChrKnj4y.js:39
+#: dist/apps/articles/index.ChrKnj4y.js:61
+#: dist/apps/articles/index.ChrKnj4y.js:63
 msgid "Author"
 msgstr ""
 
@@ -115,7 +115,7 @@ msgstr ""
 #: templates/category-body.php:71
 #: blocks/article-list/index.js:51
 #: blocks/article-list/index.js:119
-#: dist/apps/articles/index.xS8kdufy.js:63
+#: dist/apps/articles/index.ChrKnj4y.js:63
 #: dist/apps/tags/index.DjBmQGRW.js:15
 #: dist/apps/tools/index.CPhqs9qt.js:3
 #: dist/apps/tools/index.CPhqs9qt.js:49
@@ -145,10 +145,10 @@ msgstr ""
 #: templates/sidebar.php:90
 #: templates/sidebar.php:91
 #: blocks/category-grid/index.js:45
-#: dist/apps/articles/index.xS8kdufy.js:38
-#: dist/apps/articles/index.xS8kdufy.js:39
-#: dist/apps/articles/index.xS8kdufy.js:61
-#: dist/apps/categories/index.Dtcihvi8.js:35
+#: dist/apps/articles/index.ChrKnj4y.js:38
+#: dist/apps/articles/index.ChrKnj4y.js:39
+#: dist/apps/articles/index.ChrKnj4y.js:61
+#: dist/apps/categories/index.JQg-KzrP.js:35
 #: dist/apps/tools/index.CPhqs9qt.js:47
 #: dist/blocks/category-grid/index.js:1
 msgid "Categories"
@@ -242,9 +242,9 @@ msgstr ""
 #: includes/import/class-licensio-kb-heroic-import-driver.php:82
 #: templates/sidebar.php:119
 #: templates/sidebar.php:120
-#: dist/apps/articles/index.xS8kdufy.js:38
-#: dist/apps/articles/index.xS8kdufy.js:39
-#: dist/apps/articles/index.xS8kdufy.js:61
+#: dist/apps/articles/index.ChrKnj4y.js:38
+#: dist/apps/articles/index.ChrKnj4y.js:39
+#: dist/apps/articles/index.ChrKnj4y.js:61
 #: dist/apps/tags/index.DjBmQGRW.js:29
 msgid "Tags"
 msgstr ""
@@ -254,33 +254,33 @@ msgid "Loading tags…"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:105
-#: dist/apps/categories/index.Dtcihvi8.js:11
+#: dist/apps/categories/index.JQg-KzrP.js:11
 msgid "Select an image"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:106
-#: dist/apps/categories/index.Dtcihvi8.js:9
+#: dist/apps/categories/index.JQg-KzrP.js:9
 msgid "Use this image"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:170
-#: dist/apps/categories/index.Dtcihvi8.js:9
+#: dist/apps/categories/index.JQg-KzrP.js:9
 msgid "Inline SVG icon"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:171
-#: dist/apps/categories/index.Dtcihvi8.js:9
+#: dist/apps/categories/index.JQg-KzrP.js:9
 msgid "Icon"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:172
-#: dist/apps/categories/index.Dtcihvi8.js:9
+#: dist/apps/categories/index.JQg-KzrP.js:9
 msgid "Uploaded icon"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:173
 #: includes/class-licensio-kb-settings-schema.php:275
-#: dist/apps/categories/index.Dtcihvi8.js:11
+#: dist/apps/categories/index.JQg-KzrP.js:11
 msgid "Image"
 msgstr ""
 
@@ -295,22 +295,22 @@ msgid "Order"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:224
-#: dist/apps/categories/index.Dtcihvi8.js:9
+#: dist/apps/categories/index.JQg-KzrP.js:9
 msgid "Paste an SVG icon. Everything outside a small allowlist of shape elements and presentation attributes is removed on save, so the preview shows what was actually kept. Takes precedence over the uploaded icon and the Dashicons name. An icon drawn with currentColor follows the knowledge base colour."
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:236
-#: dist/apps/categories/index.Dtcihvi8.js:9
+#: dist/apps/categories/index.JQg-KzrP.js:9
 msgid "A Dashicons name, for example dashicons-book-alt. Ignored when an SVG icon or an uploaded icon is set."
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:247
-#: dist/apps/categories/index.Dtcihvi8.js:9
+#: dist/apps/categories/index.JQg-KzrP.js:9
 msgid "An uploaded icon, for example an SVG file. Takes precedence over the Dashicons name, and is itself ignored when an SVG icon is pasted above."
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:252
-#: dist/apps/categories/index.Dtcihvi8.js:11
+#: dist/apps/categories/index.JQg-KzrP.js:11
 msgid "Shown on the category card and at the top of the category page."
 msgstr ""
 
@@ -319,17 +319,17 @@ msgid "Lower numbers appear first. Categories with the same order fall back to t
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:301
-#: dist/apps/categories/index.Dtcihvi8.js:9
+#: dist/apps/categories/index.JQg-KzrP.js:9
 msgid "Paste SVG markup here"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:347
-#: dist/apps/categories/index.Dtcihvi8.js:9
+#: dist/apps/categories/index.JQg-KzrP.js:9
 msgid "Select"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:348
-#: dist/apps/categories/index.Dtcihvi8.js:9
+#: dist/apps/categories/index.JQg-KzrP.js:9
 msgid "Remove"
 msgstr ""
 
@@ -385,8 +385,8 @@ msgstr ""
 #: includes/class-licensio-kb-analytics-privacy.php:455
 #: includes/class-licensio-kb-analytics-privacy.php:486
 #: includes/class-licensio-kb-analytics-privacy.php:531
-#: dist/apps/articles/index.xS8kdufy.js:39
-#: dist/apps/articles/index.xS8kdufy.js:61
+#: dist/apps/articles/index.ChrKnj4y.js:39
+#: dist/apps/articles/index.ChrKnj4y.js:61
 #: dist/apps/feedback/index.OXEmnXeU.js:1
 msgid "Date"
 msgstr ""
@@ -431,7 +431,7 @@ msgid "Comment"
 msgstr ""
 
 #: includes/class-licensio-kb-analytics-privacy.php:523
-#: dist/apps/articles/index.xS8kdufy.js:38
+#: dist/apps/articles/index.ChrKnj4y.js:38
 #: dist/apps/feedback/index.OXEmnXeU.js:1
 #: dist/apps/tools/index.CPhqs9qt.js:41
 msgid "Status"
@@ -752,7 +752,7 @@ msgstr ""
 
 #. translators: %d: article ID.
 #: includes/class-licensio-kb-rest-analytics-controller.php:337
-#: dist/apps/articles/index.xS8kdufy.js:53
+#: dist/apps/articles/index.ChrKnj4y.js:53
 msgid "Article #%d"
 msgstr ""
 
@@ -779,7 +779,7 @@ msgstr ""
 #: includes/class-licensio-kb-settings-schema.php:122
 #: templates/search-field.php:39
 #: blocks/search/index.js:41
-#: dist/apps/articles/index.xS8kdufy.js:63
+#: dist/apps/articles/index.ChrKnj4y.js:63
 #: dist/apps/tags/index.DjBmQGRW.js:29
 #: dist/blocks/search/index.js:1
 msgid "Search"
@@ -1799,7 +1799,7 @@ msgid "How many terms to return."
 msgstr ""
 
 #: templates/archive-body.php:79
-#: dist/apps/articles/index.xS8kdufy.js:63
+#: dist/apps/articles/index.ChrKnj4y.js:63
 msgid "Uncategorised"
 msgstr ""
 
@@ -1955,7 +1955,7 @@ msgstr ""
 
 #: blocks/article-list/index.js:55
 #: blocks/faq/index.js:49
-#: dist/apps/articles/index.xS8kdufy.js:63
+#: dist/apps/articles/index.ChrKnj4y.js:63
 #: dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/blocks/article-list/index.js:1
 #: dist/blocks/faq/index.js:1
@@ -1985,8 +1985,8 @@ msgstr ""
 
 #: blocks/article-list/index.js:82
 #: blocks/faq/index.js:76
-#: dist/apps/articles/index.xS8kdufy.js:38
-#: dist/apps/articles/index.xS8kdufy.js:39
+#: dist/apps/articles/index.ChrKnj4y.js:38
+#: dist/apps/articles/index.ChrKnj4y.js:39
 #: dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/blocks/article-list/index.js:1
 #: dist/blocks/faq/index.js:1
@@ -2020,7 +2020,7 @@ msgstr ""
 
 #: blocks/article-list/index.js:127
 #: blocks/category-grid/index.js:111
-#: dist/apps/articles/index.xS8kdufy.js:61
+#: dist/apps/articles/index.ChrKnj4y.js:61
 #: dist/blocks/article-list/index.js:1
 #: dist/blocks/category-grid/index.js:1
 msgid "Columns"
@@ -2047,8 +2047,8 @@ msgid "Start the trail at the site home rather than at the knowledge base."
 msgstr ""
 
 #: blocks/category-grid/index.js:38
-#: dist/apps/categories/index.Dtcihvi8.js:11
-#: dist/apps/categories/index.Dtcihvi8.js:35
+#: dist/apps/categories/index.JQg-KzrP.js:11
+#: dist/apps/categories/index.JQg-KzrP.js:35
 #: dist/apps/tags/index.DjBmQGRW.js:7
 #: dist/blocks/category-grid/index.js:1
 msgid "Top level"
@@ -2060,7 +2060,7 @@ msgid "Show children of"
 msgstr ""
 
 #: blocks/category-grid/index.js:63
-#: dist/apps/categories/index.Dtcihvi8.js:11
+#: dist/apps/categories/index.JQg-KzrP.js:11
 #: dist/apps/tags/index.DjBmQGRW.js:15
 #: dist/apps/tags/index.DjBmQGRW.js:17
 #: dist/apps/tags/index.DjBmQGRW.js:29
@@ -2339,7 +2339,7 @@ msgid "To"
 msgstr ""
 
 #: dist/apps/analytics/index.BdtTBdHM.js:1
-#: dist/apps/articles/index.xS8kdufy.js:51
+#: dist/apps/articles/index.ChrKnj4y.js:51
 msgid "Apply"
 msgstr ""
 
@@ -2383,260 +2383,260 @@ msgstr ""
 msgid "Most read articles"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:1
+#: dist/apps/articles/index.ChrKnj4y.js:1
 msgid "You can undo this for a few seconds."
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:1
+#: dist/apps/articles/index.ChrKnj4y.js:1
 msgid "Undo"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:1
+#: dist/apps/articles/index.ChrKnj4y.js:1
 msgid "Dismiss"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:1
+#: dist/apps/articles/index.ChrKnj4y.js:1
 msgid "Not found"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:1
+#: dist/apps/articles/index.ChrKnj4y.js:1
 msgid "No permission"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:1
+#: dist/apps/articles/index.ChrKnj4y.js:1
 msgid "Being edited by someone else"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:1
+#: dist/apps/articles/index.ChrKnj4y.js:1
 msgid "Not in the trash"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:1
+#: dist/apps/articles/index.ChrKnj4y.js:1
 msgid "In the trash"
 msgstr ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.xS8kdufy.js:3
+#: dist/apps/articles/index.ChrKnj4y.js:3
 msgid "Move %d article to the trash?"
 msgid_plural "Move %d articles to the trash?"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.xS8kdufy.js:5
+#: dist/apps/articles/index.ChrKnj4y.js:5
 msgid "Restore %d article from the trash?"
 msgid_plural "Restore %d articles from the trash?"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.xS8kdufy.js:7
+#: dist/apps/articles/index.ChrKnj4y.js:7
 msgid "Permanently delete %d article? This cannot be undone."
 msgid_plural "Permanently delete %d articles? This cannot be undone."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.xS8kdufy.js:9
+#: dist/apps/articles/index.ChrKnj4y.js:9
 msgid "Change the status of %d article?"
 msgid_plural "Change the status of %d articles?"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.xS8kdufy.js:11
+#: dist/apps/articles/index.ChrKnj4y.js:11
 msgid "Change the author of %d article?"
 msgid_plural "Change the author of %d articles?"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.xS8kdufy.js:13
+#: dist/apps/articles/index.ChrKnj4y.js:13
 msgid "Open comments on %d article?"
 msgid_plural "Open comments on %d articles?"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.xS8kdufy.js:15
+#: dist/apps/articles/index.ChrKnj4y.js:15
 msgid "Close comments on %d article?"
 msgid_plural "Close comments on %d articles?"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.xS8kdufy.js:17
+#: dist/apps/articles/index.ChrKnj4y.js:17
 msgid "Add the chosen terms to %d article?"
 msgid_plural "Add the chosen terms to %d articles?"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.xS8kdufy.js:19
+#: dist/apps/articles/index.ChrKnj4y.js:19
 msgid "Remove the chosen terms from %d article?"
 msgid_plural "Remove the chosen terms from %d articles?"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.xS8kdufy.js:21
+#: dist/apps/articles/index.ChrKnj4y.js:21
 msgid "Remove every tag from %d article? No tags are chosen to replace them."
 msgid_plural "Remove every tag from %d articles? No tags are chosen to replace them."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.xS8kdufy.js:23
+#: dist/apps/articles/index.ChrKnj4y.js:23
 msgid "Remove every category from %d article? No categories are chosen to replace them."
 msgid_plural "Remove every category from %d articles? No categories are chosen to replace them."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.xS8kdufy.js:25
+#: dist/apps/articles/index.ChrKnj4y.js:25
 msgid "Replace the terms of %d article with the chosen ones?"
 msgid_plural "Replace the terms of %d articles with the chosen ones?"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.xS8kdufy.js:27
+#: dist/apps/articles/index.ChrKnj4y.js:27
 msgid "%d article moved to the trash."
 msgid_plural "%d articles moved to the trash."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.xS8kdufy.js:29
+#: dist/apps/articles/index.ChrKnj4y.js:29
 msgid "%d article restored."
 msgid_plural "%d articles restored."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.xS8kdufy.js:31
+#: dist/apps/articles/index.ChrKnj4y.js:31
 msgid "%d article permanently deleted."
 msgid_plural "%d articles permanently deleted."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.xS8kdufy.js:33
+#: dist/apps/articles/index.ChrKnj4y.js:33
 msgid "%d article updated."
 msgid_plural "%d articles updated."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.xS8kdufy.js:35
+#: dist/apps/articles/index.ChrKnj4y.js:35
 msgid "%d article put back."
 msgid_plural "%d articles put back."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: 1: number of articles, 2: the reasons.
-#: dist/apps/articles/index.xS8kdufy.js:37
+#: dist/apps/articles/index.ChrKnj4y.js:37
 msgid "%1$d article could not be put back: %2$s"
 msgid_plural "%1$d articles could not be put back: %2$s"
 msgstr[0] ""
 msgstr[1] ""
 
-#: dist/apps/articles/index.xS8kdufy.js:37
+#: dist/apps/articles/index.ChrKnj4y.js:37
 msgid "Any author"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:37
+#: dist/apps/articles/index.ChrKnj4y.js:37
 #: dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.Cohcn86k.js:3
 msgid "No matches"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:37
-#: dist/apps/articles/index.xS8kdufy.js:47
-#: dist/apps/articles/index.xS8kdufy.js:63
+#: dist/apps/articles/index.ChrKnj4y.js:37
+#: dist/apps/articles/index.ChrKnj4y.js:47
+#: dist/apps/articles/index.ChrKnj4y.js:63
 #: dist/chunks/status.C86e98PE.js:1
 msgid "Published"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:37
-#: dist/apps/articles/index.xS8kdufy.js:47
+#: dist/apps/articles/index.ChrKnj4y.js:37
+#: dist/apps/articles/index.ChrKnj4y.js:47
 #: dist/chunks/status.C86e98PE.js:1
 msgid "Draft"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:37
-#: dist/apps/articles/index.xS8kdufy.js:47
+#: dist/apps/articles/index.ChrKnj4y.js:37
+#: dist/apps/articles/index.ChrKnj4y.js:47
 msgid "Pending review"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:37
-#: dist/apps/articles/index.xS8kdufy.js:63
+#: dist/apps/articles/index.ChrKnj4y.js:37
+#: dist/apps/articles/index.ChrKnj4y.js:63
 #: dist/chunks/status.C86e98PE.js:1
 msgid "Scheduled"
 msgstr ""
 
 #. translators: %s: the new slug.
-#: dist/apps/articles/index.xS8kdufy.js:38
+#: dist/apps/articles/index.ChrKnj4y.js:38
 msgid "Saved. The slug is now “%s”."
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:38
-#: dist/apps/categories/index.Dtcihvi8.js:11
+#: dist/apps/articles/index.ChrKnj4y.js:38
+#: dist/apps/categories/index.JQg-KzrP.js:11
 #: dist/apps/tags/index.DjBmQGRW.js:15
 #: dist/apps/tags/index.DjBmQGRW.js:17
 #: dist/apps/tags/index.DjBmQGRW.js:29
 msgid "Slug"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:38
+#: dist/apps/articles/index.ChrKnj4y.js:38
 msgid "Publish date"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:38
+#: dist/apps/articles/index.ChrKnj4y.js:38
 msgid "Visibility"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:38
+#: dist/apps/articles/index.ChrKnj4y.js:38
 msgid "Public"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:38
-#: dist/apps/articles/index.xS8kdufy.js:47
-#: dist/apps/articles/index.xS8kdufy.js:63
+#: dist/apps/articles/index.ChrKnj4y.js:38
+#: dist/apps/articles/index.ChrKnj4y.js:47
+#: dist/apps/articles/index.ChrKnj4y.js:63
 #: dist/chunks/status.C86e98PE.js:1
 msgid "Private"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:38
-#: dist/apps/articles/index.xS8kdufy.js:41
+#: dist/apps/articles/index.ChrKnj4y.js:38
+#: dist/apps/articles/index.ChrKnj4y.js:41
 msgid "Password protected"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:38
+#: dist/apps/articles/index.ChrKnj4y.js:38
 msgid "Leave empty to keep the current password"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:38
+#: dist/apps/articles/index.ChrKnj4y.js:38
 msgid "Password"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:38
+#: dist/apps/articles/index.ChrKnj4y.js:38
 msgid "Comments"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:38
+#: dist/apps/articles/index.ChrKnj4y.js:38
 msgid "Open"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:38
+#: dist/apps/articles/index.ChrKnj4y.js:38
 msgid "Closed"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:38
-#: dist/apps/categories/index.Dtcihvi8.js:11
-#: dist/apps/categories/index.Dtcihvi8.js:17
-#: dist/apps/categories/index.Dtcihvi8.js:25
-#: dist/apps/categories/index.Dtcihvi8.js:29
-#: dist/apps/categories/index.Dtcihvi8.js:35
+#: dist/apps/articles/index.ChrKnj4y.js:38
+#: dist/apps/categories/index.JQg-KzrP.js:11
+#: dist/apps/categories/index.JQg-KzrP.js:17
+#: dist/apps/categories/index.JQg-KzrP.js:25
+#: dist/apps/categories/index.JQg-KzrP.js:29
+#: dist/apps/categories/index.JQg-KzrP.js:35
 #: dist/apps/feedback/index.OXEmnXeU.js:11
 #: dist/apps/settings/index.BaIGZfvd.js:1
 #: dist/apps/tags/index.DjBmQGRW.js:7
@@ -2655,166 +2655,166 @@ msgid "Cancel"
 msgstr ""
 
 #. translators: %s: article title.
-#: dist/apps/articles/index.xS8kdufy.js:39
+#: dist/apps/articles/index.ChrKnj4y.js:39
 msgid "Save the changes to “%s”?"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:39
-#: dist/apps/articles/index.xS8kdufy.js:41
-#: dist/apps/categories/index.Dtcihvi8.js:5
+#: dist/apps/articles/index.ChrKnj4y.js:39
+#: dist/apps/articles/index.ChrKnj4y.js:41
+#: dist/apps/categories/index.JQg-KzrP.js:5
 msgid "(no title)"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:39
-#: dist/apps/categories/index.Dtcihvi8.js:11
+#: dist/apps/articles/index.ChrKnj4y.js:39
+#: dist/apps/categories/index.JQg-KzrP.js:11
 #: dist/apps/tags/index.DjBmQGRW.js:17
 #: dist/apps/tags/index.DjBmQGRW.js:19
 msgid "Save"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:39
-#: dist/apps/articles/index.xS8kdufy.js:61
+#: dist/apps/articles/index.ChrKnj4y.js:39
+#: dist/apps/articles/index.ChrKnj4y.js:61
 msgid "Attachments"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:39
-#: dist/apps/articles/index.xS8kdufy.js:61
+#: dist/apps/articles/index.ChrKnj4y.js:39
+#: dist/apps/articles/index.ChrKnj4y.js:61
 msgid "Reading time"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:39
-#: dist/apps/articles/index.xS8kdufy.js:61
+#: dist/apps/articles/index.ChrKnj4y.js:39
+#: dist/apps/articles/index.ChrKnj4y.js:61
 msgid "Modified"
 msgstr ""
 
 #. translators: %s: article title.
 #. translators: %s: the tag's name.
-#: dist/apps/articles/index.xS8kdufy.js:41
+#: dist/apps/articles/index.ChrKnj4y.js:41
 #: dist/apps/tags/index.DjBmQGRW.js:17
 msgid "Select “%s”"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:41
+#: dist/apps/articles/index.ChrKnj4y.js:41
 msgid "No articles match these filters."
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:41
-#: dist/apps/articles/index.xS8kdufy.js:63
+#: dist/apps/articles/index.ChrKnj4y.js:41
+#: dist/apps/articles/index.ChrKnj4y.js:63
 msgid "Clear filters"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:41
+#: dist/apps/articles/index.ChrKnj4y.js:41
 msgid "No articles yet."
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:41
+#: dist/apps/articles/index.ChrKnj4y.js:41
 msgid "Create your first article"
 msgstr ""
 
 #. translators: %s: name of the user editing the article.
-#: dist/apps/articles/index.xS8kdufy.js:42
-#: dist/apps/articles/index.xS8kdufy.js:44
+#: dist/apps/articles/index.ChrKnj4y.js:42
+#: dist/apps/articles/index.ChrKnj4y.js:44
 msgid "%s is editing"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:44
-#: dist/apps/categories/index.Dtcihvi8.js:19
+#: dist/apps/articles/index.ChrKnj4y.js:44
+#: dist/apps/categories/index.JQg-KzrP.js:19
 #: dist/apps/tags/index.DjBmQGRW.js:21
 msgid "Edit"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:44
+#: dist/apps/articles/index.ChrKnj4y.js:44
 msgid "Quick edit"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:44
+#: dist/apps/articles/index.ChrKnj4y.js:44
 msgid "View"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:44
+#: dist/apps/articles/index.ChrKnj4y.js:44
 msgid "Preview"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:44
+#: dist/apps/articles/index.ChrKnj4y.js:44
 msgid "View feedback"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:44
-#: dist/apps/articles/index.xS8kdufy.js:47
+#: dist/apps/articles/index.ChrKnj4y.js:44
+#: dist/apps/articles/index.ChrKnj4y.js:47
 msgid "Move to trash"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:44
-#: dist/apps/articles/index.xS8kdufy.js:63
+#: dist/apps/articles/index.ChrKnj4y.js:44
+#: dist/apps/articles/index.ChrKnj4y.js:63
 #: dist/chunks/status.C86e98PE.js:1
 msgid "Trash"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:44
-#: dist/apps/articles/index.xS8kdufy.js:47
+#: dist/apps/articles/index.ChrKnj4y.js:44
+#: dist/apps/articles/index.ChrKnj4y.js:47
 msgid "Restore"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:44
-#: dist/apps/articles/index.xS8kdufy.js:47
+#: dist/apps/articles/index.ChrKnj4y.js:44
+#: dist/apps/articles/index.ChrKnj4y.js:47
 msgid "Delete permanently"
 msgstr ""
 
 #. translators: 1: helpful votes, 2: not helpful votes.
-#: dist/apps/articles/index.xS8kdufy.js:45
+#: dist/apps/articles/index.ChrKnj4y.js:45
 msgid "%1$d helpful, %2$d not helpful"
 msgstr ""
 
 #. translators: %d: reading time in minutes.
-#: dist/apps/articles/index.xS8kdufy.js:47
+#: dist/apps/articles/index.ChrKnj4y.js:47
 msgid "%d min"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:47
+#: dist/apps/articles/index.ChrKnj4y.js:47
 #: dist/apps/feedback/index.OXEmnXeU.js:11
 msgid "Change status"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:47
+#: dist/apps/articles/index.ChrKnj4y.js:47
 msgid "Add categories"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:47
+#: dist/apps/articles/index.ChrKnj4y.js:47
 msgid "Remove categories"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:47
+#: dist/apps/articles/index.ChrKnj4y.js:47
 msgid "Replace categories"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:47
+#: dist/apps/articles/index.ChrKnj4y.js:47
 msgid "Add tags"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:47
+#: dist/apps/articles/index.ChrKnj4y.js:47
 msgid "Remove tags"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:47
+#: dist/apps/articles/index.ChrKnj4y.js:47
 msgid "Replace tags"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:47
+#: dist/apps/articles/index.ChrKnj4y.js:47
 msgid "Change author"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:47
+#: dist/apps/articles/index.ChrKnj4y.js:47
 msgid "Open comments"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:47
+#: dist/apps/articles/index.ChrKnj4y.js:47
 msgid "Close comments"
 msgstr ""
 
 #. translators: %d: number of selected articles.
 #. translators: %d: number of selected feedback entries.
 #. translators: %d: how many tags are selected.
-#: dist/apps/articles/index.xS8kdufy.js:49
+#: dist/apps/articles/index.ChrKnj4y.js:49
 #: dist/apps/feedback/index.OXEmnXeU.js:7
 #: dist/apps/tags/index.DjBmQGRW.js:25
 msgid "%d selected"
@@ -2823,303 +2823,303 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of matching articles.
-#: dist/apps/articles/index.xS8kdufy.js:51
+#: dist/apps/articles/index.ChrKnj4y.js:51
 msgid "Select all %d matching"
 msgid_plural "Select all %d matching"
 msgstr[0] ""
 msgstr[1] ""
 
-#: dist/apps/articles/index.xS8kdufy.js:51
+#: dist/apps/articles/index.ChrKnj4y.js:51
 msgid "Clear selection"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:51
+#: dist/apps/articles/index.ChrKnj4y.js:51
 msgid "Only the first 10,000 matching articles were selected."
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:51
-#: dist/apps/articles/index.xS8kdufy.js:53
+#: dist/apps/articles/index.ChrKnj4y.js:51
+#: dist/apps/articles/index.ChrKnj4y.js:53
 msgid "Bulk action"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:51
+#: dist/apps/articles/index.ChrKnj4y.js:51
 msgid "New status"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:51
+#: dist/apps/articles/index.ChrKnj4y.js:51
 msgid "Tags for the bulk action"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:51
+#: dist/apps/articles/index.ChrKnj4y.js:51
 msgid "Categories for the bulk action"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:51
+#: dist/apps/articles/index.ChrKnj4y.js:51
 msgid "New author"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:51
+#: dist/apps/articles/index.ChrKnj4y.js:51
 msgid "Select articles below to perform bulk actions"
 msgstr ""
 
 #. translators: 1: articles processed, 2: articles in the run.
-#: dist/apps/articles/index.xS8kdufy.js:55
+#: dist/apps/articles/index.ChrKnj4y.js:55
 msgid "%1$d of %2$d processed"
 msgstr ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.xS8kdufy.js:57
+#: dist/apps/articles/index.ChrKnj4y.js:57
 msgid "Done: %d"
 msgstr ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.xS8kdufy.js:59
+#: dist/apps/articles/index.ChrKnj4y.js:59
 msgid "Skipped: %d"
 msgstr ""
 
 #. translators: %d: number of articles.
-#: dist/apps/articles/index.xS8kdufy.js:61
+#: dist/apps/articles/index.ChrKnj4y.js:61
 msgid "Failed: %d"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:61
+#: dist/apps/articles/index.ChrKnj4y.js:61
 msgid "The run stopped at a batch the server refused."
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:61
+#: dist/apps/articles/index.ChrKnj4y.js:61
 #: dist/apps/tools/index.CPhqs9qt.js:41
 msgid "Skipped"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:61
+#: dist/apps/articles/index.ChrKnj4y.js:61
 #: dist/apps/tools/index.CPhqs9qt.js:41
 msgid "Failed"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:61
+#: dist/apps/articles/index.ChrKnj4y.js:61
 msgid "Close"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:61
+#: dist/apps/articles/index.ChrKnj4y.js:61
 msgid "Rows per page"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:61
+#: dist/apps/articles/index.ChrKnj4y.js:61
 msgid "Columns and rows per page"
 msgstr ""
 
 #. translators: 1: helpful share threshold percentage, 2: minimum votes.
-#: dist/apps/articles/index.xS8kdufy.js:63
+#: dist/apps/articles/index.ChrKnj4y.js:63
 msgid "Helpful share below %1$d%% with at least %2$d votes in the selected window."
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:63
+#: dist/apps/articles/index.ChrKnj4y.js:63
 msgid "Filter by category"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:63
+#: dist/apps/articles/index.ChrKnj4y.js:63
 msgid "Any category"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:63
+#: dist/apps/articles/index.ChrKnj4y.js:63
 #: dist/apps/tools/index.CPhqs9qt.js:41
 msgid "Tag"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:63
+#: dist/apps/articles/index.ChrKnj4y.js:63
 msgid "Filter by tag"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:63
+#: dist/apps/articles/index.ChrKnj4y.js:63
 msgid "Any tag"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:63
+#: dist/apps/articles/index.ChrKnj4y.js:63
 msgid "Filter by author"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:63
+#: dist/apps/articles/index.ChrKnj4y.js:63
 msgid "Published between"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:63
+#: dist/apps/articles/index.ChrKnj4y.js:63
 msgid "No tags"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:63
+#: dist/apps/articles/index.ChrKnj4y.js:63
 msgid "Needs attention"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:63
+#: dist/apps/articles/index.ChrKnj4y.js:63
 msgid "Filters"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:63
+#: dist/apps/articles/index.ChrKnj4y.js:63
 #: dist/apps/feedback/index.OXEmnXeU.js:1
 #: dist/apps/tools/index.CPhqs9qt.js:41
 msgid "All"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:63
+#: dist/apps/articles/index.ChrKnj4y.js:63
 msgid "Drafts"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:63
+#: dist/apps/articles/index.ChrKnj4y.js:63
 #: dist/chunks/status.C86e98PE.js:1
 msgid "Pending"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:63
+#: dist/apps/articles/index.ChrKnj4y.js:63
 msgid "7 days"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:63
+#: dist/apps/articles/index.ChrKnj4y.js:63
 msgid "30 days"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:63
+#: dist/apps/articles/index.ChrKnj4y.js:63
 msgid "90 days"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:63
+#: dist/apps/articles/index.ChrKnj4y.js:63
 msgid "New article"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:63
-#: dist/apps/categories/index.Dtcihvi8.js:3
-#: dist/apps/categories/index.Dtcihvi8.js:35
+#: dist/apps/articles/index.ChrKnj4y.js:63
+#: dist/apps/categories/index.JQg-KzrP.js:3
+#: dist/apps/categories/index.JQg-KzrP.js:35
 #: dist/apps/tags/index.DjBmQGRW.js:29
 msgid "Retry"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:63
+#: dist/apps/articles/index.ChrKnj4y.js:63
 #: dist/apps/feedback/index.OXEmnXeU.js:5
 msgid "Filter by status"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:63
+#: dist/apps/articles/index.ChrKnj4y.js:63
 msgid "Search titles"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:63
+#: dist/apps/articles/index.ChrKnj4y.js:63
 msgid "Search articles by title"
 msgstr ""
 
-#: dist/apps/articles/index.xS8kdufy.js:63
+#: dist/apps/articles/index.ChrKnj4y.js:63
 msgid "Views and rating period"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:1
+#: dist/apps/categories/index.JQg-KzrP.js:1
 msgid "The article order has unsaved changes. Discard them?"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:1
+#: dist/apps/categories/index.JQg-KzrP.js:1
 msgid "Article order saved."
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:1
-#: dist/apps/categories/index.Dtcihvi8.js:3
+#: dist/apps/categories/index.JQg-KzrP.js:1
+#: dist/apps/categories/index.JQg-KzrP.js:3
 msgid "Article order"
 msgstr ""
 
 #. translators: %s: category name.
-#: dist/apps/categories/index.Dtcihvi8.js:3
+#: dist/apps/categories/index.JQg-KzrP.js:3
 msgid "Articles in “%s”"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:3
+#: dist/apps/categories/index.JQg-KzrP.js:3
 msgid "Select a category to order its articles."
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:3
+#: dist/apps/categories/index.JQg-KzrP.js:3
 msgid "This category has no articles."
 msgstr ""
 
 #. translators: 1: number of articles listed, 2: number of articles in the category.
-#: dist/apps/categories/index.Dtcihvi8.js:5
+#: dist/apps/categories/index.JQg-KzrP.js:5
 msgid "Only the first %1$d of %2$d articles are listed."
 msgstr ""
 
 #. translators: %s: article title.
-#: dist/apps/categories/index.Dtcihvi8.js:7
+#: dist/apps/categories/index.JQg-KzrP.js:7
 msgid "Move “%s” up"
 msgstr ""
 
 #. translators: %s: article title.
-#: dist/apps/categories/index.Dtcihvi8.js:9
+#: dist/apps/categories/index.JQg-KzrP.js:9
 msgid "Move “%s” down"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:9
+#: dist/apps/categories/index.JQg-KzrP.js:9
 msgid "Reset"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:9
+#: dist/apps/categories/index.JQg-KzrP.js:9
 msgid "Save this article order?"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:9
+#: dist/apps/categories/index.JQg-KzrP.js:9
 msgid "Save order"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:9
+#: dist/apps/categories/index.JQg-KzrP.js:9
 msgid "Image selected"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:9
+#: dist/apps/categories/index.JQg-KzrP.js:9
 msgid "The media library is not available on this page, so images cannot be picked."
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:9
+#: dist/apps/categories/index.JQg-KzrP.js:9
 msgid "SVG icon preview"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:9
+#: dist/apps/categories/index.JQg-KzrP.js:9
 msgid "Select an icon"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:9
+#: dist/apps/categories/index.JQg-KzrP.js:9
 msgid "Dashicons names start with dashicons- and use lowercase letters, digits and hyphens."
 msgstr ""
 
 #. translators: %s: category name.
 #. translators: %s: the tag's name.
-#: dist/apps/categories/index.Dtcihvi8.js:11
+#: dist/apps/categories/index.JQg-KzrP.js:11
 #: dist/apps/tags/index.DjBmQGRW.js:21
 msgid "Edit “%s”"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:11
-#: dist/apps/categories/index.Dtcihvi8.js:35
+#: dist/apps/categories/index.JQg-KzrP.js:11
+#: dist/apps/categories/index.JQg-KzrP.js:35
 msgid "Add category"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:11
+#: dist/apps/categories/index.JQg-KzrP.js:11
 msgid "Category saved."
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:11
+#: dist/apps/categories/index.JQg-KzrP.js:11
 msgid "Save category?"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:11
+#: dist/apps/categories/index.JQg-KzrP.js:11
 msgid "Enter a name to save."
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:11
+#: dist/apps/categories/index.JQg-KzrP.js:11
 msgid "Leave empty to make one from the name."
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:11
+#: dist/apps/categories/index.JQg-KzrP.js:11
 #: dist/apps/tags/index.DjBmQGRW.js:7
 msgid "Parent category"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:11
+#: dist/apps/categories/index.JQg-KzrP.js:11
 msgid "Leave empty for a top-level category."
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:11
+#: dist/apps/categories/index.JQg-KzrP.js:11
 #: dist/apps/tags/index.DjBmQGRW.js:15
 #: dist/apps/tags/index.DjBmQGRW.js:17
 #: dist/apps/tags/index.DjBmQGRW.js:29
@@ -3127,208 +3127,208 @@ msgid "Description"
 msgstr ""
 
 #. translators: %s: category name.
-#: dist/apps/categories/index.Dtcihvi8.js:13
+#: dist/apps/categories/index.JQg-KzrP.js:13
 msgid "Move “%s” here?"
 msgstr ""
 
 #. translators: %s: category name.
-#: dist/apps/categories/index.Dtcihvi8.js:15
+#: dist/apps/categories/index.JQg-KzrP.js:15
 msgid "Move “%s” up?"
 msgstr ""
 
 #. translators: %s: category name.
-#: dist/apps/categories/index.Dtcihvi8.js:17
+#: dist/apps/categories/index.JQg-KzrP.js:17
 msgid "Move “%s” down?"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:17
-#: dist/apps/categories/index.Dtcihvi8.js:33
+#: dist/apps/categories/index.JQg-KzrP.js:17
+#: dist/apps/categories/index.JQg-KzrP.js:33
 msgid "Category moved."
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:17
-#: dist/apps/categories/index.Dtcihvi8.js:35
+#: dist/apps/categories/index.JQg-KzrP.js:17
+#: dist/apps/categories/index.JQg-KzrP.js:35
 msgid "Category tree"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:17
+#: dist/apps/categories/index.JQg-KzrP.js:17
 msgid "Filter categories"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:17
+#: dist/apps/categories/index.JQg-KzrP.js:17
 msgid "Clear the filter to drag categories."
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:17
-#: dist/apps/categories/index.Dtcihvi8.js:35
+#: dist/apps/categories/index.JQg-KzrP.js:17
+#: dist/apps/categories/index.JQg-KzrP.js:35
 msgid "Move"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:17
+#: dist/apps/categories/index.JQg-KzrP.js:17
 msgid "No categories match the filter."
 msgstr ""
 
 #. translators: %d: number of articles.
-#: dist/apps/categories/index.Dtcihvi8.js:19
+#: dist/apps/categories/index.JQg-KzrP.js:19
 msgid "Articles: %d"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:19
+#: dist/apps/categories/index.JQg-KzrP.js:19
 msgid "Add child"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:19
+#: dist/apps/categories/index.JQg-KzrP.js:19
 msgid "Move up"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:19
+#: dist/apps/categories/index.JQg-KzrP.js:19
 msgid "Move down"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:19
+#: dist/apps/categories/index.JQg-KzrP.js:19
 msgid "Move to…"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:19
+#: dist/apps/categories/index.JQg-KzrP.js:19
 msgid "Merge…"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:19
+#: dist/apps/categories/index.JQg-KzrP.js:19
 msgid "Delete…"
 msgstr ""
 
 #. translators: %s: category name.
-#: dist/apps/categories/index.Dtcihvi8.js:21
+#: dist/apps/categories/index.JQg-KzrP.js:21
 msgid "Actions for %s"
 msgstr ""
 
 #. translators: %s: category name.
-#: dist/apps/categories/index.Dtcihvi8.js:23
+#: dist/apps/categories/index.JQg-KzrP.js:23
 msgid "Delete “%s”?"
 msgstr ""
 
 #. translators: 1: category name, 2: number of articles moved, 3: number of child categories moved.
-#: dist/apps/categories/index.Dtcihvi8.js:25
+#: dist/apps/categories/index.JQg-KzrP.js:25
 msgid "Deleted “%1$s”. Articles moved: %2$d. Child categories moved: %3$d."
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:25
+#: dist/apps/categories/index.JQg-KzrP.js:25
 msgid "Delete category"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:25
+#: dist/apps/categories/index.JQg-KzrP.js:25
 #: dist/apps/tags/index.DjBmQGRW.js:29
 #: dist/apps/tools/index.CPhqs9qt.js:7
 #: dist/apps/tools/index.CPhqs9qt.js:41
 msgid "Delete"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:25
+#: dist/apps/categories/index.JQg-KzrP.js:25
 msgid "What should happen to its articles?"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:25
+#: dist/apps/categories/index.JQg-KzrP.js:25
 msgid "Move to parent category"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:25
+#: dist/apps/categories/index.JQg-KzrP.js:25
 msgid "Move to another category"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:25
+#: dist/apps/categories/index.JQg-KzrP.js:25
 msgid "Leave them without this category"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:25
+#: dist/apps/categories/index.JQg-KzrP.js:25
 msgid "Category to move the articles to"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:25
+#: dist/apps/categories/index.JQg-KzrP.js:25
 msgid "What should happen to its child categories?"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:25
+#: dist/apps/categories/index.JQg-KzrP.js:25
 msgid "Move to parent (or top level)"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:25
+#: dist/apps/categories/index.JQg-KzrP.js:25
 msgid "Move under another category"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:25
+#: dist/apps/categories/index.JQg-KzrP.js:25
 msgid "Category to move the child categories under"
 msgstr ""
 
 #. translators: 1: number of categories, 2: target category name.
-#: dist/apps/categories/index.Dtcihvi8.js:27
+#: dist/apps/categories/index.JQg-KzrP.js:27
 msgid "Merge %1$d category into “%2$s”?"
 msgid_plural "Merge %1$d categories into “%2$s”?"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: 1: number of articles moved, 2: number of categories deleted.
-#: dist/apps/categories/index.Dtcihvi8.js:29
+#: dist/apps/categories/index.JQg-KzrP.js:29
 msgid "Merged. Articles moved: %1$d. Categories deleted: %2$d."
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:29
+#: dist/apps/categories/index.JQg-KzrP.js:29
 msgid "Merge categories"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:29
+#: dist/apps/categories/index.JQg-KzrP.js:29
 #: dist/apps/tags/index.DjBmQGRW.js:15
 #: dist/apps/tools/index.CPhqs9qt.js:33
 msgid "Merge"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:29
+#: dist/apps/categories/index.JQg-KzrP.js:29
 msgid "Categories to merge"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:29
+#: dist/apps/categories/index.JQg-KzrP.js:29
 msgid "At most 50 categories can be merged at once."
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:29
+#: dist/apps/categories/index.JQg-KzrP.js:29
 msgid "Their articles move to the target, and they are deleted."
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:29
+#: dist/apps/categories/index.JQg-KzrP.js:29
 msgid "Merge into"
 msgstr ""
 
 #. translators: %s: category name.
-#: dist/apps/categories/index.Dtcihvi8.js:31
+#: dist/apps/categories/index.JQg-KzrP.js:31
 msgid "Move “%s” to the top level?"
 msgstr ""
 
 #. translators: 1: category name, 2: new parent category name.
-#: dist/apps/categories/index.Dtcihvi8.js:33
+#: dist/apps/categories/index.JQg-KzrP.js:33
 msgid "Move “%1$s” under “%2$s”?"
 msgstr ""
 
 #. translators: %s: category name.
-#: dist/apps/categories/index.Dtcihvi8.js:35
+#: dist/apps/categories/index.JQg-KzrP.js:35
 msgid "Move “%s”"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:35
+#: dist/apps/categories/index.JQg-KzrP.js:35
 msgid "New place"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:35
+#: dist/apps/categories/index.JQg-KzrP.js:35
 msgid "Under a category"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:35
+#: dist/apps/categories/index.JQg-KzrP.js:35
 msgid "New parent category"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:35
+#: dist/apps/categories/index.JQg-KzrP.js:35
 msgid "No categories yet"
 msgstr ""
 
-#: dist/apps/categories/index.Dtcihvi8.js:35
+#: dist/apps/categories/index.JQg-KzrP.js:35
 msgid "Categories group your articles. Add the first one to get started."
 msgstr ""
 
