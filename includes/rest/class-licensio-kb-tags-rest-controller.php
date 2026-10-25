@@ -640,7 +640,7 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
                 return $free;
             }
 
-            if ( '' === $slug || $slug !== $term->slug ) {
+            if ( $slug !== $term->slug ) {
                 $args['slug'] = $slug;
             }
         }
@@ -981,11 +981,14 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
     }
 
     /**
-     * Stored term text as plain text.
+     * A stored term name as plain text.
      *
-     * Core saves term names and descriptions with HTML special characters
-     * encoded, so "Billing & invoices" is stored as "Billing &amp; invoices".
-     * The app shows them as text, never as HTML, so it needs the decoded form.
+     * Core saves term names with HTML special characters encoded, so
+     * "Billing & invoices" is stored as "Billing &amp; invoices". The app
+     * shows them as text, never as HTML. Only names go through this:
+     * descriptions are answered exactly as stored, because decoding one
+     * would turn text such as `&lt;b&gt;` into markup that the next save
+     * strips, or keeps as real HTML.
      *
      * @since 1.0.0
      *
@@ -995,29 +998,6 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
      */
     private static function plain_text( $text ) {
         return html_entity_decode( (string) $text, ENT_QUOTES, 'UTF-8' );
-    }
-
-    /**
-     * A core term error with the HTTP status the REST layer should answer.
-     *
-     * Core's term functions return errors without a status, which the REST
-     * layer would answer as a 500. A clash with an existing term is a 409;
-     * anything else is a bad request.
-     *
-     * @since 1.0.0
-     *
-     * @param WP_Error $error The core error.
-     *
-     * @return WP_Error The error, with a status.
-     */
-    private static function rest_error( WP_Error $error ) {
-        $code = (string) $error->get_error_code();
-
-        return new WP_Error(
-            $code,
-            $error->get_error_message(),
-            array( 'status' => in_array( $code, array( 'term_exists', 'duplicate_term_slug' ), true ) ? 409 : 400 )
-        );
     }
 
     /**

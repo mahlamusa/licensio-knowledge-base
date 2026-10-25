@@ -1516,29 +1516,6 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
     }
 
     /**
-     * A core error turned into one the app can show.
-     *
-     * Core's term errors carry a term ID or nothing as their data, which the
-     * REST server would answer as a 500. A clash with an existing term is a
-     * 409, as in the Tags routes; anything else is a 400.
-     *
-     * @since 1.0.0
-     *
-     * @param WP_Error $error The core error.
-     *
-     * @return WP_Error The same code and message with status 409 or 400.
-     */
-    private static function rest_error( WP_Error $error ) {
-        $code = (string) $error->get_error_code();
-
-        return new WP_Error(
-            $code,
-            $error->get_error_message(),
-            array( 'status' => in_array( $code, array( 'term_exists', 'duplicate_term_slug' ), true ) ? 409 : 400 )
-        );
-    }
-
-    /**
      * The error for a category that does not exist.
      *
      * @since 1.0.0

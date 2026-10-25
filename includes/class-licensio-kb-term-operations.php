@@ -197,8 +197,9 @@ class Licensio_KB_Term_Operations {
      * Move or copy the objects of several checked terms onto one term.
      *
      * The inputs must already have passed `validate()`. Term counting is
-     * deferred throughout. If a write fails, every object already handled is
-     * put back, `$record` is emptied and the error is returned.
+     * deferred throughout, the undo included, so a failure recounts once. If
+     * a write fails, every object already handled is put back, `$record` is
+     * emptied and the error is returned.
      *
      * @since 1.0.0
      *
@@ -214,7 +215,7 @@ class Licensio_KB_Term_Operations {
     private function move_all( array $sources, $source_taxonomy, $to, $target_taxonomy, $remove, &$record ) {
         $record = array();
 
-        $result = $this->with_deferred_counting(
+        return $this->with_deferred_counting(
             function () use ( $sources, $source_taxonomy, $to, $target_taxonomy, $remove, &$record ) {
                 $moved = 0;
 
@@ -222,6 +223,9 @@ class Licensio_KB_Term_Operations {
                     $count = $this->move_objects( $from, $source_taxonomy, $to, $target_taxonomy, $remove, $record );
 
                     if ( is_wp_error( $count ) ) {
+                        $this->undo( $record );
+                        $record = array();
+
                         return $count;
                     }
 
@@ -231,13 +235,6 @@ class Licensio_KB_Term_Operations {
                 return $moved;
             }
         );
-
-        if ( is_wp_error( $result ) ) {
-            $this->undo( $record );
-            $record = array();
-        }
-
-        return $result;
     }
 
     /**
