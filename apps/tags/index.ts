@@ -46,17 +46,11 @@ if ( mount ) {
 
 	const app = createApp( App ).use( createPinia() );
 
-	[
-		Alert,
-		Button,
-		ConfigProvider,
-		Input,
-		Modal,
-		Switch,
-		Table,
-	].forEach( ( component ) => {
-		app.use( component );
-	} );
+	[ Alert, Button, ConfigProvider, Input, Modal, Switch, Table ].forEach(
+		( component ) => {
+			app.use( component );
+		}
+	);
 
 	app.mount( mount );
 }
