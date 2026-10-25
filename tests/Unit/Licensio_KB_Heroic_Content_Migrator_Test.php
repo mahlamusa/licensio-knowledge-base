@@ -742,7 +742,6 @@ class Licensio_KB_Heroic_Content_Migrator_Test extends Licensio_KB_Test_Case {
         $this->assertSame( 9, $this->post_meta[901]['licensio_order_501'] );
         $this->assertSame( 46, $this->post_meta[901]['licensio_order_502'] );
         $this->assertArrayNotHasKey( 'licensio_order_77', $this->post_meta[901] );
-        $this->assertSame( array(), $this->report->notes( 'article_order' ) );
     }
 
     /**

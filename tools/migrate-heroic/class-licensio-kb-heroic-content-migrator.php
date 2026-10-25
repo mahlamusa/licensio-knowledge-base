@@ -469,11 +469,11 @@ class Licensio_KB_Heroic_Content_Migrator {
         $saved = array();
 
         foreach ( $positions as $heroic_term_id => $position ) {
-            $target = isset( $categories[ $heroic_term_id ] ) ? $categories[ $heroic_term_id ] : 0;
-
-            if ( $target <= 0 || isset( $saved[ $target ] ) ) {
+            if ( ! isset( $categories[ $heroic_term_id ] ) || isset( $saved[ $categories[ $heroic_term_id ] ] ) ) {
                 continue;
             }
+
+            $target = $categories[ $heroic_term_id ];
 
             if ( ! isset( $this->position_bases[ $target ] ) ) {
                 $current = Licensio_KB_Article_Order::positions( $target );
