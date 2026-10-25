@@ -19,7 +19,7 @@ import { computed, onMounted, ref } from 'vue';
 import { articleFilter, settings } from './api';
 import { useFeedbackStore } from './store';
 import AppHeader from '../components/AppHeader.vue';
-import { __, sprintf } from '../components/i18n';
+import { __, _n, sprintf } from '../components/i18n';
 import type { FeedbackItem, FeedbackStatus } from './types';
 
 const store = useFeedbackStore();
@@ -247,7 +247,7 @@ onMounted( () => {
 							{{
 								sprintf(
 									/* translators: %d: number of selected feedback entries. */
-									__( '%d selected', 'licensio-knowledge-base' ),
+									_n( '%d selected', '%d selected', store.selected.length, 'licensio-knowledge-base' ),
 									store.selected.length
 								)
 							}}
