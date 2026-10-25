@@ -260,6 +260,21 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
         );
         Functions\when( '_prime_post_caches' )->justReturn( null );
         Functions\when( '_prime_term_caches' )->justReturn( null );
+        Functions\when( 'wp_defer_term_counting' )->justReturn( false );
+        Functions\when( 'get_term_by' )->alias(
+            function ( $field, $value, $taxonomy ) {
+                $this->assertSame( 'slug', $field );
+                $this->assertSame( 'licensio_category', $taxonomy );
+
+                foreach ( $this->terms as $term_id => $fields ) {
+                    if ( $fields['slug'] === $value ) {
+                        return $this->term( $term_id );
+                    }
+                }
+
+                return false;
+            }
+        );
         Functions\when( 'wp_insert_term' )->alias(
             function ( $name, $taxonomy, $args ) {
                 $this->assertSame( 'licensio_category', $taxonomy );
@@ -1161,20 +1176,84 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * A core insert error is answered as a 400 with the same code.
+     * A name clash core reports is a 409, as in the Tags routes.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_a_core_insert_error_becomes_a_bad_request() {
+    public function test_a_core_name_clash_is_a_conflict() {
         Functions\when( 'wp_insert_term' )->justReturn( new WP_Error( 'term_exists', 'A term with the name provided already exists.', 4 ) );
         Functions\expect( 'update_term_meta' )->never();
 
         $result = $this->controller->create_item( $this->request( array( 'name' => 'Billing' ) ) );
 
-        $this->assert_error( 'term_exists', 400, $result );
+        $this->assert_error( 'term_exists', 409, $result );
         $this->assertSame( 'A term with the name provided already exists.', $result->get_error_message() );
+    }
+
+    /**
+     * Any other core insert error is answered as a 400 with the same code.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_another_core_insert_error_becomes_a_bad_request() {
+        Functions\when( 'wp_insert_term' )->justReturn( new WP_Error( 'empty_term_name', 'A name is required for this term.' ) );
+
+        $this->assert_error( 'empty_term_name', 400, $this->controller->create_item( $this->request( array( 'name' => 'Billing' ) ) ) );
+    }
+
+    /**
+     * An edit to a slug another category uses is refused before anything is written.
+     *
+     * The edit also moves the category, where core would quietly pick
+     * another slug.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_edit_to_a_taken_slug_is_a_conflict() {
+        $this->expect_no_writes();
+
+        $result = $this->controller->update_item(
+            $this->request(
+                array(
+                    'id'     => 2,
+                    'slug'   => 'refunds',
+                    'parent' => 4,
+                )
+            )
+        );
+
+        $this->assertInstanceOf( 'WP_Error', $result );
+        $this->assertSame( 'licensio_kb_slug_taken', $result->get_error_code() );
+        $this->assertSame( 409, $result->get_error_data()['status'] );
+        $this->assertSame( 'Another category already uses the slug “refunds”. Choose a different slug.', $result->get_error_data()['params']['slug'] );
+    }
+
+    /**
+     * A category keeps its own slug on an edit.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_edit_keeping_its_own_slug_is_saved() {
+        $result = $this->controller->update_item(
+            $this->request(
+                array(
+                    'id'   => 2,
+                    'slug' => 'install',
+                    'name' => 'Installing',
+                )
+            )
+        );
+
+        $this->assertSame( 'install', $result['slug'] );
+        $this->assertSame( 'Installing', $result['name'] );
     }
 
     /**
@@ -1971,5 +2050,96 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
         foreach ( array( 9, 10, 11, 404 ) as $id ) {
             $this->assert_error( 'licensio_kb_invalid_image', 400, Licensio_KB_Categories_REST_Controller::sanitize_image_arg( $id ) );
         }
+    }
+
+    /**
+     * A delete whose final step fails puts the articles and children back.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_failed_final_delete_puts_everything_back() {
+        Functions\when( 'wp_delete_term' )->justReturn( false );
+
+        $result = $this->controller->delete_item(
+            $this->request(
+                array(
+                    'id'                => 1,
+                    'reassign_articles' => '4',
+                    'reassign_children' => '4',
+                )
+            )
+        );
+
+        $this->assert_error( 'licensio_kb_category_not_deleted', 500, $result );
+        $this->assertSame( array( 101 ), $this->objects[1] );
+        $this->assertSame( array( 104 ), $this->objects[4] );
+        $this->assertSame( 1, $this->terms[2]['parent'] );
+    }
+
+    /**
+     * A delete whose child move fails puts the articles back too.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_failed_child_move_puts_the_articles_back() {
+        $this->fail_parent_change( 2, 4 );
+        Functions\expect( 'wp_delete_term' )->never();
+
+        $result = $this->controller->delete_item(
+            $this->request(
+                array(
+                    'id'                => 1,
+                    'reassign_articles' => '4',
+                    'reassign_children' => '4',
+                )
+            )
+        );
+
+        $this->assert_error( 'db_update_error', 400, $result );
+        $this->assertSame( array( 101 ), $this->objects[1] );
+        $this->assertSame( array( 104 ), $this->objects[4] );
+    }
+
+    /**
+     * A merge whose article move fails puts the children back and merges nothing.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_failed_article_move_in_a_merge_puts_the_children_back() {
+        Actions\expectDone( 'licensio_kb_terms_merged' )->never();
+        Functions\expect( 'wp_delete_term' )->never();
+        Functions\when( 'wp_remove_object_terms' )->alias(
+            function ( $object_id, $terms ) {
+                if ( 103 === $object_id && array( 2 ) === $terms ) {
+                    return new WP_Error( 'db_delete_error', 'Could not remove the term relationship.' );
+                }
+
+                foreach ( $terms as $term_id ) {
+                    $this->objects[ $term_id ] = array_values( array_diff( $this->objects[ $term_id ], array( $object_id ) ) );
+                }
+
+                return true;
+            }
+        );
+
+        $result = $this->controller->merge(
+            $this->request(
+                array(
+                    'sources' => array( 2 ),
+                    'target'  => 4,
+                )
+            )
+        );
+
+        $this->assertInstanceOf( 'WP_Error', $result );
+        $this->assertSame( 2, $this->terms[3]['parent'] );
+        $this->assertEqualsCanonicalizing( array( 102, 103 ), $this->objects[2] );
+        $this->assertSame( array( 104 ), $this->objects[4] );
     }
 }

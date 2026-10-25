@@ -5,14 +5,19 @@
  * - `GET /licensio-kb/v1/categories` answers every category as a flat list:
  *   `{ id, name, slug, parent, description, count, order, icon, icon_id,
  *   icon_svg, image_id, icon_url, image_url }`. Siblings come in their manual
- *   order (`licensio_order`), then by name. Names and descriptions are plain
- *   text: core stores `&` as `&amp;`, so they are decoded here.
+ *   order (`licensio_order`), then by name. Names are plain text: core
+ *   stores `&` as `&amp;`, so they are decoded here. Descriptions are
+ *   answered exactly as stored.
  * - `POST /categories` creates a category and `PATCH /categories/{id}`
  *   updates one. Only the fields sent are written. The icon and image fields
- *   go through the same sanitisers as the term meta registration.
+ *   go through the same sanitisers as the term meta registration. As in
+ *   core, a new category with a taken slug gets a unique one; editing a
+ *   category to a slug another category uses, or adding one with a name a
+ *   sibling has, is refused with a 409.
  * - `DELETE /categories/{id}` takes `reassign_articles` (`parent`, `none` or a
  *   category ID) and `reassign_children` (`parent` or a category ID), moves
- *   the articles and the child categories, then deletes the category.
+ *   the articles and the child categories, then deletes the category. If a
+ *   step fails, the moves already made are put back.
  * - `POST /categories/order` takes `{ parent, ids }`: the ordered children of
  *   `parent`. Each one is moved under `parent` and given its
  *   `licensio_order`; children of `parent` left out of `ids` are renumbered
@@ -21,7 +26,8 @@
  * - `POST /categories/merge` takes `{ sources, target }`. Child categories of
  *   the sources are moved under the target first, then
  *   Licensio_KB_Term_Operations::merge_terms() moves the articles and deletes
- *   the sources.
+ *   the sources. If the articles cannot all be moved, the children are put
+ *   back too.
  *
  * Every write that would put a category inside itself or inside one of its
  * own descendants is refused with `licensio_kb_category_cycle`.
@@ -220,7 +226,7 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
                 'maxLength'         => 200,
                 'validate_callback' => 'rest_validate_request_arg',
                 'sanitize_callback' => array( __CLASS__, 'sanitize_slug_arg' ),
-                'description'       => __( 'The category slug. Made unique when it is taken.', 'licensio-knowledge-base' ),
+                'description'       => __( 'The category slug. A new category with a taken slug gets a unique one; an edit to a slug another category uses is refused.', 'licensio-knowledge-base' ),
             ),
             'parent'      => array(
                 'type'              => 'integer',
@@ -683,7 +689,7 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
         $result = wp_insert_term( (string) $request->get_param( 'name' ), Licensio_KB_Post_Types::TAXONOMY_CATEGORY, $args );
 
         if ( is_wp_error( $result ) ) {
-            return self::bad_request( $result );
+            return self::rest_error( $result );
         }
 
         $term_id = (int) $result['term_id'];
@@ -696,7 +702,9 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
     /**
      * Update a category.
      *
-     * Only the fields present in the request are changed.
+     * Only the fields present in the request are changed. A slug another
+     * category already uses is refused with a 409 before anything is
+     * written.
      *
      * @since 1.0.0
      *
@@ -711,6 +719,14 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
 
         if ( ! $this->get_category( $id ) instanceof WP_Term ) {
             return self::not_found();
+        }
+
+        if ( isset( $args['slug'] ) ) {
+            $free = $this->operations->check_slug( $id, $args['slug'], Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
+
+            if ( is_wp_error( $free ) ) {
+                return $free;
+            }
         }
 
         if ( isset( $args['parent'] ) ) {
@@ -733,7 +749,7 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
             $result = wp_update_term( $id, Licensio_KB_Post_Types::TAXONOMY_CATEGORY, $args );
 
             if ( is_wp_error( $result ) ) {
-                return self::bad_request( $result );
+                return self::rest_error( $result );
             }
         }
 
@@ -750,10 +766,9 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      * move them to; `none` leaves the articles without this category.
      *
      * The articles are moved first, then the child categories, then the
-     * category is deleted. Only the child moves are undone on failure: if a
-     * child category cannot be moved, the children already moved are put
-     * back and the category is not deleted, but the articles stay where they
-     * were moved to. Nothing is undone if the final delete fails.
+     * category is deleted. All or nothing: if a step fails, the articles and
+     * child categories already moved are put back, the category is kept and
+     * the error is returned.
      *
      * @since 1.0.0
      *
@@ -788,10 +803,11 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
             return $plan;
         }
 
-        $moved = 0;
+        $moved  = 0;
+        $record = array();
 
         if ( $plan['articles'] > 0 ) {
-            $moved = $this->operations->move_assignments( $id, $plan['articles'], Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
+            $moved = $this->operations->move_assignments( $id, $plan['articles'], Licensio_KB_Post_Types::TAXONOMY_CATEGORY, $record );
 
             if ( is_wp_error( $moved ) ) {
                 return $moved;
@@ -801,19 +817,20 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
         $reparented = $this->reparent( self::children_of( $id, $parents ), $plan['children'], $parents );
 
         if ( is_wp_error( $reparented ) ) {
+            $this->operations->undo( $record );
+
             return $reparented;
         }
 
         $deleted = wp_delete_term( $id, Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
 
-        if ( is_wp_error( $deleted ) ) {
-            return $deleted;
-        }
-
         if ( true !== $deleted ) {
+            $this->restore_parents( $reparented, $parents );
+            $this->operations->undo( $record );
+
             return new WP_Error(
                 'licensio_kb_category_not_deleted',
-                __( 'The category could not be deleted.', 'licensio-knowledge-base' ),
+                is_wp_error( $deleted ) ? $deleted->get_error_message() : __( 'The category could not be deleted.', 'licensio-knowledge-base' ),
                 array( 'status' => 500 )
             );
         }
@@ -1011,9 +1028,10 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      * source's own parent as it deletes it. If one cannot be moved, the
      * children already moved are put back and nothing is merged. Then the
      * articles move and the sources are deleted through
-     * Licensio_KB_Term_Operations::merge_terms(). That step is not undone:
-     * if it fails, the children stay under the target, and any articles
-     * already moved stay moved.
+     * Licensio_KB_Term_Operations::merge_terms(), which puts the articles
+     * back itself if they cannot all be moved; the children are then put
+     * back too. Once the articles have moved the merge stands: a source that
+     * cannot be deleted is left out of `deleted`.
      *
      * @since 1.0.0
      *
@@ -1045,6 +1063,8 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
         $result = $this->operations->merge_terms( $sources, $target, Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
 
         if ( is_wp_error( $result ) ) {
+            $this->restore_parents( $reparented, $parents );
+
             return $result;
         }
 
@@ -1135,17 +1155,34 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
             $result = wp_update_term( $id, Licensio_KB_Post_Types::TAXONOMY_CATEGORY, array( 'parent' => $parent_id ) );
 
             if ( is_wp_error( $result ) ) {
-                foreach ( $moved as $undo ) {
-                    wp_update_term( $undo, Licensio_KB_Post_Types::TAXONOMY_CATEGORY, array( 'parent' => $parents[ $undo ] ) );
-                }
+                $this->restore_parents( $moved, $parents );
 
-                return self::bad_request( $result );
+                return self::rest_error( $result );
             }
 
             $moved[] = (int) $id;
         }
 
         return $moved;
+    }
+
+    /**
+     * Put categories back under the parents they had before a move.
+     *
+     * Best effort: a category that cannot be put back is skipped, since the
+     * caller is already reporting the error that made it undo.
+     *
+     * @since 1.0.0
+     *
+     * @param int[]           $ids     The categories that were moved.
+     * @param array<int, int> $parents Every category ID to its parent ID before the move.
+     *
+     * @return void
+     */
+    private function restore_parents( array $ids, array $parents ) {
+        foreach ( $ids as $id ) {
+            wp_update_term( $id, Licensio_KB_Post_Types::TAXONOMY_CATEGORY, array( 'parent' => $parents[ $id ] ) );
+        }
     }
 
     /**
@@ -1479,19 +1516,26 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
     }
 
     /**
-     * A core error turned into a 400 the app can show.
+     * A core error turned into one the app can show.
      *
      * Core's term errors carry a term ID or nothing as their data, which the
-     * REST server would answer as a 500.
+     * REST server would answer as a 500. A clash with an existing term is a
+     * 409, as in the Tags routes; anything else is a 400.
      *
      * @since 1.0.0
      *
      * @param WP_Error $error The core error.
      *
-     * @return WP_Error The same code and message with status 400.
+     * @return WP_Error The same code and message with status 409 or 400.
      */
-    private static function bad_request( WP_Error $error ) {
-        return new WP_Error( $error->get_error_code(), $error->get_error_message(), array( 'status' => 400 ) );
+    private static function rest_error( WP_Error $error ) {
+        $code = (string) $error->get_error_code();
+
+        return new WP_Error(
+            $code,
+            $error->get_error_message(),
+            array( 'status' => in_array( $code, array( 'term_exists', 'duplicate_term_slug' ), true ) ? 409 : 400 )
+        );
     }
 
     /**

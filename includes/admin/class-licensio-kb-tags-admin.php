@@ -179,7 +179,7 @@ class Licensio_KB_Tags_Admin {
      */
     public function app_data() {
         return array(
-            'root'        => Licensio_KB_REST_API::url(),
+            'root'        => esc_url_raw( Licensio_KB_REST_API::url() ),
             'nonce'       => wp_create_nonce( 'wp_rest' ),
             'perPage'     => self::PER_PAGE,
             'settingsUrl' => Licensio_KB_Admin_Page::settings_url(),
