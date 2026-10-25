@@ -163,7 +163,7 @@ class Licensio_KB_Search_Component_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     public function test_the_main_search_query_is_ranked_by_the_index() {
-        $query = new Licensio_KB_Fake_Query(
+        $query = $this->fake_query(
             array(
                 's'         => 'licence',
                 'post_type' => 'licensio_article',
@@ -188,7 +188,7 @@ class Licensio_KB_Search_Component_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     public function test_a_term_with_no_matches_narrows_the_query_to_nothing() {
-        $query = new Licensio_KB_Fake_Query(
+        $query = $this->fake_query(
             array(
                 's'         => 'licence',
                 'post_type' => 'licensio_article',
@@ -211,7 +211,7 @@ class Licensio_KB_Search_Component_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     public function test_a_search_outside_the_knowledge_base_is_untouched() {
-        $query = new Licensio_KB_Fake_Query(
+        $query = $this->fake_query(
             array(
                 's'         => 'licence',
                 'post_type' => 'post',
@@ -232,7 +232,7 @@ class Licensio_KB_Search_Component_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     public function test_a_non_search_query_is_untouched() {
-        $query = new Licensio_KB_Fake_Query(
+        $query = $this->fake_query(
             array( 'post_type' => 'licensio_article' ),
             true,
             false
@@ -251,7 +251,7 @@ class Licensio_KB_Search_Component_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     public function test_a_secondary_query_is_untouched() {
-        $query = new Licensio_KB_Fake_Query(
+        $query = $this->fake_query(
             array(
                 's'         => 'licence',
                 'post_type' => 'licensio_article',
@@ -330,12 +330,31 @@ class Licensio_KB_Search_Component_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * A query double flagged as the main query and a search, or not.
+     *
+     * @since 1.0.0
+     *
+     * @param array<string, mixed> $vars   The query variables.
+     * @param bool                 $main   Whether this is the main query.
+     * @param bool                 $search Whether this is a search.
+     *
+     * @return WP_Query The query.
+     */
+    private function fake_query( array $vars = array(), $main = true, $search = true ) {
+        $query            = new WP_Query( $vars );
+        $query->main      = (bool) $main;
+        $query->is_search = (bool) $search;
+
+        return $query;
+    }
+
+    /**
      * Drive rank_main_query() with a fake query and a canned result.
      *
      * @since 1.0.0
      *
-     * @param Licensio_KB_Fake_Query $query The query to pass through.
-     * @param int[]                  $ids   The IDs the search should return.
+     * @param WP_Query $query The query to pass through.
+     * @param int[]    $ids   The IDs the search should return.
      *
      * @return void
      */
@@ -357,68 +376,6 @@ class Licensio_KB_Search_Component_Test extends Licensio_KB_Test_Case {
         $this->search->rank_main_query( $query );
 
         $reflection->setValue( $this->search, null );
-    }
-}
-
-/**
- * A stand-in for WP_Query that records what was set on it.
- *
- * @since 1.0.0
- */
-class Licensio_KB_Fake_Query extends WP_Query {
-
-    /**
-     * Whether this is the main query.
-     *
-     * @since 1.0.0
-     * @var bool
-     */
-    private $main;
-
-    /**
-     * Whether this is a search.
-     *
-     * @since 1.0.0
-     * @var bool
-     */
-    private $search;
-
-    /**
-     * Constructor.
-     *
-     * @since 1.0.0
-     *
-     * @param array<string, mixed> $vars   The query variables.
-     * @param bool                 $main   Whether this is the main query.
-     * @param bool                 $search Whether this is a search.
-     */
-    public function __construct( array $vars = array(), $main = true, $search = true ) {
-        parent::__construct( $vars );
-
-        $this->main   = (bool) $main;
-        $this->search = (bool) $search;
-    }
-
-    /**
-     * Whether this is the main query.
-     *
-     * @since 1.0.0
-     *
-     * @return bool True when it is.
-     */
-    public function is_main_query() {
-        return $this->main;
-    }
-
-    /**
-     * Whether this is a search.
-     *
-     * @since 1.0.0
-     *
-     * @return bool True when it is.
-     */
-    public function is_search() {
-        return $this->search;
     }
 }
 
