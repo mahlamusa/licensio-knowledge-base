@@ -444,13 +444,17 @@ onMounted( detect );
 				</a-radio-group>
 
 				<div class="licensio-kb-migration__actions">
-					<a-button
+					<a-popconfirm
 						v-if="driver?.status.in_progress"
-						type="primary"
-						@click="start( false )"
+						:title="__( 'Resume the import from where it stopped?', 'licensio-knowledge-base' )"
+						:ok-text="__( 'Resume import', 'licensio-knowledge-base' )"
+						:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
+						@confirm="start( false )"
 					>
-						{{ __( 'Resume import', 'licensio-knowledge-base' ) }}
-					</a-button>
+						<a-button type="primary">
+							{{ __( 'Resume import', 'licensio-knowledge-base' ) }}
+						</a-button>
+					</a-popconfirm>
 					<a-button
 						v-else
 						type="primary"
@@ -609,20 +613,28 @@ onMounted( detect );
 				</template>
 
 				<div class="licensio-kb-migration__actions">
-					<a-button
+					<a-popconfirm
 						v-if="summary && runIsDry"
-						type="primary"
-						@click="start( false )"
+						:title="__( 'Run the import now?', 'licensio-knowledge-base' )"
+						:ok-text="__( 'Run import', 'licensio-knowledge-base' )"
+						:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
+						@confirm="start( false )"
 					>
-						{{ __( 'Looks good, run the import', 'licensio-knowledge-base' ) }}
-					</a-button>
-					<a-button
+						<a-button type="primary">
+							{{ __( 'Looks good, run the import', 'licensio-knowledge-base' ) }}
+						</a-button>
+					</a-popconfirm>
+					<a-popconfirm
 						v-if="runError"
-						type="primary"
-						@click="start( runIsDry )"
+						:title="__( 'Resume the import from where it stopped?', 'licensio-knowledge-base' )"
+						:ok-text="__( 'Resume', 'licensio-knowledge-base' )"
+						:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
+						@confirm="start( runIsDry )"
 					>
-						{{ __( 'Resume', 'licensio-knowledge-base' ) }}
-					</a-button>
+						<a-button type="primary">
+							{{ __( 'Resume', 'licensio-knowledge-base' ) }}
+						</a-button>
+					</a-popconfirm>
 					<a-button
 						v-if="summary && ! runIsDry && chrome.articlesUrl"
 						:href="chrome.articlesUrl"

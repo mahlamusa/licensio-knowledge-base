@@ -6,7 +6,8 @@ import { lkbTheme } from '../styles/theme';
  * Lists every vote with its article, comment and date; filters by vote and
  * status; marks rows reviewed or actioned one at a time or in bulk; and links
  * each row to the article editor. Every action goes through the Pinia store,
- * so nothing here reloads the page.
+ * so nothing here reloads the page. Every status change is sent only after
+ * the user confirmed it in a Popconfirm.
  *
  * Comments are rendered with text interpolation. There is deliberately no
  * `v-html` anywhere in this file: a reader-supplied comment must never be
@@ -19,7 +20,9 @@ import { computed, onMounted, ref } from 'vue';
 import { articleFilter, settings } from './api';
 import { useFeedbackStore } from './store';
 import AppHeader from '../components/AppHeader.vue';
+import ConfirmButton from '../components/ConfirmButton.vue';
 import { __, _n, sprintf } from '../components/i18n';
+import { usePopoverFocus } from '../components/popover-focus';
 import type { FeedbackItem, FeedbackStatus } from './types';
 
 const store = useFeedbackStore();
@@ -160,6 +163,67 @@ async function clearArticle(): Promise< void > {
 	await store.filter( {} );
 }
 
+/** A row's status the user picked and has not confirmed yet. */
+const pendingStatus = ref< { id: number; status: FeedbackStatus } | null >(
+	null
+);
+
+const {
+	open: statusConfirmOpen,
+	overlayClass: statusConfirmClass,
+	setOpen: setStatusConfirmOpen,
+} = usePopoverFocus();
+
+/**
+ * Ask before a row's new status is saved.
+ *
+ * @since 1.0.0
+ *
+ * @param {number}         id     The feedback row.
+ * @param {FeedbackStatus} status The status picked.
+ *
+ * @return {void}
+ */
+function pickStatus( id: number, status: FeedbackStatus ): void {
+	pendingStatus.value = { id, status };
+	setStatusConfirmOpen( true );
+}
+
+/**
+ * Close the status confirmation, dropping the picked status unless saved.
+ *
+ * @since 1.0.0
+ *
+ * @param {boolean} open Whether the confirmation should stay open.
+ *
+ * @return {void}
+ */
+function onStatusConfirmOpen( open: boolean ): void {
+	if ( open ) {
+		return;
+	}
+
+	setStatusConfirmOpen( false );
+	pendingStatus.value = null;
+}
+
+/**
+ * Save the picked status, once confirmed.
+ *
+ * @since 1.0.0
+ *
+ * @return {Promise<void>} Resolves once saved or failed.
+ */
+async function confirmStatus(): Promise< void > {
+	const pending = pendingStatus.value;
+
+	onStatusConfirmOpen( false );
+
+	if ( pending ) {
+		await store.setStatus( pending.id, pending.status );
+	}
+}
+
 onMounted( () => {
 	store.load();
 } );
@@ -254,20 +318,36 @@ onMounted( () => {
 						</span>
 
 						<div class="lkb-bulk__actions">
-							<a-button
+							<ConfirmButton
 								size="small"
 								:loading="store.saving"
-								@click="store.bulkSetStatus( 'reviewed' )"
+								:title="
+									sprintf(
+										/* translators: %d: number of selected feedback items. */
+										_n( 'Mark %d feedback item as reviewed?', 'Mark %d feedback items as reviewed?', store.selected.length, 'licensio-knowledge-base' ),
+										store.selected.length
+									)
+								"
+								:ok-text="__( 'Mark reviewed', 'licensio-knowledge-base' )"
+								@confirm="store.bulkSetStatus( 'reviewed' )"
 							>
 								{{ __( 'Mark reviewed', 'licensio-knowledge-base' ) }}
-							</a-button>
-							<a-button
+							</ConfirmButton>
+							<ConfirmButton
 								size="small"
 								:loading="store.saving"
-								@click="store.bulkSetStatus( 'actioned' )"
+								:title="
+									sprintf(
+										/* translators: %d: number of selected feedback items. */
+										_n( 'Mark %d feedback item as actioned?', 'Mark %d feedback items as actioned?', store.selected.length, 'licensio-knowledge-base' ),
+										store.selected.length
+									)
+								"
+								:ok-text="__( 'Mark actioned', 'licensio-knowledge-base' )"
+								@confirm="store.bulkSetStatus( 'actioned' )"
 							>
 								{{ __( 'Mark actioned', 'licensio-knowledge-base' ) }}
-							</a-button>
+							</ConfirmButton>
 						</div>
 					</template>
 
@@ -322,20 +402,30 @@ onMounted( () => {
 					</template>
 
 					<template v-else-if="'status' === column.key">
-						<a-select
-							:value="record.status"
-							style="width: 160px"
-							:disabled="store.saving"
-							:options="[
-								{ value: 'new', label: __( 'New', 'licensio-knowledge-base' ) },
-								{ value: 'reviewed', label: __( 'Reviewed', 'licensio-knowledge-base' ) },
-								{ value: 'actioned', label: __( 'Actioned', 'licensio-knowledge-base' ) },
-							]"
-							@change="
-								( value ) =>
-									store.setStatus( record.id, value as FeedbackStatus )
-							"
-						/>
+						<a-popconfirm
+							:open="statusConfirmOpen && pendingStatus?.id === record.id"
+							:title="__( 'Change the status of this feedback?', 'licensio-knowledge-base' )"
+							:ok-text="__( 'Change status', 'licensio-knowledge-base' )"
+							:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
+							:overlay-class-name="statusConfirmClass"
+							@open-change="onStatusConfirmOpen"
+							@confirm="confirmStatus"
+						>
+							<a-select
+								:value="pendingStatus?.id === record.id ? pendingStatus.status : record.status"
+								style="width: 160px"
+								:disabled="store.saving"
+								:options="[
+									{ value: 'new', label: __( 'New', 'licensio-knowledge-base' ) },
+									{ value: 'reviewed', label: __( 'Reviewed', 'licensio-knowledge-base' ) },
+									{ value: 'actioned', label: __( 'Actioned', 'licensio-knowledge-base' ) },
+								]"
+								@change="
+									( value ) =>
+										pickStatus( record.id, value as FeedbackStatus )
+								"
+							/>
+						</a-popconfirm>
 					</template>
 				</template>
 			</a-table>

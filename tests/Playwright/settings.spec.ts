@@ -15,6 +15,7 @@
  */
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { confirmPopconfirm } from './helpers/content-manager';
 import { logIn, password, user } from './helpers/session';
 
 const enabled = process.env.LICENSIO_KB_E2E === '1';
@@ -132,6 +133,7 @@ test.describe( 'Knowledge base settings', () => {
 		);
 
 		await page.getByRole( 'button', { name: 'Save changes' } ).click();
+		await confirmPopconfirm( page );
 		await expect( page.getByText( 'Settings saved.' ) ).toBeVisible();
 
 		// No permalink save, no cache flush: straight to the archive.
@@ -181,6 +183,7 @@ test.describe( 'Knowledge base settings', () => {
 		await setBrandColour( page, 'not-a-colour' );
 
 		await page.getByRole( 'button', { name: 'Save changes' } ).click();
+		await confirmPopconfirm( page );
 
 		await expect(
 			page.getByText( 'One or more settings are invalid' )
