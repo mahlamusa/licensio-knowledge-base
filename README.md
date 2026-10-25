@@ -41,7 +41,17 @@ vendor/bin/phpunit     # unit tests
 npm test               # Playwright
 ```
 
-CI runs lint, analyze and the unit tests on PHP 8.2 and 8.3, plus the JS build. The PHP 7.4 floor is enforced by `PHPCompatibilityWP` inside `phpcs.xml`; the toolchain itself needs PHP 8, so it cannot be installed on 7.4.
+The Playwright specs need a WordPress to run against. `bin/e2e-env.sh` boots one in Docker with `@wordpress/env`, installs a release zip, switches to plain permalinks and seeds the content the specs read, then prints the variables they need:
+
+```bash
+bash bin/build-release.sh
+bin/e2e-env.sh start releases/licensio-knowledge-base-wporg.zip > .tmp/e2e.env
+while IFS= read -r line; do export "$line"; done < .tmp/e2e.env
+npx playwright test
+bin/e2e-env.sh stop
+```
+
+CI runs lint, analyze and the unit tests on PHP 8.2 and 8.3, plus the JS build, and the Playwright suite against the built wporg zip in the same disposable WordPress, failing if any spec is skipped. The PHP 7.4 floor is enforced by `PHPCompatibilityWP` inside `phpcs.xml`; the toolchain itself needs PHP 8, so it cannot be installed on 7.4.
 
 ### Admin app development
 
