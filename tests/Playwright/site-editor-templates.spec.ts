@@ -9,12 +9,12 @@
  * The suite needs a running WordPress with this plugin active, a block theme
  * (Twenty Twenty-Four or newer) and an administrator account, so it is skipped
  * unless `LICENSIO_KB_E2E=1` and the two credential variables are present. CI
- * has no such site and runs Playwright with `--pass-with-no-tests`.
+ * provides both through `bin/e2e-env.sh`.
  *
  * @since 1.0.0
  */
 
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 const enabled = process.env.LICENSIO_KB_E2E === '1';
 const user = process.env.LICENSIO_KB_ADMIN_USER ?? '';
@@ -32,9 +32,25 @@ async function logIn( page: Page ): Promise< void > {
 
 async function openTemplateList( page: Page ): Promise< void > {
 	await page.goto( '/wp-admin/site-editor.php?postType=wp_template' );
-	await expect( page.getByRole( 'button', { name: 'Open Navigation' } ) ).toBeVisible( {
-		timeout: 20_000,
-	} );
+	await expect(
+		page
+			.getByRole( 'region', { name: 'Templates' } )
+			.getByRole( 'heading', { name: 'Templates' } )
+	).toBeVisible( { timeout: 20_000 } );
+}
+
+/**
+ * A template's card in the template list, by its title.
+ *
+ * @since 1.0.0
+ *
+ * @param {Page}   page  The browser page.
+ * @param {string} title The template title.
+ *
+ * @return {Locator} The button that opens the template.
+ */
+function templateCard( page: Page, title: string ): Locator {
+	return page.getByRole( 'button', { name: title, exact: true } ).first();
 }
 
 test.describe( 'Knowledge base block templates in the Site Editor', () => {
@@ -57,7 +73,7 @@ test.describe( 'Knowledge base block templates in the Site Editor', () => {
 			'Article Tag',
 			'Article Search Results',
 		] ) {
-			await expect( page.getByText( title, { exact: true } ) ).toBeVisible();
+			await expect( templateCard( page, title ) ).toBeVisible();
 		}
 	} );
 
@@ -72,8 +88,21 @@ test.describe( 'Knowledge base block templates in the Site Editor', () => {
 	test( 'a template can be customised, saved and reset', async ( { page } ) => {
 		await openTemplateList( page );
 
-		await page.getByText( 'Single Article', { exact: true } ).click();
-		await page.getByRole( 'button', { name: 'Edit' } ).click();
+		await templateCard( page, 'Single Article' ).click();
+
+		// The welcome guides open over the editor and are not under test.
+		await page.waitForFunction(
+			() =>
+				// eslint-disable-next-line no-undef
+				!! ( window as any ).wp?.data?.dispatch( 'core/preferences' )
+		);
+		await page.evaluate( () => {
+			// eslint-disable-next-line no-undef
+			const preferences = ( window as any ).wp.data.dispatch( 'core/preferences' );
+
+			preferences.set( 'core/edit-site', 'welcomeGuide', false );
+			preferences.set( 'core/edit-site', 'welcomeGuideTemplate', false );
+		} );
 
 		const canvas = page.frameLocator( 'iframe[name="editor-canvas"]' );
 
@@ -81,14 +110,33 @@ test.describe( 'Knowledge base block templates in the Site Editor', () => {
 		await page.keyboard.press( 'Enter' );
 		await page.keyboard.type( MARKER );
 
-		await page.getByRole( 'button', { name: 'Save', exact: true } ).click();
-		await page.getByRole( 'button', { name: 'Save', exact: true } ).last().click();
+		await page.getByRole( 'button', { name: 'Save', exact: true } ).first().click();
 
-		await expect( page.getByText( 'Site updated.' ) ).toBeVisible( { timeout: 20_000 } );
+		// With more than one changed entity the editor asks which to save first.
+		const saved = page
+			.getByRole( 'button', { name: 'Dismiss this notice' } )
+			.or( page.locator( '.components-snackbar' ) );
+		const panelSave = page
+			.locator( '.entities-saved-states__panel' )
+			.getByRole( 'button', { name: 'Save', exact: true } );
+
+		await expect( saved.or( panelSave ).first() ).toBeVisible( { timeout: 20_000 } );
+
+		if ( await panelSave.isVisible() ) {
+			await panelSave.click();
+		}
+
+		await expect( page.locator( '.components-snackbar' ).first() ).toContainText(
+			/updated|saved/i,
+			{ timeout: 20_000 }
+		);
 
 		// The saved customisation is what the front end now renders.
 		const article = await page.evaluate( async () => {
-			const response = await window.fetch( '/wp-json/wp/v2/licensio_articles?per_page=1' );
+			// The query-string form of the REST route works with any permalink setting.
+			const response = await window.fetch(
+				'/?rest_route=/wp/v2/licensio_articles&per_page=1'
+			);
 			const items = await response.json();
 
 			return Array.isArray( items ) && items.length > 0 ? items[ 0 ].link : '';
@@ -97,14 +145,21 @@ test.describe( 'Knowledge base block templates in the Site Editor', () => {
 		test.skip( '' === article, 'The site has no published knowledge base article to render.' );
 
 		await page.goto( article );
-		await expect( page.getByText( MARKER ) ).toBeVisible();
+		await expect( page.getByText( MARKER ).first() ).toBeVisible();
 
 		// Reset puts the plugin's own copy back.
 		await openTemplateList( page );
-		await page.getByText( 'Single Article', { exact: true } ).click();
-		await page.getByRole( 'button', { name: 'Actions' } ).click();
+		await page
+			.getByRole( 'gridcell' )
+			.filter( { has: templateCard( page, 'Single Article' ) } )
+			.getByRole( 'button', { name: 'Actions' } )
+			.click();
 		await page.getByRole( 'menuitem', { name: /Reset/ } ).click();
 		await page.getByRole( 'button', { name: 'Reset' } ).click();
+		await expect( page.locator( '.components-snackbar' ).first() ).toContainText(
+			/reset/i,
+			{ timeout: 20_000 }
+		);
 
 		await page.goto( article );
 		await expect( page.getByText( MARKER ) ).toHaveCount( 0 );
