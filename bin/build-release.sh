@@ -289,16 +289,27 @@ WP_CLI="$( resolve_wp_cli || true )"
 
 POT_FILE="${WORK_DIR}/${SLUG}.pot"
 
-# dist/ is scanned because make-pot cannot read the Vue apps' .vue files, and
-# because the JSON translation files are keyed by the built file paths, so the
-# strings have to be referenced from there. vite.config.mjs keeps the built
-# calls recognisable, and the app string check below fails the build if one
-# goes missing.
 # shellcheck disable=SC2086
 $WP_CLI i18n make-pot "$ROOT" "$POT_FILE" \
     --domain="$TEXT_DOMAIN" \
     --slug="$SLUG" \
-    --exclude='node_modules,vendor,libraries,tests,tools,bin,docs,.github,releases,.tmp,.sandbox' \
+    --exclude='node_modules,vendor,libraries,dist,tests,tools,bin,docs,.github,releases,.tmp,.sandbox' \
+    --headers='{"Report-Msgid-Bugs-To":"https://wordpress.org/support/plugin/licensio-knowledge-base"}' \
+    --allow-root
+
+# A second pass merges in the built JavaScript in dist/. make-pot cannot read
+# the Vue apps' .vue files, and the JSON translation files are keyed by the
+# built file paths, so the app strings have to be referenced from there. It
+# is a separate pass because make-pot excludes match a name at any depth: the
+# tools exclusion above would also drop dist/apps/tools/. vite.config.mjs
+# keeps the built calls recognisable, and the app string check below fails the
+# build if one goes missing.
+# shellcheck disable=SC2086
+$WP_CLI i18n make-pot "$ROOT" "$POT_FILE" \
+    --domain="$TEXT_DOMAIN" \
+    --slug="$SLUG" \
+    --include='dist' \
+    --merge \
     --headers='{"Report-Msgid-Bugs-To":"https://wordpress.org/support/plugin/licensio-knowledge-base"}' \
     --allow-root
 
