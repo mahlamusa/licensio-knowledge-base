@@ -350,6 +350,34 @@ class Licensio_KB_Term_Operations_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * Counting is restored when the work throws.
+     *
+     * A hook on an assignment write can throw. Counting must not stay
+     * deferred for the rest of the request when that happens.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_counting_is_restored_when_a_move_throws() {
+        Functions\when( 'wp_set_object_terms' )->alias(
+            function () {
+                throw new RuntimeException( 'A hook failed.' );
+            }
+        );
+
+        try {
+            ( new Licensio_KB_Term_Operations() )->move_assignments( 10, 11, 'licensio_category' );
+            $this->fail( 'The exception should reach the caller.' );
+        } catch ( RuntimeException $exception ) {
+            $this->assertSame( 'A hook failed.', $exception->getMessage() );
+        }
+
+        $this->assertSame( array( 'defer', 'count' ), $this->events );
+        $this->assertFalse( $this->deferring );
+    }
+
+    /**
      * A move that fails part way puts back the objects already moved.
      *
      * @since 1.0.0

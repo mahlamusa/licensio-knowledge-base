@@ -312,13 +312,15 @@ class Licensio_KB_Term_Operations {
      * Core's deferral is one switch, not a counter, so a caller that already
      * deferred counting (the tag conversion loop does) keeps it deferred: the
      * switch is only turned off again, which recounts, if this method turned
-     * it on.
+     * it on. It is turned off in a `finally` block, so counting comes back
+     * even when the callback (or a hook it triggers) throws.
      *
      * @since 1.0.0
      *
      * @param callable $callback The work to run.
      *
      * @return mixed What the callback returned.
+     * @throws Throwable Whatever the callback throws, after counting is restored.
      */
     private function with_deferred_counting( $callback ) {
         $was_deferred = wp_defer_term_counting();
@@ -327,13 +329,13 @@ class Licensio_KB_Term_Operations {
             wp_defer_term_counting( true );
         }
 
-        $result = $callback();
-
-        if ( ! $was_deferred ) {
-            wp_defer_term_counting( false );
+        try {
+            return $callback();
+        } finally {
+            if ( ! $was_deferred ) {
+                wp_defer_term_counting( false );
+            }
         }
-
-        return $result;
     }
 
     /**

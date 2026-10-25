@@ -253,7 +253,12 @@ async function runSearch( text: string ): Promise< void > {
 			taxonomy: props.taxonomy,
 			search: text,
 			exclude: props.exclude.slice( 0, MAX_EXCLUDE ),
-			per_page: 20,
+			// Excluded IDs past the cap are hidden here, so ask for enough extra
+			// rows to still fill the list.
+			per_page: Math.min(
+				100,
+				20 + Math.max( 0, props.exclude.length - MAX_EXCLUDE )
+			),
 		} );
 
 		if ( ticket === latestSearch ) {
