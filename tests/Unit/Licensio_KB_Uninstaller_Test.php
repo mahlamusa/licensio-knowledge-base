@@ -2,7 +2,8 @@
 /**
  * Unit tests for plugin teardown.
  *
- * Covers the data-retention decision and the multisite loop. Teardown used to
+ * Covers the data-retention decision, what is kept and what is always
+ * removed, and the multisite loop. Teardown used to
  * drop tables unconditionally and touch only the current blog, so a "clean"
  * delete destroyed visitor-written feedback on one site and left orphaned
  * tables, options and a live cron event on every other site of a network.
@@ -72,12 +73,36 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
     private $cron_cleared = array();
 
     /**
+     * The cron hooks cleared, by blog ID.
+     *
+     * @since 1.0.0
+     * @var array<int, string[]>
+     */
+    private $cron_hooks_cleared = array();
+
+    /**
      * The delete_metadata() calls made, as argument lists.
      *
      * @since 1.0.0
      * @var array<int, array<int, mixed>>
      */
     private $meta_deleted = array();
+
+    /**
+     * The wp_set_option_autoload_values() calls made, as option-to-autoload maps.
+     *
+     * @since 1.0.0
+     * @var array<int, array<string, bool>>
+     */
+    private $autoload_calls = array();
+
+    /**
+     * Scratch uploads directory the URL map directory lives in.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    private $uploads = '';
 
     /**
      * Stub the multisite and cron surface.
@@ -89,10 +114,14 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
     protected function setUp(): void {
         parent::setUp();
 
-        $this->blogs        = array();
-        $this->current_blog = 0;
-        $this->cron_cleared = array();
-        $this->meta_deleted = array();
+        $this->blogs              = array();
+        $this->current_blog       = 0;
+        $this->cron_cleared       = array();
+        $this->cron_hooks_cleared = array();
+        $this->meta_deleted       = array();
+
+        $this->autoload_calls = array();
+        $this->uploads        = sys_get_temp_dir() . '/licensio-kb-uninstall-' . uniqid( '', false );
 
         $GLOBALS['wpdb'] = new Licensio_KB_Test_WPDB(); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 
@@ -118,9 +147,11 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
 
         Functions\when( 'wp_clear_scheduled_hook' )->alias(
             function ( $hook ) {
-                unset( $hook );
+                $this->cron_hooks_cleared[ $this->current_blog ][] = $hook;
 
-                $this->cron_cleared[] = $this->current_blog;
+                if ( Licensio_KB_Visitor::CRON_HOOK === $hook ) {
+                    $this->cron_cleared[] = $this->current_blog;
+                }
 
                 return 1;
             }
@@ -131,6 +162,26 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
                 $this->meta_deleted[] = $args;
 
                 return true;
+            }
+        );
+
+        Functions\when( 'wp_set_option_autoload_values' )->alias(
+            function ( $options ) {
+                $this->autoload_calls[] = $options;
+
+                return array_fill_keys( array_keys( $options ), true );
+            }
+        );
+
+        Functions\when( 'wp_upload_dir' )->alias(
+            function () {
+                return array( 'basedir' => $this->uploads );
+            }
+        );
+
+        Functions\when( 'wp_delete_file' )->alias(
+            function ( $file ) {
+                unlink( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Scratch file this test created.
             }
         );
     }
@@ -144,6 +195,20 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
      */
     protected function tearDown(): void {
         unset( $GLOBALS['wpdb'] );
+
+        $directory = $this->uploads . '/licensio-kb-import';
+
+        foreach ( array( $directory . '/heroic-url-map.csv', $directory . '/.htaccess' ) as $file ) {
+            if ( file_exists( $file ) ) {
+                unlink( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Scratch file this test created.
+            }
+        }
+
+        foreach ( array( $directory, $this->uploads ) as $dir ) {
+            if ( is_dir( $dir ) ) {
+                rmdir( $dir ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- The scratch directory this test created.
+            }
+        }
 
         parent::tearDown();
     }
@@ -159,15 +224,35 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
      */
     private function seed_site( $delete_data = false ) {
         $this->options = array(
-            'licensio_settings'                  => array( 'delete_data_on_uninstall' => $delete_data ),
-            'licensio_visitor_salt'              => array( 'current' => 'a-salt' ),
-            'licensio_version'                   => '1.0.0',
-            'licensio_db_version'                => '1.0.0',
-            'licensio_unrelated_key'             => 'left alone',
+            'licensio_settings'                        => array( 'delete_data_on_uninstall' => $delete_data ),
+            'licensio_visitor_salt'                    => array( 'current' => 'a-salt' ),
+            'licensio_version'                         => '1.0.0',
+            'licensio_db_version'                      => '1.0.0',
+            'licensio_unrelated_key'                   => 'left alone',
+            Licensio_KB_Search_Index::BUILT_OPTION     => '1.0.0',
+            Licensio_KB_Lifecycle::UPGRADE_LOCK_OPTION => 1700000000,
             Licensio_KB_Import_State::option_for( 'heroic' ) => array( 'phase' => 'articles' ),
             Licensio_KB_Import_Report::option_for( 'heroic' ) => array( 'counts' => array() ),
-            Licensio_KB_Import_Redirects::OPTION => array( '/old' => '/new' ),
+            Licensio_KB_Import_Redirects::OPTION       => array( '/old' => '/new' ),
+            Licensio_KB_Import_Redirects::FILES_OPTION => array( 'heroic' => 'heroic-url-map.csv' ),
         );
+    }
+
+    /**
+     * Seed the URL map directory with a map file and a deny file.
+     *
+     * @since 1.0.0
+     *
+     * @return string The directory.
+     */
+    private function seed_url_map_directory() {
+        $directory = $this->uploads . '/licensio-kb-import';
+
+        mkdir( $directory, 0777, true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir -- A scratch directory in the system temp dir; WP_Filesystem is not booted in a unit test.
+        file_put_contents( $directory . '/heroic-url-map.csv', "\"type\"\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Scratch file.
+        file_put_contents( $directory . '/.htaccess', "Deny from all\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Scratch file.
+
+        return $directory;
     }
 
     /**
@@ -230,52 +315,119 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * Plugin options and the cron event go regardless of the data setting.
+     * The plugin state options and the cron event go regardless of the data setting.
      *
-     * An autoloaded option and a scheduled hook that outlive the plugin owning
-     * them are residue on every request, forever.
+     * A scheduled hook or a version marker that outlives the plugin owning it
+     * is residue. The search index marker in particular must go: left behind
+     * after the tables were dropped, it told a reinstall of the same version
+     * that the new, empty index was already built.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_options_and_cron_are_always_removed() {
+    public function test_state_options_and_cron_are_always_removed() {
         $this->seed_site( false );
 
         Licensio_KB_Uninstaller::uninstall_site();
 
-        foreach ( array_merge( Licensio_KB_Uninstaller::OPTIONS, Licensio_KB_Uninstaller::import_options() ) as $option ) {
+        $this->assertContains( Licensio_KB_Lifecycle::UPGRADE_LOCK_OPTION, Licensio_KB_Uninstaller::OPTIONS, 'A lock left by an interrupted upgrade must not outlive the plugin.' );
+
+        foreach ( Licensio_KB_Uninstaller::OPTIONS as $option ) {
             $this->assertArrayNotHasKey( $option, $this->options, $option . ' must not survive uninstall.' );
         }
 
         $this->assertNotEmpty( $this->cron_cleared, 'The salt rotation event must be cleared.' );
+        $this->assertSame( Licensio_KB_Uninstaller::CRON_HOOKS, $this->cron_hooks_cleared[0], 'Every plugin cron hook must be cleared.' );
+        $this->assertContains( Licensio_KB_Search_Index::CRON_HOOK, Licensio_KB_Uninstaller::CRON_HOOKS );
+        $this->assertContains( Licensio_KB_Analytics_Retention::CRON_HOOK, Licensio_KB_Uninstaller::CRON_HOOKS );
         $this->assertArrayHasKey( 'licensio_unrelated_key', $this->options, 'Other plugins options must be left alone.' );
     }
 
     /**
-     * The import state, report and redirect map are removed with the plugin.
+     * The data options are the settings plus every importer option.
      *
-     * The options come from the import registry rather than a hard-coded list,
-     * so a source added through the drivers filter is cleaned up as well.
+     * The import options come from the import registry rather than a
+     * hard-coded list, so a source added through the drivers filter is covered
+     * as well.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_import_options_are_removed() {
-        $this->seed_site( false );
+    public function test_the_data_options_are_the_settings_and_the_import_options() {
+        $options = Licensio_KB_Uninstaller::data_options();
 
-        $options = Licensio_KB_Uninstaller::import_options();
-
+        $this->assertContains( Licensio_KB_Settings::OPTION_NAME, $options );
         $this->assertContains( Licensio_KB_Import_State::option_for( 'heroic' ), $options );
         $this->assertContains( Licensio_KB_Import_Report::option_for( 'heroic' ), $options );
         $this->assertContains( Licensio_KB_Import_Redirects::OPTION, $options );
+        $this->assertContains( Licensio_KB_Import_Redirects::FILES_OPTION, $options );
+        $this->assertSame( array(), array_intersect( $options, Licensio_KB_Uninstaller::OPTIONS ), 'An option cannot be both kept and always removed.' );
+    }
+
+    /**
+     * By default the settings, slugs and redirect map survive, and stop autoloading.
+     *
+     * The settings hold the permalink slugs and the import options hold the
+     * redirects for old links; deleting them on a delete and reinstall changes
+     * every permalink and turns every old link into a 404.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_data_options_are_kept_by_default_and_stop_autoloading() {
+        $this->seed_site( false );
+        $this->options['licensio_settings']['article_slug'] = 'help';
 
         Licensio_KB_Uninstaller::uninstall_site();
 
-        foreach ( $options as $option ) {
-            $this->assertArrayNotHasKey( $option, $this->options, $option . ' must not survive uninstall.' );
+        foreach ( array( 'licensio_settings', Licensio_KB_Import_State::option_for( 'heroic' ), Licensio_KB_Import_Report::option_for( 'heroic' ), Licensio_KB_Import_Redirects::OPTION, Licensio_KB_Import_Redirects::FILES_OPTION ) as $option ) {
+            $this->assertArrayHasKey( $option, $this->options, $option . ' must survive an uninstall that keeps data.' );
         }
+
+        $this->assertSame( 'help', $this->options['licensio_settings']['article_slug'] );
+        $this->assertSame( array( '/old' => '/new' ), $this->options[ Licensio_KB_Import_Redirects::OPTION ] );
+        $this->assertSame( array( array_fill_keys( Licensio_KB_Uninstaller::data_options(), false ) ), $this->autoload_calls );
+    }
+
+    /**
+     * By default the URL map directory survives, so the kept file names still resolve.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_url_map_directory_is_kept_by_default() {
+        $this->seed_site( false );
+        $directory = $this->seed_url_map_directory();
+
+        Licensio_KB_Uninstaller::uninstall_site();
+
+        $this->assertFileExists( $directory . '/heroic-url-map.csv' );
+    }
+
+    /**
+     * Opting in deletes the data options and the URL map directory.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_opting_in_deletes_the_data_options_and_the_url_map_directory() {
+        $this->seed_site( true );
+        $directory = $this->seed_url_map_directory();
+
+        Licensio_KB_Uninstaller::uninstall_site();
+
+        foreach ( array_merge( Licensio_KB_Uninstaller::OPTIONS, Licensio_KB_Uninstaller::data_options() ) as $option ) {
+            $this->assertArrayNotHasKey( $option, $this->options, $option . ' must not survive Delete everything.' );
+        }
+
+        $this->assertDirectoryDoesNotExist( $directory );
+        $this->assertSame( array(), $this->autoload_calls, 'Deleted options need no autoload change.' );
+        $this->assertArrayHasKey( 'licensio_unrelated_key', $this->options, 'Other plugins options must be left alone.' );
     }
 
     /**
@@ -380,7 +532,7 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
 
         Licensio_KB_Uninstaller::uninstall_site();
 
-        foreach ( array_merge( Licensio_KB_Uninstaller::OPTIONS, Licensio_KB_Uninstaller::import_options() ) as $option ) {
+        foreach ( array_merge( Licensio_KB_Uninstaller::OPTIONS, Licensio_KB_Uninstaller::data_options() ) as $option ) {
             $this->assertArrayNotHasKey( $option, $this->options, $option . ' must not survive uninstall.' );
         }
 

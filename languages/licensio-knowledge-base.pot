@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-25T18:09:24+00:00\n"
+"POT-Creation-Date: 2026-10-25T18:10:48+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.7.1\n"
 "X-Domain: licensio-knowledge-base\n"
@@ -189,7 +189,7 @@ msgid "Your session has expired. Reload the page and try again."
 msgstr ""
 
 #: includes/admin/class-licensio-kb-import-admin.php:142
-#: includes/admin/class-licensio-kb-import-admin.php:369
+#: includes/admin/class-licensio-kb-import-admin.php:373
 msgid "Unknown import source."
 msgstr ""
 
@@ -198,19 +198,19 @@ msgstr ""
 msgid "The import stopped with an error: %s. The failure is in the migration log; running the import again resumes from the last saved point."
 msgstr ""
 
-#: includes/admin/class-licensio-kb-import-admin.php:375
+#: includes/admin/class-licensio-kb-import-admin.php:379
 msgid "There is no URL map yet. Run the import first."
 msgstr ""
 
-#: includes/admin/class-licensio-kb-import-admin.php:398
+#: includes/admin/class-licensio-kb-import-admin.php:402
 msgid "No run was named."
 msgstr ""
 
-#: includes/admin/class-licensio-kb-import-admin.php:432
+#: includes/admin/class-licensio-kb-import-admin.php:436
 msgid "You are not allowed to download import files."
 msgstr ""
 
-#: includes/admin/class-licensio-kb-import-admin.php:438
+#: includes/admin/class-licensio-kb-import-admin.php:442
 msgid "The download link has expired. Reload the page and try again."
 msgstr ""
 
@@ -550,12 +550,12 @@ msgid "You have already given feedback on this article."
 msgstr ""
 
 #. translators: 1: required PHP version, 2: running PHP version
-#: includes/class-licensio-kb-lifecycle.php:294
+#: includes/class-licensio-kb-lifecycle.php:306
 msgid "Licensio Knowledge Base requires PHP %1$s or newer. This site runs PHP %2$s."
 msgstr ""
 
 #. translators: 1: required WordPress version, 2: running WordPress version
-#: includes/class-licensio-kb-lifecycle.php:305
+#: includes/class-licensio-kb-lifecycle.php:317
 msgid "Licensio Knowledge Base requires WordPress %1$s or newer. This site runs WordPress %2$s."
 msgstr ""
 
@@ -1151,7 +1151,7 @@ msgid "Delete everything on uninstall"
 msgstr ""
 
 #: includes/class-licensio-kb-settings-schema.php:391
-msgid "On, deleting the plugin drops its tables, options and articles. Off, the data survives so a reinstall picks up where it left off."
+msgid "On, deleting the plugin drops its tables (feedback and votes, the search index, search and view history, and the import log) and deletes its settings (including the permalink slugs), the import redirects and the import URL map files. Off, all of that survives so a reinstall picks up where it left off. Articles, categories and tags are never deleted."
 msgstr ""
 
 #: includes/class-licensio-kb-settings-schema.php:512
@@ -1397,39 +1397,39 @@ msgstr ""
 msgid "One of the categories does not exist."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1355
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1356
 msgid "You are not allowed to edit this article."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1381
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1382
 msgid "Send between 1 and 100 article IDs."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1408
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1409
 msgid "Choose a status to set."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1419
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1420
 msgid "Choose a taxonomy, a mode and the terms."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1425
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1426
 msgid "Choose at least one term."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1430
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1431
 msgid "One of the terms does not exist."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1444
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1445
 msgid "Choose a user who can write articles."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1453
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1454
 msgid "Choose open or closed."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1638
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1639
 msgid "No article was found with that ID."
 msgstr ""
 
@@ -1497,32 +1497,32 @@ msgstr ""
 msgid "The category that remains."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:833
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:835
 msgid "The category could not be deleted."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:867
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:869
 msgid "A top-level category has no parent to move its articles to. Choose a category, or leave them without one."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:1528
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:1532
 #: includes/rest/class-licensio-kb-category-order-rest-controller.php:339
 msgid "That category does not exist."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:1543
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:1547
 msgid "One of the chosen categories does not exist."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:1558
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:1562
 msgid "A category cannot be moved onto itself."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:1573
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:1577
 msgid "A category cannot be placed inside itself or one of its own subcategories."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-categories-rest-controller.php:1588
+#: includes/rest/class-licensio-kb-categories-rest-controller.php:1592
 msgid "You are not allowed to change knowledge base categories."
 msgstr ""
 

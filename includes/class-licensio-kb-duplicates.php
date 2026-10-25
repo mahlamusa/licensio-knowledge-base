@@ -402,7 +402,7 @@ class Licensio_KB_Duplicates {
      * does carry overwrites. The slug is deliberately not touched — the
      * target keeps the un-suffixed slug that made it the canonical one.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Slashes the copied fields and meta so backslashes survive.
      *
      * @param int $from The post whose content wins.
      * @param int $to   The post being updated in place.
@@ -416,19 +416,22 @@ class Licensio_KB_Duplicates {
             return 0;
         }
 
+        // Core unslashes what it is given, so the raw stored values are slashed first.
         wp_update_post(
-            array(
-                'ID'             => (int) $to,
-                'post_title'     => $source->post_title,
-                'post_content'   => $source->post_content,
-                'post_excerpt'   => $source->post_excerpt,
-                'post_status'    => $source->post_status,
-                'post_author'    => (int) $source->post_author,
-                'post_date'      => $source->post_date,
-                'post_date_gmt'  => $source->post_date_gmt,
-                'comment_status' => $source->comment_status,
-                'ping_status'    => $source->ping_status,
-                'menu_order'     => (int) $source->menu_order,
+            wp_slash(
+                array(
+                    'ID'             => (int) $to,
+                    'post_title'     => $source->post_title,
+                    'post_content'   => $source->post_content,
+                    'post_excerpt'   => $source->post_excerpt,
+                    'post_status'    => $source->post_status,
+                    'post_author'    => (int) $source->post_author,
+                    'post_date'      => $source->post_date,
+                    'post_date_gmt'  => $source->post_date_gmt,
+                    'comment_status' => $source->comment_status,
+                    'ping_status'    => $source->ping_status,
+                    'menu_order'     => (int) $source->menu_order,
+                )
             ),
             true
         );
@@ -440,7 +443,7 @@ class Licensio_KB_Duplicates {
                 continue;
             }
 
-            update_post_meta( (int) $to, $key, maybe_unserialize( $values[0] ) );
+            update_post_meta( (int) $to, $key, wp_slash( maybe_unserialize( $values[0] ) ) );
             ++$copied;
         }
 
@@ -753,7 +756,7 @@ class Licensio_KB_Duplicates {
      * index are refreshed. A merge that fails is put back and the group is
      * reported as unfixable.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Slashes the copied meta so backslashes survive.
      *
      * @param array<string, mixed> $group A fixable group from describe_term_group().
      *
@@ -780,7 +783,8 @@ class Licensio_KB_Duplicates {
 
         if ( $winner > 0 && $winner !== $canonical ) {
             foreach ( get_term_meta( $winner ) as $key => $values ) {
-                update_term_meta( $canonical, $key, maybe_unserialize( $values[0] ) );
+                // update_term_meta() unslashes the value, so the raw stored value is slashed first.
+                update_term_meta( $canonical, $key, wp_slash( maybe_unserialize( $values[0] ) ) );
                 ++$term_meta_copied;
             }
         }

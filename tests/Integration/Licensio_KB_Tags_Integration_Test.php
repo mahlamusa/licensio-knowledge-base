@@ -53,7 +53,6 @@ class Licensio_KB_Tags_Integration_Test extends Licensio_KB_Analytics_DB_Test_Ca
         $this->install_content_schemas();
         $this->stub_category_term_api();
 
-        Brain\Monkey\Functions\when( 'wp_slash' )->returnArg();
         Brain\Monkey\Functions\when( 'rest_sanitize_boolean' )->alias(
             function ( $value ) {
                 return (bool) $value;

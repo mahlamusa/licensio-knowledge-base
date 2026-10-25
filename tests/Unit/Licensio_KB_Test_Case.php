@@ -185,6 +185,27 @@ abstract class Licensio_KB_Test_Case extends TestCase {
     }
 
     /**
+     * Unslash a value the way core's write functions do.
+     *
+     * `wp_insert_post()`, `wp_insert_term()`, `term_exists()` and the meta
+     * writers all unslash what they are given, so a stand-in for one of them
+     * records the value after this, which is what core would store.
+     *
+     * @since 1.0.0
+     *
+     * @param mixed $value The value handed to core.
+     *
+     * @return mixed The value core would store.
+     */
+    protected static function core_unslash( $value ) {
+        if ( is_array( $value ) ) {
+            return array_map( array( self::class, 'core_unslash' ), $value );
+        }
+
+        return is_string( $value ) ? stripslashes( $value ) : $value;
+    }
+
+    /**
      * Tear Brain Monkey down.
      *
      * @since 1.0.0

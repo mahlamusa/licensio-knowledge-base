@@ -356,6 +356,10 @@ class Licensio_KB_Import_Admin {
     /**
      * Download a source's URL map.
      *
+     * The file itself has a random name and is not served from the uploads
+     * URL, so this capability and nonce checked request is the way to it. The
+     * download is offered under the plain `{source}-url-map.csv` name.
+     *
      * @since 1.0.0
      *
      * @return void
@@ -371,11 +375,11 @@ class Licensio_KB_Import_Admin {
 
         $path = Licensio_KB_Import_Redirects::map_path_for( $source );
 
-        if ( ! file_exists( $path ) ) {
+        if ( '' === $path || ! file_exists( $path ) ) {
             wp_die( esc_html__( 'There is no URL map yet. Run the import first.', 'licensio-knowledge-base' ), '', array( 'response' => 404 ) );
         }
 
-        $this->send_csv_headers( basename( $path ) );
+        $this->send_csv_headers( Licensio_KB_Import_Redirects::download_file_name( $source ) );
 
         // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile -- Streaming a download; WP_Filesystem has no streaming API.
         readfile( $path );

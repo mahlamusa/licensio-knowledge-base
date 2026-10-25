@@ -808,4 +808,51 @@ class Licensio_KB_Categories_REST_Integration_Test extends Licensio_KB_Analytics
 
         return $ids;
     }
+
+    /**
+     * A backslash in a created or edited category is kept.
+     *
+     * REST values arrive unslashed, and the stand-ins unslash as core does,
+     * so `Paths C:\Temp` would otherwise be stored as `Paths C:Temp`.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_created_and_edited_category_keeps_every_backslash() {
+        $svg     = '<svg viewBox="0 0 24 24"><title>C:\Temp</title></svg>';
+        $created = $this->controller->create_item(
+            $this->request(
+                array(
+                    'name'        => 'Paths C:\Temp',
+                    'description' => 'Use C:\Temp.',
+                    'icon_svg'    => $svg,
+                )
+            )
+        );
+
+        $this->assertSame( 201, $created->get_status() );
+
+        $id   = $created->get_data()['id'];
+        $rows = $this->live_rows( 'SELECT t.name, tt.description FROM ' . $this->table( 'terms' ) . ' t JOIN ' . $this->table( 'term_taxonomy' ) . ' tt ON tt.term_id = t.term_id WHERE t.term_id = ' . (int) $id );
+
+        $this->assertSame( 'Paths C:\Temp', $rows[0]['name'] );
+        $this->assertSame( 'Use C:\Temp.', $rows[0]['description'] );
+        $this->assertSame( $svg, $this->live_get_term_meta( $id, 'licensio_icon_svg' ) );
+
+        $this->controller->update_item(
+            $this->request(
+                array(
+                    'id'          => $id,
+                    'name'        => 'Paths D:\Work',
+                    'description' => 'Use D:\Work.',
+                )
+            )
+        );
+
+        $rows = $this->live_rows( 'SELECT t.name, tt.description FROM ' . $this->table( 'terms' ) . ' t JOIN ' . $this->table( 'term_taxonomy' ) . ' tt ON tt.term_id = t.term_id WHERE t.term_id = ' . (int) $id );
+
+        $this->assertSame( 'Paths D:\Work', $rows[0]['name'] );
+        $this->assertSame( 'Use D:\Work.', $rows[0]['description'] );
+    }
 }
