@@ -48,6 +48,14 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
     private $calls = array();
 
     /**
+     * Whether every article assignment write fails.
+     *
+     * @since 1.0.0
+     * @var bool
+     */
+    private $refuse_write = false;
+
+    /**
      * Capture the routes and stub the term API over a small set of terms.
      *
      * Tags: Billing (10, slug `billing`), Invoices (11). Categories: Help (20),
@@ -138,12 +146,26 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
             }
         );
         Functions\when( 'get_terms' )->justReturn( array() );
-        Functions\when( 'get_objects_in_term' )->justReturn( array( '100', '101' ) );
-        Functions\when( 'wp_set_object_terms' )->alias(
-            function ( ...$args ) {
-                $this->calls[] = array_merge( array( 'set' ), $args );
+        Functions\when( 'get_objects_in_term' )->alias(
+            function ( $term_id, $taxonomy ) {
+                unset( $term_id );
 
-                return array( 1 );
+                return 'licensio_tag' === $taxonomy ? array( '100', '101' ) : array();
+            }
+        );
+        Functions\when( 'clean_object_term_cache' )->justReturn( null );
+        Functions\when( 'wp_update_term_count' )->justReturn( true );
+
+        $this->refuse_write = false;
+        $GLOBALS['wpdb']    = new Licensio_KB_Relationships_WPDB( // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- The suite's database double.
+            function ( $action, $tt_id, array $object_ids ) {
+                if ( $this->refuse_write ) {
+                    return false;
+                }
+
+                $this->calls[] = array( $action, $tt_id, $object_ids );
+
+                return count( $object_ids );
             }
         );
         Functions\when( 'wp_delete_term' )->alias(
@@ -171,6 +193,19 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * Drop the database double so it cannot leak into another suite.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    protected function tearDown(): void {
+        unset( $GLOBALS['wpdb'] );
+
+        parent::tearDown();
+    }
+
+    /**
      * A term double.
      *
      * @since 1.0.0
@@ -187,13 +222,14 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
     private function term( $id, $name, $taxonomy, $description = '', $parent_id = 0, $slug = '' ) {
         return new WP_Term(
             array(
-                'term_id'     => $id,
-                'name'        => $name,
-                'slug'        => '' === $slug ? strtolower( $name ) : $slug,
-                'taxonomy'    => $taxonomy,
-                'description' => $description,
-                'parent'      => $parent_id,
-                'count'       => 2,
+                'term_id'          => $id,
+                'term_taxonomy_id' => $id,
+                'name'             => $name,
+                'slug'             => '' === $slug ? strtolower( $name ) : $slug,
+                'taxonomy'         => $taxonomy,
+                'description'      => $description,
+                'parent'           => $parent_id,
+                'count'            => 2,
             )
         );
     }
@@ -504,8 +540,8 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
     /**
      * Converting reuses the category that already has the tag's slug.
      *
-     * The category stays where it is, gains every article the tag had, and
-     * the tag is deleted after the assignments are made.
+     * The category stays where it is, every article the tag had moves to it,
+     * and the tag is deleted after the assignments are moved.
      *
      * @since 1.0.0
      *
@@ -528,8 +564,8 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
         $this->assertSame( 2, $result['converted'][0]['articles'] );
         $this->assertSame(
             array(
-                array( 'set', 100, array( 21 ), 'licensio_category', true ),
-                array( 'set', 101, array( 21 ), 'licensio_category', true ),
+                array( 'add', 21, array( 100, 101 ) ),
+                array( 'remove', 10, array( 100, 101 ) ),
                 array( 'delete', 10, 'licensio_tag' ),
             ),
             $this->calls
@@ -567,7 +603,8 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
             ),
             $this->calls[0]
         );
-        $this->assertSame( array( 'set', 100, array( 30 ), 'licensio_category', true ), $this->calls[1] );
+        $this->assertSame( array( 'add', 30, array( 100, 101 ) ), $this->calls[1] );
+        $this->assertSame( array( 'remove', 11, array( 100, 101 ) ), $this->calls[2] );
         $this->assertSame( array( 'delete', 11, 'licensio_tag' ), $this->calls[3] );
         $this->assertSame( 20, $result['converted'][0]['category']['parent'] );
     }
@@ -613,8 +650,8 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
         $this->assertSame( 'Q&A', $result['converted'][0]['category']['name'] );
         $this->assertSame(
             array(
-                array( 'set', 100, array( 22 ), 'licensio_category', true ),
-                array( 'set', 101, array( 22 ), 'licensio_category', true ),
+                array( 'add', 22, array( 100, 101 ) ),
+                array( 'remove', 12, array( 100, 101 ) ),
                 array( 'delete', 12, 'licensio_tag' ),
             ),
             $this->calls,
@@ -646,8 +683,8 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
     /**
      * A tag that cannot be deleted is left as it was.
      *
-     * Its articles lose the category again, and the category the convert
-     * created for it is deleted.
+     * Its articles get the tag back and lose the category again, and the
+     * category the convert created for it is deleted.
      *
      * @since 1.0.0
      *
@@ -657,13 +694,6 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
         Functions\when( 'get_objects_in_term' )->alias(
             function ( $term_id ) {
                 return 30 === (int) $term_id ? array() : array( '100', '101' );
-            }
-        );
-        Functions\when( 'wp_remove_object_terms' )->alias(
-            function ( ...$args ) {
-                $this->calls[] = array_merge( array( 'remove' ), $args );
-
-                return true;
             }
         );
         Functions\when( 'wp_delete_term' )->alias(
@@ -680,11 +710,11 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
         $this->assertSame( array( 11 ), array_column( $result['failed'], 'id' ) );
         $this->assertSame(
             array(
-                array( 'set', 100, array( 30 ), 'licensio_category', true ),
-                array( 'set', 101, array( 30 ), 'licensio_category', true ),
+                array( 'add', 30, array( 100, 101 ) ),
+                array( 'remove', 11, array( 100, 101 ) ),
                 array( 'delete', 11, 'licensio_tag' ),
-                array( 'remove', 101, array( 30 ), 'licensio_category' ),
-                array( 'remove', 100, array( 30 ), 'licensio_category' ),
+                array( 'add', 11, array( 100, 101 ) ),
+                array( 'remove', 30, array( 100, 101 ) ),
                 array( 'delete', 30, 'licensio_category' ),
             ),
             array_slice( $this->calls, 1 )
@@ -699,7 +729,7 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     public function test_convert_keeps_a_tag_whose_assignment_fails() {
-        Functions\when( 'wp_set_object_terms' )->justReturn( new WP_Error( 'db_insert_error', 'Could not insert term relationship.' ) );
+        $this->refuse_write = true;
         Functions\expect( 'wp_delete_term' )->never();
 
         $result = $this->call( '/tags/convert', 'POST', array( 'ids' => array( 10, 99 ) ) );

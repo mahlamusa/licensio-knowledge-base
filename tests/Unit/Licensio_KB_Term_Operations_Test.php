@@ -86,7 +86,12 @@ class Licensio_KB_Term_Operations_Test extends Licensio_KB_Test_Case {
             function ( $term_id, $taxonomy ) {
                 unset( $taxonomy );
 
-                return isset( $this->assignments[ (int) $term_id ] ) ? new WP_Term( array( 'term_id' => (int) $term_id ) ) : null;
+                return isset( $this->assignments[ (int) $term_id ] ) ? new WP_Term(
+                    array(
+                        'term_id'          => (int) $term_id,
+                        'term_taxonomy_id' => self::tt_id_of( $term_id ),
+                    )
+                ) : null;
             }
         );
 
@@ -101,6 +106,19 @@ class Licensio_KB_Term_Operations_Test extends Licensio_KB_Test_Case {
                 return true;
             }
         );
+    }
+
+    /**
+     * Drop the database double so it cannot leak into another suite.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    protected function tearDown(): void {
+        unset( $GLOBALS['wpdb'] );
+
+        parent::tearDown();
     }
 
     /**
@@ -134,12 +152,11 @@ class Licensio_KB_Term_Operations_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     public function test_a_bad_move_is_refused( $from, $to, $taxonomy, $code ) {
-        Functions\expect( 'wp_set_object_terms' )->never();
-
         $result = ( new Licensio_KB_Term_Operations() )->move_assignments( $from, $to, $taxonomy );
 
         $this->assertInstanceOf( 'WP_Error', $result );
         $this->assertSame( $code, $result->get_error_code() );
+        $this->assertSame( array(), $this->events, 'Nothing is written.' );
     }
 
     /**
@@ -206,14 +223,10 @@ class Licensio_KB_Term_Operations_Test extends Licensio_KB_Test_Case {
         $this->assertSame(
             array(
                 'defer',
-                'assign 1 to 30',
-                'unassign 1 from 10',
-                'assign 2 to 30',
-                'unassign 2 from 10',
-                'assign 2 to 30',
-                'unassign 2 from 11',
+                'assign 1,2 to 30',
+                'unassign 1,2 from 10',
                 'assign 3 to 30',
-                'unassign 3 from 11',
+                'unassign 2,3 from 11',
                 'count',
                 'merged',
                 'delete 10',
@@ -245,7 +258,6 @@ class Licensio_KB_Term_Operations_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     public function test_a_bad_merge_writes_nothing() {
-        Functions\expect( 'wp_set_object_terms' )->never();
         Functions\expect( 'wp_delete_term' )->never();
         Actions\expectDone( 'licensio_kb_terms_merged' )->never();
 
@@ -255,6 +267,7 @@ class Licensio_KB_Term_Operations_Test extends Licensio_KB_Test_Case {
         $this->assertSame( 'licensio_kb_no_sources', $operations->merge_terms( array( 0 ), 20, 'licensio_tag' )->get_error_code() );
         $this->assertSame( 'licensio_kb_invalid_term', $operations->merge_terms( array( 10, 99 ), 20, 'licensio_tag' )->get_error_code() );
         $this->assertSame( 'licensio_kb_invalid_taxonomy', $operations->merge_terms( array( 10 ), 20, 'post_tag' )->get_error_code() );
+        $this->assertSame( array(), $this->events, 'Nothing is written.' );
     }
 
     /**
@@ -300,7 +313,7 @@ class Licensio_KB_Term_Operations_Test extends Licensio_KB_Test_Case {
         ( new Licensio_KB_Term_Operations() )->move_assignments( 10, 11, 'licensio_category' );
 
         $this->assertSame(
-            array( 'defer', 'assign 1 to 11', 'unassign 1 from 10', 'assign 2 to 11', 'unassign 2 from 10', 'count' ),
+            array( 'defer', 'assign 1 to 11', 'unassign 1,2 from 10', 'count' ),
             $this->events
         );
         $this->assertFalse( $this->deferring );
@@ -323,7 +336,7 @@ class Licensio_KB_Term_Operations_Test extends Licensio_KB_Test_Case {
         ( new Licensio_KB_Term_Operations() )->move_assignments( 10, 11, 'licensio_category' );
 
         $this->assertSame(
-            array( 'assign 1 to 11', 'unassign 1 from 10', 'assign 2 to 11', 'unassign 2 from 10' ),
+            array( 'assign 1 to 11', 'unassign 1,2 from 10' ),
             $this->events,
             'Counting is neither deferred nor turned back on.'
         );
@@ -341,11 +354,9 @@ class Licensio_KB_Term_Operations_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     public function test_counting_is_restored_when_a_move_throws() {
-        Functions\when( 'wp_set_object_terms' )->alias(
-            function () {
-                throw new RuntimeException( 'A hook failed.' );
-            }
-        );
+        $this->refuse_write = function () {
+            throw new RuntimeException( 'A hook failed.' );
+        };
 
         try {
             ( new Licensio_KB_Term_Operations() )->move_assignments( 10, 11, 'licensio_category' );
@@ -394,7 +405,9 @@ class Licensio_KB_Term_Operations_Test extends Licensio_KB_Test_Case {
         $record     = array();
 
         $this->assertSame( 2, $operations->move_assignments( 10, 11, 'licensio_category', $record ) );
-        $this->assertCount( 2, $record );
+        $this->assertCount( 1, $record, 'One entry per source term.' );
+        $this->assertSame( array( 1 ), $record[0]['added'], 'Object 2 already had the target.' );
+        $this->assertSame( array( 1, 2 ), $record[0]['removed'] );
 
         $operations->undo( $record );
 
@@ -429,36 +442,96 @@ class Licensio_KB_Term_Operations_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * Copying gives every object of a tag the category and leaves the tag alone.
+     * A big term moves in batches, and a failed later batch puts back the earlier ones.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_assignments_are_copied_across_taxonomies() {
-        $record = array();
-        $copied = ( new Licensio_KB_Term_Operations() )->copy_assignments( 10, 'licensio_tag', 30, 'licensio_category', $record );
+    public function test_a_big_move_is_batched_and_a_late_failure_puts_everything_back() {
+        $size                  = Licensio_KB_Term_Operations::BATCH_SIZE;
+        $this->assignments[10] = range( 100, 99 + ( 2 * $size ) + 1 );
+        $before                = $this->assignments;
+        $last                  = 99 + ( 2 * $size ) + 1;
 
-        $this->assertSame( 2, $copied );
-        $this->assertSame( array( 1, 2 ), $this->assignments[30] );
-        $this->assertSame( array( 1, 2 ), $this->assignments[10], 'The source keeps its objects; deleting it removes them.' );
-        $this->assertSame( array( false, false ), array_column( $record, 'removed' ) );
+        $this->refuse_write = function ( $action, $term_id, $object_ids ) use ( $last ) {
+            return 'remove' === $action && 10 === $term_id && in_array( $last, $object_ids, true );
+        };
+
+        $result = ( new Licensio_KB_Term_Operations() )->move_assignments( 10, 30, 'licensio_category' );
+
+        $this->assertInstanceOf( 'WP_Error', $result );
+        $this->assertSame( 'licensio_kb_assignments_not_saved', $result->get_error_code() );
+        $this->assertSame( 3, count( preg_grep( '/^assign .* to 30$/', $this->events ) ), 'The target is written in three batches.' );
+        $this->assertSame( 2, count( preg_grep( '/^unassign .* from 10$/', $this->events ) ), 'Two source batches went through before the third failed.' );
+        $this->assertEqualsCanonicalizing( $before[10], $this->assignments[10] );
+        $this->assertSame( array(), $this->assignments[30] );
     }
 
     /**
-     * A copy names both taxonomies, and each must be a knowledge base one.
+     * After a move the caches, counts and listeners hear about every changed object.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_a_bad_copy_is_refused() {
-        Functions\expect( 'wp_set_object_terms' )->never();
+    public function test_a_move_refreshes_caches_counts_and_listeners() {
+        $cleaned = array();
+        $counted = array();
 
+        Functions\when( 'clean_object_term_cache' )->alias(
+            function ( $object_ids, $object_type ) use ( &$cleaned ) {
+                $cleaned[] = array( $object_ids, $object_type );
+            }
+        );
+        Functions\when( 'wp_update_term_count' )->alias(
+            function ( $tt_ids, $taxonomy ) use ( &$counted ) {
+                $counted[] = array( $tt_ids, $taxonomy );
+
+                return true;
+            }
+        );
+        Actions\expectDone( 'licensio_kb_term_assignments_changed' )->once()->with( array( 1, 2 ), 'licensio_category' );
+
+        ( new Licensio_KB_Term_Operations() )->move_assignments( 10, 11, 'licensio_category' );
+
+        $this->assertSame( array( array( array( 1, 2 ), 'licensio_article' ) ), $cleaned );
+        $this->assertSame( array( array( array( 1010, 1011 ), 'licensio_category' ) ), $counted, 'Counts are updated by term taxonomy ID.' );
+    }
+
+    /**
+     * Moving across taxonomies gives every object of a tag the category and takes the tag off.
+     *
+     * The tag is taken off here so that deleting it afterwards has no
+     * objects left to rewrite one at a time.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_assignments_are_moved_across_taxonomies() {
+        $record = array();
+        $moved  = ( new Licensio_KB_Term_Operations() )->move_across_taxonomies( 10, 'licensio_tag', 30, 'licensio_category', $record );
+
+        $this->assertSame( 2, $moved );
+        $this->assertSame( array( 1, 2 ), $this->assignments[30] );
+        $this->assertSame( array(), $this->assignments[10], 'The source term is taken off every object.' );
+        $this->assertSame( array( array( 1, 2 ) ), array_column( $record, 'removed' ), 'The removal is recorded for undo.' );
+    }
+
+    /**
+     * A move across taxonomies names both, and each must be a knowledge base one.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_bad_move_across_taxonomies_is_refused() {
         $operations = new Licensio_KB_Term_Operations();
 
-        $this->assertSame( 'licensio_kb_invalid_taxonomy', $operations->copy_assignments( 10, 'post_tag', 30, 'licensio_category' )->get_error_code() );
-        $this->assertSame( 'licensio_kb_invalid_term', $operations->copy_assignments( 10, 'licensio_tag', 99, 'licensio_category' )->get_error_code() );
+        $this->assertSame( 'licensio_kb_invalid_taxonomy', $operations->move_across_taxonomies( 10, 'post_tag', 30, 'licensio_category' )->get_error_code() );
+        $this->assertSame( 'licensio_kb_invalid_term', $operations->move_across_taxonomies( 10, 'licensio_tag', 99, 'licensio_category' )->get_error_code() );
+        $this->assertSame( array(), $this->events, 'Nothing is written.' );
     }
 
     /**
@@ -494,7 +567,10 @@ class Licensio_KB_Term_Operations_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * Make removing a term from one object fail.
+     * Make taking a source term off one object fail.
+     *
+     * The batch holding that object fails; taking the target off it again,
+     * as an undo does, still works.
      *
      * @since 1.0.0
      *
@@ -503,18 +579,8 @@ class Licensio_KB_Term_Operations_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     private function fail_removal_of( $failing_object ) {
-        Functions\when( 'wp_remove_object_terms' )->alias(
-            function ( $object_id, $terms ) use ( $failing_object ) {
-                if ( $failing_object === $object_id && ! in_array( 20, $terms, true ) ) {
-                    return new WP_Error( 'db_delete_error', 'Could not remove the term relationship.' );
-                }
-
-                foreach ( $terms as $term_id ) {
-                    $this->assignments[ $term_id ] = array_values( array_diff( $this->assignments[ $term_id ], array( $object_id ) ) );
-                }
-
-                return true;
-            }
-        );
+        $this->refuse_write = function ( $action, $term_id, $object_ids ) use ( $failing_object ) {
+            return 'remove' === $action && 20 !== $term_id && in_array( $failing_object, $object_ids, true );
+        };
     }
 }

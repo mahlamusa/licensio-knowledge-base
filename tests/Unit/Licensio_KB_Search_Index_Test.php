@@ -261,6 +261,7 @@ class Licensio_KB_Search_Index_Test extends Licensio_KB_Test_Case {
         Actions\expectAdded( 'transition_post_status' )->once();
         Actions\expectAdded( 'deleted_post' )->once();
         Actions\expectAdded( 'set_object_terms' )->once();
+        Actions\expectAdded( 'licensio_kb_term_assignments_changed' )->once();
         Actions\expectAdded( 'edited_term' )->once();
         Actions\expectAdded( 'delete_term' )->once();
         Actions\expectAdded( Licensio_KB_Search_Index::CRON_HOOK )->once();
@@ -321,6 +322,26 @@ class Licensio_KB_Search_Index_Test extends Licensio_KB_Test_Case {
         Functions\expect( 'get_post' )->never();
 
         $this->index->handle_set_object_terms( 5, array(), array(), 'post_tag' );
+    }
+
+    /**
+     * A batched term move reindexes the articles it changed.
+     *
+     * Moves, copies and merges write relationship rows directly, so core's
+     * `set_object_terms` never fires for those articles. Many articles start
+     * a rebuild instead, and another taxonomy is ignored.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_batched_term_move_reindexes_the_changed_articles() {
+        Functions\when( 'wp_next_scheduled' )->justReturn( false );
+        Functions\expect( 'wp_schedule_single_event' )->once();
+        Functions\expect( 'get_post' )->never();
+
+        $this->index->handle_assignments_changed( array( 5, 6 ), 'post_tag' );
+        $this->index->handle_assignments_changed( range( 1, Licensio_KB_Search_Index::TERM_FANOUT_LIMIT + 1 ), Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
     }
 
     /**
