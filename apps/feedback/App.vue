@@ -26,9 +26,9 @@ const store = useFeedbackStore();
 const chrome = settings();
 
 const voteOptions = [
-	{ value: 0, label: 'All votes' },
-	{ value: 1, label: 'Helpful' },
-	{ value: -1, label: 'Not helpful' },
+	{ value: 0, label: __( 'All votes', 'licensio-knowledge-base' ) },
+	{ value: 1, label: __( 'Helpful', 'licensio-knowledge-base' ) },
+	{ value: -1, label: __( 'Not helpful', 'licensio-knowledge-base' ) },
 ];
 
 /**
@@ -40,17 +40,27 @@ const voteOptions = [
  * rows it produces read as the same vocabulary.
  */
 const statusFilters = computed( () => [
-	{ value: '' as const, label: 'All', key: 'all', tone: 'all' },
-	{ value: 'new' as const, label: 'New', key: 'new', tone: 'new' },
+	{
+		value: '' as const,
+		label: __( 'All', 'licensio-knowledge-base' ),
+		key: 'all',
+		tone: 'all',
+	},
+	{
+		value: 'new' as const,
+		label: __( 'New', 'licensio-knowledge-base' ),
+		key: 'new',
+		tone: 'new',
+	},
 	{
 		value: 'reviewed' as const,
-		label: 'Reviewed',
+		label: __( 'Reviewed', 'licensio-knowledge-base' ),
 		key: 'reviewed',
 		tone: 'reviewed',
 	},
 	{
 		value: 'actioned' as const,
-		label: 'Actioned',
+		label: __( 'Actioned', 'licensio-knowledge-base' ),
 		key: 'actioned',
 		tone: 'actioned',
 	},
@@ -60,11 +70,34 @@ const statusFilters = computed( () => [
 } ) ) );
 
 const columns = [
-	{ title: 'Article', dataIndex: 'articleName', key: 'article' },
-	{ title: 'Vote', dataIndex: 'vote', key: 'vote', width: 120 },
-	{ title: 'Comment', dataIndex: 'comment', key: 'comment' },
-	{ title: 'Date', dataIndex: 'createdAt', key: 'createdAt', width: 180 },
-	{ title: 'Status', dataIndex: 'status', key: 'status', width: 220 },
+	{
+		title: __( 'Article', 'licensio-knowledge-base' ),
+		dataIndex: 'articleName',
+		key: 'article',
+	},
+	{
+		title: __( 'Vote', 'licensio-knowledge-base' ),
+		dataIndex: 'vote',
+		key: 'vote',
+		width: 120,
+	},
+	{
+		title: __( 'Comment', 'licensio-knowledge-base' ),
+		dataIndex: 'comment',
+		key: 'comment',
+	},
+	{
+		title: __( 'Date', 'licensio-knowledge-base' ),
+		dataIndex: 'createdAt',
+		key: 'createdAt',
+		width: 180,
+	},
+	{
+		title: __( 'Status', 'licensio-knowledge-base' ),
+		dataIndex: 'status',
+		key: 'status',
+		width: 220,
+	},
 ];
 
 /**
@@ -139,7 +172,9 @@ onMounted( () => {
 
 			<div id="lkb-main" class="lkb-page__body lkb-measure">
 				<div class="lkb-page__head">
-					<h1 class="lkb-page__title">Feedback</h1>
+					<h1 class="lkb-page__title">
+						{{ __( 'Feedback', 'licensio-knowledge-base' ) }}
+					</h1>
 				</div>
 
 				<a-alert
@@ -167,7 +202,13 @@ onMounted( () => {
 				</a-alert>
 
 				<div class="lkb-toolbar">
-					<div class="lkb-pills" role="group" aria-label="Filter by status">
+					<div
+						class="lkb-pills"
+						role="group"
+						:aria-label="
+							__( 'Filter by status', 'licensio-knowledge-base' )
+						"
+					>
 						<button
 							v-for="filter in statusFilters"
 							:key="filter.key"
@@ -188,7 +229,7 @@ onMounted( () => {
 					<a-select
 						:value="store.vote"
 						style="width: 170px"
-						aria-label="Filter by vote"
+						:aria-label="__( 'Filter by vote', 'licensio-knowledge-base' )"
 						:options="voteOptions"
 						@change="( value ) => store.filter( { vote: Number( value ) } )"
 					/>
@@ -203,7 +244,13 @@ onMounted( () => {
 				<div class="lkb-bulk" :class="{ 'is-armed': store.selected.length > 0 }">
 					<template v-if="store.selected.length">
 						<span class="lkb-bulk__count">
-							{{ store.selected.length }} selected
+							{{
+								sprintf(
+									/* translators: %d: number of selected feedback entries. */
+									__( '%d selected', 'licensio-knowledge-base' ),
+									store.selected.length
+								)
+							}}
 						</span>
 
 						<div class="lkb-bulk__actions">
@@ -212,20 +259,25 @@ onMounted( () => {
 								:loading="store.saving"
 								@click="store.bulkSetStatus( 'reviewed' )"
 							>
-								Mark reviewed
+								{{ __( 'Mark reviewed', 'licensio-knowledge-base' ) }}
 							</a-button>
 							<a-button
 								size="small"
 								:loading="store.saving"
 								@click="store.bulkSetStatus( 'actioned' )"
 							>
-								Mark actioned
+								{{ __( 'Mark actioned', 'licensio-knowledge-base' ) }}
 							</a-button>
 						</div>
 					</template>
 
 					<span v-else class="lkb-bulk__hint">
-						Select feedback below to perform bulk actions
+						{{
+							__(
+								'Select feedback below to perform bulk actions',
+								'licensio-knowledge-base'
+							)
+						}}
 					</span>
 				</div>
 
@@ -250,14 +302,16 @@ onMounted( () => {
 				<template #bodyCell="{ column, record }">
 					<template v-if="'article' === column.key">
 						<a v-if="record.editUrl" :href="record.editUrl">
-							{{ record.articleName || '(untitled)' }}
+							{{ record.articleName || __( '(untitled)', 'licensio-knowledge-base' ) }}
 						</a>
-						<span v-else>{{ record.articleName || '(untitled)' }}</span>
+						<span v-else>{{ record.articleName || __( '(untitled)', 'licensio-knowledge-base' ) }}</span>
 					</template>
 
 					<template v-else-if="'vote' === column.key">
 						<a-tag :color="isHelpful( record ) ? 'green' : 'red'">
-							{{ isHelpful( record ) ? 'Helpful' : 'Not helpful' }}
+							{{ isHelpful( record )
+								? __( 'Helpful', 'licensio-knowledge-base' )
+								: __( 'Not helpful', 'licensio-knowledge-base' ) }}
 						</a-tag>
 					</template>
 
@@ -273,9 +327,9 @@ onMounted( () => {
 							style="width: 160px"
 							:disabled="store.saving"
 							:options="[
-								{ value: 'new', label: 'New' },
-								{ value: 'reviewed', label: 'Reviewed' },
-								{ value: 'actioned', label: 'Actioned' },
+								{ value: 'new', label: __( 'New', 'licensio-knowledge-base' ) },
+								{ value: 'reviewed', label: __( 'Reviewed', 'licensio-knowledge-base' ) },
+								{ value: 'actioned', label: __( 'Actioned', 'licensio-knowledge-base' ) },
 							]"
 							@change="
 								( value ) =>

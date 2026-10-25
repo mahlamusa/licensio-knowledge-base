@@ -13,6 +13,7 @@ import { lkbTheme } from '../styles/theme';
  */
 
 import { config } from './api';
+import { __ } from '../components/i18n';
 import AppHeader from '../components/AppHeader.vue';
 import DataMaintenance from './components/DataMaintenance.vue';
 import Duplicates from './components/Duplicates.vue';
@@ -30,20 +31,20 @@ const hasImportSources = chrome.wizard?.available === true;
 
 			<div id="lkb-main" class="lkb-page__body lkb-measure">
 				<div class="lkb-page__head">
-					<h1 class="lkb-page__title">{{ 'Tools' }}</h1>
+					<h1 class="lkb-page__title">{{ __( 'Tools', 'licensio-knowledge-base' ) }}</h1>
 				</div>
 
 				<a-tabs class="licensio-kb-tools__tabs">
-					<a-tab-pane v-if="hasImportSources" key="migration" :tab="'Migration'">
+					<a-tab-pane v-if="hasImportSources" key="migration" :tab="__( 'Migration', 'licensio-knowledge-base' )">
 						<MigrationWizard />
 					</a-tab-pane>
-					<a-tab-pane key="search-index" :tab="'Search Index'">
+					<a-tab-pane key="search-index" :tab="__( 'Search Index', 'licensio-knowledge-base' )">
 						<SearchIndex />
 					</a-tab-pane>
-					<a-tab-pane key="data-maintenance" :tab="'Data Maintenance'">
+					<a-tab-pane key="data-maintenance" :tab="__( 'Data Maintenance', 'licensio-knowledge-base' )">
 						<DataMaintenance />
 					</a-tab-pane>
-					<a-tab-pane key="duplicates" :tab="'Duplicates'">
+					<a-tab-pane key="duplicates" :tab="__( 'Duplicates', 'licensio-knowledge-base' )">
 						<Duplicates />
 					</a-tab-pane>
 				</a-tabs>

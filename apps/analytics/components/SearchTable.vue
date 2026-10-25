@@ -5,27 +5,27 @@
  * @since 1.0.0
  */
 
-import { translate } from '../api';
 import type { SearchRow } from '../types';
+import { __ } from '../../components/i18n';
 
 defineProps<{ rows: SearchRow[] }>();
 
 const columns = [
-	{ title: translate( 'Search term' ), dataIndex: 'term', key: 'term' },
+	{ title: __( 'Search term', 'licensio-knowledge-base' ), dataIndex: 'term', key: 'term' },
 	{
-		title: translate( 'Times searched' ),
+		title: __( 'Times searched', 'licensio-knowledge-base' ),
 		dataIndex: 'searches',
 		key: 'searches',
 		width: 150,
 	},
 	{
-		title: translate( 'Empty results' ),
+		title: __( 'Empty results', 'licensio-knowledge-base' ),
 		dataIndex: 'zero_results',
 		key: 'zero_results',
 		width: 150,
 	},
 	{
-		title: translate( 'Average results' ),
+		title: __( 'Average results', 'licensio-knowledge-base' ),
 		dataIndex: 'average_results',
 		key: 'average_results',
 		width: 160,
@@ -42,7 +42,7 @@ const columns = [
 		size="small"
 	>
 		<template #emptyText>
-			{{ translate( 'Nothing was searched for in this range.' ) }}
+			{{ __( 'Nothing was searched for in this range.', 'licensio-knowledge-base' ) }}
 		</template>
 	</a-table>
 </template>

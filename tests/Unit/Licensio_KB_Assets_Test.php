@@ -244,6 +244,86 @@ class Licensio_KB_Assets_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * The chunks an entry imports are listed to any depth, without the entry.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_entry_chunks_walks_the_import_graph() {
+        $assets = new Licensio_KB_Assets();
+
+        $this->assertSame(
+            array( 'chunks/shared.def456.js', 'chunks/vendor.jkl012.js' ),
+            $assets->entry_chunks( 'apps/analytics/index.ts' )
+        );
+    }
+
+    /**
+     * An app that uses wp-i18n gets the translations of its imported chunks.
+     *
+     * WordPress only loads the JSON file of the handle's own script, so a
+     * string in a shared chunk would stay untranslated without this.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_chunk_translations_are_printed_before_an_i18n_app() {
+        $inline     = array();
+        $registered = array();
+
+        Functions\when( 'wp_register_script' )->alias(
+            function ( $handle, $src = '' ) use ( &$registered ) {
+                $registered[ $handle ] = (string) $src;
+
+                return true;
+            }
+        );
+        Functions\when( 'wp_deregister_script' )->justReturn( null );
+        Functions\when( 'load_script_textdomain' )->alias(
+            function ( $handle ) use ( &$registered ) {
+                $is_shared = false !== strpos( $registered[ $handle ], 'chunks/shared.def456.js' );
+
+                return $is_shared ? '{"locale_data":{"messages":{"":{},"Save":["Speichern"]}}}' : false;
+            }
+        );
+        Functions\when( 'wp_add_inline_script' )->alias(
+            function ( $handle, $data, $position = 'after' ) use ( &$inline ) {
+                $inline[] = array( $handle, $data, $position );
+
+                return true;
+            }
+        );
+
+        $assets = new Licensio_KB_Assets();
+
+        $this->assertTrue( $assets->enqueue_app( 'licensio-analytics', 'apps/analytics/index.ts', array( 'wp-i18n' ) ) );
+
+        $this->assertCount( 1, $inline, 'Only the chunk with a translation file prints anything.' );
+        $this->assertSame( 'licensio-analytics', $inline[0][0] );
+        $this->assertSame( 'before', $inline[0][2] );
+        $this->assertStringContainsString( '"licensio-knowledge-base"', $inline[0][1] );
+        $this->assertStringContainsString( 'Speichern', $inline[0][1] );
+        $this->assertStringContainsString( 'wp.i18n.setLocaleData', $inline[0][1] );
+    }
+
+    /**
+     * An app without wp-i18n does not look for chunk translations.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_chunk_translations_need_the_i18n_dependency() {
+        Functions\expect( 'load_script_textdomain' )->never();
+
+        $assets = new Licensio_KB_Assets();
+
+        $this->assertTrue( $assets->enqueue_app( 'licensio-analytics', 'apps/analytics/index.ts' ) );
+    }
+
+    /**
      * An unknown entry enqueues nothing and says so.
      *
      * @since 1.0.0
