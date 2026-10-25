@@ -292,6 +292,10 @@ test.describe( 'Articles app', () => {
 			await expect( undo ).toHaveAccessibleDescription(
 				'1 article moved to the trash.'
 			);
+			await expect(
+				page.locator( '#a11y-speak-polite' ),
+				'Undo reads the message, so it is not announced again.'
+			).not.toContainText( '1 article moved to the trash.' );
 
 			// The countdown is paused while Undo has focus.
 			await page.waitForTimeout( UNDO_SECONDS * 1000 + 1500 );

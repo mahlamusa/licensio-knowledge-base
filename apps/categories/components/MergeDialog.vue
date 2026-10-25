@@ -10,7 +10,7 @@
  * @since 1.0.0
  */
 
-import { computed, nextTick, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import ConfirmButton from '../../components/ConfirmButton.vue';
 import TermSelect from '../../components/TermSelect.vue';
@@ -40,6 +40,8 @@ const sources = ref< number[] >( [] );
 const target = ref< number | null >( null );
 const saving = ref( false );
 const error = ref( '' );
+
+let focusTimer = 0;
 
 const tooMany = computed( () => sources.value.length > MAX_SOURCES );
 
@@ -72,6 +74,8 @@ const confirmTitle = computed( () =>
 watch(
 	() => props.open,
 	( open ) => {
+		window.clearTimeout( focusTimer );
+
 		if ( open ) {
 			sources.value = props.category ? [ props.category.id ] : [];
 			target.value = null;
@@ -80,7 +84,7 @@ watch(
 			// The dialog would otherwise focus itself, so the first Tab
 			// lands on its close button rather than a field.
 			nextTick( () => {
-				window.setTimeout( () => {
+				focusTimer = window.setTimeout( () => {
 					document
 						.querySelector< HTMLElement >( '.lkb-merge-dialog input' )
 						?.focus();
@@ -90,6 +94,8 @@ watch(
 	},
 	{ immediate: true }
 );
+
+onBeforeUnmount( () => window.clearTimeout( focusTimer ) );
 
 // A target that became a source, or sits below one, is no longer valid.
 watch( targetExclude, ( excluded ) => {

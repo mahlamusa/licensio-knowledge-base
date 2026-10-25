@@ -6,11 +6,12 @@
  * callback; letting it time out does nothing. Author and comment changes and
  * permanent deletes never show it.
  *
- * Keyboard and screen reader users get the same chance to undo: the toast is
- * announced politely, the countdown pauses while the toast has the pointer or
- * focus, and when the change took away the control that had focus, focus
- * moves to Undo. Focus goes to the page title when the toast closes from
- * under it.
+ * Keyboard and screen reader users get the same chance to undo: the countdown
+ * pauses while the toast has the pointer or focus, and when the change took
+ * away the control that had focus, focus moves to Undo, which reads the
+ * message as its description. Otherwise the message is announced politely,
+ * so it is read once either way. Focus goes to the page title when the toast
+ * closes from under it.
  *
  * Used by the Articles app only. If another app needs it, it moves to the
  * shared components.
@@ -197,13 +198,13 @@ export function showUndoToast( message: string, onUndo: () => void ): void {
 			),
 	} );
 
-	speak( message );
 	start();
 
 	window.setTimeout( () => {
 		const toast = element();
 
 		if ( ! toast ) {
+			speak( message );
 			return;
 		}
 
@@ -230,8 +231,16 @@ export function showUndoToast( message: string, onUndo: () => void ): void {
 		} );
 
 		// Checked once the list has re-rendered without the changed rows.
-		if ( focusWasLost() ) {
-			toast.querySelector< HTMLElement >( '.ant-btn' )?.focus();
+		const undo = toast.querySelector< HTMLElement >( '.ant-btn' );
+
+		if ( undo && focusWasLost() ) {
+			undo.focus();
+		}
+
+		// Undo reads the message as its description when it takes focus, so
+		// only announce it when focus stayed where it was.
+		if ( ! undo || undo.ownerDocument.activeElement !== undo ) {
+			speak( message );
 		}
 	}, 50 );
 }
