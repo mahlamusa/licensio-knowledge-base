@@ -21,13 +21,7 @@ use Brain\Monkey\Functions;
  */
 class Licensio_KB_Term_Operations_Test extends Licensio_KB_Test_Case {
 
-    /**
-     * Term ID to the object IDs assigned to it.
-     *
-     * @since 1.0.0
-     * @var array<int, int[]>
-     */
-    private $assignments = array();
+    use Licensio_KB_Term_Assignments;
 
     /**
      * Term IDs deleted during the test, in order.
@@ -36,14 +30,6 @@ class Licensio_KB_Term_Operations_Test extends Licensio_KB_Test_Case {
      * @var int[]
      */
     private $deleted = array();
-
-    /**
-     * The order events happened in.
-     *
-     * @since 1.0.0
-     * @var string[]
-     */
-    private $events = array();
 
     /**
      * Back the core term functions with the in-memory store.
@@ -84,36 +70,7 @@ class Licensio_KB_Term_Operations_Test extends Licensio_KB_Test_Case {
             }
         );
 
-        Functions\when( 'get_objects_in_term' )->alias(
-            function ( $term_id ) {
-                return array_map( 'strval', $this->assignments[ (int) $term_id ] );
-            }
-        );
-
-        Functions\when( 'wp_set_object_terms' )->alias(
-            function ( $object_id, $terms, $taxonomy, $append ) {
-                unset( $taxonomy );
-                $this->assertTrue( $append, 'Moving onto the target must not drop the object\'s other terms.' );
-
-                foreach ( $terms as $term_id ) {
-                    if ( ! in_array( $object_id, $this->assignments[ $term_id ], true ) ) {
-                        $this->assignments[ $term_id ][] = $object_id;
-                    }
-                }
-
-                return array();
-            }
-        );
-
-        Functions\when( 'wp_remove_object_terms' )->alias(
-            function ( $object_id, $terms ) {
-                foreach ( $terms as $term_id ) {
-                    $this->assignments[ $term_id ] = array_values( array_diff( $this->assignments[ $term_id ], array( $object_id ) ) );
-                }
-
-                return true;
-            }
-        );
+        $this->stub_term_assignments();
 
         Functions\when( 'wp_delete_term' )->alias(
             function ( $term_id ) {
@@ -226,7 +183,22 @@ class Licensio_KB_Term_Operations_Test extends Licensio_KB_Test_Case {
 
         ( new Licensio_KB_Term_Operations() )->merge_terms( array( 10, 11 ), 30, 'licensio_category' );
 
-        $this->assertSame( array( 'merged', 'delete 10', 'delete 11' ), $this->events );
+        $this->assertSame(
+            array(
+                'assign 1 to 30',
+                'unassign 1 from 10',
+                'assign 2 to 30',
+                'unassign 2 from 10',
+                'assign 2 to 30',
+                'unassign 2 from 11',
+                'assign 3 to 30',
+                'unassign 3 from 11',
+                'merged',
+                'delete 10',
+                'delete 11',
+            ),
+            $this->events
+        );
     }
 
     /**

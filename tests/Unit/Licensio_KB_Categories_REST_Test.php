@@ -21,6 +21,8 @@ use Brain\Monkey\Functions;
  */
 class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
 
+    use Licensio_KB_Term_Assignments;
+
     /**
      * Every route registered during the test, keyed by route path.
      *
@@ -44,22 +46,6 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
      * @var array<int, array<string, mixed>>
      */
     private $meta = array();
-
-    /**
-     * Term ID to the article IDs assigned to it.
-     *
-     * @since 1.0.0
-     * @var array<int, int[]>
-     */
-    private $objects = array();
-
-    /**
-     * Every write, in the order it happened.
-     *
-     * @since 1.0.0
-     * @var string[]
-     */
-    private $events = array();
 
     /**
      * Every current_user_can() call, as its argument list.
@@ -145,7 +131,7 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
             4 => $this->fields( 'Billing &amp; invoices', 0 ),
             5 => $this->fields( 'Refunds', 4 ),
         );
-        $this->objects     = array(
+        $this->assignments = array(
             1 => array( 101 ),
             2 => array( 102, 103 ),
             3 => array(),
@@ -300,42 +286,12 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
         Functions\when( 'wp_delete_term' )->alias(
             function ( $term_id ) {
                 $this->events[] = 'delete ' . $term_id;
-                unset( $this->terms[ (int) $term_id ], $this->objects[ (int) $term_id ] );
+                unset( $this->terms[ (int) $term_id ], $this->assignments[ (int) $term_id ] );
 
                 return true;
             }
         );
-        Functions\when( 'get_objects_in_term' )->alias(
-            function ( $term_id ) {
-                return array_map( 'strval', $this->objects[ (int) $term_id ] );
-            }
-        );
-        Functions\when( 'wp_set_object_terms' )->alias(
-            function ( $object_id, $terms, $taxonomy, $append ) {
-                unset( $taxonomy );
-                $this->assertTrue( $append, 'Moving an article must not drop its other categories.' );
-
-                foreach ( $terms as $term_id ) {
-                    $this->events[] = 'assign ' . $object_id . ' to ' . $term_id;
-
-                    if ( ! in_array( $object_id, $this->objects[ $term_id ], true ) ) {
-                        $this->objects[ $term_id ][] = $object_id;
-                    }
-                }
-
-                return array();
-            }
-        );
-        Functions\when( 'wp_remove_object_terms' )->alias(
-            function ( $object_id, $terms ) {
-                foreach ( $terms as $term_id ) {
-                    $this->events[]            = 'unassign ' . $object_id . ' from ' . $term_id;
-                    $this->objects[ $term_id ] = array_values( array_diff( $this->objects[ $term_id ], array( $object_id ) ) );
-                }
-
-                return true;
-            }
-        );
+        $this->stub_term_assignments();
     }
 
     /**
@@ -1368,7 +1324,7 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
             ),
             $this->events
         );
-        $this->assertSame( array( 101, 102, 103 ), $this->objects[1] );
+        $this->assertSame( array( 101, 102, 103 ), $this->assignments[1] );
         $this->assertSame( 1, $this->terms[3]['parent'] );
     }
 
@@ -1398,7 +1354,7 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
             ),
             $result
         );
-        $this->assertSame( array( 104 ), $this->objects[3] );
+        $this->assertSame( array( 104 ), $this->assignments[3] );
         $this->assertSame( array( 'assign 104 to 3', 'unassign 104 from 4', 'update 5 parent=1', 'delete 4' ), $this->events );
     }
 
@@ -1569,7 +1525,7 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
             ),
             $this->events
         );
-        $this->assertSame( array( 101, 102, 103, 104 ), $this->objects[1] );
+        $this->assertSame( array( 101, 102, 103, 104 ), $this->assignments[1] );
     }
 
     /**
@@ -1768,8 +1724,8 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     public function test_a_failed_delete_undoes_its_child_moves() {
-        $this->terms[6]   = $this->fields( 'Updates', 1 );
-        $this->objects[6] = array();
+        $this->terms[6]       = $this->fields( 'Updates', 1 );
+        $this->assignments[6] = array();
         $this->fail_parent_change( 6, 4 );
         Functions\expect( 'wp_delete_term' )->never();
 
