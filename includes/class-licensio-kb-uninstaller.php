@@ -51,6 +51,7 @@ class Licensio_KB_Uninstaller {
         'licensio_fulltext_supported',
         'licensio_flush_rewrite_rules',
         'licensio_search_reindex_state',
+        Licensio_KB_Search_Index::BUILT_OPTION,
     );
 
     /**

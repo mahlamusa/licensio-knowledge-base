@@ -218,6 +218,7 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
             'licensio_version'                         => '1.0.0',
             'licensio_db_version'                      => '1.0.0',
             'licensio_unrelated_key'                   => 'left alone',
+            Licensio_KB_Search_Index::BUILT_OPTION     => '1.0.0',
             Licensio_KB_Import_State::option_for( 'heroic' ) => array( 'phase' => 'articles' ),
             Licensio_KB_Import_Report::option_for( 'heroic' ) => array( 'counts' => array() ),
             Licensio_KB_Import_Redirects::OPTION       => array( '/old' => '/new' ),
@@ -305,7 +306,9 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
      * The plugin state options and the cron event go regardless of the data setting.
      *
      * A scheduled hook or a version marker that outlives the plugin owning it
-     * is residue.
+     * is residue. The search index marker in particular must go: left behind
+     * after the tables were dropped, it told a reinstall of the same version
+     * that the new, empty index was already built.
      *
      * @since 1.0.0
      *
