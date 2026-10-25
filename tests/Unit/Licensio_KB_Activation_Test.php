@@ -55,6 +55,14 @@ class Licensio_KB_Activation_Test extends Licensio_KB_Test_Case {
     private $flushed = false;
 
     /**
+     * Autoload values set through wp_set_option_autoload(), by option name.
+     *
+     * @since 1.0.0
+     * @var array<string, bool>
+     */
+    private $autoload = array();
+
+    /**
      * Stub the WordPress surface the activation routine touches.
      *
      * @since 1.0.0
@@ -68,6 +76,7 @@ class Licensio_KB_Activation_Test extends Licensio_KB_Test_Case {
         $this->taxonomies = array();
         $this->cron       = array();
         $this->flushed    = false;
+        $this->autoload   = array();
 
         $GLOBALS['licensio_kb_delta_calls'] = array();
         $GLOBALS['wpdb']                    = new Licensio_KB_Test_WPDB(); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
@@ -118,6 +127,13 @@ class Licensio_KB_Activation_Test extends Licensio_KB_Test_Case {
                 unset( $this->cron[ $hook ] );
 
                 return 1;
+            }
+        );
+        Functions\when( 'wp_set_option_autoload' )->alias(
+            function ( $option, $autoload ) {
+                $this->autoload[ $option ] = (bool) $autoload;
+
+                return true;
             }
         );
         Functions\when( 'deactivate_plugins' )->justReturn( null );
@@ -180,6 +196,22 @@ class Licensio_KB_Activation_Test extends Licensio_KB_Test_Case {
 
         $this->assertTrue( $this->flushed, 'Activation must flush the rewrite rules.' );
         $this->assertSame( LICENSIO_KB_VERSION, $this->options['licensio_version'] );
+    }
+
+    /**
+     * Activation turns autoload back on for settings an earlier uninstall kept.
+     *
+     * An uninstall that keeps the settings stops them autoloading; a reinstall
+     * reads them on every request again, so it must autoload them again.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_activation_autoloads_the_settings_again() {
+        Licensio_KB_Lifecycle::activate_site();
+
+        $this->assertSame( array( Licensio_KB_Settings::OPTION_NAME => true ), $this->autoload );
     }
 
     /**

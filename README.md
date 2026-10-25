@@ -123,7 +123,7 @@ The JavaScript half of the text-domain rule lives in `.eslintrc.json` and runs u
 
 ```
 licensio-knowledge-base.php  bootstrap, constants, lifecycle hooks
-uninstall.php                drops tables and options
+uninstall.php                removes plugin state; data only when opted in
 readme.txt                   the wordpress.org listing        (#11)
 includes/                    class-licensio-kb-*.php and the function files
 libraries/                   Strauss-prefixed vendor code (committed)
@@ -196,7 +196,7 @@ Add your own with the `licensio_settings_registry` filter. A registry entry is:
 
 Changing a setting marked `flush_rewrites` records a request that `Licensio_KB_Post_Types` honours late on `init`; you do not need to call `flush_rewrite_rules()` yourself, and you should not, because settings are written long before the permastructs are registered.
 
-`delete_data_on_uninstall` (default **false**) decides whether the four data tables are dropped when the plugin is deleted. The default preserves visitor-written feedback; the Privacy group on the settings screen surfaces the toggle.
+`delete_data_on_uninstall` (default **false**) decides whether the plugin's data is deleted when the plugin is deleted: the four data tables, the settings (which hold the permalink slugs), the import options (the served redirect map, the resume cursors, the run reports and the URL map file names) and the import URL map directory. The default keeps all of it, and switches the kept options to not autoload. The version markers, the visitor salt, the cron events and the per-user admin preferences are always removed. Articles, categories and tags are never removed. The Privacy group on the settings screen surfaces the toggle.
 
 ### Settings screen
 
@@ -403,7 +403,7 @@ It cannot be a module: module scripts are always deferred and execute after ever
 | `licensio_activated` / `licensio_deactivated` | action | End of activation / deactivation. |
 | `licensio_upgraded` | action | The plugin version moved forward. |
 | `licensio_db_installed` | action | Tables created or upgraded; passed the FULLTEXT flag. |
-| `licensio_uninstalled` | action | The plugin is being removed from a site; fires once per site. Passed whether the data tables were dropped. |
+| `licensio_uninstalled` | action | The plugin is being removed from a site; fires once per site. Passed whether the data was deleted. |
 | `licensio_visitor_salt_rotated` | action | The daily salt was rotated. |
 | `licensio_feedback_recorded` | action | A vote was written. Passed the article ID and the vote; never the comment. |
 | `licensio_feedback_score_updated` | action | An article's usefulness score was recomputed. Passed the article ID and the figures. |

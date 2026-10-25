@@ -143,6 +143,9 @@ class Licensio_KB_Lifecycle {
 
         update_option( self::VERSION_OPTION, LICENSIO_KB_VERSION, true );
 
+        // A previous uninstall that kept the settings stopped them autoloading.
+        wp_set_option_autoload( Licensio_KB_Settings::OPTION_NAME, true );
+
         flush_rewrite_rules();
 
         /**

@@ -8,17 +8,22 @@
  *
  * Two rules govern what is removed:
  *
- * - Visitor-written content — feedback comments, votes, search and view history
- *   — is preserved unless the site owner opted in through the
- *   `delete_data_on_uninstall` setting. Deleting support history that a visitor
- *   wrote, on a plugin delete that may well be an upgrade or a migration, is not
- *   recoverable; keeping it is.
- * - Plugin state — options, the salt-rotation cron event and per-user admin
- *   preferences — is always removed, on every site of the network. An
- *   autoloaded option, a scheduled hook or a user meta row that outlives the
- *   plugin that owns it is pure residue.
+ * - Data is kept unless the site owner opted in through the
+ *   `delete_data_on_uninstall` setting. Data is the four tables (feedback
+ *   comments, votes, search and view history), the settings (which hold the
+ *   article, category and tag slugs, so every permalink survives a delete and
+ *   reinstall), the import options (the served redirect map, the resume
+ *   cursors and the run reports) and the import URL map files. Deleting
+ *   support history or the redirects that keep old links alive, on a plugin
+ *   delete that may well be an upgrade or a migration, is not recoverable;
+ *   keeping it is. Kept options are switched to not autoload, so a site
+ *   without the plugin does not load them on every request.
+ * - Plugin state - the version markers, the visitor salt, the one-shot flags,
+ *   the salt-rotation cron event and per-user admin preferences - is always
+ *   removed, on every site of the network. A scheduled hook or a user meta row
+ *   that outlives the plugin that owns it is pure residue.
  *
- * Consumed by: #9, #11, #12.
+ * Articles, categories and tags are never removed by uninstall.
  *
  * @package Licensio_KB
  * @since   1.0.0
@@ -27,26 +32,35 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Removes the plugin's tables, options, user meta and scheduled events.
+ * Removes the plugin's state, and its data when the site owner opted in.
  *
  * @since 1.0.0
  */
 class Licensio_KB_Uninstaller {
 
     /**
-     * Every option the plugin owns.
+     * The plugin state options, removed on every uninstall.
      *
      * @since 1.0.0
      * @var string[]
      */
     const OPTIONS = array(
-        'licensio_settings',
         'licensio_visitor_salt',
         'licensio_version',
         'licensio_db_version',
         'licensio_fulltext_supported',
         'licensio_flush_rewrite_rules',
         'licensio_search_reindex_state',
+    );
+
+    /**
+     * The data options outside the importer, kept unless the site owner opted in.
+     *
+     * @since 1.0.0
+     * @var string[]
+     */
+    const DATA_OPTIONS = array(
+        Licensio_KB_Settings::OPTION_NAME,
     );
 
     /**
@@ -98,6 +112,10 @@ class Licensio_KB_Uninstaller {
     /**
      * Tear the plugin down for the current site.
      *
+     * Removes the plugin state always, and the data only when the site owner
+     * turned on Delete everything on uninstall. Kept data options are switched
+     * to not autoload.
+     *
      * @since 1.0.0
      *
      * @return void
@@ -119,9 +137,17 @@ class Licensio_KB_Uninstaller {
                  */
                 unset( $e );
             }
+
+            foreach ( self::data_options() as $option ) {
+                delete_option( $option );
+            }
+
+            Licensio_KB_Import_Redirects::delete_directory();
+        } else {
+            wp_set_option_autoload_values( array_fill_keys( self::data_options(), false ) );
         }
 
-        foreach ( array_merge( self::OPTIONS, self::import_options() ) as $option ) {
+        foreach ( self::OPTIONS as $option ) {
             delete_option( $option );
         }
 
@@ -144,13 +170,24 @@ class Licensio_KB_Uninstaller {
          *
          * @since 1.0.0
          *
-         * @param bool $deleted_data Whether the data tables were dropped.
+         * @param bool $deleted_data Whether the data was deleted: the tables, the data options and the URL map files.
          */
         do_action( 'licensio_uninstalled', $delete_data );
     }
 
     /**
-     * The state, report and redirect options every registered importer keeps.
+     * Every data option, kept unless the site owner opted in.
+     *
+     * @since 1.0.0
+     *
+     * @return string[] Option names.
+     */
+    public static function data_options() {
+        return array_values( array_unique( array_merge( self::DATA_OPTIONS, self::import_options() ) ) );
+    }
+
+    /**
+     * The state, report, redirect and URL map options every registered importer keeps.
      *
      * @since 1.0.0
      *
@@ -163,15 +200,17 @@ class Licensio_KB_Uninstaller {
     }
 
     /**
-     * Whether the site owner asked for the data tables to be dropped.
+     * Whether the site owner asked for the data to be deleted.
      *
      * Defaults to false. The tables hold feedback comments and votes written by
-     * visitors, which a site owner may reasonably treat as support history, and
-     * a plugin delete is not always a decision to discard it.
+     * visitors, which a site owner may reasonably treat as support history, the
+     * settings hold the permalink slugs and the import options hold the
+     * redirects for old links, and a plugin delete is not always a decision to
+     * discard them.
      *
      * @since 1.0.0
      *
-     * @return bool True when the data tables should be dropped.
+     * @return bool True when the tables, data options and URL map files should be deleted.
      */
     public static function should_delete_data() {
         $settings = new Licensio_KB_Settings();

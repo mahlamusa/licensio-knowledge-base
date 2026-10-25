@@ -145,7 +145,7 @@ Yes. The import wizard under **Knowledge Base > Tools** carries over articles, c
 
 = What happens to my articles if I deactivate the plugin? =
 
-Nothing. Deactivating leaves all content and data in place. Data is only removed when you delete the plugin, and then only if you have turned on **Delete everything on uninstall** under **Knowledge Base > Settings > Privacy**.
+Nothing. Deactivating leaves all content and data in place. Data is only removed when you delete the plugin, and then only if you have turned on **Delete everything on uninstall** under **Knowledge Base > Settings > Privacy**. With it on, deleting the plugin drops the feedback, vote, search and view tables and deletes the settings (including the permalink slugs), the import redirects and the import URL map files. With it off, all of that is kept. Articles, categories and tags are never deleted by uninstall.
 
 = Who can manage the knowledge base? =
 
