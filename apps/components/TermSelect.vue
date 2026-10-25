@@ -97,6 +97,10 @@ const SEARCH_DELAY = 250;
 // The terms route accepts at most this many IDs in `include` per request.
 const LABELS_PER_REQUEST = 100;
 
+// The terms route refuses more than this many IDs in `exclude`. Only the
+// first ones are sent; the results are filtered against the whole list here.
+const MAX_EXCLUDE = 100;
+
 const results = ref< TermItem[] >( [] );
 const labels = ref< Record< number, string > >( {} );
 const searchText = ref( '' );
@@ -248,7 +252,7 @@ async function runSearch( text: string ): Promise< void > {
 		const terms = await get< TermItem[] >( 'terms', {
 			taxonomy: props.taxonomy,
 			search: text,
-			exclude: props.exclude,
+			exclude: props.exclude.slice( 0, MAX_EXCLUDE ),
 			per_page: 20,
 		} );
 
