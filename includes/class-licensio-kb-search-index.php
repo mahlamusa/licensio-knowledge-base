@@ -100,6 +100,7 @@ class Licensio_KB_Search_Index {
         add_action( 'transition_post_status', array( $this, 'handle_transition_post_status' ), 20, 3 );
         add_action( 'deleted_post', array( $this, 'handle_deleted_post' ), 20 );
         add_action( 'set_object_terms', array( $this, 'handle_set_object_terms' ), 20, 4 );
+        add_action( 'licensio_kb_term_assignments_changed', array( $this, 'handle_assignments_changed' ), 20, 2 );
         add_action( 'edited_term', array( $this, 'handle_edited_term' ), 20, 3 );
         add_action( 'delete_term', array( $this, 'handle_delete_term' ), 20, 5 );
 
@@ -210,6 +211,28 @@ class Licensio_KB_Search_Index {
         }
 
         $this->reindex( (int) $object_id );
+    }
+
+    /**
+     * Reindex the articles a term move, copy or merge changed.
+     *
+     * Those operations write the relationship rows in batches, so core's
+     * `set_object_terms` does not fire for each article. Many articles at once
+     * start a background rebuild instead of reindexing inline.
+     *
+     * @since 1.0.0
+     *
+     * @param int[]  $object_ids The articles that gained or lost a term.
+     * @param string $taxonomy   The taxonomy that changed.
+     *
+     * @return void
+     */
+    public function handle_assignments_changed( $object_ids, $taxonomy ) {
+        if ( ! in_array( $taxonomy, self::indexed_taxonomies(), true ) ) {
+            return;
+        }
+
+        $this->reindex_many( array_map( 'intval', (array) $object_ids ) );
     }
 
     /**

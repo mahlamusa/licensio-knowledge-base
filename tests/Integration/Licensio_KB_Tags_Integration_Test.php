@@ -507,15 +507,7 @@ class Licensio_KB_Tags_Integration_Test extends Licensio_KB_Analytics_DB_Test_Ca
         $before  = $this->live_snapshot();
 
         Brain\Monkey\Actions\expectDone( 'licensio_kb_terms_merged' )->never();
-        Brain\Monkey\Functions\when( 'wp_remove_object_terms' )->alias(
-            function ( $object_id, $terms, $taxonomy ) use ( $failing, $b ) {
-                if ( $failing === (int) $object_id && array( $b ) === $terms ) {
-                    return new WP_Error( 'db_delete_error', 'Could not remove the term relationship.' );
-                }
-
-                return $this->live_remove_object_terms( $object_id, $terms, $taxonomy );
-            }
-        );
+        $this->live_fail_removal( $b, Licensio_KB_Post_Types::TAXONOMY_TAG, $failing );
 
         $result = $this->controller->merge(
             new WP_REST_Request(

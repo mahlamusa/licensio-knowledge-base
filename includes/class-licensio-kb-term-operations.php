@@ -8,9 +8,18 @@
  * rules and fire the same hooks.
  *
  * Every move is all or nothing and is recorded, so a caller whose later step
- * fails can put the articles back with `undo()`. Term counting is deferred
- * while articles move. `check_slug()` holds the rule both apps follow when a
- * term is edited to a slug another term already uses.
+ * fails can put the articles back with `undo()`. The relationship rows move
+ * in batches of SQL statements rather than through one core call per article,
+ * so a term with thousands of articles moves well within a request's time
+ * limit; caches and counts are refreshed after each move. Term counting is
+ * deferred while articles move. `check_slug()` holds the rule both apps
+ * follow when a term is edited to a slug another term already uses.
+ *
+ * Writing the rows directly skips core's per-object relationship hooks
+ * (`set_object_terms`, `added_term_relationship`, `deleted_term_relationships`
+ * and the like). `licensio_kb_term_assignments_changed` ( int[] $object_ids,
+ * string $taxonomy ) fires instead, once per taxonomy for every move, copy or
+ * undo, so the search index can refresh the articles that changed.
  *
  * Two hooks form the contract the per-category article order relies on:
  *
@@ -35,6 +44,17 @@ defined( 'ABSPATH' ) || exit;
  * @since 1.0.0
  */
 class Licensio_KB_Term_Operations {
+
+    /**
+     * How many relationship rows one statement writes.
+     *
+     * Keeps each statement well under the server's packet limit while a term
+     * with thousands of articles still moves in a handful of statements.
+     *
+     * @since 1.0.0
+     * @var int
+     */
+    const BATCH_SIZE = 500;
 
     /**
      * Register the WordPress hooks.
@@ -83,12 +103,11 @@ class Licensio_KB_Term_Operations {
     /**
      * Move every object assigned to one term onto another.
      *
-     * Each object gains the target term and loses the source term, through
-     * `wp_set_object_terms()` and `wp_remove_object_terms()`, so caches are
-     * kept up to date by core. Term counting is deferred while the objects
-     * move, so each term is recounted once rather than once per object. An
-     * object that already has the target term simply loses the source term.
-     * The source term itself is left in place.
+     * Each object gains the target term and loses the source term. The
+     * relationship rows are written in batches, then the objects' term caches
+     * are cleaned and both terms are recounted, once each. An object that
+     * already has the target term simply loses the source term. The source
+     * term itself is left in place.
      *
      * All or nothing: if one object cannot be moved, the objects already
      * moved are put back and the error is returned. On success `$record`
@@ -164,10 +183,12 @@ class Licensio_KB_Term_Operations {
     /**
      * Put back the assignments a move, copy or merge recorded.
      *
-     * Works through the record newest first: an object gets its source term
-     * back if it lost it, and loses the target term unless it had the target
-     * before the move. Best effort: a write that fails here is skipped, since
-     * the caller is already reporting the error that made it undo.
+     * Works through the record newest first: the objects that lost the source
+     * term get it back, and the objects that gained the target term lose it
+     * again; an object that had the target before the move keeps it. Best
+     * effort: a write that fails here is skipped, since the caller is already
+     * reporting the error that made it undo. Caches and counts are refreshed
+     * for every object in the record.
      *
      * @since 1.0.0
      *
@@ -179,14 +200,14 @@ class Licensio_KB_Term_Operations {
         $this->with_deferred_counting(
             function () use ( $record ) {
                 foreach ( array_reverse( $record ) as $entry ) {
-                    if ( $entry['removed'] ) {
-                        wp_set_object_terms( $entry['object'], array( $entry['from'] ), $entry['from_taxonomy'], true );
-                    }
+                    $restored = array();
+                    $dropped  = array();
 
-                    if ( ! $entry['had_target'] ) {
-                        wp_remove_object_terms( $entry['object'], array( $entry['to'] ), $entry['to_taxonomy'] );
-                    }
+                    $this->write_relationships( 'add', $entry['removed'], $entry['from_tt'], $restored );
+                    $this->write_relationships( 'remove', $entry['added'], $entry['to_tt'], $dropped );
                 }
+
+                $this->refresh( $record );
 
                 return null;
             }
@@ -199,7 +220,8 @@ class Licensio_KB_Term_Operations {
      * The inputs must already have passed `validate()`. Term counting is
      * deferred throughout, the undo included, so a failure recounts once. If
      * a write fails, every object already handled is put back, `$record` is
-     * emptied and the error is returned.
+     * emptied and the error is returned. On success the objects' caches and
+     * the terms' counts are refreshed.
      *
      * @since 1.0.0
      *
@@ -208,7 +230,7 @@ class Licensio_KB_Term_Operations {
      * @param int    $to              The term the objects gain.
      * @param string $target_taxonomy The target's taxonomy.
      * @param bool   $remove          True to take the source term off each object, false to leave it.
-     * @param array  $record          Receives one entry per object handled.
+     * @param array  $record          Receives one entry per source term handled.
      *
      * @return int|WP_Error The number of objects handled, or the first error.
      */
@@ -232,6 +254,8 @@ class Licensio_KB_Term_Operations {
                     $moved += $count;
                 }
 
+                $this->refresh( $record );
+
                 return $moved;
             }
         );
@@ -240,8 +264,10 @@ class Licensio_KB_Term_Operations {
     /**
      * Move or copy every object from one checked term to another.
      *
-     * Each object is recorded as soon as it gains the target, before the
-     * source is removed, so an object whose removal fails is put back too.
+     * The target relationships are written first, then the source ones are
+     * removed, in batches. The record entry is added before anything is
+     * written and grows with each batch that succeeds, so the objects of a
+     * batch already written are put back too when a later batch fails.
      *
      * @since 1.0.0
      *
@@ -250,9 +276,9 @@ class Licensio_KB_Term_Operations {
      * @param int    $to              The term the objects gain.
      * @param string $target_taxonomy The target's taxonomy.
      * @param bool   $remove          True to take the source term off each object.
-     * @param array  $record          Receives one entry per object handled.
+     * @param array  $record          Receives one entry for this source term.
      *
-     * @return int|WP_Error The number of objects handled, or an error when a write fails.
+     * @return int|WP_Error The number of objects handled, or an error when a read or write fails.
      */
     private function move_objects( $from, $source_taxonomy, $to, $target_taxonomy, $remove, &$record ) {
         $object_ids = get_objects_in_term( $from, $source_taxonomy );
@@ -267,43 +293,163 @@ class Licensio_KB_Term_Operations {
             return $on_target;
         }
 
-        $had_target = array_flip( array_map( 'intval', (array) $on_target ) );
-        $moved      = 0;
+        $object_ids = array_values( array_unique( array_map( 'intval', (array) $object_ids ) ) );
 
-        foreach ( (array) $object_ids as $object_id ) {
-            $object_id = (int) $object_id;
-
-            $added = wp_set_object_terms( $object_id, array( $to ), $target_taxonomy, true );
-
-            if ( is_wp_error( $added ) ) {
-                return $added;
-            }
-
-            $index            = count( $record );
-            $record[ $index ] = array(
-                'object'        => $object_id,
-                'from'          => (int) $from,
-                'from_taxonomy' => (string) $source_taxonomy,
-                'to'            => (int) $to,
-                'to_taxonomy'   => (string) $target_taxonomy,
-                'had_target'    => isset( $had_target[ $object_id ] ),
-                'removed'       => false,
-            );
-
-            if ( $remove ) {
-                $removed = wp_remove_object_terms( $object_id, array( $from ), $source_taxonomy );
-
-                if ( is_wp_error( $removed ) ) {
-                    return $removed;
-                }
-
-                $record[ $index ]['removed'] = true;
-            }
-
-            ++$moved;
+        if ( array() === $object_ids ) {
+            return 0;
         }
 
-        return $moved;
+        $from_term = get_term( $from, $source_taxonomy );
+        $to_term   = get_term( $to, $target_taxonomy );
+
+        if ( ! $from_term instanceof WP_Term || ! $to_term instanceof WP_Term ) {
+            return new WP_Error(
+                'licensio_kb_invalid_term',
+                __( 'One of the chosen terms does not exist.', 'licensio-knowledge-base' ),
+                array( 'status' => 404 )
+            );
+        }
+
+        $index            = count( $record );
+        $record[ $index ] = array(
+            'from'          => (int) $from,
+            'from_tt'       => (int) $from_term->term_taxonomy_id,
+            'from_taxonomy' => (string) $source_taxonomy,
+            'to'            => (int) $to,
+            'to_tt'         => (int) $to_term->term_taxonomy_id,
+            'to_taxonomy'   => (string) $target_taxonomy,
+            'added'         => array(),
+            'removed'       => array(),
+        );
+
+        $missing = array_values( array_diff( $object_ids, array_map( 'intval', (array) $on_target ) ) );
+        $written = $this->write_relationships( 'add', $missing, $record[ $index ]['to_tt'], $record[ $index ]['added'] );
+
+        if ( is_wp_error( $written ) ) {
+            return $written;
+        }
+
+        if ( $remove ) {
+            $written = $this->write_relationships( 'remove', $object_ids, $record[ $index ]['from_tt'], $record[ $index ]['removed'] );
+
+            if ( is_wp_error( $written ) ) {
+                return $written;
+            }
+        }
+
+        return count( $object_ids );
+    }
+
+    /**
+     * Add or remove one term's relationship rows for many objects.
+     *
+     * One statement per batch of `BATCH_SIZE` objects, prepared with the
+     * object and term taxonomy IDs as integers. Stops at the first statement
+     * that fails; `$done` holds the objects of the batches already written.
+     *
+     * @since 1.0.0
+     *
+     * @param string $action     `add` to insert the rows, `remove` to delete them.
+     * @param int[]  $object_ids The objects.
+     * @param int    $tt_id      The term taxonomy ID.
+     * @param int[]  $done       Receives the objects whose rows were written.
+     *
+     * @return true|WP_Error True when every batch was written, or an error.
+     */
+    private function write_relationships( $action, array $object_ids, $tt_id, &$done ) {
+        global $wpdb;
+
+        $done = array();
+
+        foreach ( array_chunk( array_map( 'intval', $object_ids ), self::BATCH_SIZE ) as $batch ) {
+            if ( 'add' === $action ) {
+                $values = array();
+
+                foreach ( $batch as $object_id ) {
+                    $values[] = $object_id;
+                    $values[] = (int) $tt_id;
+                }
+
+                $rows = implode( ', ', array_fill( 0, count( $batch ), '( %d, %d )' ) );
+
+                // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- $rows holds only %d placeholders, one pair per object.
+                $sql = $wpdb->prepare(
+                    "INSERT IGNORE INTO %i ( object_id, term_taxonomy_id ) VALUES {$rows}",
+                    array_merge( array( $wpdb->term_relationships ), $values )
+                );
+                // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
+            } else {
+                $sql = $wpdb->prepare(
+                    'DELETE FROM %i WHERE term_taxonomy_id = %d AND object_id IN ( ' . implode( ', ', array_fill( 0, count( $batch ), '%d' ) ) . ' )',
+                    array_merge( array( $wpdb->term_relationships, (int) $tt_id ), $batch )
+                );
+            }
+
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Prepared above.
+            if ( false === $wpdb->query( $sql ) ) {
+                return new WP_Error(
+                    'licensio_kb_assignments_not_saved',
+                    __( 'The article assignments could not be saved.', 'licensio-knowledge-base' ),
+                    array( 'status' => 500 )
+                );
+            }
+
+            $done = array_merge( $done, $batch );
+        }
+
+        return true;
+    }
+
+    /**
+     * Refresh caches, counts and listeners after recorded writes.
+     *
+     * Cleans the term caches of every object in the record, recounts each
+     * term once (queued while counting is deferred) and fires
+     * `licensio_kb_term_assignments_changed` once per taxonomy.
+     *
+     * @since 1.0.0
+     *
+     * @param array<int, array<string, mixed>> $record The record of the writes.
+     *
+     * @return void
+     */
+    private function refresh( array $record ) {
+        $objects = array();
+        $terms   = array();
+
+        foreach ( $record as $entry ) {
+            $objects[ $entry['from_taxonomy'] ] = array_merge( isset( $objects[ $entry['from_taxonomy'] ] ) ? $objects[ $entry['from_taxonomy'] ] : array(), $entry['removed'] );
+            $objects[ $entry['to_taxonomy'] ]   = array_merge( isset( $objects[ $entry['to_taxonomy'] ] ) ? $objects[ $entry['to_taxonomy'] ] : array(), $entry['added'] );
+
+            $terms[ $entry['from_taxonomy'] ][] = (int) $entry['from_tt'];
+            $terms[ $entry['to_taxonomy'] ][]   = (int) $entry['to_tt'];
+        }
+
+        foreach ( $objects as $taxonomy => $object_ids ) {
+            $object_ids = array_values( array_unique( $object_ids ) );
+
+            wp_update_term_count( array_values( array_unique( $terms[ $taxonomy ] ) ), $taxonomy );
+
+            if ( array() === $object_ids ) {
+                continue;
+            }
+
+            clean_object_term_cache( $object_ids, Licensio_KB_Post_Types::POST_TYPE );
+
+            /**
+             * Fires after term assignments were written directly to the database.
+             *
+             * Moves, copies and merges write the relationship rows in batches
+             * instead of through `wp_set_object_terms()`, so core's per-object
+             * hooks do not fire. This one does, once per taxonomy.
+             *
+             * @since 1.0.0
+             *
+             * @param int[]  $object_ids The objects that gained or lost a term.
+             * @param string $taxonomy   The taxonomy whose assignments changed.
+             */
+            do_action( 'licensio_kb_term_assignments_changed', $object_ids, (string) $taxonomy );
+        }
     }
 
     /**

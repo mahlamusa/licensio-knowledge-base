@@ -568,6 +568,65 @@ trait Licensio_KB_Live_Term_API {
     }
 
     /**
+     * Make the relationship delete of one term fail for one object.
+     *
+     * Swaps `$wpdb` for an adapter that refuses the batched `DELETE` taking
+     * the term off a batch holding the object, as a failing server would;
+     * every other statement runs as usual.
+     *
+     * @since 1.0.0
+     *
+     * @param int    $term_id   The term whose relationship delete fails.
+     * @param string $taxonomy  The term's taxonomy.
+     * @param int    $object_id The object whose batch fails.
+     *
+     * @return void
+     */
+    protected function live_fail_removal( $term_id, $taxonomy, $object_id ) {
+        $tt_id   = (int) $this->live_term_row( (int) $term_id, (string) $taxonomy )['term_taxonomy_id'];
+        $pattern = '/^DELETE FROM \S+ WHERE term_taxonomy_id = ' . $tt_id . ' AND object_id IN \(.*\b' . (int) $object_id . '\b/';
+
+        $GLOBALS['wpdb'] = new class( $this->db, self::PREFIX, $pattern ) extends Licensio_KB_Live_WPDB { // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- The suite's database adapter.
+
+            /**
+             * The statement to refuse.
+             *
+             * @since 1.0.0
+             * @var string
+             */
+            private $refused;
+
+            /**
+             * Build the adapter.
+             *
+             * @since 1.0.0
+             *
+             * @param mysqli $db      A live connection.
+             * @param string $prefix  The table prefix in use.
+             * @param string $refused A pattern matching the statement to refuse.
+             */
+            public function __construct( $db, $prefix, $refused ) {
+                parent::__construct( $db, $prefix );
+
+                $this->refused = $refused;
+            }
+
+            /**
+             * Run a statement, unless it is the refused one.
+             *
+             * @since 1.0.0
+             *
+             * @param string $query The SQL statement.
+             *
+             * @return int|false Rows affected, or false for the refused statement.
+             */
+            public function query( $query ) {
+                return preg_match( $this->refused, (string) $query ) ? false : parent::query( $query );
+            }
+        };
+    }
+
+    /**
      * Stand-in for `wp_update_term_count()`.
      *
      * @since 1.0.0
