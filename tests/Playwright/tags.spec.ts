@@ -5,7 +5,8 @@
  * merge, convert and delete) waits for its Popconfirm and that Cancel sends
  * nothing, that an edit to a slug another tag uses is refused with a message
  * and keeps the input, and that merge and convert to
- * category work on the selected tags, and that focus lands on the page title
+ * category work on the selected tags, that a failed merge or convert shows
+ * its error inside the dialog, and that focus lands on the page title
  * once a bulk delete takes the Delete button away. Escape closes the Add tag
  * form and an inline edit, sending nothing. The category the convert
  * creates is deleted again through the core REST API.
@@ -566,6 +567,71 @@ test( 'a merge reports the tags it could not delete apart from those it merged',
 
 	await page.unroute( /tags(%2F|\/)merge/ );
 	await search( page, suffix );
+	await deleteListed( page );
+} );
+
+test( 'a failed merge or convert shows its error inside the dialog', async ( {
+	page,
+} ) => {
+	const target = `Fail keep ${ suffix }`;
+	const source = `Fail away ${ suffix }`;
+	const failing = /tags(%2F|\/)(merge|convert)/;
+
+	await logIn( page );
+	await openContentManager( page, 'tags' );
+
+	for ( const name of [ target, source ] ) {
+		await addTag( page, name );
+	}
+
+	await search( page, `Fail ${ suffix }` );
+	await page.route( failing, ( route ) =>
+		route.fulfill( {
+			status: 500,
+			json: {
+				code: 'boom',
+				message: 'Server exploded.',
+				data: { status: 500 },
+			},
+		} )
+	);
+
+	await row( page, source ).locator( '.ant-checkbox-input' ).check();
+	await page.getByRole( 'button', { name: 'Merge into…' } ).click();
+
+	const merge = page.locator( '.ant-modal', { hasText: 'Merge tags' } );
+
+	await merge.getByLabel( 'Tag to merge into' ).click();
+	await page.keyboard.type( target );
+	await page
+		.locator( '.ant-select-item-option', { hasText: target } )
+		.click();
+	await merge.getByRole( 'button', { name: 'Merge' } ).click();
+	await confirmPopconfirm( page );
+	await expect( merge.locator( '.ant-alert-error' ) ).toContainText(
+		'Server exploded.'
+	);
+	await merge.getByRole( 'button', { name: 'Cancel' } ).click();
+	await expect( merge ).toBeHidden();
+
+	await page.getByRole( 'button', { name: 'Convert to category' } ).click();
+
+	const convert = page.locator( '.ant-modal', {
+		hasText: 'Convert to categories',
+	} );
+
+	await expect(
+		convert.locator( '.ant-alert-error' ),
+		'A new dialog starts without an old error.'
+	).toHaveCount( 0 );
+	await convert.getByRole( 'button', { name: 'Convert' } ).click();
+	await confirmPopconfirm( page );
+	await expect( convert.locator( '.ant-alert-error' ) ).toContainText(
+		'Server exploded.'
+	);
+	await convert.getByRole( 'button', { name: 'Cancel' } ).click();
+
+	await page.unroute( failing );
 	await deleteListed( page );
 } );
 
