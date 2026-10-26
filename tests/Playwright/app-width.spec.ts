@@ -8,6 +8,8 @@
  * either side rather than running to the window edges. At phone width the
  * page itself must not scroll sideways; a wide table may scroll inside itself,
  * and a tag slug still reads as one word rather than breaking letter by letter.
+ * Once the page scrolls, the app header sits right under a fixed admin bar,
+ * and at the top of the screen on a phone, where the admin bar scrolls away.
  *
  * When wp-cli is available (`LICENSIO_KB_WP_CLI`), a long-titled article and
  * a long tag name are added for the run and removed after it, and the admin
@@ -197,6 +199,38 @@ test.describe( 'App width', () => {
 			await slug.evaluate( ( el ) => el.getClientRects().length ),
 			'lines the slug takes'
 		).toBe( 1 );
+	} );
+
+	test( 'the app header sticks under the admin bar only while the bar is fixed', async ( {
+		page,
+	} ) => {
+		// Core fixes the admin bar down to 601px and lets it scroll away below.
+		for ( const [ width, top ] of [
+			[ 390, 0 ],
+			[ 700, 46 ],
+		] ) {
+			await page.setViewportSize( { width, height: 400 } );
+			await page.goto( contentManagerUrl( 'articles' ) );
+			await expect( page.locator( '#lkb-main' ) ).toBeVisible();
+			await page.waitForLoadState( 'networkidle' );
+			await page.evaluate( () => window.scrollTo( 0, 300 ) );
+
+			expect(
+				await page.evaluate( () => window.scrollY ),
+				`page scrolled at ${ width }px`
+			).toBeGreaterThan( 100 );
+			await expect
+				.poll(
+					() =>
+						page
+							.locator( '.lkb-header' )
+							.evaluate( ( el ) =>
+								Math.round( el.getBoundingClientRect().top )
+							),
+					{ message: `header top at ${ width }px` }
+				)
+				.toBe( top );
+		}
 	} );
 
 	for ( const screen of SCREENS ) {

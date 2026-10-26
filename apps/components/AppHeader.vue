@@ -232,4 +232,11 @@ onUnmounted( () => {
 		font-size: 17px;
 	}
 }
+
+/* Core stops fixing the admin bar here, so it scrolls away with the page. */
+@media ( max-width: 600px ) {
+	.lkb-header {
+		top: 0;
+	}
+}
 </style>
