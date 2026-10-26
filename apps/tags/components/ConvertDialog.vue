@@ -9,7 +9,7 @@
  * existing category is named with that category, since it may sit somewhere
  * other than the chosen parent. The conversion is sent from the Popconfirm of
  * the Convert button, so closing the dialog or cancelling the Popconfirm sends
- * nothing.
+ * nothing. A failed conversion shows its error inside the dialog.
  *
  * @since 1.0.0
  */
@@ -20,6 +20,7 @@ import ConfirmButton from '../../components/ConfirmButton.vue';
 import TermSelect from '../../components/TermSelect.vue';
 import { useEscapeClose } from '../../components/popover-focus';
 import { __, _n, sprintf } from '../../components/i18n';
+import { errorMessage } from '../../components/rest';
 import type { TermValue } from '../../components/types/terms';
 import { useTagsStore } from '../store';
 
@@ -34,6 +35,7 @@ useEscapeClose( () => props.open, '.lkb-tag-convert-dialog', close );
 
 const store = useTagsStore();
 const parent = ref< TermValue | TermValue[] | null >( null );
+const error = ref( '' );
 
 const parentId = computed( () =>
 	typeof parent.value === 'number' ? parent.value : 0
@@ -57,6 +59,7 @@ watch(
 	( open ) => {
 		if ( open ) {
 			parent.value = null;
+			error.value = '';
 		}
 	}
 );
@@ -122,8 +125,9 @@ async function convert(): Promise< void > {
 		result.failed.forEach( ( failure ) => {
 			message.error( failure.message );
 		} );
-	} catch {
-		// The store shows the error.
+	} catch ( caught ) {
+		// Shown in the dialog, as the page alert is behind its mask.
+		error.value = errorMessage( caught );
 	}
 }
 </script>
@@ -136,6 +140,14 @@ async function convert(): Promise< void > {
 		:keyboard="false"
 		@cancel="close"
 	>
+		<a-alert
+			v-if="error"
+			type="error"
+			show-icon
+			:message="error"
+			class="lkb-dialog__error"
+		/>
+
 		<p>
 			{{
 				__(
@@ -170,3 +182,9 @@ async function convert(): Promise< void > {
 		</template>
 	</a-modal>
 </template>
+
+<style scoped>
+.lkb-dialog__error {
+	margin-bottom: var(--lkb-gap);
+}
+</style>

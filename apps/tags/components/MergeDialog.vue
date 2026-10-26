@@ -8,6 +8,7 @@
  *
  * The toast counts every selected tag as merged, since its articles moved,
  * and warns apart about any the server could not delete afterwards.
+ * A failed merge shows its error inside the dialog.
  *
  * @since 1.0.0
  */
@@ -18,6 +19,7 @@ import ConfirmButton from '../../components/ConfirmButton.vue';
 import TermSelect from '../../components/TermSelect.vue';
 import { useEscapeClose } from '../../components/popover-focus';
 import { __, _n, sprintf } from '../../components/i18n';
+import { errorMessage } from '../../components/rest';
 import type { TermValue } from '../../components/types/terms';
 import { useTagsStore } from '../store';
 
@@ -32,6 +34,7 @@ useEscapeClose( () => props.open, '.lkb-tag-merge-dialog', close );
 
 const store = useTagsStore();
 const target = ref< TermValue | TermValue[] | null >( null );
+const error = ref( '' );
 
 const targetId = computed( () =>
 	typeof target.value === 'number' ? target.value : 0
@@ -68,6 +71,7 @@ watch(
 	( open ) => {
 		if ( open ) {
 			target.value = null;
+			error.value = '';
 		}
 	}
 );
@@ -129,8 +133,9 @@ async function merge(): Promise< void > {
 				)
 			);
 		}
-	} catch {
-		// The store shows the error.
+	} catch ( caught ) {
+		// Shown in the dialog, as the page alert is behind its mask.
+		error.value = errorMessage( caught );
 	}
 }
 </script>
@@ -143,6 +148,14 @@ async function merge(): Promise< void > {
 		:keyboard="false"
 		@cancel="close"
 	>
+		<a-alert
+			v-if="error"
+			type="error"
+			show-icon
+			:message="error"
+			class="lkb-dialog__error"
+		/>
+
 		<p>{{ intro }}</p>
 
 		<TermSelect
@@ -172,3 +185,9 @@ async function merge(): Promise< void > {
 		</template>
 	</a-modal>
 </template>
+
+<style scoped>
+.lkb-dialog__error {
+	margin-bottom: var(--lkb-gap);
+}
+</style>
