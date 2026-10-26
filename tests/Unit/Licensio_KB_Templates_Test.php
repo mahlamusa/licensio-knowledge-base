@@ -413,6 +413,173 @@ class Licensio_KB_Templates_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * Data for the guard tests: every view the shortcode knows.
+     *
+     * @since 1.0.0
+     *
+     * @return array<string, array{0: string}> View name sets.
+     */
+    public function view_names() {
+        return array(
+            'single'   => array( 'single' ),
+            'category' => array( 'category' ),
+            'tag'      => array( 'tag' ),
+            'search'   => array( 'search' ),
+            'archive'  => array( 'archive' ),
+        );
+    }
+
+    /**
+     * Point the conditionals at a view, including the article search scope.
+     *
+     * @since 1.0.0
+     *
+     * @param string $view The view the request should be.
+     *
+     * @return void
+     */
+    private function stub_view_request( $view ) {
+        $this->stub_conditionals( $view, 'search' === $view ? Licensio_KB_Post_Types::POST_TYPE : '' );
+    }
+
+    /**
+     * Fail the test if a view body starts looping the main query.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    private function forbid_the_loop() {
+        Functions\expect( 'have_posts' )->never();
+        Functions\expect( 'the_post' )->never();
+    }
+
+    /**
+     * Inside a loop the view shortcode renders nothing.
+     *
+     * Post content is rendered inside a loop. A view body there would loop
+     * the main query to its end and rewind it, so the outer loop would start
+     * over and render the shortcode again until PHP ran out of memory.
+     *
+     * @since 1.0.0
+     *
+     * @dataProvider view_names
+     *
+     * @param string $view The view name.
+     *
+     * @return void
+     */
+    public function test_the_view_shortcode_renders_nothing_inside_a_loop( $view ) {
+        $this->stub_view_request( $view );
+        $this->stub_shortcode_atts();
+        $this->forbid_the_loop();
+
+        Functions\when( 'in_the_loop' )->justReturn( true );
+
+        $this->assertSame( '', $this->templates->render_view_shortcode( array( 'view' => $view ) ) );
+    }
+
+    /**
+     * A view renders nothing on a request it does not belong to.
+     *
+     * @since 1.0.0
+     *
+     * @dataProvider view_names
+     *
+     * @param string $view The view name.
+     *
+     * @return void
+     */
+    public function test_the_view_shortcode_renders_nothing_for_another_request( $view ) {
+        $other = 'tag' === $view ? 'category' : 'tag';
+
+        $this->stub_view_request( $other );
+        $this->stub_shortcode_atts();
+        $this->forbid_the_loop();
+
+        $this->assertSame( '', $this->templates->render_view_shortcode( array( 'view' => $view ) ) );
+    }
+
+    /**
+     * A view only matches its own request.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_each_view_matches_only_its_own_request() {
+        $views = array_keys( Licensio_KB_Templates::VIEW_BODIES );
+
+        foreach ( $views as $request ) {
+            $this->stub_view_request( $request );
+
+            foreach ( $views as $view ) {
+                $this->assertSame( $view === $request, Licensio_KB_Templates::view_matches_request( $view ), $view . ' on ' . $request );
+            }
+        }
+
+        $this->stub_conditionals( 'search' );
+
+        $this->assertFalse( Licensio_KB_Templates::view_matches_request( 'search' ), 'A site-wide search is not the knowledge base search.' );
+        $this->assertFalse( Licensio_KB_Templates::view_matches_request( 'nope' ) );
+    }
+
+    /**
+     * A view renders nothing while post content is being filtered.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_view_renders_nothing_from_inside_post_content() {
+        $this->stub_view_request( 'tag' );
+        $this->forbid_the_loop();
+
+        Filters\expectApplied( 'the_content' )->once()->andReturnUsing(
+            function () {
+                return Licensio_KB_Templates::render_view( 'tag' );
+            }
+        );
+
+        $this->assertSame( '', apply_filters( 'the_content', 'CONTENT' ) );
+    }
+
+    /**
+     * A view body cannot render a view inside itself.
+     *
+     * A theme override of a body that prints the shortcode again would
+     * otherwise recurse until PHP gave up.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_view_body_cannot_render_a_view_inside_itself() {
+        $this->stub_view_request( 'tag' );
+        $this->stub_theme_lookup();
+
+        file_put_contents( $this->theme_dir . '/licensio-kb/tag-body.php', '<?php echo "OUTER[" . Licensio_KB_Templates::render_view( "tag" ) . "]";' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+
+        $this->assertSame( 'OUTER[]', Licensio_KB_Templates::render_view( 'tag' ) );
+        $this->assertSame( 'OUTER[]', Licensio_KB_Templates::render_view( 'tag' ), 'The guard is released after each render.' );
+    }
+
+    /**
+     * Make shortcode_atts() merge the way core does.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    private function stub_shortcode_atts() {
+        Functions\when( 'shortcode_atts' )->alias(
+            function ( $pairs, $atts ) {
+                return array_merge( $pairs, array_intersect_key( (array) $atts, $pairs ) );
+            }
+        );
+    }
+
+    /**
      * The article title reaches the page escaped.
      *
      * @since 1.0.0

@@ -119,6 +119,7 @@ class Licensio_KB_Hero_Test extends Licensio_KB_Test_Case {
      * Point every template conditional at one view.
      *
      * @since 1.0.0
+     * @since 1.0.0 Scopes the search view to the article post type.
      *
      * @param string $view One of `single`, `category`, `tag`, `archive`, `search` or `` for none.
      *
@@ -152,6 +153,13 @@ class Licensio_KB_Hero_Test extends Licensio_KB_Test_Case {
         );
 
         Functions\when( 'is_search' )->justReturn( 'search' === $view );
+
+        // A knowledge base search is one scoped to the article post type.
+        Functions\when( 'get_query_var' )->alias(
+            function ( $name ) use ( $view ) {
+                return 'post_type' === $name && 'search' === $view ? Licensio_KB_Post_Types::POST_TYPE : '';
+            }
+        );
     }
 
     /**
