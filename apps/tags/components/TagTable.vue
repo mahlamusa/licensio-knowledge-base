@@ -363,10 +363,9 @@ watch(
 				</template>
 
 				<template v-else-if="'count' === column.key">
-					<a v-if="articlesUrl" :href="`${ articlesUrl }&tag=${ record.id }`">
+					<a :href="`${ articlesUrl }&tag=${ record.id }`">
 						{{ record.count }}
 					</a>
-					<template v-else>{{ record.count }}</template>
 				</template>
 
 				<template v-else-if="'actions' === column.key">
