@@ -6,7 +6,7 @@
  * nothing, that an edit to a slug another tag uses is refused with a message
  * and keeps the input, and that merge and convert to
  * category work on the selected tags, that a failed merge or convert shows
- * its error inside the dialog, and that focus lands on the page title
+ * its error inside the dialog and clears it on a retry, and that focus lands on the page title
  * once a bulk delete takes the Delete button away. Escape closes the Add tag
  * form and an inline edit, sending nothing. The category the convert
  * creates is deleted again through the core REST API.
@@ -599,6 +599,24 @@ test( 'a failed merge or convert shows its error inside the dialog', async ( {
 		.click();
 	await merge.getByRole( 'button', { name: 'Merge' } ).click();
 	await confirmPopconfirm( page );
+	await expect( merge.locator( '.ant-alert-error' ) ).toContainText(
+		'Server exploded.'
+	);
+
+	// Trying again clears the old error while the new request is on its way.
+	let release: () => void = () => undefined;
+	const held = new Promise< void >( ( resolve ) => {
+		release = resolve;
+	} );
+
+	await page.route( failing, async ( route ) => {
+		await held;
+		await route.fallback();
+	} );
+	await merge.getByRole( 'button', { name: 'Merge' } ).click();
+	await confirmPopconfirm( page );
+	await expect( merge.locator( '.ant-alert-error' ) ).toHaveCount( 0 );
+	release();
 	await expect( merge.locator( '.ant-alert-error' ) ).toContainText(
 		'Server exploded.'
 	);

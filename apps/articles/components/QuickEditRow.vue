@@ -4,14 +4,15 @@
  *
  * Title, slug, status, publish date, visibility, categories, tags (new tags
  * can be typed in), author and comments. Save sends only the fields that
- * changed, without asking first. A field error from the server shows under its field
+ * changed, without asking first, and waits while a bulk run is going. A
+ * field error from the server shows under its field
  * and the form keeps what was typed. A row another user has locked answers
  * 409, which is shown and puts the lock on the row.
  *
  * @since 1.0.0
  */
 
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import TermSelect from '../../components/TermSelect.vue';
 import { errorMessage, RestError } from '../../components/rest';
 import { __, sprintf } from '../../components/i18n';
@@ -78,6 +79,24 @@ const formEl = ref< HTMLFormElement | null >( null );
 onMounted(
 	() => formEl.value?.querySelector< HTMLInputElement >( 'input' )?.focus()
 );
+
+// When the form goes away while it has focus, as it does when a save moves
+// the article out of this view, focus moves to the page title instead of
+// falling back to the top of the document.
+onBeforeUnmount( () => {
+	// The form is still in the page; there is no other node to ask for its document.
+	// eslint-disable-next-line @wordpress/no-global-active-element
+	if ( ! formEl.value?.contains( document.activeElement ) ) {
+		return;
+	}
+
+	const title = document.querySelector< HTMLElement >( '.lkb-page__title' );
+
+	if ( title ) {
+		title.tabIndex = -1;
+		title.focus();
+	}
+} );
 
 const statusOptions = computed( () => {
 	const options = [
@@ -449,7 +468,9 @@ function statusOf( field: string ): 'error' | undefined {
 			<a-button
 				type="primary"
 				:loading="saving"
-				:disabled="passwordMissing || !! props.item.lock"
+				:disabled="
+					passwordMissing || !! props.item.lock || store.bulk.running
+				"
 				@click="save"
 			>
 				{{ __( 'Save', 'licensio-knowledge-base' ) }}

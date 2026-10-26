@@ -346,7 +346,11 @@ const expandedKeys = computed( () =>
 								type="link"
 								size="small"
 								class="lkb-rowactions__button"
-								:disabled="!! record.lock || ! record.edit_url"
+								:disabled="
+									!! record.lock ||
+									! record.edit_url ||
+									store.bulk.running
+								"
 								:aria-expanded="store.quickEditId === record.id"
 								:data-quick-edit="record.id"
 								@click="

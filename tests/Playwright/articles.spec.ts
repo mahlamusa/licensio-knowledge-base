@@ -321,7 +321,7 @@ test.describe( 'Articles app', () => {
 		await expect( app.getByText( 'No articles match' ) ).toHaveCount( 0 );
 	} );
 
-	test( 'a quick edit that publishes a draft takes it out of the Drafts view', async ( {
+	test( 'a quick edit that publishes a draft takes it out of the Drafts view and keeps focus on the page', async ( {
 		page,
 	} ) => {
 		const app = await openContentManager( page, 'articles' );
@@ -371,6 +371,10 @@ test.describe( 'Articles app', () => {
 			await expect(
 				app.locator( '.ant-table-expanded-row' )
 			).toHaveCount( 0 );
+			await expect(
+				app.locator( '.lkb-page__title' ),
+				'Focus stays on the page when the form goes away.'
+			).toBeFocused();
 			await expect( pill( 'Drafts' ) ).toContainText(
 				`(${ drafts - 1 })`
 			);

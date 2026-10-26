@@ -100,6 +100,8 @@ async function merge(): Promise< void > {
 		( id ) => id !== targetId.value
 	).length;
 
+	error.value = '';
+
 	try {
 		const result = await store.mergeSelected( targetId.value );
 		const kept = merged - result.deleted.length;

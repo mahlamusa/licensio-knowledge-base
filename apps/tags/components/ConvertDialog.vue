@@ -88,6 +88,8 @@ async function convert(): Promise< void > {
 		store.items.map( ( item ) => [ item.id, item.name ] )
 	);
 
+	error.value = '';
+
 	try {
 		const result = await store.convertSelected( parentId.value );
 

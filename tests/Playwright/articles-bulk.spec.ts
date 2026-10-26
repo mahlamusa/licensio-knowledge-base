@@ -7,8 +7,9 @@
  * Cancel on the bulk Popconfirm sends nothing, a slow "Select all
  * matching" answer is dropped once the user has moved to another view,
  * unticking a row after "Select all matching" keeps the rest selected and
- * ticking it again keeps the selection across pages, a row action cannot
- * start while another runs, so each Undo puts back only its own article, and
+ * ticking it again keeps the selection across pages, a row action or quick
+ * edit cannot start while a run is going, so each Undo puts back only its
+ * own article, and
  * Replace with no terms chosen is sent as a request to clear them.
  *
  * The spec seeds its own data with wp-cli and removes it afterwards: 250
@@ -233,7 +234,7 @@ test.describe( 'Articles bulk actions', () => {
 		);
 	} );
 
-	test( 'a row action waits for a running one, so Undo puts back only its own article', async ( {
+	test( 'row actions and quick edit are disabled while a run is going, so Undo puts back only its own article', async ( {
 		page,
 	} ) => {
 		const app = await openSeeded( page );
@@ -264,6 +265,10 @@ test.describe( 'Articles bulk actions', () => {
 			app
 				.locator( `tr[data-row-key="${ key }"]` )
 				.getByRole( 'button', { name: 'Trash' } );
+		const quickEditOf = ( key: string ) =>
+			app
+				.locator( `tr[data-row-key="${ key }"]` )
+				.getByRole( 'button', { name: 'Quick edit' } );
 		const second = trashOf( keys[ 1 ] );
 
 		await trashOf( keys[ 0 ] ).click();
@@ -272,6 +277,10 @@ test.describe( 'Articles bulk actions', () => {
 			second,
 			'Another row action cannot start while the first runs.'
 		).toBeDisabled();
+		await expect(
+			quickEditOf( keys[ 1 ] ),
+			'Quick edit cannot open while a run is going, as its end closes it.'
+		).toBeDisabled();
 
 		release();
 
@@ -279,6 +288,7 @@ test.describe( 'Articles bulk actions', () => {
 
 		await expect( toast ).toContainText( '1 article moved to the trash.' );
 		await expect( second ).toBeEnabled();
+		await expect( quickEditOf( keys[ 1 ] ) ).toBeEnabled();
 		expect( bulk ).toHaveLength( 1 );
 
 		await page.unroute( /articles%2Fbulk|articles\/bulk/ );
