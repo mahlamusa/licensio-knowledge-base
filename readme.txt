@@ -81,7 +81,7 @@ Heroic Knowledge Base and BetterDocs are trademarks of their respective owners. 
 
 = Make it look like your site =
 
-* One brand colour drives links, buttons and accents; a readable text colour is picked for you.
+* Takes its text colour, link colour and fonts from your theme, on light and dark themes alike. Set an optional brand colour to drive links, buttons and accents; a readable text colour is picked for you.
 * Choose the layout width, the card style (raised, outlined or flat), the archive header (solid colour, gradient or image), the archive heading, the search placeholder and the number of category columns.
 * Put the sidebar on the left, the right or nowhere, separately for the home, categories and articles, and make it follow the reader down long articles.
 * Choose your own article, category and tag URL bases, with optional nested category URLs.
@@ -117,7 +117,7 @@ No. The plugin is entirely standalone: no e-commerce plugin, no page builder and
 
 = Will it work with my theme? =
 
-Yes. Classic themes get the plugin's own PHP templates, and block themes get Site Editor templates. Both use the same stylesheet, and the brand colour, layout width and card style settings help it match your site.
+Yes. Classic themes get the plugin's own PHP templates, and block themes get Site Editor templates. Both use the same stylesheet, which sets no colours or fonts of its own: text, links and fonts come from your theme. The optional brand colour, layout width and card style settings fine-tune the match.
 
 = Can I override the templates in my theme? =
 

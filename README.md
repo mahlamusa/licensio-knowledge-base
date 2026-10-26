@@ -310,7 +310,7 @@ one URL would fight over `paged`. Raise or disable the cap with
 `licensio_uncategorised_limit`.
 
 `hero.php` is the one heading block every page template renders — breadcrumbs,
-the heading with its last word in the brand gradient, and an optional
+the heading with its last word in the accent colour, and an optional
 standfirst. A theme that overrides it replaces the hero on all five views at
 once, which is how a theme hands the knowledge base the hero it already uses
 elsewhere. That is also what clears a fixed site header: the hero's own top
@@ -329,13 +329,18 @@ project's PHPCS ruleset requires of anything assigned at a file's top level.
 #### Styling
 
 `assets/css/licensio-kb.css` is scoped to `.licensio-kb` and is enqueued only
-on knowledge base views. Everything the settings control — brand colour, the
-RGB triplet and readable foreground derived from it, layout width, card
-shadow, border and background — is emitted by
+on knowledge base views. It sets no colours or fonts: text, links, headings
+and the typeface come from the active theme, backgrounds are transparent, and
+borders and tints are mixed from `currentColor` so they work on light and dark
+themes. Everything the settings control — layout width, card shadow, border
+and background, and the brand colour with the RGB triplet and readable
+foreground derived from it — is emitted by
 `Licensio_KB_Templates::inline_css()` as CSS custom properties on
-`.licensio-kb`, never as a rule-level override, so changing a setting restyles
-every component that derives from it. Values are re-validated there before
-being printed into the style element rather than trusted from the option.
+`.licensio-kb`, so changing a setting restyles every component that derives
+from it. The brand colour is empty by default, meaning "use the theme"; its
+properties, and the one rule that paints links with it, are printed only when
+it is set. Values are re-validated there before being printed into the style
+element rather than trusted from the option.
 
 ### Blocks and shortcodes
 

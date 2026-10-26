@@ -595,7 +595,7 @@ class Licensio_KB_Category_Card_Test extends Licensio_KB_Test_Case {
         $this->assertStringContainsString( 'licensio-kb-card__article-icon', $markup );
         $this->assertStringContainsString( 'licensio-kb-card__view-all-icon', $markup );
         $this->assertStringContainsString( '.licensio-kb .licensio-kb-card__article-icon {', $css );
-        $this->assertStringContainsString( 'color: var(--licensio-kb-brand);', $css );
+        $this->assertStringContainsString( 'color: var(--licensio-kb-accent);', $css );
     }
 
     /**

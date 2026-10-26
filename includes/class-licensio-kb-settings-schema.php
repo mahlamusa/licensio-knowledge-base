@@ -203,7 +203,7 @@ class Licensio_KB_Settings_Schema {
             'brand_color'                => array(
                 'group'       => 'appearance',
                 'label'       => __( 'Brand colour', 'licensio-knowledge-base' ),
-                'description' => __( 'Links, buttons and accents derive from this one colour. A readable text colour is chosen for you.', 'licensio-knowledge-base' ),
+                'description' => __( 'Leave empty to use your theme colours. When set, links, buttons and accents use this colour and a readable text colour is chosen for you.', 'licensio-knowledge-base' ),
                 'control'     => 'color',
                 'preview'     => array(
                     'kind'       => 'color',
@@ -247,7 +247,7 @@ class Licensio_KB_Settings_Schema {
                     'kind'   => 'map',
                     'values' => array(
                         'shadow' => array(
-                            '--licensio-kb-card-shadow' => '0 4px 14px rgba(16,24,40,0.06)',
+                            '--licensio-kb-card-shadow' => Licensio_KB_Templates::CARD_SHADOW,
                             '--licensio-kb-card-border' => '1px solid transparent',
                             '--licensio-kb-card-bg'     => 'var(--licensio-kb-surface)',
                         ),
