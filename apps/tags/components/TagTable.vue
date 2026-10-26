@@ -26,8 +26,8 @@
  * as core's link to a tag's edit screen does.
  *
  * A tag's article count, of published articles only as on the Categories
- * app, links to the Articles app filtered by that tag, which lists its
- * articles in every status.
+ * app and headed Published to say so, links to the Articles app filtered by
+ * that tag, which lists its articles in every status.
  *
  * Names and descriptions are rendered as text, never as HTML. The table
  * shows a description as plain text, without its markup and with entities
@@ -180,7 +180,7 @@ const columns = computed( () => [
 		customCell: quickEditCell( 0 ),
 	},
 	{
-		title: __( 'Articles', 'licensio-knowledge-base' ),
+		title: __( 'Published', 'licensio-knowledge-base' ),
 		key: 'count',
 		width: 110,
 		sorter: true,
@@ -547,8 +547,11 @@ watch(
 						:href="`${ articlesUrl }&tag=${ record.id }`"
 						:aria-label="
 							sprintf(
-								/* translators: %d: number of articles. */
-								__( 'Articles: %d', 'licensio-knowledge-base' ),
+								/* translators: %d: number of published articles. */
+								__(
+									'Published articles: %d',
+									'licensio-knowledge-base'
+								),
 								record.count
 							)
 						"
