@@ -520,7 +520,13 @@ test.describe( 'Categories app', () => {
 
 		const form = categoryForm( page );
 		const inline = form.getByLabel( 'SVG or Base64 image' );
-		const dashicon = form.getByLabel( 'Dashicon name' );
+		const dashicon = form.getByLabel( 'Choose a Dashicon' );
+		const picked = form.locator(
+			'.lkb-icon-field__picker .ant-select-selection-item'
+		);
+		const options = page.locator(
+			'.lkb-icon-field__popup .ant-select-item-option'
+		);
 		const upload = form.getByRole( 'button', {
 			name: 'Icon file: Select',
 		} );
@@ -535,7 +541,10 @@ test.describe( 'Categories app', () => {
 
 		await form.getByText( 'Dashicon', { exact: true } ).click();
 		await expect( dashicon ).toBeVisible();
-		await expect( dashicon ).toHaveValue( 'dashicons-book-alt' );
+		await expect( picked ).toHaveText( 'book-alt' );
+		await expect(
+			form.locator( '.lkb-icon-field__glyph.dashicons-book-alt' )
+		).toBeVisible();
 		await expect( inline ).toHaveCount( 0 );
 		await expect( upload ).toHaveCount( 0 );
 
@@ -545,7 +554,20 @@ test.describe( 'Categories app', () => {
 		await expect( dashicon ).toHaveCount( 0 );
 
 		await form.getByText( 'Dashicon', { exact: true } ).click();
-		await dashicon.fill( 'dashicons-lock' );
+
+		// The picker searches core's Dashicons by name and shows each glyph.
+		await form.locator( '.lkb-icon-field__picker' ).click();
+		await dashicon.fill( 'Book' );
+		await expect(
+			options.and( page.getByTitle( 'book-alt', { exact: true } ) )
+		).toBeVisible();
+		await expect( options.locator( '.dashicons-book-alt' ) ).toBeAttached();
+		await expect(
+			options.and( page.getByTitle( 'lock', { exact: true } ) )
+		).toHaveCount( 0 );
+		await dashicon.fill( 'lock' );
+		await options.and( page.getByTitle( 'lock', { exact: true } ) ).click();
+		await expect( picked ).toHaveText( 'lock' );
 		await form.getByRole( 'button', { name: 'Update' } ).click();
 		await expect( page.locator( '.ant-message' ) ).toContainText(
 			'Category saved.'

@@ -4,7 +4,8 @@
  *
  * - Upload: an image or SVG file from the media library.
  * - Inline: pasted SVG markup, or a Base64 image (`data:image/…;base64,…`).
- * - Dashicon: a Dashicons name, previewed as the glyph.
+ * - Dashicon: picked from a searchable list of core's Dashicons, each shown
+ *   as its glyph, and previewed beside the field.
  *
  * The form keeps only the picked source and clears the others on save, so
  * no hidden icon is left to win. The inline value is edited and shown as
@@ -16,6 +17,7 @@
 
 import { computed } from 'vue';
 import { __ } from '../../components/i18n';
+import { DASHICONS } from '../dashicons';
 import type { IconSource } from '../icon';
 import MediaField from './MediaField.vue';
 
@@ -61,6 +63,35 @@ const sources = computed( () => [
 ] );
 
 const dashicon = computed( () => props.icon.trim() );
+
+/** The picker's options: every core Dashicon, by its full class name. */
+const dashiconOptions = DASHICONS.map( ( name ) => ( {
+	value: `dashicons-${ name }`,
+	label: name,
+} ) );
+
+/**
+ * Whether a Dashicon option matches what was typed in the picker.
+ *
+ * Matches anywhere in the name, ignoring case and the `dashicons-` prefix, so
+ * "book", "Book" and "dashicons-book" all find `dashicons-book-alt`.
+ *
+ * @since 1.0.0
+ *
+ * @param {string} input        What was typed.
+ * @param {Object} option       The option.
+ * @param {string} option.label The name without the prefix.
+ *
+ * @return {boolean} Whether the option is shown.
+ */
+function matchDashicon( input: string, option: { label: string } ): boolean {
+	const typed = input
+		.trim()
+		.toLowerCase()
+		.replace( /^dashicons-/, '' );
+
+	return option.label.includes( typed );
+}
 
 const iconLooksWrong = computed(
 	() => '' !== dashicon.value && ! DASHICON.test( dashicon.value )
@@ -179,7 +210,7 @@ const inlinePreview = computed( () => {
 
 		<a-form-item
 			v-else
-			:label="__( 'Dashicon name', 'licensio-knowledge-base' )"
+			:label="__( 'Choose a Dashicon', 'licensio-knowledge-base' )"
 			html-for="lkb-category-icon"
 			:validate-status="
 				props.errors.icon
@@ -199,20 +230,45 @@ const inlinePreview = computed( () => {
 			"
 			:extra="
 				__(
-					'For example dashicons-book-alt. Browse the names at developer.wordpress.org/resource/dashicons.',
+					'Type to search the icons by name, for example book or admin.',
 					'licensio-knowledge-base'
 				)
 			"
 		>
 			<div class="lkb-icon-field__inline">
-				<a-input
+				<a-select
 					id="lkb-category-icon"
-					:value="props.icon"
-					placeholder="dashicons-book-alt"
-					@update:value="
-						( value: string ) => emit( 'update:icon', value )
+					class="lkb-icon-field__picker"
+					:value="'' === dashicon ? undefined : dashicon"
+					:options="dashiconOptions"
+					show-search
+					allow-clear
+					:filter-option="matchDashicon"
+					:placeholder="
+						__( 'Search Dashicons', 'licensio-knowledge-base' )
 					"
-				/>
+					:not-found-content="
+						__(
+							'No Dashicon matches that name.',
+							'licensio-knowledge-base'
+						)
+					"
+					popup-class-name="lkb-icon-field__popup"
+					@update:value="
+						( value: string | undefined ) =>
+							emit( 'update:icon', value ?? '' )
+					"
+				>
+					<template #option="{ value, label }">
+						<span class="lkb-icon-field__option">
+							<span
+								:class="[ 'dashicons', value ]"
+								aria-hidden="true"
+							/>
+							{{ label }}
+						</span>
+					</template>
+				</a-select>
 				<span
 					v-if="'' !== dashicon && ! iconLooksWrong"
 					:class="[ 'lkb-icon-field__glyph', 'dashicons', dashicon ]"
@@ -257,11 +313,29 @@ const inlinePreview = computed( () => {
 	background: var( --lkb-sunken );
 }
 
+.lkb-icon-field__picker {
+	flex: 1;
+	min-width: 0;
+}
+
 .lkb-icon-field__glyph {
 	flex: none;
 	width: 32px;
 	height: 32px;
 	font-size: 32px;
 	color: var( --lkb-ink );
+}
+</style>
+
+<style>
+/* The picker's list renders outside the form, so it is styled unscoped. */
+.lkb-icon-field__option {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.lkb-icon-field__option .dashicons {
+	color: var( --lkb-ink-muted );
 }
 </style>
