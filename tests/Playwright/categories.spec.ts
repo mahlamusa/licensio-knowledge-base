@@ -554,6 +554,8 @@ test.describe( 'Categories app', () => {
 				'<svg viewBox="0 0 1 1"><script>alert(1)</script><path class="e2e-icon" d="M0 0h1v1z"/></svg>',
 			],
 		] ) {
+			// A fresh page each time, so only this category's menu is in the DOM.
+			await page.reload();
 			await act( page, name, 'Edit' );
 
 			const drawer = page.locator( '.ant-drawer-content' );
