@@ -28,6 +28,7 @@
 import { expect, test, type Page, type Request } from '@playwright/test';
 import {
 	answerConfirm,
+	confirmDialog,
 	contentManagerUrl,
 	expectNoConfirmDialog,
 	openContentManager,
@@ -1165,40 +1166,43 @@ test.describe( 'Categories app', () => {
 			.click();
 		expect( await paneTitles( page ) ).toEqual( moved );
 
-		const asked: string[] = [];
+		const question = confirmDialog( page );
+		const title = 'Discard the unsaved article order?';
 
-		page.on( 'dialog', async ( dialog ) => {
-			asked.push( `${ dialog.type() }: ${ dialog.message() }` );
-			await dialog.dismiss();
-		} );
-
-		const question =
-			'confirm: The article order has unsaved changes. Discard them?';
-
-		// Another category, the selected one again, and a merge each ask first.
+		// Another category, the selected one again, and a merge each ask
+		// first, in the centred dialog; No keeps the order.
 		await node( page, 'Beta' ).locator( '.lkb-tree__name' ).click();
-		await expect.poll( () => asked ).toEqual( [ question ] );
+		await expect( question ).toContainText( title );
+		await answerConfirm( page, 'cancel' );
 		await node( page, 'Alpha' ).locator( '.lkb-tree__name' ).click();
-		await expect.poll( () => asked ).toHaveLength( 2 );
+		await expect( question ).toContainText( title );
+		await answerConfirm( page, 'cancel' );
 		await act( page, 'Beta', 'Merge…' );
-		await expect
-			.poll( () => asked )
-			.toEqual( [ question, question, question ] );
-		await expect( page.locator( '.ant-modal-content' ) ).toHaveCount( 0 );
+		await expect( question ).toContainText( title );
+		await answerConfirm( page, 'cancel' );
+		await expect(
+			page.locator( '.lkb-merge-dialog .ant-modal-content' )
+		).toBeHidden();
 
 		await expect( pane ).toContainText( 'Articles in “Alpha”' );
 		expect( await paneTitles( page ) ).toEqual( moved );
 
-		// Leaving the page brings up the browser's leave warning.
+		// Leaving the page still brings up the browser's leave warning.
+		const asked: string[] = [];
+
+		page.on( 'dialog', async ( dialog ) => {
+			asked.push( dialog.type() );
+			await dialog.dismiss();
+		} );
 		await node( page, 'Beta' ).locator( '.lkb-tree__count' ).click();
-		await expect.poll( () => asked[ 3 ] ?? '' ).toMatch( /^beforeunload/ );
+		await expect.poll( () => asked[ 0 ] ?? '' ).toBe( 'beforeunload' );
 		await expect( page ).toHaveURL( /page=licensio-kb-categories/ );
 		expect( await paneTitles( page ) ).toEqual( moved );
+		page.removeAllListeners( 'dialog' );
 
 		// Agreeing drops the order and selects the other category.
-		page.removeAllListeners( 'dialog' );
-		page.once( 'dialog', ( dialog ) => dialog.accept() );
 		await node( page, 'Beta' ).locator( '.lkb-tree__name' ).click();
+		await answerConfirm( page, 'confirm' );
 		await expect( pane ).toContainText( 'Articles in “Beta”' );
 	} );
 

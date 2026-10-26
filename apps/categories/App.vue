@@ -129,8 +129,10 @@ async function onAction(
 	// A merge or delete can move articles and reload the order pane.
 	if (
 		( 'merge' === action || 'delete' === action ) &&
-		! store.confirmDiscardOrder()
+		! ( await store.confirmDiscardOrder() )
 	) {
+		returnTo = item.id;
+		restoreFocus();
 		return;
 	}
 
