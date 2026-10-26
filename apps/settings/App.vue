@@ -26,7 +26,6 @@ const activeGroup = ref( '' );
 const confirmingReset = ref( false );
 
 const groups = computed( () => store.schema );
-const blocks = computed( () => store.categoryBlocks );
 
 const activeGroupObject = computed(
 	() =>

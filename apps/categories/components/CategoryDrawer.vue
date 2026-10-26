@@ -102,7 +102,7 @@ function trapFocus( event: KeyboardEvent ): void {
 	const panel = document.querySelector< HTMLElement >(
 		'.lkb-category-drawer .ant-drawer-content-wrapper'
 	);
-	const active = document.activeElement;
+	const active = panel?.ownerDocument.activeElement ?? null;
 
 	if ( 'Tab' !== event.key || ! panel || ! panel.contains( active ) ) {
 		return;
@@ -165,7 +165,8 @@ function onAfterOpenChange( open: boolean ): void {
 		return;
 	}
 
-	const active = document.activeElement;
+	const name = document.getElementById( 'lkb-category-name' );
+	const active = name?.ownerDocument.activeElement;
 
 	if (
 		active?.closest( '.lkb-category-drawer' ) &&
@@ -174,7 +175,7 @@ function onAfterOpenChange( open: boolean ): void {
 		return;
 	}
 
-	document.getElementById( 'lkb-category-name' )?.focus();
+	name?.focus();
 }
 
 /**

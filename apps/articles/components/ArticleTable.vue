@@ -127,9 +127,10 @@ function feedbackUrl( id: number ): string {
  *
  * @since 1.0.0
  *
- * @param {Object}  pagination The table pagination.
- * @param {unknown} filters    Unused column filters.
- * @param {Object}  sorter     The sorted column.
+ * @param {Object}  pagination           The table pagination.
+ * @param {number}  [pagination.current] The page now shown.
+ * @param {unknown} filters              Unused column filters.
+ * @param {Object}  sorter               The sorted column.
  *
  * @return {void}
  */

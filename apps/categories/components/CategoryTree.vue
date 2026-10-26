@@ -178,7 +178,10 @@ function onSelect( keys: Array< string | number > ): void {
  *
  * @since 1.0.0
  *
- * @param {Object} node The slot's node data.
+ * @param {Object}       node                The slot's node data.
+ * @param {CategoryItem} [node.item]         The category, on a plain node.
+ * @param {Object}       [node.dataRef]      The source data, on a tree node.
+ * @param {CategoryItem} [node.dataRef.item] The category, on a tree node.
  *
  * @return {CategoryItem} The category.
  */
@@ -555,7 +558,9 @@ function onMenuKey( event: KeyboardEvent, id: number ): void {
 	}
 
 	const items = menuItems();
-	const at = items.indexOf( document.activeElement as HTMLElement );
+	const at = items.indexOf(
+		items[ 0 ]?.ownerDocument.activeElement as HTMLElement
+	);
 	const next: Record< string, number > = {
 		ArrowDown: ( at + 1 ) % items.length,
 		ArrowUp: ( at - 1 + items.length ) % items.length,

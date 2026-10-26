@@ -90,13 +90,13 @@ async function selectSafeSource( root: Locator ): Promise< string > {
 	const labels = await cards.locator( 'strong' ).allInnerTexts();
 	const order = labels
 		.map( ( label, index ) => ( { label, index } ) )
-		.sort( ( a, b ) =>
-			'BetterDocs' === a.label
-				? -1
-				: 'BetterDocs' === b.label
-				? 1
-				: a.index - b.index
-		);
+		.sort( ( a, b ) => {
+			if ( 'BetterDocs' === a.label ) {
+				return -1;
+			}
+
+			return 'BetterDocs' === b.label ? 1 : a.index - b.index;
+		} );
 
 	for ( const { label, index } of order ) {
 		await cards.nth( index ).locator( 'input[type="radio"]' ).check();

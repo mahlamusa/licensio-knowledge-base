@@ -334,7 +334,8 @@ async function clear( everything: boolean ): Promise< void > {
  *
  * @since 1.0.0
  *
- * @param {{current?: number}} pagination The table's pagination state.
+ * @param {Object} pagination           The table's pagination state.
+ * @param {number} [pagination.current] The page now shown.
  *
  * @return {void}
  */

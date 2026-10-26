@@ -129,9 +129,10 @@ const columns = computed( () => [
  *
  * @since 1.0.0
  *
- * @param {Object}  pagination The table's pagination.
- * @param {unknown} filters    The table's filters, unused.
- * @param {Object}  sorter     The table's sorter.
+ * @param {Object}  pagination           The table's pagination.
+ * @param {number}  [pagination.current] The page now shown.
+ * @param {unknown} filters              The table's filters, unused.
+ * @param {Object}  sorter               The table's sorter.
  *
  * @return {void}
  */
