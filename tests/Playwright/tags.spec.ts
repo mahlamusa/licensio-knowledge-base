@@ -10,7 +10,9 @@
  * its error inside the dialog and clears it on a retry, and that focus lands on the page title
  * once a bulk delete takes the Delete button away. Edit loads a tag into the
  * left form as Edit Tag; Update, Cancel and Escape return it to Add New Tag,
- * and Escape closes a Quick edit, sending nothing. The form and the list sit
+ * and Escape closes a Quick edit, sending nothing. Unsaved changes in the
+ * form are only dropped once confirmed, a deleted tag leaves the form, and
+ * `?term=` loads a tag into it. The form and the list sit
  * side by side on a desktop and stack, form first, on a phone. The category
  * the convert creates is deleted again through the core REST API.
  *

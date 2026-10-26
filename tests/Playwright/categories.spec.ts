@@ -9,7 +9,10 @@
  * first field, delete with reassignment, merge, the article order pane
  * against the live order routes (a drag saved and shown on the category
  * archive, and a saved first page of a long list), and the layout: form left
- * of the tree and article order on a desktop, above them on a phone. Creating, saving and moving are not confirmed; deleting, merging
+ * of the tree and article order on a desktop, above them on a phone. Update
+ * keeps a move made while the form was open, unsaved form changes are only
+ * dropped once confirmed, a deleted category leaves the form, and `?term=`
+ * loads a category into it. Creating, saving and moving are not confirmed; deleting, merging
  * and discarding an unsaved order are, and a cancelled one sends nothing.
  *
  * The slug the app makes from a name is also compared with core's
