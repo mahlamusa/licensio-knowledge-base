@@ -21,7 +21,7 @@
  */
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { cancelPopconfirm, openPopconfirm } from './helpers/content-manager';
+import { answerConfirm, confirmDialog } from './helpers/content-manager';
 import { logIn, password, user } from './helpers/session';
 
 const enabled = process.env.LICENSIO_KB_E2E === '1';
@@ -227,10 +227,10 @@ test.describe( 'Migration wizard', () => {
 		await root
 			.getByRole( 'button', { name: 'Skip the dry run and import' } )
 			.click();
-		await expect( openPopconfirm( page ) ).toContainText(
+		await expect( confirmDialog( page ) ).toContainText(
 			'Run the import now, without a dry run first?'
 		);
-		await cancelPopconfirm( page );
+		await answerConfirm( page, 'cancel' );
 		await expect(
 			root.getByRole( 'button', { name: 'Start dry run' } )
 		).toBeVisible();
@@ -259,10 +259,10 @@ test.describe( 'Migration wizard', () => {
 		await root
 			.getByRole( 'button', { name: 'Looks good, run the import' } )
 			.click();
-		await expect( openPopconfirm( page ) ).toContainText(
+		await expect( confirmDialog( page ) ).toContainText(
 			'Run the import now?'
 		);
-		await cancelPopconfirm( page );
+		await answerConfirm( page, 'cancel' );
 		await expect(
 			root.getByRole( 'heading', { name: 'Verifying import (dry run)' } )
 		).toBeVisible();

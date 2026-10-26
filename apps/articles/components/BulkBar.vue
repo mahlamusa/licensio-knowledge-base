@@ -383,7 +383,7 @@ watch( inTrash, () => {
 					:danger="'delete' === choice"
 					:disabled="! request || store.bulk.running"
 					:loading="store.bulk.running"
-					@confirm="apply"
+					@confirm="void apply()"
 				>
 					{{ __( 'Apply', 'licensio-knowledge-base' ) }}
 				</ConfirmButton>

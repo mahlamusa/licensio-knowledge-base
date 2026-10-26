@@ -4,7 +4,7 @@
  * Holds the filters, sort, page and selection, and is the only place that
  * talks to the API. Every write re-reads the page, so counts and the list stay
  * true to the server. Writes are only ever called after the user confirmed
- * them in a Popconfirm.
+ * them in a confirmation dialog.
  *
  * The page opens with the `search` and `term` query arguments the core tag
  * screens redirect with: `search` fills the search box, and `term` shows that

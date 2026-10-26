@@ -113,7 +113,7 @@ useEscapeClose(
 /**
  * Keep Tab and Shift+Tab inside the open drawer.
  *
- * Only acts while focus is in the drawer, so an open Popconfirm, which Ant
+ * Only acts while focus is in the drawer, so a dialog or popover, which Ant
  * Design renders elsewhere in the page, keeps its own tab order.
  *
  * @since 1.0.0

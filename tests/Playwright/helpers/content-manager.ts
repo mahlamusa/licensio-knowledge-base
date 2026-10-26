@@ -7,12 +7,14 @@
  * `Licensio_KB_Content_Manager` (ARTICLES_SLUG, CATEGORIES_SLUG, TAGS_SLUG).
  *
  * Each app mounts into `#licensio-kb-{app}` and renders the shared shell, whose
- * main region is `#lkb-main`. Every change goes through a Popconfirm
- * (`ConfirmButton`), which the two Popconfirm helpers answer.
+ * main region is `#lkb-main`. Destructive and bulk actions ask first in a
+ * centred confirmation dialog (`ConfirmButton`), which `confirmDialog()`
+ * finds and `answerConfirm()` answers in every app.
  *
  * Specs import from here; this folder holds no specs of its own.
  *
- * Consumed by the articles, categories and tags browser tests.
+ * Consumed by the articles, categories, tags, feedback, settings and tools
+ * browser tests.
  *
  * @since 1.0.0
  */
@@ -84,65 +86,55 @@ export async function openContentManager(
 }
 
 /**
- * The Popconfirm that is open now.
+ * The confirmation dialog that is open now.
  *
  * @since 1.0.0
  *
  * @param {Page} page The browser page.
  *
- * @return {Locator} The open Popconfirm.
+ * @return {Locator} The open dialog.
  */
-export function openPopconfirm( page: Page ): Locator {
-	return page.locator( '.ant-popconfirm:not(.ant-popover-hidden)' ).last();
+export function confirmDialog( page: Page ): Locator {
+	return page.getByRole( 'alertdialog' );
 }
 
 /**
- * Check that no Popconfirm is showing, for an action that runs on click.
+ * Check that no confirmation dialog is showing, for an action that runs on
+ * click.
  *
  * @since 1.0.0
  *
  * @param {Page} page The browser page.
  *
- * @return {Promise<void>} Resolves once no Popconfirm is visible.
+ * @return {Promise<void>} Resolves once no dialog is visible.
  */
-export async function expectNoPopconfirm( page: Page ): Promise< void > {
-	await expect( page.locator( '.ant-popconfirm:visible' ) ).toHaveCount( 0 );
+export async function expectNoConfirmDialog( page: Page ): Promise< void > {
+	await expect( confirmDialog( page ) ).toHaveCount( 0 );
 }
 
 /**
- * Answer the open Popconfirm with its confirm button.
+ * Answer the open confirmation dialog and wait for it to close.
  *
  * @since 1.0.0
  *
- * @param {Page} page The browser page.
+ * @param {Page}                 page   The browser page.
+ * @param {'confirm' | 'cancel'} answer Which button to press.
  *
- * @return {Promise<void>} Resolves once the Popconfirm has closed.
+ * @return {Promise<void>} Resolves once the dialog has closed.
  */
-export async function confirmPopconfirm( page: Page ): Promise< void > {
-	const popconfirm = openPopconfirm( page );
+export async function answerConfirm(
+	page: Page,
+	answer: 'confirm' | 'cancel'
+): Promise< void > {
+	const dialog = confirmDialog( page );
 
-	await expect( popconfirm ).toBeVisible();
-	await popconfirm
-		.locator( '.ant-popconfirm-buttons button.ant-btn-primary' )
+	await expect( dialog ).toBeVisible();
+	await dialog
+		.locator(
+			'confirm' === answer
+				? '.ant-modal-footer .ant-btn-primary'
+				: '.ant-modal-footer .ant-btn:not(.ant-btn-primary)'
+		)
 		.click();
-	await expect( popconfirm ).toBeHidden();
-}
-
-/**
- * Answer the open Popconfirm with its cancel button.
- *
- * @since 1.0.0
- *
- * @param {Page} page The browser page.
- *
- * @return {Promise<void>} Resolves once the Popconfirm has closed.
- */
-export async function cancelPopconfirm( page: Page ): Promise< void > {
-	const popconfirm = openPopconfirm( page );
-
-	await expect( popconfirm ).toBeVisible();
-	await popconfirm
-		.locator( '.ant-popconfirm-buttons button:not(.ant-btn-primary)' )
-		.click();
-	await expect( popconfirm ).toBeHidden();
+	await expect( dialog ).toBeHidden();
 }

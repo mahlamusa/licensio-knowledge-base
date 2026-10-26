@@ -7,8 +7,8 @@
  * the category that already has its slug or the parent's child that already
  * has its name, and its articles are kept. Once done, each tag that joined an
  * existing category is named with that category, since it may sit somewhere
- * other than the chosen parent. The conversion is sent from the Popconfirm of
- * the Convert button, so closing the dialog or cancelling the Popconfirm sends
+ * other than the chosen parent. The conversion is sent from the confirmation of
+ * the Convert button, so closing the dialog or cancelling the confirmation sends
  * nothing. A failed conversion shows its error inside the dialog.
  *
  * @since 1.0.0
