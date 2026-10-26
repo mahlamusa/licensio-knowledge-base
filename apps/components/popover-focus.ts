@@ -1,9 +1,9 @@
 /**
- * Keyboard access for a click-opened Ant Design popover or Popconfirm.
+ * Keyboard access for a click-opened Ant Design popover.
  *
  * Ant Design renders the overlay at the end of the page and leaves focus on
- * the trigger, so a keyboard user cannot tab into it, and only a Popconfirm
- * closes on Escape, and only while focus is still on its trigger. Bound to
+ * the trigger, so a keyboard user cannot tab into it, and it does not close
+ * on Escape. Bound to
  * the overlay, this moves focus to the first control in it when it opens,
  * and closes it on Escape from anywhere, putting focus back where it was.
  * Escape on an open select or date picker inside the overlay closes that
@@ -20,9 +20,9 @@
  *         v-on:open-change="setOpen"
  *     >
  *
- * Consumed by the articles app's filters and columns popovers and the
- * category tree's move Popconfirm. Confirmations no longer use it:
- * ConfirmButton opens a modal dialog, which traps focus itself. `FOCUSABLE`
+ * Consumed by the articles app's filters and columns popovers.
+ * Confirmations do not use it: ConfirmButton opens a modal dialog, which
+ * traps focus itself. `FOCUSABLE`
  * is shared with the category drawer's focus trap. `useEscapeClose()` applies
  * the same rule for open selects to a drawer or dialog.
  *

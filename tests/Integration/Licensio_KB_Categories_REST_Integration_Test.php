@@ -451,6 +451,60 @@ class Licensio_KB_Categories_REST_Integration_Test extends Licensio_KB_Analytics
     }
 
     /**
+     * Saving the picked icon source clears the others in the database.
+     *
+     * The app sends every icon field on save, empty for the sources not
+     * picked. A Base64 image is stored as checked, and a Base64 SVG lands in
+     * the SVG field decoded and sanitised.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_saving_one_icon_source_clears_the_others() {
+        $id  = $this->ids['Billing'];
+        $png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+
+        $this->live_update_term_meta( $id, 'licensio_icon', 'dashicons-money' );
+        $this->live_update_term_meta( $id, 'licensio_icon_svg', '<svg viewBox="0 0 24 24"><path d="M4 4h16"/></svg>' );
+
+        $updated = $this->controller->update_item(
+            $this->request(
+                array(
+                    'id'        => $id,
+                    'icon'      => '',
+                    'icon_id'   => 0,
+                    'icon_svg'  => '',
+                    'icon_data' => Licensio_KB_Categories_REST_Controller::sanitize_icon_data_arg( $png ),
+                )
+            )
+        );
+
+        $this->assertSame( '', $this->live_get_term_meta( $id, 'licensio_icon' ) );
+        $this->assertSame( '', $this->live_get_term_meta( $id, 'licensio_icon_svg' ) );
+        $this->assertSame( '0', (string) $this->live_get_term_meta( $id, 'licensio_icon_id' ) );
+        $this->assertSame( $png, $this->live_get_term_meta( $id, 'licensio_icon_data' ) );
+        $this->assertSame( $png, $updated['icon_data'] );
+        $this->assertSame( '', $updated['icon_svg'] );
+
+        $updated = $this->controller->update_item(
+            $this->request(
+                array(
+                    'id'        => $id,
+                    'icon'      => '',
+                    'icon_id'   => 0,
+                    'icon_svg'  => Licensio_KB_Categories_REST_Controller::sanitize_icon_svg_arg( 'data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMjQgMjQiPjxwYXRoIGQ9Ik00IDRoMTYiLz48L3N2Zz4=' ),
+                    'icon_data' => '',
+                )
+            )
+        );
+
+        $this->assertSame( '', $this->live_get_term_meta( $id, 'licensio_icon_data' ) );
+        $this->assertSame( '<svg viewBox="0 0 24 24"><path d="M4 4h16"/></svg>', $this->live_get_term_meta( $id, 'licensio_icon_svg' ) );
+        $this->assertSame( '', $updated['icon_data'] );
+    }
+
+    /**
      * A name with `&` is stored encoded, as core does, and answered as plain text.
      *
      * @since 1.0.0

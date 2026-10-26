@@ -9,6 +9,8 @@
  * @since   1.0.0
  */
 
+// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions -- The tests build the Base64 icons they check.
+
 use Brain\Monkey\Functions;
 
 /**
@@ -99,7 +101,7 @@ class Licensio_KB_Term_Meta_Test extends Licensio_KB_Test_Case {
         $term_meta = new Licensio_KB_Term_Meta();
         $term_meta->register_meta();
 
-        $expected = array( 'licensio_icon', 'licensio_icon_id', 'licensio_icon_svg', 'licensio_image_id', 'licensio_order' );
+        $expected = array( 'licensio_icon', 'licensio_icon_id', 'licensio_icon_svg', 'licensio_icon_data', 'licensio_image_id', 'licensio_order' );
 
         $this->assertSame( $expected, array_keys( $this->registered ) );
 
@@ -140,7 +142,7 @@ class Licensio_KB_Term_Meta_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * The SVG key is registered with the SVG sanitizer, not something weaker.
+     * The SVG key is registered with the SVG sanitizer wrapper, not something weaker.
      *
      * The generic "every key has a sanitize callback" assertion above is
      * satisfied by any callable, including one that returns its argument. This
@@ -157,8 +159,87 @@ class Licensio_KB_Term_Meta_Test extends Licensio_KB_Test_Case {
         $term_meta->register_meta();
 
         $this->assertSame(
-            array( 'Licensio_KB_SVG_Sanitizer', 'sanitize' ),
+            array( 'Licensio_KB_Term_Meta', 'sanitize_icon_svg' ),
             $this->registered['licensio_icon_svg']['args']['sanitize_callback']
+        );
+        $this->assertSame(
+            array( 'Licensio_KB_Term_Meta', 'sanitize_icon_data' ),
+            $this->registered['licensio_icon_data']['args']['sanitize_callback']
+        );
+    }
+
+    /**
+     * A Base64 SVG is decoded and goes through the SVG sanitizer.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_base64_svg_is_decoded_and_sanitized() {
+        $svg = '<svg viewBox="0 0 24 24" onload="alert(1)"><script>alert(2)</script><path d="M4 4h16"/></svg>';
+
+        $this->assertSame(
+            '<svg viewBox="0 0 24 24"><path d="M4 4h16"/></svg>',
+            Licensio_KB_Term_Meta::sanitize_icon_svg( 'data:image/svg+xml;base64,' . base64_encode( $svg ) )
+        );
+        $this->assertSame(
+            '<svg viewBox="0 0 24 24"><path d="M4 4h16"/></svg>',
+            Licensio_KB_Term_Meta::sanitize_icon_svg( $svg ),
+            'Markup is sanitized as before.'
+        );
+        $this->assertSame( '', Licensio_KB_Term_Meta::sanitize_icon_svg( 'data:image/svg+xml;base64,' . base64_encode( '<script>alert(1)</script>' ) ) );
+        $this->assertSame( '', Licensio_KB_Term_Meta::sanitize_icon_svg( 'data:image/svg+xml;base64,not base64!' ) );
+        $this->assertSame( '', Licensio_KB_Term_Meta::sanitize_icon_svg( array( $svg ) ) );
+    }
+
+    /**
+     * Only a real PNG, JPEG, GIF or WebP within the size cap is kept as a Base64 icon.
+     *
+     * @since 1.0.0
+     *
+     * @dataProvider provide_icon_data
+     *
+     * @param mixed  $input    The raw value.
+     * @param string $expected The stored value.
+     *
+     * @return void
+     */
+    public function test_a_base64_icon_is_reduced_to_an_allowed_image( $input, $expected ) {
+        $this->assertSame( $expected, Licensio_KB_Term_Meta::sanitize_icon_data( $input ) );
+    }
+
+    /**
+     * Base64 icon values and what is kept of them.
+     *
+     * @since 1.0.0
+     *
+     * @return array<string, array{0: mixed, 1: string}> Input and expected output.
+     */
+    public static function provide_icon_data() {
+        $png  = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+        $gif  = 'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+        $webp = 'UklGRhoAAABXRUJQVlA4TA0AAAAvAAAAEAcQERGIiP4HAA==';
+        $jpeg = '/9j/wAARCAABAAEDASIAAhEBAxEBAP/Z';
+        $big  = base64_encode( base64_decode( $png ) . str_repeat( "\0", Licensio_KB_Term_Meta::ICON_DATA_MAX_BYTES ) );
+
+        return array(
+            'a png'                   => array( 'data:image/png;base64,' . $png, 'data:image/png;base64,' . $png ),
+            'a gif'                   => array( 'data:image/gif;base64,' . $gif, 'data:image/gif;base64,' . $gif ),
+            'a webp'                  => array( 'data:image/webp;base64,' . $webp, 'data:image/webp;base64,' . $webp ),
+            'a jpeg'                  => array( 'data:image/jpeg;base64,' . $jpeg, 'data:image/jpeg;base64,' . $jpeg ),
+            'a jpeg labelled as jpg'  => array( 'data:image/jpg;base64,' . $jpeg, 'data:image/jpeg;base64,' . $jpeg ),
+            'a png labelled as jpg'   => array( 'data:image/jpg;base64,' . $png, 'data:image/png;base64,' . $png ),
+            'wrapped base64'          => array( " data:image/png;base64,\n" . chunk_split( $png, 20, "\n" ), 'data:image/png;base64,' . $png ),
+            'a png labelled as a gif' => array( 'data:image/gif;base64,' . $png, 'data:image/png;base64,' . $png ),
+            'an svg'                  => array( 'data:image/svg+xml;base64,' . base64_encode( '<svg/>' ), '' ),
+            'html labelled as a png'  => array( 'data:image/png;base64,' . base64_encode( '<script>alert(1)</script>' ), '' ),
+            'not base64'              => array( 'data:image/png;base64,***', '' ),
+            'not base64 encoded'      => array( 'data:image/png,' . $png, '' ),
+            'a url'                   => array( 'https://example.com/icon.png', '' ),
+            'javascript'              => array( 'javascript:alert(1)', '' ),
+            'too large'               => array( 'data:image/png;base64,' . $big, '' ),
+            'empty'                   => array( '', '' ),
+            'an array'                => array( array( 'data:image/png;base64,' . $png ), '' ),
         );
     }
 
@@ -280,15 +361,17 @@ class Licensio_KB_Term_Meta_Test extends Licensio_KB_Test_Case {
      * WP-CLI, a hand-edited row — so a consumer must not have to trust what is
      * in the table.
      *
-     * @since 1.0.0 Added the inline SVG icon key.
+     * @since 1.0.0 Added the inline SVG and Base64 icon keys.
      *
      * @return void
      */
     public function test_reads_are_sanitized_too() {
-        $this->meta['9|licensio_icon']     = 'dashicons-book" onload="alert(1)';
-        $this->meta['9|licensio_order']    = '-4';
-        $this->meta['9|licensio_icon_svg'] = '<svg viewBox="0 0 24 24" onload="alert(1)"><script>alert(2)</script><path d="M4 4h16"/></svg>';
+        $this->meta['9|licensio_icon']      = 'dashicons-book" onload="alert(1)';
+        $this->meta['9|licensio_order']     = '-4';
+        $this->meta['9|licensio_icon_svg']  = '<svg viewBox="0 0 24 24" onload="alert(1)"><script>alert(2)</script><path d="M4 4h16"/></svg>';
+        $this->meta['9|licensio_icon_data'] = 'data:image/png;base64,' . base64_encode( '"><script>alert(1)</script>' );
 
+        $this->assertSame( '', Licensio_KB_Term_Meta::get_icon_data( 9 ), 'A Base64 icon that is not an image is not answered.' );
         $this->assertSame( '', Licensio_KB_Term_Meta::get_icon( 9 ) );
         $this->assertSame( 0, Licensio_KB_Term_Meta::get_order( 9 ) );
         $this->assertSame(

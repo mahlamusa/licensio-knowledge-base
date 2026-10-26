@@ -2,15 +2,14 @@
 /**
  * The "Move to…" dialog: the keyboard way to give a category a new parent.
  *
- * The category goes to the end of the new parent's children. The move is a
- * `ConfirmButton`; nothing is sent before the user confirms.
+ * The category goes to the end of the new parent's children. A move is not
+ * destructive, so it is sent when the user clicks Move, with no confirmation.
  *
  * @since 1.0.0
  */
 
 import { computed, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
-import ConfirmButton from '../../components/ConfirmButton.vue';
 import TermSelect from '../../components/TermSelect.vue';
 import { useEscapeClose } from '../../components/popover-focus';
 import { __, sprintf } from '../../components/i18n';
@@ -53,25 +52,6 @@ const destination = computed( () =>
 	'top' === where.value ? 0 : parent.value
 );
 
-const confirmTitle = computed( () => {
-	const name = props.category?.name ?? '';
-
-	if ( 0 === destination.value ) {
-		return sprintf(
-			/* translators: %s: category name. */
-			__( 'Move “%s” to the top level?', 'licensio-knowledge-base' ),
-			name
-		);
-	}
-
-	return sprintf(
-		/* translators: 1: category name, 2: new parent category name. */
-		__( 'Move “%1$s” under “%2$s”?', 'licensio-knowledge-base' ),
-		name,
-		store.find( destination.value ?? 0 )?.name ?? ''
-	);
-} );
-
 watch(
 	() => props.open,
 	( open ) => {
@@ -100,7 +80,7 @@ function onParent( value: TermValue | TermValue[] | null ): void {
 }
 
 /**
- * Move the category, after the user confirmed.
+ * Move the category.
  *
  * @since 1.0.0
  *
@@ -187,16 +167,14 @@ async function moveCategory(): Promise< void > {
 				<a-button @click="emit( 'close' )">
 					{{ __( 'Cancel', 'licensio-knowledge-base' ) }}
 				</a-button>
-				<ConfirmButton
+				<a-button
 					type="primary"
-					:title="confirmTitle"
-					:ok-text="__( 'Move', 'licensio-knowledge-base' )"
 					:disabled="null === destination"
 					:loading="saving"
-					@confirm="moveCategory"
+					@click="moveCategory"
 				>
 					{{ __( 'Move', 'licensio-knowledge-base' ) }}
-				</ConfirmButton>
+				</a-button>
 			</div>
 		</template>
 	</a-modal>
