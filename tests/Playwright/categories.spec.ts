@@ -1,13 +1,15 @@
 /**
  * The Categories app, end to end.
  *
- * Drag and drop with Cancel and Confirm, a keyboard move answered with
- * Escape and then Move, the add drawer opening on its Name field unless
- * the user already tabbed on, the merge dialog opening on its first field,
- * delete with reassignment, merge, the article order pane against the live
- * order routes (a drag saved and shown on the category archive, and a saved
- * first page of a long list), and the phone-width layout. Every write must wait for its
- * Popconfirm, and a cancelled one must send nothing.
+ * Drag and drop and keyboard moves saved at once, the add drawer opening on
+ * its Name field unless the user already tabbed on, the icon source switch
+ * and its clearing of the other sources, Base64 and inline SVG icons on the
+ * front end, the slug following the name, the merge dialog opening on its
+ * first field, delete with reassignment, merge, the article order pane
+ * against the live order routes (a drag saved and shown on the category
+ * archive, and a saved first page of a long list), and the phone-width
+ * layout. Creating, saving and moving are not confirmed; deleting, merging
+ * and discarding an unsaved order are, and a cancelled one sends nothing.
  *
  * The suite needs a running WordPress with this plugin active and an
  * administrator account, so it is skipped unless `LICENSIO_KB_E2E=1` and the
@@ -385,7 +387,7 @@ test.describe( 'Categories app', () => {
 		await expect( node( page, 'Gamma child' ) ).toBeVisible();
 	} );
 
-	test( 'a cancelled drop puts the tree back and sends nothing', async ( {
+	test( 'a drop is saved at once and survives a reload', async ( {
 		page,
 	} ) => {
 		const writes = recordWrites( page );
@@ -394,27 +396,11 @@ test.describe( 'Categories app', () => {
 			targetPosition: { x: 60, y: 22 },
 		} );
 
-		await cancelPopconfirm( page );
-
-		expect( await topLevel( page ) ).toEqual( [
-			'Alpha',
-			'Beta',
-			'Gamma',
-		] );
-		expect( writes ).toHaveLength( 0 );
-	} );
-
-	test( 'a confirmed drop is saved and survives a reload', async ( {
-		page,
-	} ) => {
-		await node( page, 'Alpha' ).dragTo( node( page, 'Gamma' ), {
-			targetPosition: { x: 60, y: 22 },
-		} );
-
-		await confirmPopconfirm( page );
 		await expect( page.locator( '.ant-message' ) ).toContainText(
 			'Category moved.'
 		);
+		expect( writes ).toHaveLength( 1 );
+		await expect( page.locator( '.ant-popover:visible' ) ).toHaveCount( 0 );
 
 		const after = await topLevel( page );
 
@@ -432,26 +418,20 @@ test.describe( 'Categories app', () => {
 
 		await node( page, 'Gamma' ).dragTo( node( page, 'Gamma child' ) );
 
-		await expect(
-			page.locator( '.lkb-move-confirm:not(.ant-popover-hidden)' )
-		).toHaveCount( 0 );
-		expect( writes ).toHaveLength( 0 );
-	} );
-
-	test( 'move down from the keyboard menu asks first', async ( { page } ) => {
-		const writes = recordWrites( page );
-
-		await act( page, 'Alpha', 'Move down' );
-		await cancelPopconfirm( page );
 		expect( writes ).toHaveLength( 0 );
 		expect( await topLevel( page ) ).toEqual( [
 			'Alpha',
 			'Beta',
 			'Gamma',
 		] );
+	} );
+
+	test( 'move down from the keyboard menu moves at once', async ( {
+		page,
+	} ) => {
+		const writes = recordWrites( page );
 
 		await act( page, 'Alpha', 'Move down' );
-		await confirmPopconfirm( page );
 		await expect
 			.poll( () => topLevel( page ) )
 			.toEqual( [ 'Beta', 'Alpha', 'Gamma' ] );
@@ -477,6 +457,7 @@ test.describe( 'Categories app', () => {
 		await page.keyboard.press( 'Escape' );
 		await expect( trigger ).toBeFocused();
 		await expect( trigger ).toHaveAttribute( 'aria-expanded', 'false' );
+		expect( writes ).toHaveLength( 0 );
 
 		// Edit, Add child, then Move down (Move up is disabled for the first category).
 		await page.keyboard.press( 'Enter' );
@@ -490,42 +471,169 @@ test.describe( 'Categories app', () => {
 		).toBeFocused();
 		await page.keyboard.press( 'Enter' );
 
-		// The move Popconfirm opens on Cancel, like every other, and Escape cancels it.
-		const confirm = page.locator( '.lkb-move-confirm' );
-
-		await expect(
-			confirm.getByRole( 'button', { name: 'Cancel' } )
-		).toBeFocused();
+		// The move is saved at once and focus goes back to the moved category's button.
 		await expect
 			.poll( () => topLevel( page ) )
 			.toEqual( [ 'Beta', 'Alpha', 'Gamma' ] );
-		await page.keyboard.press( 'Escape' );
-		await expect
-			.poll( () => topLevel( page ) )
-			.toEqual( [ 'Alpha', 'Beta', 'Gamma' ] );
 		await expect( trigger ).toBeFocused();
-		expect( writes ).toHaveLength( 0 );
-
-		await page.keyboard.press( 'Enter' );
-		await expect( edit ).toBeFocused();
-		await page.keyboard.press( 'ArrowDown' );
-		await page.keyboard.press( 'ArrowDown' );
-		await page.keyboard.press( 'Enter' );
-		await expect(
-			confirm.getByRole( 'button', { name: 'Cancel' } )
-		).toBeFocused();
-		await page.keyboard.press( 'Tab' );
-		await expect(
-			confirm.getByRole( 'button', { name: 'Move' } )
-		).toBeFocused();
-		await page.keyboard.press( 'Enter' );
-		await expect
-			.poll( () => topLevel( page ) )
-			.toEqual( [ 'Beta', 'Alpha', 'Gamma' ] );
 		expect( writes ).toHaveLength( 1 );
 	} );
 
-	test( 'the drawer adds a category with a Dashicon and an SVG icon', async ( {
+	test( 'the icon source switch shows only that source and saving clears the others', async ( {
+		page,
+	} ) => {
+		const alpha = await categoryId( page, 'Alpha' );
+
+		// Two sources set, as an import could leave them: the inline SVG wins.
+		await api( page, 'PATCH', `categories/${ alpha }`, {
+			icon: 'dashicons-book-alt',
+			icon_svg: '<svg viewBox="0 0 1 1"><path d="M0 0h1v1z"/></svg>',
+		} );
+		await page.reload();
+		await act( page, 'Alpha', 'Edit' );
+
+		const drawer = page.locator( '.ant-drawer-content' );
+		const inline = drawer.getByLabel( 'SVG or Base64 image' );
+		const dashicon = drawer.getByLabel( 'Dashicon name' );
+		const upload = drawer.getByRole( 'button', {
+			name: 'Icon file: Select',
+		} );
+
+		// It opens on the source the category shows.
+		await expect(
+			drawer.getByRole( 'radio', { name: 'Inline' } )
+		).toBeChecked();
+		await expect( inline ).toHaveValue( /<path/ );
+		await expect( dashicon ).toHaveCount( 0 );
+		await expect( upload ).toHaveCount( 0 );
+
+		await drawer.getByText( 'Dashicon', { exact: true } ).click();
+		await expect( dashicon ).toBeVisible();
+		await expect( dashicon ).toHaveValue( 'dashicons-book-alt' );
+		await expect( inline ).toHaveCount( 0 );
+		await expect( upload ).toHaveCount( 0 );
+
+		await drawer.getByText( 'Upload', { exact: true } ).click();
+		await expect( upload ).toBeVisible();
+		await expect( inline ).toHaveCount( 0 );
+		await expect( dashicon ).toHaveCount( 0 );
+
+		await drawer.getByText( 'Dashicon', { exact: true } ).click();
+		await dashicon.fill( 'dashicons-lock' );
+		await drawer.getByRole( 'button', { name: 'Save' } ).click();
+		await expect( page.locator( '.ant-message' ) ).toContainText(
+			'Category saved.'
+		);
+
+		const items = ( await api( page, 'GET', 'categories' ) ) as Array<
+			Category & {
+				icon: string;
+				icon_id: number;
+				icon_svg: string;
+				icon_data: string;
+			}
+		>;
+		const saved = items.find( ( item ) => alpha === item.id );
+
+		expect( saved?.icon ).toBe( 'dashicons-lock' );
+		expect( saved?.icon_svg ).toBe( '' );
+		expect( saved?.icon_data ).toBe( '' );
+		expect( saved?.icon_id ).toBe( 0 );
+	} );
+
+	test( 'a Base64 image and an inline SVG icon render on the front end', async ( {
+		page,
+	} ) => {
+		const png =
+			'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+
+		for ( const [ name, value ] of [
+			[ 'Alpha', png ],
+			[
+				'Beta',
+				'<svg viewBox="0 0 1 1"><script>alert(1)</script><path class="e2e-icon" d="M0 0h1v1z"/></svg>',
+			],
+		] ) {
+			await act( page, name, 'Edit' );
+
+			const drawer = page.locator( '.ant-drawer-content' );
+
+			await drawer.getByText( 'Inline', { exact: true } ).click();
+			await drawer.getByLabel( 'SVG or Base64 image' ).fill( value );
+			await expect(
+				drawer.locator( '.lkb-icon-field__preview' )
+			).toBeVisible();
+			await drawer.getByRole( 'button', { name: 'Save' } ).click();
+			await expect( drawer ).toBeHidden();
+		}
+
+		const items = ( await api( page, 'GET', 'categories' ) ) as Array<
+			Category & { icon_svg: string; icon_data: string }
+		>;
+
+		expect(
+			items.find( ( item ) => 'Alpha' === item.name )?.icon_data
+		).toBe( png );
+		expect(
+			items.find( ( item ) => 'Beta' === item.name )?.icon_svg
+		).not.toContain( 'script' );
+
+		// The grid hides empty categories, so each gets an article.
+		await makeArticles( page, await categoryId( page, 'Alpha' ), [
+			'E2E order icon A',
+		] );
+		await makeArticles( page, await categoryId( page, 'Beta' ), [
+			'E2E order icon B',
+		] );
+
+		const created = ( await api(
+			page,
+			'POST',
+			'pages',
+			{
+				title: 'E2E category icons',
+				status: 'publish',
+				content:
+					'<!-- wp:licensio-kb/category-grid {"showIcon":true} /-->',
+			},
+			'wp/v2'
+		) ) as { id: number; link: string };
+
+		try {
+			await page.goto( created.link );
+
+			const card = ( name: string ) =>
+				page
+					.locator( '.licensio-kb-card--category' )
+					.filter( { hasText: name } );
+
+			await expect(
+				card( 'Alpha' ).locator( 'img.licensio-kb-card__icon-image' )
+			).toHaveAttribute( 'src', png );
+			expect(
+				await card( 'Alpha' )
+					.locator( 'img.licensio-kb-card__icon-image' )
+					.evaluate( ( img: HTMLImageElement ) => img.naturalWidth )
+			).toBe( 1 );
+			await expect(
+				card( 'Beta' ).locator(
+					'.licensio-kb-card__icon--svg svg path'
+				)
+			).toHaveCount( 1 );
+			await expect( card( 'Beta' ).locator( 'script' ) ).toHaveCount( 0 );
+		} finally {
+			await page.goBack();
+			await api(
+				page,
+				'DELETE',
+				`pages/${ created.id }?force=true`,
+				undefined,
+				'wp/v2'
+			);
+		}
+	} );
+
+	test( 'a new slug follows the name on type and paste until it is edited', async ( {
 		page,
 	} ) => {
 		await page
@@ -534,32 +642,77 @@ test.describe( 'Categories app', () => {
 			.click();
 
 		const drawer = page.locator( '.ant-drawer-content' );
+		const name = drawer.getByLabel( 'Name' );
+		const slug = drawer.getByLabel( 'Slug' );
 
 		// The drawer opens with focus on its Name field.
-		await expect( drawer.getByLabel( 'Name' ) ).toBeFocused();
-		await drawer.getByLabel( 'Name' ).fill( 'Delta & co' );
-		await drawer
-			.getByLabel( 'Icon', { exact: true } )
-			.fill( 'dashicons-book-alt' );
-		await drawer
-			.getByLabel( 'Inline SVG icon' )
-			.fill(
-				'<svg viewBox="0 0 1 1"><script>alert(1)</script><path d="M0 0h1v1z"/></svg>'
-			);
+		await expect( name ).toBeFocused();
+		await page.keyboard.type( 'Café & Crème' );
+		await expect( slug ).toHaveValue( 'cafe-creme' );
+
+		await name.fill( '' );
+		await name.focus();
+		await page.keyboard.insertText( 'Getting Started: “Quick” Guide' );
+		await expect( slug ).toHaveValue( 'getting-started-quick-guide' );
 
 		await drawer.getByRole( 'button', { name: 'Save' } ).click();
-		await confirmPopconfirm( page );
-
-		await expect( node( page, 'Delta & co' ) ).toBeVisible();
+		await expect(
+			node( page, 'Getting Started: “Quick” Guide' )
+		).toBeVisible();
 
 		const items = ( await api( page, 'GET', 'categories' ) ) as Array<
-			Category & { icon: string; icon_svg: string }
+			Category & { slug: string }
 		>;
-		const delta = items.find( ( item ) => 'Delta & co' === item.name );
 
-		expect( delta?.icon ).toBe( 'dashicons-book-alt' );
-		expect( delta?.icon_svg ).toContain( '<path' );
-		expect( delta?.icon_svg ).not.toContain( 'script' );
+		// The preview matched what the server stored.
+		expect(
+			items.find(
+				( item ) => 'Getting Started: “Quick” Guide' === item.name
+			)?.slug
+		).toBe( 'getting-started-quick-guide' );
+
+		// Once the slug is edited by hand, it no longer follows the name.
+		await page
+			.getByRole( 'button', { name: 'Add category' } )
+			.first()
+			.click();
+		await name.fill( 'Billing' );
+		await expect( slug ).toHaveValue( 'billing' );
+		await slug.fill( 'payments' );
+		await name.fill( 'Billing and invoices' );
+		await expect( slug ).toHaveValue( 'payments' );
+	} );
+
+	test( 'renaming a category keeps its slug and Generate from name makes one', async ( {
+		page,
+	} ) => {
+		const writes = recordWrites( page );
+
+		await act( page, 'Beta', 'Edit' );
+
+		const drawer = page.locator( '.ant-drawer-content' );
+		const slug = drawer.getByLabel( 'Slug' );
+
+		await expect( slug ).toHaveValue( 'beta' );
+		await drawer.getByLabel( 'Name' ).fill( 'Beta renamed' );
+		await expect( slug ).toHaveValue( 'beta' );
+
+		await drawer
+			.getByRole( 'button', { name: 'Generate from name' } )
+			.click();
+		await expect( slug ).toHaveValue( 'beta-renamed' );
+		expect( writes ).toHaveLength( 0 );
+
+		await drawer.getByRole( 'button', { name: 'Save' } ).click();
+		await expect( node( page, 'Beta renamed' ) ).toBeVisible();
+
+		const items = ( await api( page, 'GET', 'categories' ) ) as Array<
+			Category & { slug: string }
+		>;
+
+		expect(
+			items.find( ( item ) => 'Beta renamed' === item.name )?.slug
+		).toBe( 'beta-renamed' );
 	} );
 
 	test( 'the drawer keeps focus where the user tabbed while it opened', async ( {
@@ -619,7 +772,6 @@ test.describe( 'Categories app', () => {
 
 		await drawer.getByLabel( 'Slug' ).fill( 'alpha' );
 		await drawer.getByRole( 'button', { name: 'Save' } ).click();
-		await confirmPopconfirm( page );
 
 		await expect(
 			drawer.locator( '.ant-form-item-explain-error' )
@@ -880,15 +1032,17 @@ test.describe( 'Categories app', () => {
 
 		const writes = recordWrites( page );
 
-		await pane.getByRole( 'button', { name: 'Save order' } ).click();
+		// Reset asks first, since it throws the new order away; Cancel keeps it.
+		await pane.getByRole( 'button', { name: 'Reset' } ).click();
 		await cancelPopconfirm( page );
-		expect( writes ).toHaveLength( 0 );
+		expect( await paneTitles( page ) ).toEqual( expected );
 
+		// Saving is not confirmed, and focus moves to the pane heading.
 		await pane.getByRole( 'button', { name: 'Save order' } ).click();
-		await confirmPopconfirm( page );
 		await expect( page.locator( '.ant-message' ) ).toContainText(
 			'Article order saved.'
 		);
+		await expect( pane.locator( '.lkb-order__title' ) ).toBeFocused();
 		expect( writes ).toHaveLength( 1 );
 		expect( writes[ 0 ].postDataJSON() ).toEqual( { ids: [ d, c, a, b ] } );
 
@@ -954,7 +1108,6 @@ test.describe( 'Categories app', () => {
 			.getByRole( 'button', { name: 'Move “E2E order 204” up' } )
 			.click();
 		await pane.getByRole( 'button', { name: 'Save order' } ).click();
-		await confirmPopconfirm( page );
 		await expect( page.locator( '.ant-message' ) ).toContainText(
 			'Article order saved.'
 		);
