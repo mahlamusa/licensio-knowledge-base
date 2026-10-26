@@ -790,6 +790,11 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
     /**
      * One page of the article list.
      *
+     * WP_Query leaves `found_posts` at 0 when the page asked for is past the
+     * end, so the matches are then counted again from the first page. The
+     * total and page count stay right, and the app can step back to the
+     * last page.
+     *
      * @since 1.0.0
      *
      * @param WP_REST_Request $request The request.
@@ -809,12 +814,26 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
             )
         );
         $window = Licensio_KB_Article_Metrics::normalize_window( isset( $params['window'] ) ? $params['window'] : 0 );
+        $total  = (int) $query->found_posts;
+
+        if ( ! $posts && $args['paged'] > 1 ) {
+            $total = (int) $this->run_query(
+                array_merge(
+                    $args,
+                    array(
+                        'fields'         => 'ids',
+                        'posts_per_page' => 1,
+                        'paged'          => 1,
+                    )
+                )
+            )->found_posts;
+        }
 
         return rest_ensure_response(
             array(
                 'items'  => $this->prepare_items( $posts, $window ),
-                'total'  => (int) $query->found_posts,
-                'pages'  => (int) ceil( (int) $query->found_posts / (int) $args['posts_per_page'] ),
+                'total'  => $total,
+                'pages'  => (int) ceil( $total / (int) $args['posts_per_page'] ),
                 'counts' => self::status_counts(),
             )
         );

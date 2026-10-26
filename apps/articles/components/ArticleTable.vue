@@ -425,14 +425,16 @@ const expandedKeys = computed( () =>
  * As on core's list screens, the row actions show when the row is hovered or
  * when focus is inside them, and always on touch and narrow screens. They are
  * only made transparent, so they stay in the layout and the accessibility
- * tree, and Tab still reaches them.
+ * tree, and Tab still reaches them. They also stay while one of their
+ * confirmations is open, so it never points at an empty space.
  */
 .lkb-rowactions {
 	opacity: 0;
 }
 
 .ant-table-row:hover .lkb-rowactions,
-.lkb-rowactions:focus-within {
+.lkb-rowactions:focus-within,
+.lkb-rowactions:has( .ant-popover-open ) {
 	opacity: 1;
 }
 

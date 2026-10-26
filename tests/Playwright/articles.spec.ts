@@ -28,6 +28,7 @@ import {
 } from './helpers/content-manager';
 import { failOnUnresolvedComponents } from './helpers/ant-components';
 import { logIn, password, user } from './helpers/session';
+import { wpCli, wpEval } from './helpers/wp-cli';
 
 failOnUnresolvedComponents();
 
@@ -260,6 +261,42 @@ test.describe( 'Articles app', () => {
 		await expect( app.getByText( 'No articles yet.' ) ).toHaveCount( 0 );
 	} );
 
+	test( 'a page past the end of several pages lands on the last one', async ( {
+		page,
+	} ) => {
+		test.skip( ! wpCli, 'Set LICENSIO_KB_WP_CLI to run.' );
+
+		// One more than a page of 20, so the last page is the second.
+		const word = `Clamp${ Date.now() }`;
+		const ids = wpEval( `
+			$ids = array();
+			for ( $i = 1; $i <= 21; $i++ ) {
+				$ids[] = wp_insert_post( array( 'post_type' => 'licensio_article', 'post_status' => 'publish', 'post_title' => '${ word } ' . $i ) );
+			}
+			echo implode( ',', $ids );
+		` );
+
+		try {
+			await page.goto(
+				contentManagerUrl( 'articles' ) + `&search=${ word }&paged=999`
+			);
+
+			const app = page.locator( '#licensio-kb-articles' );
+
+			await expect( page ).toHaveURL( /paged=2/ );
+			await expect( app.locator( '.ant-table-row' ) ).toHaveCount( 1 );
+			await expect(
+				app.locator( '.ant-pagination-item-active' )
+			).toHaveText( '2' );
+		} finally {
+			wpEval( `
+				foreach ( array( ${ ids } ) as $id ) {
+					wp_delete_post( $id, true );
+				}
+			` );
+		}
+	} );
+
 	test( 'a failed first load shows the error without the empty state', async ( {
 		page,
 	} ) => {
@@ -373,6 +410,15 @@ test.describe( 'Articles app', () => {
 			.getByRole( 'link', { name: 'Edit', exact: true } )
 			.evaluate( ( link ) => ( link as HTMLElement ).blur() );
 		await expect( actions ).toHaveCSS( 'opacity', '0' );
+
+		// An open confirmation keeps them, so it does not point at nothing.
+		await row.hover();
+		await row.getByRole( 'button', { name: 'Trash' } ).click();
+		await page.mouse.move( 0, 0 );
+		await expect( page.locator( '.ant-popconfirm' ) ).toBeVisible();
+		await expect( actions ).toHaveCSS( 'opacity', '1' );
+		await page.keyboard.press( 'Escape' );
+		await expect( page.locator( '.ant-popconfirm' ) ).toBeHidden();
 
 		await page.setViewportSize( { width: 390, height: 844 } );
 		await expect( actions ).toHaveCSS( 'opacity', '1' );

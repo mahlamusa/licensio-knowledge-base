@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-26T07:13:17+00:00\n"
+"POT-Creation-Date: 2026-10-26T07:24:36+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.7.1\n"
 "X-Domain: licensio-knowledge-base\n"
@@ -46,8 +46,8 @@ msgstr ""
 #: includes/admin/class-licensio-kb-admin-columns.php:205
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:39
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:61
-#: dist/apps/articles/index.CaA3Gu3g.js:39
-#: dist/apps/articles/index.CaA3Gu3g.js:61
+#: dist/apps/articles/index.CVotsgDG.js:39
+#: dist/apps/articles/index.CVotsgDG.js:61
 msgid "Rating"
 msgstr ""
 
@@ -58,8 +58,8 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:39
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:61
 #: dist/apps/analytics/index.D9liPAub.js:1
-#: dist/apps/articles/index.CaA3Gu3g.js:39
-#: dist/apps/articles/index.CaA3Gu3g.js:61
+#: dist/apps/articles/index.CVotsgDG.js:39
+#: dist/apps/articles/index.CVotsgDG.js:61
 msgid "Views"
 msgstr ""
 
@@ -72,10 +72,10 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:39
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:61
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CaA3Gu3g.js:38
-#: dist/apps/articles/index.CaA3Gu3g.js:39
-#: dist/apps/articles/index.CaA3Gu3g.js:61
-#: dist/apps/articles/index.CaA3Gu3g.js:63
+#: dist/apps/articles/index.CVotsgDG.js:38
+#: dist/apps/articles/index.CVotsgDG.js:39
+#: dist/apps/articles/index.CVotsgDG.js:61
+#: dist/apps/articles/index.CVotsgDG.js:63
 msgid "Author"
 msgstr ""
 
@@ -131,7 +131,7 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:49
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
 #: .tmp/e2e/licensio-knowledge-base/dist/blocks/article-list/index.js:1
-#: dist/apps/articles/index.CaA3Gu3g.js:63
+#: dist/apps/articles/index.CVotsgDG.js:63
 #: dist/apps/tags/index.Bjwl0jqk.js:15
 #: dist/apps/tools/index.CDy_F_6g.js:3
 #: dist/apps/tools/index.CDy_F_6g.js:49
@@ -167,9 +167,9 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:35
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:47
 #: .tmp/e2e/licensio-knowledge-base/dist/blocks/category-grid/index.js:1
-#: dist/apps/articles/index.CaA3Gu3g.js:38
-#: dist/apps/articles/index.CaA3Gu3g.js:39
-#: dist/apps/articles/index.CaA3Gu3g.js:61
+#: dist/apps/articles/index.CVotsgDG.js:38
+#: dist/apps/articles/index.CVotsgDG.js:39
+#: dist/apps/articles/index.CVotsgDG.js:61
 #: dist/apps/categories/index.BQKk77Ty.js:35
 #: dist/apps/tools/index.CDy_F_6g.js:47
 #: dist/blocks/category-grid/index.js:1
@@ -186,7 +186,7 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:5
 #: dist/apps/analytics/index.D9liPAub.js:1
-#: dist/apps/feedback/index.DE73ajr0.js:5
+#: dist/apps/feedback/index.D_zG1Rx-.js:5
 msgid "Feedback"
 msgstr ""
 
@@ -271,9 +271,9 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:39
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:61
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:29
-#: dist/apps/articles/index.CaA3Gu3g.js:38
-#: dist/apps/articles/index.CaA3Gu3g.js:39
-#: dist/apps/articles/index.CaA3Gu3g.js:61
+#: dist/apps/articles/index.CVotsgDG.js:38
+#: dist/apps/articles/index.CVotsgDG.js:39
+#: dist/apps/articles/index.CVotsgDG.js:61
 #: dist/apps/tags/index.Bjwl0jqk.js:29
 msgid "Tags"
 msgstr ""
@@ -436,9 +436,9 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:39
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:61
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:1
-#: dist/apps/articles/index.CaA3Gu3g.js:39
-#: dist/apps/articles/index.CaA3Gu3g.js:61
-#: dist/apps/feedback/index.DE73ajr0.js:1
+#: dist/apps/articles/index.CVotsgDG.js:39
+#: dist/apps/articles/index.CVotsgDG.js:61
+#: dist/apps/feedback/index.D_zG1Rx-.js:1
 msgid "Date"
 msgstr ""
 
@@ -451,7 +451,7 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:1
 #: dist/apps/analytics/index.D9liPAub.js:1
-#: dist/apps/feedback/index.DE73ajr0.js:1
+#: dist/apps/feedback/index.D_zG1Rx-.js:1
 msgid "Article"
 msgstr ""
 
@@ -461,7 +461,7 @@ msgstr ""
 
 #: includes/class-licensio-kb-analytics-privacy.php:513
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:1
-#: dist/apps/feedback/index.DE73ajr0.js:1
+#: dist/apps/feedback/index.D_zG1Rx-.js:1
 msgid "Vote"
 msgstr ""
 
@@ -470,8 +470,8 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:1
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:11
 #: dist/apps/analytics/index.D9liPAub.js:1
-#: dist/apps/feedback/index.DE73ajr0.js:1
-#: dist/apps/feedback/index.DE73ajr0.js:11
+#: dist/apps/feedback/index.D_zG1Rx-.js:1
+#: dist/apps/feedback/index.D_zG1Rx-.js:11
 msgid "Helpful"
 msgstr ""
 
@@ -480,14 +480,14 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:1
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:11
 #: dist/apps/analytics/index.D9liPAub.js:1
-#: dist/apps/feedback/index.DE73ajr0.js:1
-#: dist/apps/feedback/index.DE73ajr0.js:11
+#: dist/apps/feedback/index.D_zG1Rx-.js:1
+#: dist/apps/feedback/index.D_zG1Rx-.js:11
 msgid "Not helpful"
 msgstr ""
 
 #: includes/class-licensio-kb-analytics-privacy.php:519
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:1
-#: dist/apps/feedback/index.DE73ajr0.js:1
+#: dist/apps/feedback/index.D_zG1Rx-.js:1
 msgid "Comment"
 msgstr ""
 
@@ -495,8 +495,8 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:38
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:1
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/articles/index.CaA3Gu3g.js:38
-#: dist/apps/feedback/index.DE73ajr0.js:1
+#: dist/apps/articles/index.CVotsgDG.js:38
+#: dist/apps/feedback/index.D_zG1Rx-.js:1
 #: dist/apps/tools/index.CDy_F_6g.js:41
 msgid "Status"
 msgstr ""
@@ -817,7 +817,7 @@ msgstr ""
 #. translators: %d: article ID.
 #: includes/class-licensio-kb-rest-analytics-controller.php:337
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:53
-#: dist/apps/articles/index.CaA3Gu3g.js:53
+#: dist/apps/articles/index.CVotsgDG.js:53
 msgid "Article #%d"
 msgstr ""
 
@@ -847,7 +847,7 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:29
 #: .tmp/e2e/licensio-knowledge-base/dist/blocks/search/index.js:1
-#: dist/apps/articles/index.CaA3Gu3g.js:63
+#: dist/apps/articles/index.CVotsgDG.js:63
 #: dist/apps/tags/index.Bjwl0jqk.js:29
 #: dist/blocks/search/index.js:1
 msgid "Search"
@@ -1413,98 +1413,98 @@ msgstr ""
 msgid "Each tag must be a tag ID or a new tag name."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1038
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1057
 msgid "Restore this article before editing it."
 msgstr ""
 
 #. translators: %s: the name of the user editing the article.
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1114
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1133
 msgid "%s is editing this article."
 msgstr ""
 
 #. translators: %s: the name of the user editing the article.
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1114
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1133
 msgid "Someone else"
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1155
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1174
 msgid "You are not allowed to publish this article."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1167
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1186
 msgid "The date is not valid."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1185
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1204
 msgid "A private article cannot also have a password."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1192
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1211
 msgid "You are not allowed to change the author of this article."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1196
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1215
 msgid "That user cannot write articles."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1219
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1238
 msgid "You are not allowed to assign these terms."
 msgstr ""
 
 #. translators: %s: the names of the fields with errors.
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1236
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1255
 msgid "Invalid parameter(s): %s"
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1262
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1281
 msgid "Categories cannot be created here."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1266
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1285
 msgid "You are not allowed to create tags."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1274
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1293
 msgid "One of the tags does not exist."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1275
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1294
 msgid "One of the categories does not exist."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1356
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1375
 msgid "You are not allowed to edit this article."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1382
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1401
 msgid "Send between 1 and 100 article IDs."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1409
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1428
 msgid "Choose a status to set."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1420
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1439
 msgid "Choose a taxonomy, a mode and the terms."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1426
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1445
 msgid "Choose at least one term."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1431
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1450
 msgid "One of the terms does not exist."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1445
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1464
 msgid "Choose a user who can write articles."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1454
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1473
 msgid "Choose open or closed."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1639
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1658
 msgid "No article was found with that ID."
 msgstr ""
 
@@ -1874,7 +1874,7 @@ msgstr ""
 
 #: templates/archive-body.php:79
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CaA3Gu3g.js:63
+#: dist/apps/articles/index.CVotsgDG.js:63
 msgid "Uncategorised"
 msgstr ""
 
@@ -2038,7 +2038,7 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: .tmp/e2e/licensio-knowledge-base/dist/blocks/article-list/index.js:1
 #: .tmp/e2e/licensio-knowledge-base/dist/blocks/faq/index.js:1
-#: dist/apps/articles/index.CaA3Gu3g.js:63
+#: dist/apps/articles/index.CVotsgDG.js:63
 #: dist/apps/tools/index.CDy_F_6g.js:41
 #: dist/blocks/article-list/index.js:1
 #: dist/blocks/faq/index.js:1
@@ -2079,8 +2079,8 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: .tmp/e2e/licensio-knowledge-base/dist/blocks/article-list/index.js:1
 #: .tmp/e2e/licensio-knowledge-base/dist/blocks/faq/index.js:1
-#: dist/apps/articles/index.CaA3Gu3g.js:38
-#: dist/apps/articles/index.CaA3Gu3g.js:39
+#: dist/apps/articles/index.CVotsgDG.js:38
+#: dist/apps/articles/index.CVotsgDG.js:39
 #: dist/apps/tools/index.CDy_F_6g.js:41
 #: dist/blocks/article-list/index.js:1
 #: dist/blocks/faq/index.js:1
@@ -2125,7 +2125,7 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:61
 #: .tmp/e2e/licensio-knowledge-base/dist/blocks/article-list/index.js:1
 #: .tmp/e2e/licensio-knowledge-base/dist/blocks/category-grid/index.js:1
-#: dist/apps/articles/index.CaA3Gu3g.js:61
+#: dist/apps/articles/index.CVotsgDG.js:61
 #: dist/blocks/article-list/index.js:1
 #: dist/blocks/category-grid/index.js:1
 msgid "Columns"
@@ -2518,7 +2518,7 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:51
 #: dist/apps/analytics/index.D9liPAub.js:1
-#: dist/apps/articles/index.CaA3Gu3g.js:51
+#: dist/apps/articles/index.CVotsgDG.js:51
 msgid "Apply"
 msgstr ""
 
@@ -2573,48 +2573,48 @@ msgid "Most read articles"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:1
-#: dist/apps/articles/index.CaA3Gu3g.js:1
+#: dist/apps/articles/index.CVotsgDG.js:1
 msgid "You can undo this for a few seconds."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:1
-#: dist/apps/articles/index.CaA3Gu3g.js:1
+#: dist/apps/articles/index.CVotsgDG.js:1
 msgid "Undo"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:1
-#: dist/apps/articles/index.CaA3Gu3g.js:1
+#: dist/apps/articles/index.CVotsgDG.js:1
 msgid "Dismiss"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:1
-#: dist/apps/articles/index.CaA3Gu3g.js:1
+#: dist/apps/articles/index.CVotsgDG.js:1
 msgid "Not found"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:1
-#: dist/apps/articles/index.CaA3Gu3g.js:1
+#: dist/apps/articles/index.CVotsgDG.js:1
 msgid "No permission"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:1
-#: dist/apps/articles/index.CaA3Gu3g.js:1
+#: dist/apps/articles/index.CVotsgDG.js:1
 msgid "Being edited by someone else"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:1
-#: dist/apps/articles/index.CaA3Gu3g.js:1
+#: dist/apps/articles/index.CVotsgDG.js:1
 msgid "Not in the trash"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:1
-#: dist/apps/articles/index.CaA3Gu3g.js:1
+#: dist/apps/articles/index.CVotsgDG.js:1
 msgid "In the trash"
 msgstr ""
 
 #. translators: %d: number of articles.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:3
-#: dist/apps/articles/index.CaA3Gu3g.js:3
+#: dist/apps/articles/index.CVotsgDG.js:3
 msgid "Move %d article to the trash?"
 msgid_plural "Move %d articles to the trash?"
 msgstr[0] ""
@@ -2622,7 +2622,7 @@ msgstr[1] ""
 
 #. translators: %d: number of articles.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:5
-#: dist/apps/articles/index.CaA3Gu3g.js:5
+#: dist/apps/articles/index.CVotsgDG.js:5
 msgid "Restore %d article from the trash?"
 msgid_plural "Restore %d articles from the trash?"
 msgstr[0] ""
@@ -2630,7 +2630,7 @@ msgstr[1] ""
 
 #. translators: %d: number of articles.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:7
-#: dist/apps/articles/index.CaA3Gu3g.js:7
+#: dist/apps/articles/index.CVotsgDG.js:7
 msgid "Permanently delete %d article? This cannot be undone."
 msgid_plural "Permanently delete %d articles? This cannot be undone."
 msgstr[0] ""
@@ -2638,7 +2638,7 @@ msgstr[1] ""
 
 #. translators: %d: number of articles.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:9
-#: dist/apps/articles/index.CaA3Gu3g.js:9
+#: dist/apps/articles/index.CVotsgDG.js:9
 msgid "Change the status of %d article?"
 msgid_plural "Change the status of %d articles?"
 msgstr[0] ""
@@ -2646,7 +2646,7 @@ msgstr[1] ""
 
 #. translators: %d: number of articles.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:11
-#: dist/apps/articles/index.CaA3Gu3g.js:11
+#: dist/apps/articles/index.CVotsgDG.js:11
 msgid "Change the author of %d article?"
 msgid_plural "Change the author of %d articles?"
 msgstr[0] ""
@@ -2654,7 +2654,7 @@ msgstr[1] ""
 
 #. translators: %d: number of articles.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:13
-#: dist/apps/articles/index.CaA3Gu3g.js:13
+#: dist/apps/articles/index.CVotsgDG.js:13
 msgid "Open comments on %d article?"
 msgid_plural "Open comments on %d articles?"
 msgstr[0] ""
@@ -2662,7 +2662,7 @@ msgstr[1] ""
 
 #. translators: %d: number of articles.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:15
-#: dist/apps/articles/index.CaA3Gu3g.js:15
+#: dist/apps/articles/index.CVotsgDG.js:15
 msgid "Close comments on %d article?"
 msgid_plural "Close comments on %d articles?"
 msgstr[0] ""
@@ -2670,7 +2670,7 @@ msgstr[1] ""
 
 #. translators: %d: number of articles.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:17
-#: dist/apps/articles/index.CaA3Gu3g.js:17
+#: dist/apps/articles/index.CVotsgDG.js:17
 msgid "Add the chosen terms to %d article?"
 msgid_plural "Add the chosen terms to %d articles?"
 msgstr[0] ""
@@ -2678,7 +2678,7 @@ msgstr[1] ""
 
 #. translators: %d: number of articles.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:19
-#: dist/apps/articles/index.CaA3Gu3g.js:19
+#: dist/apps/articles/index.CVotsgDG.js:19
 msgid "Remove the chosen terms from %d article?"
 msgid_plural "Remove the chosen terms from %d articles?"
 msgstr[0] ""
@@ -2686,7 +2686,7 @@ msgstr[1] ""
 
 #. translators: %d: number of articles.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:21
-#: dist/apps/articles/index.CaA3Gu3g.js:21
+#: dist/apps/articles/index.CVotsgDG.js:21
 msgid "Remove every tag from %d article? No tags are chosen to replace them."
 msgid_plural "Remove every tag from %d articles? No tags are chosen to replace them."
 msgstr[0] ""
@@ -2694,7 +2694,7 @@ msgstr[1] ""
 
 #. translators: %d: number of articles.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:23
-#: dist/apps/articles/index.CaA3Gu3g.js:23
+#: dist/apps/articles/index.CVotsgDG.js:23
 msgid "Remove every category from %d article? No categories are chosen to replace them."
 msgid_plural "Remove every category from %d articles? No categories are chosen to replace them."
 msgstr[0] ""
@@ -2702,7 +2702,7 @@ msgstr[1] ""
 
 #. translators: %d: number of articles.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:25
-#: dist/apps/articles/index.CaA3Gu3g.js:25
+#: dist/apps/articles/index.CVotsgDG.js:25
 msgid "Replace the terms of %d article with the chosen ones?"
 msgid_plural "Replace the terms of %d articles with the chosen ones?"
 msgstr[0] ""
@@ -2710,7 +2710,7 @@ msgstr[1] ""
 
 #. translators: %d: number of articles.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:27
-#: dist/apps/articles/index.CaA3Gu3g.js:27
+#: dist/apps/articles/index.CVotsgDG.js:27
 msgid "%d article moved to the trash."
 msgid_plural "%d articles moved to the trash."
 msgstr[0] ""
@@ -2718,7 +2718,7 @@ msgstr[1] ""
 
 #. translators: %d: number of articles.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:29
-#: dist/apps/articles/index.CaA3Gu3g.js:29
+#: dist/apps/articles/index.CVotsgDG.js:29
 msgid "%d article restored."
 msgid_plural "%d articles restored."
 msgstr[0] ""
@@ -2726,7 +2726,7 @@ msgstr[1] ""
 
 #. translators: %d: number of articles.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:31
-#: dist/apps/articles/index.CaA3Gu3g.js:31
+#: dist/apps/articles/index.CVotsgDG.js:31
 msgid "%d article permanently deleted."
 msgid_plural "%d articles permanently deleted."
 msgstr[0] ""
@@ -2734,7 +2734,7 @@ msgstr[1] ""
 
 #. translators: %d: number of articles.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:33
-#: dist/apps/articles/index.CaA3Gu3g.js:33
+#: dist/apps/articles/index.CVotsgDG.js:33
 msgid "%d article updated."
 msgid_plural "%d articles updated."
 msgstr[0] ""
@@ -2742,7 +2742,7 @@ msgstr[1] ""
 
 #. translators: %d: number of articles.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:35
-#: dist/apps/articles/index.CaA3Gu3g.js:35
+#: dist/apps/articles/index.CVotsgDG.js:35
 msgid "%d article put back."
 msgid_plural "%d articles put back."
 msgstr[0] ""
@@ -2750,20 +2750,20 @@ msgstr[1] ""
 
 #. translators: 1: number of articles, 2: the reasons.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:37
-#: dist/apps/articles/index.CaA3Gu3g.js:37
+#: dist/apps/articles/index.CVotsgDG.js:37
 msgid "%1$d article could not be put back: %2$s"
 msgid_plural "%1$d articles could not be put back: %2$s"
 msgstr[0] ""
 msgstr[1] ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:37
-#: dist/apps/articles/index.CaA3Gu3g.js:37
+#: dist/apps/articles/index.CVotsgDG.js:37
 msgid "Any author"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:37
 #: .tmp/e2e/licensio-knowledge-base/dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.Cohcn86k.js:3
-#: dist/apps/articles/index.CaA3Gu3g.js:37
+#: dist/apps/articles/index.CVotsgDG.js:37
 #: dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.G_TJ16ZC.js:3
 msgid "No matches"
 msgstr ""
@@ -2772,9 +2772,9 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
 #: .tmp/e2e/licensio-knowledge-base/dist/chunks/status.C86e98PE.js:1
-#: dist/apps/articles/index.CaA3Gu3g.js:37
-#: dist/apps/articles/index.CaA3Gu3g.js:47
-#: dist/apps/articles/index.CaA3Gu3g.js:63
+#: dist/apps/articles/index.CVotsgDG.js:37
+#: dist/apps/articles/index.CVotsgDG.js:47
+#: dist/apps/articles/index.CVotsgDG.js:63
 #: dist/chunks/status.BpobMsUa.js:1
 msgid "Published"
 msgstr ""
@@ -2782,31 +2782,31 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:37
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
 #: .tmp/e2e/licensio-knowledge-base/dist/chunks/status.C86e98PE.js:1
-#: dist/apps/articles/index.CaA3Gu3g.js:37
-#: dist/apps/articles/index.CaA3Gu3g.js:47
+#: dist/apps/articles/index.CVotsgDG.js:37
+#: dist/apps/articles/index.CVotsgDG.js:47
 #: dist/chunks/status.BpobMsUa.js:1
 msgid "Draft"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:37
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
-#: dist/apps/articles/index.CaA3Gu3g.js:37
-#: dist/apps/articles/index.CaA3Gu3g.js:47
+#: dist/apps/articles/index.CVotsgDG.js:37
+#: dist/apps/articles/index.CVotsgDG.js:47
 msgid "Pending review"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:37
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
 #: .tmp/e2e/licensio-knowledge-base/dist/chunks/status.C86e98PE.js:1
-#: dist/apps/articles/index.CaA3Gu3g.js:37
-#: dist/apps/articles/index.CaA3Gu3g.js:63
+#: dist/apps/articles/index.CVotsgDG.js:37
+#: dist/apps/articles/index.CVotsgDG.js:63
 #: dist/chunks/status.BpobMsUa.js:1
 msgid "Scheduled"
 msgstr ""
 
 #. translators: %s: the new slug.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:38
-#: dist/apps/articles/index.CaA3Gu3g.js:38
+#: dist/apps/articles/index.CVotsgDG.js:38
 msgid "Saved. The slug is now “%s”."
 msgstr ""
 
@@ -2815,7 +2815,7 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:15
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:17
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:29
-#: dist/apps/articles/index.CaA3Gu3g.js:38
+#: dist/apps/articles/index.CVotsgDG.js:38
 #: dist/apps/categories/index.BQKk77Ty.js:11
 #: dist/apps/tags/index.Bjwl0jqk.js:15
 #: dist/apps/tags/index.Bjwl0jqk.js:17
@@ -2824,17 +2824,17 @@ msgid "Slug"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:38
-#: dist/apps/articles/index.CaA3Gu3g.js:38
+#: dist/apps/articles/index.CVotsgDG.js:38
 msgid "Publish date"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:38
-#: dist/apps/articles/index.CaA3Gu3g.js:38
+#: dist/apps/articles/index.CVotsgDG.js:38
 msgid "Visibility"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:38
-#: dist/apps/articles/index.CaA3Gu3g.js:38
+#: dist/apps/articles/index.CVotsgDG.js:38
 msgid "Public"
 msgstr ""
 
@@ -2842,42 +2842,42 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
 #: .tmp/e2e/licensio-knowledge-base/dist/chunks/status.C86e98PE.js:1
-#: dist/apps/articles/index.CaA3Gu3g.js:38
-#: dist/apps/articles/index.CaA3Gu3g.js:47
-#: dist/apps/articles/index.CaA3Gu3g.js:63
+#: dist/apps/articles/index.CVotsgDG.js:38
+#: dist/apps/articles/index.CVotsgDG.js:47
+#: dist/apps/articles/index.CVotsgDG.js:63
 #: dist/chunks/status.BpobMsUa.js:1
 msgid "Private"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:38
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:41
-#: dist/apps/articles/index.CaA3Gu3g.js:38
-#: dist/apps/articles/index.CaA3Gu3g.js:41
+#: dist/apps/articles/index.CVotsgDG.js:38
+#: dist/apps/articles/index.CVotsgDG.js:41
 msgid "Password protected"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:38
-#: dist/apps/articles/index.CaA3Gu3g.js:38
+#: dist/apps/articles/index.CVotsgDG.js:38
 msgid "Leave empty to keep the current password"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:38
-#: dist/apps/articles/index.CaA3Gu3g.js:38
+#: dist/apps/articles/index.CVotsgDG.js:38
 msgid "Password"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:38
-#: dist/apps/articles/index.CaA3Gu3g.js:38
+#: dist/apps/articles/index.CVotsgDG.js:38
 msgid "Comments"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:38
-#: dist/apps/articles/index.CaA3Gu3g.js:38
+#: dist/apps/articles/index.CVotsgDG.js:38
 msgid "Open"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:38
-#: dist/apps/articles/index.CaA3Gu3g.js:38
+#: dist/apps/articles/index.CVotsgDG.js:38
 msgid "Closed"
 msgstr ""
 
@@ -2901,13 +2901,13 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:51
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
 #: .tmp/e2e/licensio-knowledge-base/dist/chunks/ConfirmButton.vue_vue_type_script_setup_true_lang.BI2r1Vjz.js:1
-#: dist/apps/articles/index.CaA3Gu3g.js:38
+#: dist/apps/articles/index.CVotsgDG.js:38
 #: dist/apps/categories/index.BQKk77Ty.js:11
 #: dist/apps/categories/index.BQKk77Ty.js:17
 #: dist/apps/categories/index.BQKk77Ty.js:25
 #: dist/apps/categories/index.BQKk77Ty.js:29
 #: dist/apps/categories/index.BQKk77Ty.js:35
-#: dist/apps/feedback/index.DE73ajr0.js:11
+#: dist/apps/feedback/index.D_zG1Rx-.js:11
 #: dist/apps/settings/index.B7P3m90S.js:1
 #: dist/apps/tags/index.Bjwl0jqk.js:7
 #: dist/apps/tags/index.Bjwl0jqk.js:15
@@ -2926,15 +2926,15 @@ msgstr ""
 
 #. translators: %s: article title.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:39
-#: dist/apps/articles/index.CaA3Gu3g.js:39
+#: dist/apps/articles/index.CVotsgDG.js:39
 msgid "Save the changes to “%s”?"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:39
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:41
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:5
-#: dist/apps/articles/index.CaA3Gu3g.js:39
-#: dist/apps/articles/index.CaA3Gu3g.js:41
+#: dist/apps/articles/index.CVotsgDG.js:39
+#: dist/apps/articles/index.CVotsgDG.js:41
 #: dist/apps/categories/index.BQKk77Ty.js:5
 msgid "(no title)"
 msgstr ""
@@ -2943,7 +2943,7 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:11
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:17
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:19
-#: dist/apps/articles/index.CaA3Gu3g.js:39
+#: dist/apps/articles/index.CVotsgDG.js:39
 #: dist/apps/categories/index.BQKk77Ty.js:11
 #: dist/apps/tags/index.Bjwl0jqk.js:17
 #: dist/apps/tags/index.Bjwl0jqk.js:19
@@ -2952,22 +2952,22 @@ msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:39
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:61
-#: dist/apps/articles/index.CaA3Gu3g.js:39
-#: dist/apps/articles/index.CaA3Gu3g.js:61
+#: dist/apps/articles/index.CVotsgDG.js:39
+#: dist/apps/articles/index.CVotsgDG.js:61
 msgid "Attachments"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:39
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:61
-#: dist/apps/articles/index.CaA3Gu3g.js:39
-#: dist/apps/articles/index.CaA3Gu3g.js:61
+#: dist/apps/articles/index.CVotsgDG.js:39
+#: dist/apps/articles/index.CVotsgDG.js:61
 msgid "Reading time"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:39
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:61
-#: dist/apps/articles/index.CaA3Gu3g.js:39
-#: dist/apps/articles/index.CaA3Gu3g.js:61
+#: dist/apps/articles/index.CVotsgDG.js:39
+#: dist/apps/articles/index.CVotsgDG.js:61
 msgid "Modified"
 msgstr ""
 
@@ -2975,161 +2975,161 @@ msgstr ""
 #. translators: %s: the tag's name.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:41
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:17
-#: dist/apps/articles/index.CaA3Gu3g.js:41
+#: dist/apps/articles/index.CVotsgDG.js:41
 #: dist/apps/tags/index.Bjwl0jqk.js:17
 msgid "Select “%s”"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:41
-#: dist/apps/articles/index.CaA3Gu3g.js:41
+#: dist/apps/articles/index.CVotsgDG.js:41
 msgid "No articles match these filters."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:41
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CaA3Gu3g.js:41
-#: dist/apps/articles/index.CaA3Gu3g.js:63
+#: dist/apps/articles/index.CVotsgDG.js:41
+#: dist/apps/articles/index.CVotsgDG.js:63
 msgid "Clear filters"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:41
-#: dist/apps/articles/index.CaA3Gu3g.js:41
+#: dist/apps/articles/index.CVotsgDG.js:41
 msgid "No articles yet."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:41
-#: dist/apps/articles/index.CaA3Gu3g.js:41
+#: dist/apps/articles/index.CVotsgDG.js:41
 msgid "Create your first article"
 msgstr ""
 
 #. translators: %s: name of the user editing the article.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:42
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:44
-#: dist/apps/articles/index.CaA3Gu3g.js:42
-#: dist/apps/articles/index.CaA3Gu3g.js:44
+#: dist/apps/articles/index.CVotsgDG.js:42
+#: dist/apps/articles/index.CVotsgDG.js:44
 msgid "%s is editing"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:44
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:19
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:21
-#: dist/apps/articles/index.CaA3Gu3g.js:44
+#: dist/apps/articles/index.CVotsgDG.js:44
 #: dist/apps/categories/index.BQKk77Ty.js:19
 #: dist/apps/tags/index.Bjwl0jqk.js:21
 msgid "Edit"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:44
-#: dist/apps/articles/index.CaA3Gu3g.js:44
+#: dist/apps/articles/index.CVotsgDG.js:44
 msgid "Quick edit"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:44
-#: dist/apps/articles/index.CaA3Gu3g.js:44
+#: dist/apps/articles/index.CVotsgDG.js:44
 msgid "View"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:44
-#: dist/apps/articles/index.CaA3Gu3g.js:44
+#: dist/apps/articles/index.CVotsgDG.js:44
 msgid "Preview"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:44
-#: dist/apps/articles/index.CaA3Gu3g.js:44
+#: dist/apps/articles/index.CVotsgDG.js:44
 msgid "View feedback"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:44
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
-#: dist/apps/articles/index.CaA3Gu3g.js:44
-#: dist/apps/articles/index.CaA3Gu3g.js:47
+#: dist/apps/articles/index.CVotsgDG.js:44
+#: dist/apps/articles/index.CVotsgDG.js:47
 msgid "Move to trash"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:44
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
 #: .tmp/e2e/licensio-knowledge-base/dist/chunks/status.C86e98PE.js:1
-#: dist/apps/articles/index.CaA3Gu3g.js:44
-#: dist/apps/articles/index.CaA3Gu3g.js:63
+#: dist/apps/articles/index.CVotsgDG.js:44
+#: dist/apps/articles/index.CVotsgDG.js:63
 #: dist/chunks/status.BpobMsUa.js:1
 msgid "Trash"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:44
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
-#: dist/apps/articles/index.CaA3Gu3g.js:44
-#: dist/apps/articles/index.CaA3Gu3g.js:47
+#: dist/apps/articles/index.CVotsgDG.js:44
+#: dist/apps/articles/index.CVotsgDG.js:47
 msgid "Restore"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:44
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
-#: dist/apps/articles/index.CaA3Gu3g.js:44
-#: dist/apps/articles/index.CaA3Gu3g.js:47
+#: dist/apps/articles/index.CVotsgDG.js:44
+#: dist/apps/articles/index.CVotsgDG.js:47
 msgid "Delete permanently"
 msgstr ""
 
 #. translators: 1: helpful votes, 2: not helpful votes.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:45
-#: dist/apps/articles/index.CaA3Gu3g.js:45
+#: dist/apps/articles/index.CVotsgDG.js:45
 msgid "%1$d helpful, %2$d not helpful"
 msgstr ""
 
 #. translators: %d: reading time in minutes.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
-#: dist/apps/articles/index.CaA3Gu3g.js:47
+#: dist/apps/articles/index.CVotsgDG.js:47
 msgid "%d min"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:11
-#: dist/apps/articles/index.CaA3Gu3g.js:47
-#: dist/apps/feedback/index.DE73ajr0.js:11
+#: dist/apps/articles/index.CVotsgDG.js:47
+#: dist/apps/feedback/index.D_zG1Rx-.js:11
 msgid "Change status"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
-#: dist/apps/articles/index.CaA3Gu3g.js:47
+#: dist/apps/articles/index.CVotsgDG.js:47
 msgid "Add categories"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
-#: dist/apps/articles/index.CaA3Gu3g.js:47
+#: dist/apps/articles/index.CVotsgDG.js:47
 msgid "Remove categories"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
-#: dist/apps/articles/index.CaA3Gu3g.js:47
+#: dist/apps/articles/index.CVotsgDG.js:47
 msgid "Replace categories"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
-#: dist/apps/articles/index.CaA3Gu3g.js:47
+#: dist/apps/articles/index.CVotsgDG.js:47
 msgid "Add tags"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
-#: dist/apps/articles/index.CaA3Gu3g.js:47
+#: dist/apps/articles/index.CVotsgDG.js:47
 msgid "Remove tags"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
-#: dist/apps/articles/index.CaA3Gu3g.js:47
+#: dist/apps/articles/index.CVotsgDG.js:47
 msgid "Replace tags"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
-#: dist/apps/articles/index.CaA3Gu3g.js:47
+#: dist/apps/articles/index.CVotsgDG.js:47
 msgid "Change author"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
-#: dist/apps/articles/index.CaA3Gu3g.js:47
+#: dist/apps/articles/index.CVotsgDG.js:47
 msgid "Open comments"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
-#: dist/apps/articles/index.CaA3Gu3g.js:47
+#: dist/apps/articles/index.CVotsgDG.js:47
 msgid "Close comments"
 msgstr ""
 
@@ -3139,8 +3139,8 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:49
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:7
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:25
-#: dist/apps/articles/index.CaA3Gu3g.js:49
-#: dist/apps/feedback/index.DE73ajr0.js:7
+#: dist/apps/articles/index.CVotsgDG.js:49
+#: dist/apps/feedback/index.D_zG1Rx-.js:7
 #: dist/apps/tags/index.Bjwl0jqk.js:25
 msgid "%d selected"
 msgid_plural "%d selected"
@@ -3149,208 +3149,208 @@ msgstr[1] ""
 
 #. translators: %d: number of matching articles.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:51
-#: dist/apps/articles/index.CaA3Gu3g.js:51
+#: dist/apps/articles/index.CVotsgDG.js:51
 msgid "Select all %d matching"
 msgid_plural "Select all %d matching"
 msgstr[0] ""
 msgstr[1] ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:51
-#: dist/apps/articles/index.CaA3Gu3g.js:51
+#: dist/apps/articles/index.CVotsgDG.js:51
 msgid "Clear selection"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:51
-#: dist/apps/articles/index.CaA3Gu3g.js:51
+#: dist/apps/articles/index.CVotsgDG.js:51
 msgid "Only the first 10,000 matching articles were selected."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:51
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:53
-#: dist/apps/articles/index.CaA3Gu3g.js:51
-#: dist/apps/articles/index.CaA3Gu3g.js:53
+#: dist/apps/articles/index.CVotsgDG.js:51
+#: dist/apps/articles/index.CVotsgDG.js:53
 msgid "Bulk action"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:51
-#: dist/apps/articles/index.CaA3Gu3g.js:51
+#: dist/apps/articles/index.CVotsgDG.js:51
 msgid "New status"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:51
-#: dist/apps/articles/index.CaA3Gu3g.js:51
+#: dist/apps/articles/index.CVotsgDG.js:51
 msgid "Tags for the bulk action"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:51
-#: dist/apps/articles/index.CaA3Gu3g.js:51
+#: dist/apps/articles/index.CVotsgDG.js:51
 msgid "Categories for the bulk action"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:51
-#: dist/apps/articles/index.CaA3Gu3g.js:51
+#: dist/apps/articles/index.CVotsgDG.js:51
 msgid "New author"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:51
-#: dist/apps/articles/index.CaA3Gu3g.js:51
+#: dist/apps/articles/index.CVotsgDG.js:51
 msgid "Select articles below to perform bulk actions"
 msgstr ""
 
 #. translators: 1: articles processed, 2: articles in the run.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:55
-#: dist/apps/articles/index.CaA3Gu3g.js:55
+#: dist/apps/articles/index.CVotsgDG.js:55
 msgid "%1$d of %2$d processed"
 msgstr ""
 
 #. translators: %d: number of articles.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:57
-#: dist/apps/articles/index.CaA3Gu3g.js:57
+#: dist/apps/articles/index.CVotsgDG.js:57
 msgid "Done: %d"
 msgstr ""
 
 #. translators: %d: number of articles.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:59
-#: dist/apps/articles/index.CaA3Gu3g.js:59
+#: dist/apps/articles/index.CVotsgDG.js:59
 msgid "Skipped: %d"
 msgstr ""
 
 #. translators: %d: number of articles.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:61
-#: dist/apps/articles/index.CaA3Gu3g.js:61
+#: dist/apps/articles/index.CVotsgDG.js:61
 msgid "Failed: %d"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:61
-#: dist/apps/articles/index.CaA3Gu3g.js:61
+#: dist/apps/articles/index.CVotsgDG.js:61
 msgid "The run stopped at a batch the server refused."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:61
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/articles/index.CaA3Gu3g.js:61
+#: dist/apps/articles/index.CVotsgDG.js:61
 #: dist/apps/tools/index.CDy_F_6g.js:41
 msgid "Skipped"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:61
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/articles/index.CaA3Gu3g.js:61
+#: dist/apps/articles/index.CVotsgDG.js:61
 #: dist/apps/tools/index.CDy_F_6g.js:41
 msgid "Failed"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:61
-#: dist/apps/articles/index.CaA3Gu3g.js:61
+#: dist/apps/articles/index.CVotsgDG.js:61
 msgid "Close"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:61
-#: dist/apps/articles/index.CaA3Gu3g.js:61
+#: dist/apps/articles/index.CVotsgDG.js:61
 msgid "Rows per page"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:61
-#: dist/apps/articles/index.CaA3Gu3g.js:61
+#: dist/apps/articles/index.CVotsgDG.js:61
 msgid "Columns and rows per page"
 msgstr ""
 
 #. translators: 1: helpful share threshold percentage, 2: minimum votes.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CaA3Gu3g.js:63
+#: dist/apps/articles/index.CVotsgDG.js:63
 msgid "Helpful share below %1$d%% with at least %2$d votes in the selected window."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CaA3Gu3g.js:63
+#: dist/apps/articles/index.CVotsgDG.js:63
 msgid "Filter by category"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CaA3Gu3g.js:63
+#: dist/apps/articles/index.CVotsgDG.js:63
 msgid "Any category"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/articles/index.CaA3Gu3g.js:63
+#: dist/apps/articles/index.CVotsgDG.js:63
 #: dist/apps/tools/index.CDy_F_6g.js:41
 msgid "Tag"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CaA3Gu3g.js:63
+#: dist/apps/articles/index.CVotsgDG.js:63
 msgid "Filter by tag"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CaA3Gu3g.js:63
+#: dist/apps/articles/index.CVotsgDG.js:63
 msgid "Any tag"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CaA3Gu3g.js:63
+#: dist/apps/articles/index.CVotsgDG.js:63
 msgid "Filter by author"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CaA3Gu3g.js:63
+#: dist/apps/articles/index.CVotsgDG.js:63
 msgid "Published between"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CaA3Gu3g.js:63
+#: dist/apps/articles/index.CVotsgDG.js:63
 msgid "No tags"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CaA3Gu3g.js:63
+#: dist/apps/articles/index.CVotsgDG.js:63
 msgid "Needs attention"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CaA3Gu3g.js:63
+#: dist/apps/articles/index.CVotsgDG.js:63
 msgid "Filters"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:1
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/articles/index.CaA3Gu3g.js:63
-#: dist/apps/feedback/index.DE73ajr0.js:1
+#: dist/apps/articles/index.CVotsgDG.js:63
+#: dist/apps/feedback/index.D_zG1Rx-.js:1
 #: dist/apps/tools/index.CDy_F_6g.js:41
 msgid "All"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CaA3Gu3g.js:63
+#: dist/apps/articles/index.CVotsgDG.js:63
 msgid "Drafts"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
 #: .tmp/e2e/licensio-knowledge-base/dist/chunks/status.C86e98PE.js:1
-#: dist/apps/articles/index.CaA3Gu3g.js:63
+#: dist/apps/articles/index.CVotsgDG.js:63
 #: dist/chunks/status.BpobMsUa.js:1
 msgid "Pending"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CaA3Gu3g.js:63
+#: dist/apps/articles/index.CVotsgDG.js:63
 msgid "7 days"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CaA3Gu3g.js:63
+#: dist/apps/articles/index.CVotsgDG.js:63
 msgid "30 days"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CaA3Gu3g.js:63
+#: dist/apps/articles/index.CVotsgDG.js:63
 msgid "90 days"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CaA3Gu3g.js:63
+#: dist/apps/articles/index.CVotsgDG.js:63
 msgid "New article"
 msgstr ""
 
@@ -3358,7 +3358,7 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:3
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:35
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:29
-#: dist/apps/articles/index.CaA3Gu3g.js:63
+#: dist/apps/articles/index.CVotsgDG.js:63
 #: dist/apps/categories/index.BQKk77Ty.js:3
 #: dist/apps/categories/index.BQKk77Ty.js:35
 #: dist/apps/tags/index.Bjwl0jqk.js:29
@@ -3367,23 +3367,23 @@ msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:5
-#: dist/apps/articles/index.CaA3Gu3g.js:63
-#: dist/apps/feedback/index.DE73ajr0.js:5
+#: dist/apps/articles/index.CVotsgDG.js:63
+#: dist/apps/feedback/index.D_zG1Rx-.js:5
 msgid "Filter by status"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CaA3Gu3g.js:63
+#: dist/apps/articles/index.CVotsgDG.js:63
 msgid "Search titles"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CaA3Gu3g.js:63
+#: dist/apps/articles/index.CVotsgDG.js:63
 msgid "Search articles by title"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CaA3Gu3g.js:63
+#: dist/apps/articles/index.CVotsgDG.js:63
 msgid "Views and rating period"
 msgstr ""
 
@@ -3800,98 +3800,98 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:1
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:1
 #: .tmp/e2e/licensio-knowledge-base/dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.Cohcn86k.js:1
-#: dist/apps/feedback/index.DE73ajr0.js:1
+#: dist/apps/feedback/index.D_zG1Rx-.js:1
 #: dist/apps/tools/index.CDy_F_6g.js:1
 #: dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.G_TJ16ZC.js:1
 msgid "The request failed."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:1
-#: dist/apps/feedback/index.DE73ajr0.js:1
+#: dist/apps/feedback/index.D_zG1Rx-.js:1
 msgid "All votes"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:1
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:11
-#: dist/apps/feedback/index.DE73ajr0.js:1
-#: dist/apps/feedback/index.DE73ajr0.js:11
+#: dist/apps/feedback/index.D_zG1Rx-.js:1
+#: dist/apps/feedback/index.D_zG1Rx-.js:11
 msgid "New"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:1
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:11
-#: dist/apps/feedback/index.DE73ajr0.js:1
-#: dist/apps/feedback/index.DE73ajr0.js:11
+#: dist/apps/feedback/index.D_zG1Rx-.js:1
+#: dist/apps/feedback/index.D_zG1Rx-.js:11
 msgid "Reviewed"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:1
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:11
-#: dist/apps/feedback/index.DE73ajr0.js:1
-#: dist/apps/feedback/index.DE73ajr0.js:11
+#: dist/apps/feedback/index.D_zG1Rx-.js:1
+#: dist/apps/feedback/index.D_zG1Rx-.js:11
 msgid "Actioned"
 msgstr ""
 
 #. translators: %s: article title.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:3
-#: dist/apps/feedback/index.DE73ajr0.js:3
+#: dist/apps/feedback/index.D_zG1Rx-.js:3
 msgid "Filtered to article: %s"
 msgstr ""
 
 #. translators: %d: article ID.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:5
-#: dist/apps/feedback/index.DE73ajr0.js:5
+#: dist/apps/feedback/index.D_zG1Rx-.js:5
 msgid "Filtered to article #%d"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:5
-#: dist/apps/feedback/index.DE73ajr0.js:5
+#: dist/apps/feedback/index.D_zG1Rx-.js:5
 msgid "Show all articles"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:5
-#: dist/apps/feedback/index.DE73ajr0.js:5
+#: dist/apps/feedback/index.D_zG1Rx-.js:5
 msgid "Filter by vote"
 msgstr ""
 
 #. translators: %d: number of selected feedback items.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:9
-#: dist/apps/feedback/index.DE73ajr0.js:9
+#: dist/apps/feedback/index.D_zG1Rx-.js:9
 msgid "Mark %d feedback item as reviewed?"
 msgid_plural "Mark %d feedback items as reviewed?"
 msgstr[0] ""
 msgstr[1] ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:9
-#: dist/apps/feedback/index.DE73ajr0.js:9
+#: dist/apps/feedback/index.D_zG1Rx-.js:9
 msgid "Mark reviewed"
 msgstr ""
 
 #. translators: %d: number of selected feedback items.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:11
-#: dist/apps/feedback/index.DE73ajr0.js:11
+#: dist/apps/feedback/index.D_zG1Rx-.js:11
 msgid "Mark %d feedback item as actioned?"
 msgid_plural "Mark %d feedback items as actioned?"
 msgstr[0] ""
 msgstr[1] ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:11
-#: dist/apps/feedback/index.DE73ajr0.js:11
+#: dist/apps/feedback/index.D_zG1Rx-.js:11
 msgid "Mark actioned"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:11
-#: dist/apps/feedback/index.DE73ajr0.js:11
+#: dist/apps/feedback/index.D_zG1Rx-.js:11
 msgid "Select feedback below to perform bulk actions"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:11
-#: dist/apps/feedback/index.DE73ajr0.js:11
+#: dist/apps/feedback/index.D_zG1Rx-.js:11
 msgid "(untitled)"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:11
-#: dist/apps/feedback/index.DE73ajr0.js:11
+#: dist/apps/feedback/index.D_zG1Rx-.js:11
 msgid "Change the status of this feedback?"
 msgstr ""
 

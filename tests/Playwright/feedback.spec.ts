@@ -2,7 +2,7 @@
  * The Feedback inbox, end to end.
  *
  * Checks that a row's status change and a bulk mark each ask in a Popconfirm
- * first, that Cancel sends nothing and puts the row's status back, and that
+ * first, that Cancel or Escape sends nothing and puts the row's status back, and that
  * a confirmed change is saved.
  *
  * Seeds one article with two votes through wp-cli and filters the inbox to
@@ -128,6 +128,14 @@ test.describe( 'Feedback inbox', () => {
 			'Change the status of this feedback?'
 		);
 		await cancelPopconfirm( page );
+		await expect( status ).toHaveText( 'New' );
+		expect( writes ).toHaveLength( 0 );
+
+		// Escape closes it the same way: nothing sent, the status put back.
+		await pickStatus( page, 'First E2E comment', 'Reviewed' );
+		await expect( openPopconfirm( page ) ).toBeVisible();
+		await page.keyboard.press( 'Escape' );
+		await expect( openPopconfirm( page ) ).toBeHidden();
 		await expect( status ).toHaveText( 'New' );
 		expect( writes ).toHaveLength( 0 );
 

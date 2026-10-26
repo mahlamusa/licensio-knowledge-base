@@ -16,7 +16,7 @@ import { lkbTheme } from '../styles/theme';
  * @since 1.0.0
  */
 
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { articleFilter, settings } from './api';
 import { useFeedbackStore } from './store';
 import AppHeader from '../components/AppHeader.vue';
@@ -173,6 +173,14 @@ const {
 	overlayClass: statusConfirmClass,
 	setOpen: setStatusConfirmOpen,
 } = usePopoverFocus();
+
+// Escape closes the confirmation through `setOpen()` alone, without an
+// `openChange`, so the picked status is dropped however it was closed.
+watch( statusConfirmOpen, ( open ) => {
+	if ( ! open ) {
+		pendingStatus.value = null;
+	}
+} );
 
 /**
  * Ask before a row's new status is saved.
