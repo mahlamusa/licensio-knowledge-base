@@ -10,9 +10,16 @@
  * Three of the fields are icons and only one of them is drawn. The precedence
  * is inline SVG, then the uploaded icon, then the dashicon name — set out in
  * full on Licensio_KB_Term_Meta. Silent precedence is a support ticket waiting
- * to happen, so each field's description says on screen what it overrides, and
+ * to happen, so each field's description says on screen what it replaces, and
  * the fields are rendered in precedence order so the one that wins is the one
  * read first.
+ *
+ * Saving keeps one icon source, as the Categories app does: the icon that
+ * wins is stored and every other icon field is cleared, including the inline
+ * Base64 image the app can set and this form cannot. When the form posts no
+ * icon at all, the stored icons are left alone, so saving the order of a
+ * category with a Base64 icon does not lose it; the edit form shows that icon
+ * read-only, with a note that setting another one here replaces it.
  *
  * @package Licensio_KB
  * @since   1.0.0 Added the inline SVG icon field.
@@ -133,6 +140,7 @@ class Licensio_KB_Term_Fields {
      * Render the fields on the "edit category" form.
      *
      * @since 1.0.0 Added the inline SVG icon field.
+     * @since 1.0.0 Shows an inline Base64 icon read-only.
      *
      * @param WP_Term|object $term The term being edited.
      *
@@ -143,11 +151,40 @@ class Licensio_KB_Term_Fields {
 
         wp_nonce_field( self::NONCE_ACTION, self::NONCE_FIELD );
 
+        $this->render_icon_data_row( Licensio_KB_Term_Meta::get_icon_data( $term_id ) );
         $this->render_field_wrapper( 'icon_svg', Licensio_KB_Term_Meta::get_icon_svg( $term_id ), 'tr' );
         $this->render_field_wrapper( 'icon_id', Licensio_KB_Term_Meta::get_icon_id( $term_id ), 'tr' );
         $this->render_field_wrapper( 'icon', Licensio_KB_Term_Meta::get_icon( $term_id ), 'tr' );
         $this->render_field_wrapper( 'image_id', Licensio_KB_Term_Meta::get_image_id( $term_id ), 'tr' );
         $this->render_field_wrapper( 'order', Licensio_KB_Term_Meta::get_order( $term_id ), 'tr' );
+    }
+
+    /**
+     * Show a stored inline Base64 icon, read-only, on the edit form.
+     *
+     * This form has no control for a Base64 icon; the Categories app sets it.
+     * Showing it says which icon the category uses, and that setting another
+     * icon here replaces it. The source is printed with `esc_attr()` because
+     * `esc_url()` drops `data:` URLs; Licensio_KB_Term_Meta::get_icon_data()
+     * rebuilds the value from bytes that decoded as an allowed image.
+     *
+     * @since 1.0.0
+     *
+     * @param string $data The checked `data:` URL, or an empty string.
+     *
+     * @return void
+     */
+    private function render_icon_data_row( $data ) {
+        if ( '' === $data ) {
+            return;
+        }
+
+        printf(
+            '<tr class="form-field"><th scope="row">%1$s</th><td><img class="licensio-kb-media-preview" src="%2$s" alt="" width="48" height="48" /><p class="description">%3$s</p></td></tr>',
+            esc_html__( 'Base64 image icon', 'licensio-knowledge-base' ),
+            esc_attr( $data ),
+            esc_html__( 'Set in the Categories screen, which can change it. Setting an icon below replaces it.', 'licensio-knowledge-base' )
+        );
     }
 
     /**
@@ -221,7 +258,7 @@ class Licensio_KB_Term_Fields {
                 $this->render_svg_field( $name, (string) $value );
                 printf(
                     '<p class="description">%s</p>',
-                    esc_html__( 'Paste an SVG icon. Everything outside a small allowlist of shape elements and presentation attributes is removed on save, so the preview shows what was actually kept. Takes precedence over the uploaded icon and the Dashicons name. An icon drawn with currentColor follows the knowledge base colour.', 'licensio-knowledge-base' )
+                    esc_html__( 'Paste an SVG icon. Everything outside a small allowlist of shape elements and presentation attributes is removed on save, so the preview shows what was actually kept. Saving one replaces the uploaded icon and the Dashicons name. An icon drawn with currentColor follows the knowledge base colour.', 'licensio-knowledge-base' )
                 );
                 break;
 
@@ -233,7 +270,7 @@ class Licensio_KB_Term_Fields {
                 );
                 printf(
                     '<p class="description">%s</p>',
-                    esc_html__( 'A Dashicons name, for example dashicons-book-alt. Ignored when an SVG icon or an uploaded icon is set.', 'licensio-knowledge-base' )
+                    esc_html__( 'A Dashicons name, for example dashicons-book-alt. Kept only when no SVG icon or uploaded icon is set.', 'licensio-knowledge-base' )
                 );
                 break;
 
@@ -244,7 +281,7 @@ class Licensio_KB_Term_Fields {
                 if ( 'icon_id' === $field ) {
                     printf(
                         '<p class="description">%s</p>',
-                        esc_html__( 'An uploaded icon, for example an SVG file. Takes precedence over the Dashicons name, and is itself ignored when an SVG icon is pasted above.', 'licensio-knowledge-base' )
+                        esc_html__( 'An uploaded icon, for example an SVG file. Replaces the Dashicons name on save, and is itself replaced when an SVG icon is pasted above.', 'licensio-knowledge-base' )
                     );
                 } else {
                     printf(
@@ -358,7 +395,13 @@ class Licensio_KB_Term_Fields {
      * write, an importer — posts none of them, and writing defaults for the
      * absent ones would erase metadata that call had no intention of touching.
      *
+     * One icon source is kept: when the posted icons name one, the one that
+     * wins by precedence is stored and every other icon field is cleared,
+     * the inline Base64 image included. When they name none, the stored
+     * icons are left as they are.
+     *
      * @since 1.0.0 Added the inline SVG icon field. Slashes the values so backslashes survive.
+     * @since 1.0.0 Keeps one icon source and clears the others.
      *
      * @param int $term_id The term that was created or edited.
      *
@@ -379,22 +422,67 @@ class Licensio_KB_Term_Fields {
 
         $fields = array(
             'licensio_icon'     => array( Licensio_KB_Term_Meta::META_ICON, array( 'Licensio_KB_Term_Meta', 'sanitize_icon' ) ),
-            'licensio_icon_svg' => array( Licensio_KB_Term_Meta::META_ICON_SVG, array( 'Licensio_KB_SVG_Sanitizer', 'sanitize' ) ),
+            'licensio_icon_svg' => array( Licensio_KB_Term_Meta::META_ICON_SVG, array( 'Licensio_KB_Term_Meta', 'sanitize_icon_svg' ) ),
             'licensio_icon_id'  => array( Licensio_KB_Term_Meta::META_ICON_ID, array( 'Licensio_KB_Term_Meta', 'sanitize_attachment_id' ) ),
             'licensio_image_id' => array( Licensio_KB_Term_Meta::META_IMAGE_ID, array( 'Licensio_KB_Term_Meta', 'sanitize_attachment_id' ) ),
             'licensio_order'    => array( Licensio_KB_Term_Meta::META_ORDER, array( 'Licensio_KB_Term_Meta', 'sanitize_order' ) ),
         );
+
+        $values = array();
 
         foreach ( $fields as $input => $field ) {
             if ( ! isset( $_POST[ $input ] ) ) {
                 continue;
             }
 
-            $raw   = wp_unslash( $_POST[ $input ] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized by the callback below.
-            $value = call_user_func( $field[1], $raw );
-
-            // update_term_meta() unslashes the value, and it was unslashed above already.
-            update_term_meta( (int) $term_id, $field[0], wp_slash( $value ) );
+            $raw              = wp_unslash( $_POST[ $input ] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized by the callback below.
+            $values[ $input ] = call_user_func( $field[1], $raw );
         }
+
+        $winner = self::winning_icon( $values );
+
+        if ( '' !== $winner ) {
+            $cleared = array(
+                'licensio_icon'      => '',
+                'licensio_icon_svg'  => '',
+                'licensio_icon_id'   => 0,
+                'licensio_icon_data' => '',
+            );
+
+            unset( $cleared[ $winner ] );
+            $values = array_merge( $values, $cleared );
+
+            $fields['licensio_icon_data'] = array( Licensio_KB_Term_Meta::META_ICON_DATA );
+        }
+
+        foreach ( $values as $input => $value ) {
+            // update_term_meta() unslashes the value, and it was unslashed above already.
+            update_term_meta( (int) $term_id, $fields[ $input ][0], wp_slash( $value ) );
+        }
+    }
+
+    /**
+     * The posted icon field that wins, by the front end's precedence.
+     *
+     * @since 1.0.0
+     *
+     * @param array<string, mixed> $values The sanitised posted values, by input name.
+     *
+     * @return string `licensio_icon_svg`, `licensio_icon_id` or `licensio_icon`, or an empty string when no icon was posted.
+     */
+    private static function winning_icon( array $values ) {
+        if ( isset( $values['licensio_icon_svg'] ) && '' !== $values['licensio_icon_svg'] ) {
+            return 'licensio_icon_svg';
+        }
+
+        if ( ! empty( $values['licensio_icon_id'] ) ) {
+            return 'licensio_icon_id';
+        }
+
+        if ( isset( $values['licensio_icon'] ) && '' !== $values['licensio_icon'] ) {
+            return 'licensio_icon';
+        }
+
+        return '';
     }
 }
