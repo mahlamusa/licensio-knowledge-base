@@ -10,9 +10,7 @@
  * stylesheet. Override from a theme by copying this file to
  * `licensio-kb/search-body.php`.
  *
- * The heading and breadcrumb trail come from the shared hero. The search form
- * follows it rather than sitting inside it, because a theme override of the
- * hero renders its own markup and nothing the plugin owns can be nested there.
+ * The heading, breadcrumb trail and search field come from the shared hero.
  *
  * @package Licensio_KB
  * @since   1.0.0
@@ -40,7 +38,6 @@ $licensio_kb_heading = sprintf(
 </div>
 
 <div class="licensio-kb licensio-kb--search">
-
 
     <?php if ( have_posts() ) : ?>
         <div class="licensio-kb__list">

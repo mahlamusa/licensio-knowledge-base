@@ -930,10 +930,7 @@ class Licensio_KB_Block_Templates_Test extends Licensio_KB_Test_Case {
 
             $this->assertInstanceOf( 'WP_Block_Template', $template, $slug );
             $this->assertStringNotContainsString( 'wp:shortcode', $template->content, $slug );
-
-            if ( false !== strpos( $template->content, '[licensio_kb_view ' ) ) {
-                $this->assertMatchesRegularExpression( '/<!-- wp:html -->\s*\[licensio_kb_view view="[a-z]+"\]\s*<!-- \/wp:html -->/', $template->content, $slug );
-            }
+            $this->assertMatchesRegularExpression( '/<!-- wp:html -->\s*\[licensio_kb_view view="[a-z]+"\]\s*<!-- \/wp:html -->/', $template->content, $slug );
         }
     }
 }

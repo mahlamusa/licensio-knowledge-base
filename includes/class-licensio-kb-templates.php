@@ -152,9 +152,9 @@ class Licensio_KB_Templates {
      * block templates, and those templates render this shortcode for the body
      * of the view — the same `archive-body`, `category-body`, `single-body`,
      * `tag-body` or `search-body` template the classic layer includes between
-     * `get_header()` and `get_footer()`. That single shared body is what keeps the page identical under a classic
-     * theme, a block theme and any theme in between: one markup, one
-     * stylesheet, no second design to drift.
+     * `get_header()` and `get_footer()`. That single shared body is what keeps
+     * the page identical under a classic theme, a block theme and any theme in
+     * between: one markup, one stylesheet, no second design to drift.
      *
      * @since 1.0.0
      * @since 1.0.0 Renders the single article, tag and search bodies as well.
