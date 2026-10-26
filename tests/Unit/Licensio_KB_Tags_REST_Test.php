@@ -919,6 +919,7 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     public function test_merge_and_convert_check_every_article_first() {
+        /** @var Licensio_KB_Term_Operations&Mockery\MockInterface $operations */
         $operations = Mockery::mock( Licensio_KB_Term_Operations::class );
         $operations->shouldReceive( 'check_articles' )
             ->with( array( 11 ), 'licensio_tag' )

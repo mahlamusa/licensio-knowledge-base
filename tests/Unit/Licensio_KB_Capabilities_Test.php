@@ -126,13 +126,12 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     public function test_the_grant_runs_once_per_capability_set_version() {
-        $user = Mockery::mock( WP_User::class );
-        $user->shouldReceive( 'exists' )->andReturn( true );
-        $user->shouldReceive( 'get_role_caps' )->once();
+        $user = new WP_User( 7 );
         Functions\when( 'wp_get_current_user' )->justReturn( $user );
 
         Licensio_KB_Capabilities::maybe_add_capabilities();
 
+        $this->assertSame( 1, $user->role_caps_reads, 'The current user is read again.' );
         $this->assertTrue( $this->roles['author']->has_cap( 'publish_licensio_articles' ) );
         $this->assertSame( Licensio_KB_Capabilities::CAPS_VERSION, $this->options[ Licensio_KB_Capabilities::VERSION_OPTION ] );
 
