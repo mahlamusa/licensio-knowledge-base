@@ -4,7 +4,8 @@
  *
  * Articles can be dragged, or moved with the Move up and Move down buttons
  * from the keyboard. Focus follows the moved article, and moves to its other
- * button when the one pressed is disabled at the top or bottom of the list. Nothing is sent until the user clicks "Save order";
+ * button when the one pressed is disabled at the top or bottom of the list.
+ * Nothing is sent until the user clicks "Save order";
  * Reset, after a confirmation since it throws the changes away, puts the
  * loaded order back. While the order is unsaved, choosing
  * another category asks first (see the store's `confirmDiscardOrder()`) and
@@ -187,10 +188,10 @@ function moveByButton( index: number, direction: -1 | 1 ): void {
 				'.lkb-order__buttons button'
 			) ?? []
 		);
-		const pressed = buttons[ -1 === direction ? 0 : 1 ];
-		const other = buttons[ -1 === direction ? 1 : 0 ];
-
-		( pressed && ! pressed.disabled ? pressed : other )?.focus();
+		// The pressed button first, then the other one.
+		( -1 === direction ? buttons : buttons.reverse() )
+			.find( ( button ) => ! button.disabled )
+			?.focus();
 	} );
 }
 

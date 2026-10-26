@@ -47,10 +47,10 @@ const booting = ref( true );
 const drivers = ref< SourceDriver[] >( [] );
 const detectError = ref( '' );
 const selected = ref( '' );
-
 // Names its radio group: radios that share a name are one tab stop, with
 // the arrow keys moving between them.
 const sourceName = useId();
+
 const step = ref< Step >( 'source' );
 
 const loadingCategories = ref( false );

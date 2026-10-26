@@ -67,8 +67,10 @@ function tabStops( root: HTMLElement ): HTMLElement[] {
 		}
 
 		const group = Array.from(
-			root.querySelectorAll< HTMLInputElement >( 'input[type="radio"]' )
-		).filter( ( radio ) => radio.name === element.name );
+			root.querySelectorAll< HTMLInputElement >(
+				`input[type="radio"][name="${ CSS.escape( element.name ) }"]`
+			)
+		);
 
 		return group.some( ( radio ) => radio.checked )
 			? element.checked
@@ -144,19 +146,20 @@ function ownsEscape( target: EventTarget | null ): boolean {
  * the key itself, so it also closes alone.
  *
  * Consumed by the Categories and Tags dialogs and their add and edit forms,
- * and the Articles quick edit form.
+ * and the Articles quick edit form, which passes its own element: the table
+ * keeps closed quick edit forms in the page, hidden.
  *
  * @since 1.0.0
  *
- * @param {Function} isOpen    Whether the dialog or edit is open now.
- * @param {string}   container A selector matching the dialog's or form's root.
- * @param {Function} close     Closes it.
+ * @param {Function}                     isOpen    Whether the dialog or edit is open now.
+ * @param {string|Ref<HTMLElement|null>} container A selector matching the dialog's or form's root, or the root itself.
+ * @param {Function}                     close     Closes it.
  *
  * @return {void}
  */
 export function useEscapeClose(
 	isOpen: () => boolean,
-	container: string,
+	container: string | Ref< HTMLElement | null >,
 	close: () => void
 ): void {
 	let owned = false;
@@ -188,7 +191,10 @@ export function useEscapeClose(
 			return;
 		}
 
-		const root = document.querySelector( container );
+		const root =
+			'string' === typeof container
+				? document.querySelector( container )
+				: container.value;
 
 		if (
 			root &&
