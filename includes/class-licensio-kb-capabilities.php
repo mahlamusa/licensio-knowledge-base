@@ -86,35 +86,46 @@ class Licensio_KB_Capabilities {
     const CONTRIBUTOR_ARTICLE_CAPABILITIES = array( 'edit_posts', 'delete_posts' );
 
     /**
+     * The version of the capability set the roles are granted.
+     *
+     * Raise it when the capabilities a role receives change, so every site is
+     * granted the new set once.
+     *
+     * @since 1.0.0
+     * @var int
+     */
+    const CAPS_VERSION = 1;
+
+    /**
+     * The option holding the capability set version a site was last granted.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    const VERSION_OPTION = 'licensio_caps_version';
+
+    /**
      * Register the WordPress hooks.
      *
-     * The capabilities are granted on activation and after an upgrade — see the
-     * plugin bootstrap, which hooks `licensio_activated` and
-     * `licensio_upgraded`, so a network activation grants them inside each
-     * site's own install routine.
-     *
-     * `admin_init` is the repair path, following the same pattern
-     * Licensio_KB_Lifecycle already uses to settle an install whose state is
-     * behind the code. Without it, any site whose code changed without an
-     * activation — a subsite of a network too large to walk, a site created
+     * The capabilities are granted once per version of the capability set,
+     * recorded in the `licensio_caps_version` option. `init` checks that
+     * option on every request, so a site whose code changed without an
+     * activation (a subsite of a network too large to walk, a site created
      * before network activation, a deploy that swapped the plugin files in
-     * place — would hold a post type nobody can edit and would simply lose the
-     * Knowledge Base menu with no visible cause.
+     * place) is granted the capabilities on its first request, before the
+     * admin menu or any REST route checks them. Activation and upgrade run
+     * the same check, see the plugin bootstrap.
      *
-     * The check is free on the overwhelmingly common path: roles are already in
-     * memory from the autoloaded `wp_user_roles` option, and has_cap() means
-     * nothing is written unless a capability is genuinely absent. It is also
-     * what gives an existing install the article capabilities the first time an
-     * administrator loads wp-admin after the plugin files change. The cost of
-     * that is that a capability revoked by hand is granted back on the next
-     * admin request; `licensio_capabilities` is the supported way to change who
-     * holds it.
+     * After that the roles are the site owner's: a capability removed or
+     * denied with a role editor stays that way, until a later version of the
+     * plugin changes the capability set and raises `CAPS_VERSION`. Even then
+     * an explicit denial is kept.
      *
      * Creating a category or tag is refused for users who cannot manage the
      * knowledge base, whichever route asks, and the block editor is not
      * offered to create tags for them.
      *
-     * @since 1.0.0 Grants the article capabilities to authors and contributors too, and keeps term creation to managers.
+     * @since 1.0.0 Grants the article capabilities to authors and contributors too, once per capability set, and keeps term creation to managers.
      *
      * @return void
      */
@@ -122,7 +133,7 @@ class Licensio_KB_Capabilities {
         add_filter( 'licensio_article_post_type_args', array( $this, 'filter_post_type_args' ) );
         add_filter( 'licensio_category_taxonomy_args', array( $this, 'filter_taxonomy_args' ) );
         add_filter( 'licensio_tag_taxonomy_args', array( $this, 'filter_taxonomy_args' ) );
-        add_action( 'admin_init', array( __CLASS__, 'add_capabilities' ), 5 );
+        add_action( 'init', array( __CLASS__, 'maybe_add_capabilities' ), 1 );
         add_filter( 'pre_insert_term', array( __CLASS__, 'guard_term_creation' ), 10, 2 );
         add_filter( 'rest_prepare_' . Licensio_KB_Post_Types::POST_TYPE, array( __CLASS__, 'hide_term_creation' ) );
     }
@@ -158,10 +169,10 @@ class Licensio_KB_Capabilities {
          * Filter the roles granted knowledge base capabilities.
          *
          * Applied when capabilities are granted and when they are removed, so a
-         * site that adds a role here also has it cleaned up. Changes take effect
-         * the next time the plugin is activated or upgraded; call
-         * Licensio_KB_Capabilities::add_capabilities() directly to apply them
-         * immediately. A role given `manage_licensio_kb` here also receives
+         * site that adds a role here also has it cleaned up. The grant runs
+         * once per capability set version, so call
+         * Licensio_KB_Capabilities::add_capabilities() directly to apply a
+         * change. A role given `manage_licensio_kb` here also receives
          * every article capability, so managing the knowledge base still
          * includes managing its articles.
          *
@@ -196,12 +207,43 @@ class Licensio_KB_Capabilities {
     }
 
     /**
-     * Grant the knowledge base capabilities to their roles.
+     * Grant the knowledge base capabilities once per capability set version.
      *
-     * Idempotent, and safe to run on every activation and upgrade. Roles are
-     * stored per site, so this must run inside the site it is granting for.
+     * Hooked to `init`, `licensio_activated` and `licensio_upgraded`. Does
+     * nothing once the site holds the current set, so role edits made after
+     * the grant are kept. The current user's capabilities were read before
+     * `init`, so they are read again after a grant, and the first request
+     * after the plugin files change already works.
      *
      * @since 1.0.0
+     *
+     * @return void
+     */
+    public static function maybe_add_capabilities() {
+        if ( (int) get_option( self::VERSION_OPTION, 0 ) >= self::CAPS_VERSION ) {
+            return;
+        }
+
+        self::add_capabilities();
+
+        update_option( self::VERSION_OPTION, self::CAPS_VERSION );
+
+        $user = wp_get_current_user();
+
+        if ( $user instanceof WP_User && $user->exists() ) {
+            $user->get_role_caps();
+        }
+    }
+
+    /**
+     * Grant the knowledge base capabilities to their roles.
+     *
+     * Idempotent. A capability a role already has, or was explicitly denied,
+     * is left as it is. Roles are stored per site, so this must run inside the
+     * site it is granting for. Call it directly to apply a change to the
+     * `licensio_capabilities` filter at once.
+     *
+     * @since 1.0.0 Keeps an explicit denial.
      *
      * @return void
      */
@@ -216,7 +258,7 @@ class Licensio_KB_Capabilities {
             foreach ( (array) $capabilities as $capability ) {
                 $capability = (string) $capability;
 
-                if ( '' === $capability || $role->has_cap( $capability ) ) {
+                if ( '' === $capability || isset( $role->capabilities[ $capability ] ) ) {
                     continue;
                 }
 

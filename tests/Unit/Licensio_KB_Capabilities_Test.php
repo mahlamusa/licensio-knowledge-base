@@ -94,10 +94,9 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
     /**
      * Granting a capability a role already holds writes nothing.
      *
-     * The grant runs on `admin_init`, so it happens on every admin request.
      * Core's `WP_Role::add_cap()` rewrites the autoloaded `wp_user_roles`
-     * option each time it is called, so an unguarded grant would mean a
-     * database write on every single page of wp-admin.
+     * option each time it is called, so a direct call to the grant on a site
+     * that already holds every capability must write nothing.
      *
      * @since 1.0.0
      *
@@ -113,6 +112,70 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
         $this->assertSame( $granted, $this->roles['administrator']->add_cap_calls );
         $this->assertSame( $granted, $this->roles['editor']->add_cap_calls );
         $this->assertTrue( $this->roles['administrator']->has_cap( 'manage_licensio_kb' ) );
+    }
+
+    /**
+     * The capabilities are granted once per capability set version.
+     *
+     * A capability the site owner removes afterwards stays removed, as the
+     * readme promises, and the current user's capabilities are read again
+     * so the request that granted them can already use them.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_grant_runs_once_per_capability_set_version() {
+        $user = Mockery::mock( WP_User::class );
+        $user->shouldReceive( 'exists' )->andReturn( true );
+        $user->shouldReceive( 'get_role_caps' )->once();
+        Functions\when( 'wp_get_current_user' )->justReturn( $user );
+
+        Licensio_KB_Capabilities::maybe_add_capabilities();
+
+        $this->assertTrue( $this->roles['author']->has_cap( 'publish_licensio_articles' ) );
+        $this->assertSame( Licensio_KB_Capabilities::CAPS_VERSION, $this->options[ Licensio_KB_Capabilities::VERSION_OPTION ] );
+
+        $this->roles['author']->remove_cap( 'publish_licensio_articles' );
+
+        Licensio_KB_Capabilities::maybe_add_capabilities();
+
+        $this->assertFalse( $this->roles['author']->has_cap( 'publish_licensio_articles' ), 'A capability the owner removed is not granted back.' );
+    }
+
+    /**
+     * A site behind the current capability set is granted it again.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_site_behind_the_capability_set_is_granted_it() {
+        Functions\when( 'wp_get_current_user' )->justReturn( null );
+
+        $this->options[ Licensio_KB_Capabilities::VERSION_OPTION ] = Licensio_KB_Capabilities::CAPS_VERSION - 1;
+
+        Licensio_KB_Capabilities::maybe_add_capabilities();
+
+        $this->assertTrue( $this->roles['contributor']->has_cap( 'edit_licensio_articles' ) );
+        $this->assertSame( Licensio_KB_Capabilities::CAPS_VERSION, $this->options[ Licensio_KB_Capabilities::VERSION_OPTION ] );
+    }
+
+    /**
+     * A capability the site owner explicitly denied stays denied.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_explicit_denial_survives_a_grant() {
+        $this->roles['author']->add_cap( 'publish_licensio_articles', false );
+
+        Licensio_KB_Capabilities::add_capabilities();
+
+        $this->assertFalse( $this->roles['author']->has_cap( 'publish_licensio_articles' ) );
+        $this->assertArrayHasKey( 'publish_licensio_articles', $this->roles['author']->capabilities );
+        $this->assertTrue( $this->roles['author']->has_cap( 'edit_licensio_articles' ) );
     }
 
     /**
@@ -387,10 +450,12 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
         $this->assertNotFalse( has_filter( 'licensio_article_post_type_args', array( $capabilities, 'filter_post_type_args' ) ) );
         $this->assertNotFalse( has_filter( 'licensio_category_taxonomy_args', array( $capabilities, 'filter_taxonomy_args' ) ) );
         $this->assertNotFalse( has_filter( 'licensio_tag_taxonomy_args', array( $capabilities, 'filter_taxonomy_args' ) ) );
-        $this->assertNotFalse(
-            has_action( 'admin_init', array( 'Licensio_KB_Capabilities', 'add_capabilities' ) ),
-            'A site whose code changed without an activation must still receive the capability.'
+        $this->assertSame(
+            1,
+            has_action( 'init', array( 'Licensio_KB_Capabilities', 'maybe_add_capabilities' ) ),
+            'A site whose code changed without an activation must receive the capabilities before the menu and REST check them.'
         );
+        $this->assertFalse( has_action( 'admin_init', array( 'Licensio_KB_Capabilities', 'add_capabilities' ) ), 'No grant on every admin request.' );
         $this->assertNotFalse( has_filter( 'pre_insert_term', array( 'Licensio_KB_Capabilities', 'guard_term_creation' ) ) );
         $this->assertNotFalse( has_filter( 'rest_prepare_licensio_article', array( 'Licensio_KB_Capabilities', 'hide_term_creation' ) ) );
     }

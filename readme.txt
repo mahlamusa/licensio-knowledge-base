@@ -153,7 +153,7 @@ Administrators and editors. Both are given the `manage_licensio_kb` capability o
 
 = Can authors and contributors write articles? =
 
-Yes, the same way they write posts. Authors create, edit, publish and delete their own articles; contributors write their own drafts and submit them for review. Both can file articles under existing categories and tags, but not create new ones. In Knowledge Base > All Articles they see only their own articles. Categories, Tags, Settings, Tools, Analytics and Feedback stay with administrators and editors. The article capabilities (`edit_licensio_articles`, `publish_licensio_articles` and the rest) can be changed per role with any role editor.
+Yes, the same way they write posts. Authors create, edit, publish and delete their own articles; contributors write their own drafts and submit them for review. Both can file articles under existing categories and tags, but not create new ones. In Knowledge Base > All Articles they see only their own articles. Categories, Tags, Settings, Tools, Analytics and Feedback stay with administrators and editors. The article capabilities (`edit_licensio_articles`, `publish_licensio_articles` and the rest) can be changed per role with any role editor; the plugin grants them once and keeps the changes you make.
 
 = Can a filter turn the All Articles, Categories and Tags apps back on? =
 

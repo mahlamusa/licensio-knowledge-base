@@ -59,6 +59,7 @@ class Licensio_KB_Uninstaller {
         'licensio_search_reindex_state',
         Licensio_KB_Search_Index::BUILT_OPTION,
         Licensio_KB_Lifecycle::UPGRADE_LOCK_OPTION,
+        Licensio_KB_Capabilities::VERSION_OPTION,
     );
 
     /**
