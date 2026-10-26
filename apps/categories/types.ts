@@ -33,6 +33,8 @@ export interface CategoryItem {
 	icon_id: number;
 	/** Sanitised inline SVG markup, or empty. Shown as text, never as HTML. */
 	icon_svg: string;
+	/** An inline Base64 PNG, JPEG, GIF or WebP icon as a data URL, or empty. */
+	icon_data: string;
 	/** The category image's attachment ID, or 0. */
 	image_id: number;
 	/** The uploaded icon's URL, or empty. */
@@ -53,6 +55,7 @@ export interface CategoryInput {
 	icon?: string;
 	icon_id?: number;
 	icon_svg?: string;
+	icon_data?: string;
 	image_id?: number;
 }
 

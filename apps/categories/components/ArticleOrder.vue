@@ -3,15 +3,23 @@
  * The article order pane for the selected category.
  *
  * Articles can be dragged, or moved with the Move up and Move down buttons
- * from the keyboard. Nothing is sent until the user confirms "Save order";
- * Reset puts the loaded order back. While the order is unsaved, choosing
+ * from the keyboard. Nothing is sent until the user clicks "Save order";
+ * Reset, after a confirmation since it throws the changes away, puts the
+ * loaded order back. While the order is unsaved, choosing
  * another category asks first (see the store's `confirmDiscardOrder()`) and
  * leaving the page brings up the browser's leave warning.
  *
  * @since 1.0.0
  */
 
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import {
+	computed,
+	nextTick,
+	onBeforeUnmount,
+	onMounted,
+	ref,
+	watch,
+} from 'vue';
 import { message } from 'ant-design-vue';
 import ConfirmButton from '../../components/ConfirmButton.vue';
 import { __, sprintf } from '../../components/i18n';
@@ -32,6 +40,7 @@ const loadedIds = ref< number[] >( [] );
 const total = ref( 0 );
 const loading = ref( false );
 const saving = ref( false );
+const heading = ref< HTMLElement | null >( null );
 const error = ref( '' );
 const dragIndex = ref< number | null >( null );
 
@@ -203,9 +212,11 @@ function reset(): void {
 }
 
 /**
- * Save the order, after the user confirmed.
+ * Save the order.
  *
- * The answer is applied only if the pane still shows the list that was
+ * Saving is not destructive, so it is not confirmed. The Save and Reset
+ * buttons go away once the order is saved, so focus moves to the pane's
+ * heading rather than being dropped on the page. The answer is applied only if the pane still shows the list that was
  * saved: when another category was selected (or the list reloaded) while the
  * request was out, its answer would otherwise filter the new list.
  *
@@ -239,6 +250,8 @@ async function save(): Promise< void > {
 
 		loadedIds.value = saved.ids;
 		reset();
+		await nextTick();
+		heading.value?.focus();
 	} catch ( caught ) {
 		if ( ticket !== latest ) {
 			return;
@@ -256,7 +269,7 @@ async function save(): Promise< void > {
 		class="lkb-order"
 		:aria-label="__( 'Article order', 'licensio-knowledge-base' )"
 	>
-		<h2 class="lkb-order__title">
+		<h2 ref="heading" class="lkb-order__title" tabindex="-1">
 			{{
 				props.category
 					? sprintf(
@@ -390,23 +403,22 @@ async function save(): Promise< void > {
 			</ol>
 
 			<div v-if="dirty" class="lkb-order__actions">
-				<a-button :disabled="saving" @click="reset">
-					{{ __( 'Reset', 'licensio-knowledge-base' ) }}
-				</a-button>
 				<ConfirmButton
-					type="primary"
 					:title="
 						__(
-							'Save this article order?',
+							'Discard the unsaved article order?',
 							'licensio-knowledge-base'
 						)
 					"
-					:ok-text="__( 'Save order', 'licensio-knowledge-base' )"
-					:loading="saving"
-					@confirm="save"
+					:ok-text="__( 'Discard', 'licensio-knowledge-base' )"
+					:disabled="saving"
+					@confirm="reset"
 				>
-					{{ __( 'Save order', 'licensio-knowledge-base' ) }}
+					{{ __( 'Reset', 'licensio-knowledge-base' ) }}
 				</ConfirmButton>
+				<a-button type="primary" :loading="saving" @click="save">
+					{{ __( 'Save order', 'licensio-knowledge-base' ) }}
+				</a-button>
 			</div>
 		</template>
 	</section>
