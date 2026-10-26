@@ -23,7 +23,9 @@
  * A page opened for one tag (`?term=`) loads that tag into the left form,
  * as core's link to a tag's edit screen does.
  *
- * A tag's article count links to the Articles app filtered by that tag.
+ * A tag's article count, of published articles only as on the Categories
+ * app, links to the Articles app filtered by that tag, which lists its
+ * articles in every status.
  *
  * Names and descriptions are rendered as text, never as HTML. The table
  * shows a description as plain text, without its markup and with entities

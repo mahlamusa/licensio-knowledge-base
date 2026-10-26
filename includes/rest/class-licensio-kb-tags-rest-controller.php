@@ -7,13 +7,15 @@
  *
  * - `GET /tags`: `search`, `unused`, `include[]`, `orderby` (`name`, `count`),
  *   `order`, `page`, `per_page`. Answers `{ items, total, pages, page, per_page }`.
- *   Each item's `count` is the number of articles with the tag in any status
- *   but trash and auto-draft, so a tag only drafts, scheduled, pending or
- *   private articles use is not unused. The Unused filter and the count sort
- *   use the same number. Core's own term count, which only counts published
- *   articles and which the front end reads, is left untouched. The single-tag
- *   answers of the write routes carry core's count; the app reads counts only
- *   from this list, which it reloads after every write.
+ *   Each item's `count` is the number of published articles with the tag,
+ *   like category counts and core's own term count, so converting a tag to a
+ *   category keeps the number shown. The count sort uses the same number.
+ *   The Unused filter instead counts articles in any status but trash and
+ *   auto-draft, so a tag only drafts, scheduled, pending or private articles
+ *   use is not unused and deleting the Unused list never strips it from them;
+ *   such a tag shows a count of 0. The single-tag answers of the write routes
+ *   carry core's count; the app reads counts only from this list, which it
+ *   reloads after every write.
  * - `POST /tags` and `PATCH /tags/{id}`: `name`, `slug`, `description`. As in
  *   core, a new tag with a taken slug gets a unique one; editing a tag to a
  *   slug another tag uses, or adding one with a name a tag has, is refused
@@ -226,7 +228,7 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
                 'type'        => 'string',
                 'enum'        => array( 'name', 'count' ),
                 'default'     => 'name',
-                'description' => __( 'Sort by name or by article count.', 'licensio-knowledge-base' ),
+                'description' => __( 'Sort by name or by published article count.', 'licensio-knowledge-base' ),
             ),
             'order'    => array(
                 'type'        => 'string',
@@ -530,10 +532,13 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
      * "off" value, and the sort is a set of CASE expressions of which only the
      * chosen one is not null.
      *
-     * The article count comes from a derived table over the tag
-     * relationships of articles in any status but trash and auto-draft, not
-     * from core's published-only `count` column, so the Unused filter never
-     * lists a tag a draft, scheduled, pending or private article still uses.
+     * The counts come from a derived table over the tag relationships of
+     * articles in any status but trash and auto-draft, not from core's
+     * stored `count` column. It gives two numbers: the published articles,
+     * which is the `count` answered and sorted by, as category counts and
+     * core term counts are; and every article it covers, which the Unused
+     * filter reads, so it never lists a tag a draft, scheduled, pending or
+     * private article still uses.
      *
      * @since 1.0.0
      *
@@ -559,17 +564,18 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
             $wpdb->prepare(
                 'SELECT COUNT(*) FROM %i AS t INNER JOIN %i AS tt ON tt.term_id = t.term_id
                 LEFT JOIN (
-                    SELECT r.term_taxonomy_id, COUNT(*) AS n FROM %i AS r INNER JOIN %i AS p ON p.ID = r.object_id
+                    SELECT r.term_taxonomy_id, COUNT(*) AS used, SUM( CASE WHEN p.post_status = %s THEN 1 ELSE 0 END ) AS n FROM %i AS r INNER JOIN %i AS p ON p.ID = r.object_id
                     INNER JOIN %i AS rt ON rt.term_taxonomy_id = r.term_taxonomy_id AND rt.taxonomy = %s
                     WHERE p.post_type = %s AND p.post_status NOT IN ( %s, %s )
                     GROUP BY r.term_taxonomy_id
                 ) AS c ON c.term_taxonomy_id = tt.term_taxonomy_id
                 WHERE tt.taxonomy = %s
                     AND ( %s = \'\' OR t.name LIKE %s OR t.slug LIKE %s )
-                    AND ( %d = 0 OR COALESCE( c.n, 0 ) = 0 )
+                    AND ( %d = 0 OR COALESCE( c.used, 0 ) = 0 )
                     AND ( %s = \'\' OR FIND_IN_SET( t.term_id, %s ) > 0 )',
                 $wpdb->terms,
                 $wpdb->term_taxonomy,
+                'publish',
                 $wpdb->term_relationships,
                 $wpdb->posts,
                 $wpdb->term_taxonomy,
@@ -592,14 +598,14 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
             $wpdb->prepare(
                 'SELECT t.term_id, t.name, t.slug, tt.description, COALESCE( c.n, 0 ) AS count FROM %i AS t INNER JOIN %i AS tt ON tt.term_id = t.term_id
                 LEFT JOIN (
-                    SELECT r.term_taxonomy_id, COUNT(*) AS n FROM %i AS r INNER JOIN %i AS p ON p.ID = r.object_id
+                    SELECT r.term_taxonomy_id, COUNT(*) AS used, SUM( CASE WHEN p.post_status = %s THEN 1 ELSE 0 END ) AS n FROM %i AS r INNER JOIN %i AS p ON p.ID = r.object_id
                     INNER JOIN %i AS rt ON rt.term_taxonomy_id = r.term_taxonomy_id AND rt.taxonomy = %s
                     WHERE p.post_type = %s AND p.post_status NOT IN ( %s, %s )
                     GROUP BY r.term_taxonomy_id
                 ) AS c ON c.term_taxonomy_id = tt.term_taxonomy_id
                 WHERE tt.taxonomy = %s
                     AND ( %s = \'\' OR t.name LIKE %s OR t.slug LIKE %s )
-                    AND ( %d = 0 OR COALESCE( c.n, 0 ) = 0 )
+                    AND ( %d = 0 OR COALESCE( c.used, 0 ) = 0 )
                     AND ( %s = \'\' OR FIND_IN_SET( t.term_id, %s ) > 0 )
                 ORDER BY
                     CASE WHEN %s = \'count\' AND %s = \'asc\' THEN COALESCE( c.n, 0 ) END ASC,
@@ -610,6 +616,7 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
                 LIMIT %d OFFSET %d',
                 $wpdb->terms,
                 $wpdb->term_taxonomy,
+                'publish',
                 $wpdb->term_relationships,
                 $wpdb->posts,
                 $wpdb->term_taxonomy,
@@ -1064,8 +1071,8 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
     /**
      * A tag, as the app reads it.
      *
-     * The list query's `count` counts articles in every status but trash and
-     * auto-draft; a `WP_Term` carries core's published-only count. The name
+     * The list query's `count` counts published articles, as the
+     * published-only count a `WP_Term` carries does. The name
      * is decoded to plain text; the description is kept as stored, so it
      * round-trips unchanged.
      *
