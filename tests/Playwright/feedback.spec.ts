@@ -18,6 +18,7 @@ import { expect, test, type Page } from '@playwright/test';
 import {
 	cancelPopconfirm,
 	confirmPopconfirm,
+	expectNoPopconfirm,
 	openPopconfirm,
 } from './helpers/content-manager';
 import { logIn, password, user } from './helpers/session';
@@ -127,9 +128,7 @@ test.describe( 'Feedback inbox', () => {
 		await pickStatus( page, 'First E2E comment', 'Reviewed' );
 		await expect.poll( () => writes.length ).toBe( 1 );
 		await expect( status ).toHaveText( 'Reviewed' );
-		await expect( page.locator( '.ant-popconfirm:visible' ) ).toHaveCount(
-			0
-		);
+		await expectNoPopconfirm( page );
 
 		// A bulk mark asks first, and Cancel sends nothing.
 

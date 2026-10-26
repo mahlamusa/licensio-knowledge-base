@@ -19,6 +19,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import {
 	cancelPopconfirm,
 	confirmPopconfirm,
+	expectNoPopconfirm,
 	openPopconfirm,
 } from './helpers/content-manager';
 import { logIn, password, user } from './helpers/session';
@@ -141,9 +142,7 @@ test.describe( 'Knowledge base settings', () => {
 		// A save is an update, so it runs on click without a confirmation.
 		await page.getByRole( 'button', { name: 'Save changes' } ).click();
 		await expect( page.getByText( 'Settings saved.' ) ).toBeVisible();
-		await expect( page.locator( '.ant-popconfirm:visible' ) ).toHaveCount(
-			0
-		);
+		await expectNoPopconfirm( page );
 
 		// No permalink save, no cache flush: straight to the archive.
 		await page.goto( '/?post_type=licensio_article' );
