@@ -794,4 +794,22 @@ class Licensio_KB_Article_Bulk_Test extends Licensio_KB_Test_Case {
             $this->core_writes
         );
     }
+
+    /**
+     * Before the post type is registered, a capability is never the bare core one.
+     *
+     * Contributors hold core's `edit_posts` for blog posts; it must never
+     * stand in for the article capability.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_type_cap_never_falls_back_to_the_core_capability() {
+        Functions\when( 'get_post_type_object' )->justReturn( null );
+
+        $this->assertSame( 'edit_licensio_articles', Licensio_KB_Article_Bulk::type_cap( 'edit_posts' ) );
+        $this->assertSame( 'publish_licensio_articles', Licensio_KB_Article_Bulk::type_cap( 'publish_posts' ) );
+        $this->assertSame( 'do_not_allow', Licensio_KB_Article_Bulk::type_cap( 'moderate_comments' ) );
+    }
 }

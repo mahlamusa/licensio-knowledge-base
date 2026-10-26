@@ -751,16 +751,24 @@ class Licensio_KB_Article_Bulk {
     /**
      * The article post type's name for a primitive capability.
      *
-     * @since 1.0.0
+     * Before the post type is registered, the article capability is named
+     * from the plugin's own map, and an unknown one is refused; never the
+     * bare core capability, which contributors hold for posts.
+     *
+     * @since 1.0.0 Never falls back to the core capability.
      *
      * @param string $cap The generic capability, e.g. `publish_posts`.
      *
-     * @return string The post type's capability.
+     * @return string The post type's capability, or `do_not_allow` for an unknown one.
      */
     public static function type_cap( $cap ) {
         $type = get_post_type_object( Licensio_KB_Post_Types::POST_TYPE );
 
-        return is_object( $type ) && isset( $type->cap->$cap ) ? (string) $type->cap->$cap : (string) $cap;
+        if ( is_object( $type ) && isset( $type->cap->$cap ) ) {
+            return (string) $type->cap->$cap;
+        }
+
+        return isset( Licensio_KB_Capabilities::ARTICLE_CAPABILITIES[ $cap ] ) ? Licensio_KB_Capabilities::ARTICLE_CAPABILITIES[ $cap ] : 'do_not_allow';
     }
 
     /**
