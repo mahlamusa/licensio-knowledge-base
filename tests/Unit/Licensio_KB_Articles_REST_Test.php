@@ -974,6 +974,92 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * Quick edit edits the stored title, so an unchanged title saves the same bytes.
+     *
+     * A title stored with entities by a user without `unfiltered_html` is
+     * shown decoded, as text, but Quick edit gets it as stored. Sending that
+     * back writes it unchanged, so the entities never become markup.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_quick_edit_round_trips_the_stored_title() {
+        $stored  = 'Guide &lt;img src=x onerror=alert(1)&gt; &amp; tips';
+        $post    = $this->post( array( 'post_title' => $stored ) );
+        $written = array();
+        $metrics = new class( 50, 5 ) extends Licensio_KB_Article_Metrics {
+
+            /**
+             * No figures for any article.
+             *
+             * @since 1.0.0
+             *
+             * @param int[] $ids    The article IDs.
+             * @param int   $window The window, in days.
+             *
+             * @return array<int, array{views: int, up: int, down: int, share: int|null}> None.
+             */
+            public function for_articles( array $ids, $window ) {
+                return array();
+            }
+
+            /**
+             * No attachments for any article.
+             *
+             * @since 1.0.0
+             *
+             * @param int[] $ids The article IDs.
+             *
+             * @return array<int, int> None.
+             */
+            public function attachment_counts( array $ids ) {
+                return array();
+            }
+        };
+
+        Functions\when( 'get_post' )->justReturn( $post );
+        Functions\when( 'wp_slash' )->returnArg();
+        Functions\when( 'wp_update_post' )->alias(
+            function ( $postarr ) use ( &$written, $post ) {
+                $written[]        = $postarr;
+                $post->post_title = $postarr['post_title'];
+
+                return $postarr['ID'];
+            }
+        );
+        Functions\when( 'clean_post_cache' )->justReturn( null );
+        Functions\when( 'update_object_term_cache' )->justReturn( null );
+        Functions\when( 'wp_list_pluck' )->alias(
+            function ( $items, $field ) {
+                return array_map(
+                    function ( $item ) use ( $field ) {
+                        return $item->$field;
+                    },
+                    $items
+                );
+            }
+        );
+        Functions\when( 'cache_users' )->justReturn( null );
+        Functions\when( 'get_the_terms' )->justReturn( false );
+        Functions\when( 'get_edit_post_link' )->justReturn( '' );
+        Functions\when( 'get_preview_post_link' )->justReturn( '' );
+        Functions\when( 'strip_shortcodes' )->returnArg();
+
+        $controller = new Licensio_KB_Articles_REST_Controller( $metrics, new Licensio_KB_Article_Bulk() );
+        $row        = $controller->prepare_items( array( $post ), 30 )[0];
+
+        $this->assertSame( 'Guide <img src=x onerror=alert(1)> & tips', $row['title'], 'Shown as text.' );
+        $this->assertSame( $stored, $row['title_raw'], 'Edited as stored.' );
+
+        $saved = $controller->update_item( $this->patch( array( 'title' => $row['title_raw'] ) ) );
+
+        $this->assertSame( $stored, $written[0]['post_title'], 'The same bytes are written back.' );
+        $this->assertSame( $stored, $saved['title_raw'] );
+        $this->assertSame( $row['title'], $saved['title'] );
+    }
+
+    /**
      * A tag that cannot be created stops the quick edit before the article is written.
      *
      * @since 1.0.0

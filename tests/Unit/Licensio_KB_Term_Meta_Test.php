@@ -193,6 +193,26 @@ class Licensio_KB_Term_Meta_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * An oversized Base64 SVG is refused before it is decoded.
+     *
+     * The padding is whitespace inside the Base64, which decoding strips,
+     * so the decoded SVG is small and valid: only a cap on the encoded text
+     * refuses it.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_oversized_base64_svg_is_refused_before_decoding() {
+        $encoded = base64_encode( '<svg viewBox="0 0 24 24"><path d="M4 4h16"/></svg>' );
+        $wrapped = 'data:image/svg+xml;base64,' . chunk_split( $encoded, 76, "\r\n" );
+        $padded  = 'data:image/svg+xml;base64,' . substr( $encoded, 0, 4 ) . str_repeat( "\n", 200000 ) . substr( $encoded, 4 );
+
+        $this->assertSame( '<svg viewBox="0 0 24 24"><path d="M4 4h16"/></svg>', Licensio_KB_Term_Meta::sanitize_icon_svg( $wrapped ), 'Wrapped Base64 within the cap is decoded.' );
+        $this->assertSame( '', Licensio_KB_Term_Meta::sanitize_icon_svg( $padded ) );
+    }
+
+    /**
      * Only a real PNG, JPEG, GIF or WebP within the size cap is kept as a Base64 icon.
      *
      * @since 1.0.0

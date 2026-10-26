@@ -199,6 +199,80 @@ test.describe( 'Articles app', () => {
 		}
 	} );
 
+	test( 'quick edit edits the stored title, not the decoded one', async ( {
+		page,
+	} ) => {
+		const app = await openContentManager( page, 'articles' );
+		const stamp = Date.now();
+		const stored = `Entities &lt;b&gt;${ stamp }&lt;/b&gt; &amp; more`;
+		const { id } = await articleRequest( page, 'POST', '', {
+			title: stored,
+			status: 'draft',
+		} );
+
+		try {
+			await page.goto(
+				contentManagerUrl( 'articles' ) + '&status=draft'
+			);
+
+			const row = app.locator( '.ant-table-row', {
+				hasText: `Entities <b>${ stamp }</b> & more`,
+			} );
+
+			await expect(
+				row,
+				'The list shows the title as text.'
+			).toBeVisible();
+
+			await row.getByRole( 'button', { name: 'Quick edit' } ).click();
+
+			const form = app.locator( '.ant-table-expanded-row' ).first();
+			const field = form.getByLabel( 'Title' );
+
+			await expect( field ).toHaveValue( stored );
+
+			await field.fill( stored + ' edited' );
+			await form.getByRole( 'button', { name: /Save/ } ).click();
+			await expect(
+				row,
+				'The saved title is shown as text.'
+			).toContainText( `Entities <b>${ stamp }</b> & more edited` );
+			await expect(
+				field,
+				'The form keeps the stored title after the save.'
+			).toHaveValue( stored + ' edited' );
+
+			const raw = await page.evaluate( async ( postId ) => {
+				const config = (
+					window as unknown as {
+						licensioKbArticles: { root: string; nonce: string };
+					}
+				 ).licensioKbArticles;
+				const base =
+					config.root.replace( 'licensio-kb/v1', 'wp/v2' ) +
+					'licensio_articles/' +
+					postId;
+				const response = await fetch(
+					base +
+						( base.includes( '?' ) ? '&' : '?' ) +
+						'context=edit',
+					{
+						headers: { 'X-WP-Nonce': config.nonce },
+						credentials: 'same-origin',
+					}
+				);
+
+				return ( await response.json() ).title.raw as string;
+			}, id );
+
+			expect( raw, 'The entities are saved as they were.' ).toBe(
+				stored + ' edited'
+			);
+		} finally {
+			await articleRequest( page, 'DELETE', '/' + id );
+		}
+	} );
+
 	test( 'quick edit fits a phone screen without scrolling sideways', async ( {
 		page,
 	} ) => {
