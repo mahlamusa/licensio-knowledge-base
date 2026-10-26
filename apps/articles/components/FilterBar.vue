@@ -12,6 +12,7 @@
 
 import { computed } from 'vue';
 import { FilterOutlined } from '@ant-design/icons-vue';
+import type { CheckboxChangeEvent } from 'ant-design-vue/es/checkbox/interface';
 import TermSelect from '../../components/TermSelect.vue';
 import { usePopoverFocus } from '../../components/popover-focus';
 import { __, sprintf } from '../../components/i18n';
@@ -153,7 +154,7 @@ const attentionHelp = sprintf(
 				<a-checkbox
 					:checked="store.query.uncategorised"
 					@change="
-						( event ) =>
+						( event: CheckboxChangeEvent ) =>
 							store.setFilters( {
 								uncategorised: event.target.checked,
 							} )
@@ -165,7 +166,7 @@ const attentionHelp = sprintf(
 				<a-checkbox
 					:checked="store.query.untagged"
 					@change="
-						( event ) =>
+						( event: CheckboxChangeEvent ) =>
 							store.setFilters( {
 								untagged: event.target.checked,
 							} )
@@ -178,7 +179,7 @@ const attentionHelp = sprintf(
 					<a-checkbox
 						:checked="store.query.needs_attention"
 						@change="
-							( event ) =>
+							( event: CheckboxChangeEvent ) =>
 								store.setFilters( {
 									needs_attention: event.target.checked,
 								} )

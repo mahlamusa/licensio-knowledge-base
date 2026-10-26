@@ -317,7 +317,7 @@ onMounted( () => {
 						"
 						:options="voteOptions"
 						@change="
-							( value ) =>
+							( value: unknown ) =>
 								store.filter( { vote: Number( value ) } )
 						"
 					/>
@@ -431,7 +431,7 @@ onMounted( () => {
 						:loading="store.loading"
 						:row-selection="{
 							selectedRowKeys: store.selected,
-							onChange: ( keys ) =>
+							onChange: ( keys: unknown[] ) =>
 								store.select( keys as number[] ),
 						}"
 						:pagination="{
@@ -519,7 +519,8 @@ onMounted( () => {
 								>
 									<a-select
 										:value="
-											pendingStatus?.id === record.id
+											pendingStatus &&
+											pendingStatus.id === record.id
 												? pendingStatus.status
 												: record.status
 										"
@@ -549,7 +550,7 @@ onMounted( () => {
 											},
 										]"
 										@change="
-											( value ) =>
+											( value: unknown ) =>
 												pickStatus(
 													record.id,
 													value as FeedbackStatus

@@ -38,6 +38,8 @@ composer run lint      # PHPCS against WPCS
 composer run fix       # PHPCBF
 composer run analyze   # PHPStan level 5
 vendor/bin/phpunit     # unit tests
+npm run lint:js        # ESLint + Prettier over apps (.ts, .vue), blocks, tests/Playwright, tools
+npm run typecheck      # vue-tsc --noEmit over the apps and the Playwright specs
 npm test               # Playwright
 ```
 

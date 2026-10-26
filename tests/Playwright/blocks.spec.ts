@@ -154,9 +154,13 @@ test.describe( 'Knowledge base blocks', () => {
 
 		await page.goto( '/wp-admin/post-new.php?post_type=page' );
 
-		const nonce = await page.evaluate( () =>
-			// eslint-disable-next-line no-undef
-			window.wpApiSettings ? window.wpApiSettings.nonce : ''
+		const nonce = await page.evaluate(
+			() =>
+				(
+					window as Window & {
+						wpApiSettings?: { nonce: string };
+					}
+				 ).wpApiSettings?.nonce ?? ''
 		);
 
 		const cookies = await page.context().cookies();

@@ -10,6 +10,7 @@
  */
 
 import { SettingOutlined } from '@ant-design/icons-vue';
+import type { RadioChangeEvent } from 'ant-design-vue';
 import { __ } from '../../components/i18n';
 import { usePopoverFocus } from '../../components/popover-focus';
 import { useArticlesStore } from '../store';
@@ -59,7 +60,7 @@ const perPageOptions: PerPage[] = [ 20, 50, 100 ];
 					:value="store.preferences.columns"
 					:options="columns"
 					@change="
-						( value ) =>
+						( value: unknown ) =>
 							store.setPreferences( {
 								columns: value as ArticleColumn[],
 							} )
@@ -82,7 +83,7 @@ const perPageOptions: PerPage[] = [ 20, 50, 100 ];
 						} ) )
 					"
 					@change="
-						( event ) =>
+						( event: RadioChangeEvent ) =>
 							store.setPreferences( {
 								per_page: Number(
 									event.target.value

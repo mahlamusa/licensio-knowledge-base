@@ -15,6 +15,7 @@
 
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons-vue';
+import type { RadioChangeEvent } from 'ant-design-vue';
 import { lkbTheme } from '../styles/theme';
 import AppHeader from '../components/AppHeader.vue';
 import { __ } from '../components/i18n';
@@ -203,7 +204,7 @@ onBeforeUnmount( () => clearTimeout( searchTimer ) );
 								)
 							"
 							@change="
-								( event ) =>
+								( event: RadioChangeEvent ) =>
 									store.setFilters( {
 										window: Number(
 											event.target.value
