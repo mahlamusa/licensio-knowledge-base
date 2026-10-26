@@ -100,7 +100,10 @@ class Licensio_KB_Term_Fields_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * A valid submission stores every posted field.
+     * A valid submission stores every posted field, keeping one icon.
+     *
+     * The SVG wins by precedence, so the uploaded icon, the Dashicons name and
+     * the inline Base64 image are cleared rather than left hidden behind it.
      *
      * @since 1.0.0
      *
@@ -118,14 +121,114 @@ class Licensio_KB_Term_Fields_Test extends Licensio_KB_Test_Case {
 
         $this->assertSame(
             array(
-                '3|licensio_icon'     => 'dashicons-book-alt',
-                '3|licensio_icon_svg' => '<svg viewBox="0 0 24 24"><path d="M4 4h16"/></svg>',
-                '3|licensio_icon_id'  => 42,
-                '3|licensio_image_id' => 42,
-                '3|licensio_order'    => 7,
+                '3|licensio_icon'      => '',
+                '3|licensio_icon_svg'  => '<svg viewBox="0 0 24 24"><path d="M4 4h16"/></svg>',
+                '3|licensio_icon_id'   => 0,
+                '3|licensio_image_id'  => 42,
+                '3|licensio_order'     => 7,
+                '3|licensio_icon_data' => '',
             ),
             $this->written
         );
+    }
+
+    /**
+     * A Dashicons name saved on its own clears every other icon source.
+     *
+     * The form has no Base64 control, so a Base64 icon set in the Categories
+     * app would otherwise keep winning over the icon picked here.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_one_icon_source_is_kept_and_the_others_cleared() {
+        $_POST['licensio_icon']     = 'dashicons-lock';
+        $_POST['licensio_icon_svg'] = '';
+        $_POST['licensio_icon_id']  = '0';
+
+        $fields = new Licensio_KB_Term_Fields();
+        $fields->save_fields( 3 );
+
+        $this->assertSame(
+            array(
+                '3|licensio_icon'      => 'dashicons-lock',
+                '3|licensio_icon_svg'  => '',
+                '3|licensio_icon_id'   => 0,
+                '3|licensio_icon_data' => '',
+            ),
+            $this->written
+        );
+
+        $this->written             = array();
+        $_POST['licensio_icon_id'] = '42';
+
+        $fields->save_fields( 3 );
+
+        $this->assertSame(
+            array(
+                '3|licensio_icon'      => '',
+                '3|licensio_icon_svg'  => '',
+                '3|licensio_icon_id'   => 42,
+                '3|licensio_icon_data' => '',
+            ),
+            $this->written,
+            'An uploaded icon beats the Dashicons name.'
+        );
+    }
+
+    /**
+     * A save that names no icon leaves the stored icons, Base64 included, alone.
+     *
+     * The edit form posts its empty icon fields with every save, so changing
+     * only the order of a category whose icon was set in the app must not
+     * clear that icon.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_save_with_no_icon_keeps_the_base64_icon() {
+        $_POST['licensio_icon']     = '';
+        $_POST['licensio_icon_svg'] = '';
+        $_POST['licensio_icon_id']  = '0';
+        $_POST['licensio_order']    = '4';
+
+        $fields = new Licensio_KB_Term_Fields();
+        $fields->save_fields( 3 );
+
+        $this->assertArrayNotHasKey( '3|licensio_icon_data', $this->written );
+        $this->assertSame( 4, $this->written['3|licensio_order'] );
+    }
+
+    /**
+     * The edit form shows a Base64 icon read-only and says it is replaced.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_edit_form_shows_a_base64_icon_read_only() {
+        $png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+
+        Functions\when( 'wp_nonce_field' )->justReturn( '' );
+        Functions\when( 'get_term_meta' )->alias(
+            function ( $term_id, $key ) use ( $png ) {
+                unset( $term_id );
+
+                return 'licensio_icon_data' === $key ? $png : '';
+            }
+        );
+
+        $fields = new Licensio_KB_Term_Fields();
+
+        ob_start();
+        $fields->render_edit_fields( (object) array( 'term_id' => 3 ) );
+        $markup = (string) ob_get_clean();
+
+        $this->assertStringContainsString( 'src="' . $png . '"', $markup );
+        $this->assertStringContainsString( 'Setting an icon below replaces it.', $markup );
+        $this->assertStringNotContainsString( 'name="licensio_icon_data"', $markup, 'Read-only: nothing posts it.' );
     }
 
     /**

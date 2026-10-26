@@ -7,9 +7,9 @@
  * View all link into the category archive. Override from a theme by copying
  * this file to `licensio-kb/category-card.php`.
  *
- * Three meta keys can supply the icon and only one of them is drawn. The order
- * is inline SVG, then the uploaded attachment, then the dashicon name — most
- * specific first, and set out in full on Licensio_KB_Term_Meta.
+ * Four meta keys can supply the icon and only one of them is drawn. The order
+ * is inline SVG, then the inline Base64 image, then the uploaded attachment,
+ * then the dashicon name — set out in full on Licensio_KB_Term_Meta.
  *
  * @package Licensio_KB
  * @since   1.0.0 Redesigned to the Help Topics card: inline article count, icon-fronted article links and a View all link.
@@ -47,10 +47,13 @@ $licensio_kb_articles       = $licensio_kb_show_articles
     ? Licensio_KB_Templates::category_articles( $licensio_kb_category, $licensio_kb_article_limit )
     : array();
 $licensio_kb_icon_svg       = $licensio_kb_show_icon ? Licensio_KB_Term_Meta::get_icon_svg( $licensio_kb_category->term_id ) : '';
-$licensio_kb_icon_id        = $licensio_kb_show_icon && '' === $licensio_kb_icon_svg
+$licensio_kb_icon_data      = $licensio_kb_show_icon && '' === $licensio_kb_icon_svg
+    ? Licensio_KB_Term_Meta::get_icon_data( $licensio_kb_category->term_id )
+    : '';
+$licensio_kb_icon_id        = $licensio_kb_show_icon && '' === $licensio_kb_icon_svg && '' === $licensio_kb_icon_data
     ? Licensio_KB_Term_Meta::get_icon_id( $licensio_kb_category->term_id )
     : 0;
-$licensio_kb_icon           = $licensio_kb_show_icon && '' === $licensio_kb_icon_svg && 0 === $licensio_kb_icon_id
+$licensio_kb_icon           = $licensio_kb_show_icon && '' === $licensio_kb_icon_svg && '' === $licensio_kb_icon_data && 0 === $licensio_kb_icon_id
     ? Licensio_KB_Term_Meta::get_icon( $licensio_kb_category->term_id )
     : '';
 ?>
@@ -77,6 +80,18 @@ $licensio_kb_icon           = $licensio_kb_show_icon && '' === $licensio_kb_icon
             echo $licensio_kb_icon_svg; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Allowlist-sanitized on read by Licensio_KB_Term_Meta::get_icon_svg().
             ?>
         </span>
+    <?php elseif ( '' !== $licensio_kb_icon_data ) : ?>
+        <?php
+        /*
+         * esc_attr() rather than esc_url(): a data: URL is not one of the
+         * protocols esc_url() keeps, so it would print an empty source. The
+         * value is safe as a source because Licensio_KB_Term_Meta::get_icon_data()
+         * rebuilds it on every read from bytes that decoded as a PNG, JPEG,
+         * GIF or WebP image, so it is only ever `data:image/…;base64,` and
+         * Base64 characters.
+         */
+        ?>
+        <img class="licensio-kb-card__icon-image" src="<?php echo esc_attr( $licensio_kb_icon_data ); ?>" alt="" />
     <?php elseif ( $licensio_kb_icon_id > 0 ) : ?>
         <?php
         echo wp_kses_post(

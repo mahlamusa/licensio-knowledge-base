@@ -4,13 +4,16 @@
  *
  * - `GET /licensio-kb/v1/categories` answers every category as a flat list:
  *   `{ id, name, slug, parent, description, count, order, icon, icon_id,
- *   icon_svg, image_id, icon_url, image_url }`. Siblings come in their manual
+ *   icon_svg, icon_data, image_id, icon_url, image_url }`. Siblings come in their manual
  *   order (`licensio_order`), then by name. Names are plain text: core
  *   stores `&` as `&amp;`, so they are decoded here. Descriptions are
  *   answered exactly as stored.
  * - `POST /categories` creates a category and `PATCH /categories/{id}`
  *   updates one. Only the fields sent are written. The icon and image fields
- *   go through the same sanitisers as the term meta registration. As in
+ *   go through the same sanitisers as the term meta registration; a Base64
+ *   icon that is not an allowed image is refused with a 400 rather than
+ *   dropped. The app sends every icon field on save, empty for the sources
+ *   not picked, so only one icon source is ever kept. As in
  *   core, a new category with a taken slug gets a unique one; editing a
  *   category to a slug another category uses, or adding one with a name a
  *   sibling has, is refused with a 409.
@@ -84,10 +87,11 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      * @var array<string, string>
      */
     const META_FIELDS = array(
-        'icon'     => Licensio_KB_Term_Meta::META_ICON,
-        'icon_id'  => Licensio_KB_Term_Meta::META_ICON_ID,
-        'icon_svg' => Licensio_KB_Term_Meta::META_ICON_SVG,
-        'image_id' => Licensio_KB_Term_Meta::META_IMAGE_ID,
+        'icon'      => Licensio_KB_Term_Meta::META_ICON,
+        'icon_id'   => Licensio_KB_Term_Meta::META_ICON_ID,
+        'icon_svg'  => Licensio_KB_Term_Meta::META_ICON_SVG,
+        'icon_data' => Licensio_KB_Term_Meta::META_ICON_DATA,
+        'image_id'  => Licensio_KB_Term_Meta::META_IMAGE_ID,
     );
 
     /**
@@ -254,8 +258,13 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
             ),
             'icon_svg'    => array(
                 'type'              => 'string',
-                'sanitize_callback' => array( 'Licensio_KB_SVG_Sanitizer', 'sanitize' ),
-                'description'       => __( 'Inline SVG icon markup. Reduced to an allowlist on save.', 'licensio-knowledge-base' ),
+                'sanitize_callback' => array( __CLASS__, 'sanitize_icon_svg_arg' ),
+                'description'       => __( 'Inline SVG icon markup, or a Base64 SVG data URL. Reduced to an allowlist on save.', 'licensio-knowledge-base' ),
+            ),
+            'icon_data'   => array(
+                'type'              => 'string',
+                'sanitize_callback' => array( __CLASS__, 'sanitize_icon_data_arg' ),
+                'description'       => __( 'An inline Base64 PNG, JPEG, GIF or WebP icon as a data URL, empty for none.', 'licensio-knowledge-base' ),
             ),
             'image_id'    => array(
                 'type'              => 'integer',
@@ -283,6 +292,71 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      */
     public static function sanitize_slug_arg( $value ) {
         return is_scalar( $value ) ? sanitize_title( (string) $value ) : '';
+    }
+
+    /**
+     * Reduce an inline SVG argument to sanitised markup.
+     *
+     * Markup keeps the sanitiser's quiet behaviour: what is not allowed is
+     * removed. An SVG data URL that decodes to nothing safe is refused
+     * instead, because there is no markup left on screen to show what was
+     * dropped, and so is a value that is not text, rather than clearing the
+     * stored icon.
+     *
+     * @since 1.0.0
+     *
+     * @param mixed $value The raw markup or Base64 SVG data URL.
+     *
+     * @return string|WP_Error The sanitised SVG, or an error the REST server answers as a 400.
+     */
+    public static function sanitize_icon_svg_arg( $value ) {
+        $svg = Licensio_KB_Term_Meta::sanitize_icon_svg( $value );
+
+        if ( ! is_scalar( $value ) || ( '' === $svg && 0 === stripos( trim( (string) $value ), 'data:' ) ) ) {
+            return new WP_Error(
+                'licensio_kb_invalid_icon',
+                __( 'This could not be read as a safe SVG icon.', 'licensio-knowledge-base' ),
+                array( 'status' => 400 )
+            );
+        }
+
+        return $svg;
+    }
+
+    /**
+     * Check an inline Base64 icon argument.
+     *
+     * An empty string clears the icon. Anything else must be a PNG, JPEG,
+     * GIF or WebP `data:` URL within Licensio_KB_Term_Meta::ICON_DATA_MAX_BYTES,
+     * or it is refused, so a pasted icon never vanishes without a message and
+     * a value that is not text never clears the stored one.
+     *
+     * @since 1.0.0
+     *
+     * @param mixed $value The raw `data:` URL.
+     *
+     * @return string|WP_Error The `data:` URL, an empty string, or an error the REST server answers as a 400.
+     */
+    public static function sanitize_icon_data_arg( $value ) {
+        if ( is_scalar( $value ) && '' === trim( (string) $value ) ) {
+            return '';
+        }
+
+        $data = Licensio_KB_Term_Meta::sanitize_icon_data( $value );
+
+        if ( '' === $data ) {
+            return new WP_Error(
+                'licensio_kb_invalid_icon',
+                sprintf(
+                    /* translators: %s: the largest icon size, e.g. 64 KB. */
+                    __( 'Paste a Base64 PNG, JPEG, GIF or WebP image of at most %s.', 'licensio-knowledge-base' ),
+                    size_format( Licensio_KB_Term_Meta::ICON_DATA_MAX_BYTES )
+                ),
+                array( 'status' => 400 )
+            );
+        }
+
+        return $data;
     }
 
     /**
@@ -1295,6 +1369,7 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
             'icon'        => Licensio_KB_Term_Meta::get_icon( $id ),
             'icon_id'     => $icon_id,
             'icon_svg'    => Licensio_KB_Term_Meta::get_icon_svg( $id ),
+            'icon_data'   => Licensio_KB_Term_Meta::get_icon_data( $id ),
             'image_id'    => $image_id,
             'icon_url'    => self::attachment_url( $icon_id, 'thumbnail' ),
             'image_url'   => self::attachment_url( $image_id, 'medium' ),

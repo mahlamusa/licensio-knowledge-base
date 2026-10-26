@@ -2,9 +2,18 @@
 /**
  * The add and edit drawer.
  *
- * Opening it sends nothing. Save is a `ConfirmButton`, so the category is
- * written only after the user confirms. A field error from the server
- * (`data.params`) is shown on its field only; any other error above the form.
+ * Opening it sends nothing. Saving is not destructive, so Save writes the
+ * category straight away, with no confirmation. A field error from the
+ * server (`data.params`) is shown on its field only; any other error above
+ * the form.
+ *
+ * A new category's slug follows its name as the user types or pastes, using
+ * core's rules, until the user edits the slug by hand. An existing
+ * category's slug never follows a rename, because that would change its
+ * URLs; "Generate from name" makes one on request instead.
+ *
+ * The icon is one source: only the picked source is kept, and the other icon
+ * fields are cleared on save (see `../icon`).
  *
  * Ant Design's drawer does not keep focus inside itself, so while it is open
  * Tab and Shift+Tab wrap around its fields and buttons. It opens with focus
@@ -16,12 +25,14 @@
 
 import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
-import ConfirmButton from '../../components/ConfirmButton.vue';
 import TermSelect from '../../components/TermSelect.vue';
 import { FOCUSABLE, useEscapeClose } from '../../components/popover-focus';
 import { errorMessage, RestError } from '../../components/rest';
 import { __, sprintf } from '../../components/i18n';
 import type { TermValue } from '../../components/types/terms';
+import { iconInput, iconSourceOf } from '../icon';
+import type { IconSource } from '../icon';
+import { slugify } from '../slug';
 import { selfAndDescendantIds, useCategoriesStore } from '../store';
 import type { CategoryInput, CategoryItem } from '../types';
 import IconField from './IconField.vue';
@@ -48,16 +59,29 @@ const form = reactive( {
 	slug: '',
 	parent: null as number | null,
 	description: '',
+	iconSource: 'upload' as IconSource,
 	icon: '',
 	iconId: 0,
 	iconUrl: '',
-	iconSvg: '',
+	iconInline: '',
 	imageId: 0,
 	imageUrl: '',
 } );
 
 /** The fields that show the server's error for them under the field. */
-const FIELDS = [ 'name', 'slug', 'parent', 'description' ];
+const FIELDS = [
+	'name',
+	'slug',
+	'parent',
+	'description',
+	'icon',
+	'icon_id',
+	'icon_svg',
+	'icon_data',
+];
+
+/** Whether the user edited a new category's slug by hand. */
+const slugEdited = ref( false );
 
 const saving = ref( false );
 const formError = ref( '' );
@@ -192,10 +216,12 @@ function reset(): void {
 	form.slug = item?.slug ?? '';
 	form.parent = ( item ? item.parent : props.parent ) || null;
 	form.description = item?.description ?? '';
+	form.iconSource = iconSourceOf( item );
 	form.icon = item?.icon ?? '';
 	form.iconId = item?.icon_id ?? 0;
 	form.iconUrl = item?.icon_url ?? '';
-	form.iconSvg = item?.icon_svg ?? '';
+	form.iconInline = item?.icon_svg || item?.icon_data || '';
+	slugEdited.value = false;
 	form.imageId = item?.image_id ?? 0;
 	form.imageUrl = item?.image_url ?? '';
 	formError.value = '';
@@ -211,6 +237,48 @@ watch(
 	},
 	{ immediate: true }
 );
+
+/**
+ * Make a new category's slug from its name, until the slug is edited.
+ *
+ * @since 1.0.0
+ *
+ * @param {string} name The name as typed or pasted.
+ *
+ * @return {void}
+ */
+function onName( name: string ): void {
+	form.name = name;
+
+	if ( ! props.category && ! slugEdited.value ) {
+		form.slug = slugify( name );
+	}
+}
+
+/**
+ * Keep a slug the user typed, and stop it following the name.
+ *
+ * @since 1.0.0
+ *
+ * @param {string} slug The slug as typed.
+ *
+ * @return {void}
+ */
+function onSlug( slug: string ): void {
+	form.slug = slug;
+	slugEdited.value = true;
+}
+
+/**
+ * Make the slug from the name on request, for an existing category.
+ *
+ * @since 1.0.0
+ *
+ * @return {void}
+ */
+function generateSlug(): void {
+	form.slug = slugify( form.name );
+}
 
 /**
  * Keep the picked parent.
@@ -266,7 +334,7 @@ function statusOf( field: string ): 'error' | undefined {
 }
 
 /**
- * Write the category, after the user confirmed.
+ * Write the category.
  *
  * @since 1.0.0
  *
@@ -280,8 +348,15 @@ async function save(): Promise< void > {
 	const input: CategoryInput = {
 		name: form.name.trim(),
 		parent: form.parent ?? 0,
-		icon: form.icon.trim(),
-		icon_svg: form.iconSvg,
+		...iconInput(
+			{
+				source: form.iconSource,
+				name: form.icon,
+				id: form.iconId,
+				inline: form.iconInline,
+			},
+			props.category
+		),
 	};
 
 	// The description is shown and sent exactly as stored. It is sent only
@@ -292,19 +367,17 @@ async function save(): Promise< void > {
 		input.description = form.description;
 	}
 
-	// An unchanged icon or image is not sent again: if its file was deleted
-	// from the media library since, the server would refuse it and block
-	// every other change to the category.
-	if ( form.iconId !== props.category?.icon_id ) {
-		input.icon_id = form.iconId;
-	}
-
+	// An unchanged image is not sent again: if its file was deleted from the
+	// media library since, the server would refuse it and block every other
+	// change to the category. `iconInput()` does the same for the icon.
 	if ( form.imageId !== props.category?.image_id ) {
 		input.image_id = form.imageId;
 	}
 
-	// An empty slug is left out, so the server keeps or derives one.
-	if ( '' !== form.slug.trim() ) {
+	// An empty slug is left out, so the server keeps or derives one. So is a
+	// new category's slug that still follows the name: the server makes the
+	// same one, and also makes it unique.
+	if ( '' !== form.slug.trim() && ( props.category || slugEdited.value ) ) {
 		input.slug = form.slug.trim();
 	}
 
@@ -365,7 +438,11 @@ async function save(): Promise< void > {
 				:validate-status="statusOf( 'name' )"
 				:help="fieldErrors.name"
 			>
-				<a-input id="lkb-category-name" v-model:value="form.name" />
+				<a-input
+					id="lkb-category-name"
+					:value="form.name"
+					@update:value="onName"
+				/>
 			</a-form-item>
 
 			<a-form-item
@@ -374,13 +451,36 @@ async function save(): Promise< void > {
 				:validate-status="statusOf( 'slug' )"
 				:help="fieldErrors.slug"
 				:extra="
-					__(
-						'Leave empty to make one from the name.',
-						'licensio-knowledge-base'
-					)
+					props.category
+						? __(
+								'The slug is part of the category’s web address, so it does not change when the category is renamed.',
+								'licensio-knowledge-base'
+						  )
+						: __(
+								'Made from the name until you edit it.',
+								'licensio-knowledge-base'
+						  )
 				"
 			>
-				<a-input id="lkb-category-slug" v-model:value="form.slug" />
+				<div class="lkb-drawer__slug">
+					<a-input
+						id="lkb-category-slug"
+						:value="form.slug"
+						@update:value="onSlug"
+					/>
+					<a-button
+						v-if="props.category"
+						:disabled="nameMissing"
+						@click="generateSlug"
+					>
+						{{
+							__(
+								'Generate from name',
+								'licensio-knowledge-base'
+							)
+						}}
+					</a-button>
+				</div>
 			</a-form-item>
 
 			<a-form-item
@@ -420,10 +520,12 @@ async function save(): Promise< void > {
 			</a-form-item>
 
 			<IconField
+				v-model:source="form.iconSource"
 				v-model:icon="form.icon"
 				v-model:icon-id="form.iconId"
 				v-model:icon-url="form.iconUrl"
-				v-model:icon-svg="form.iconSvg"
+				v-model:inline="form.iconInline"
+				:errors="fieldErrors"
 			/>
 
 			<a-form-item
@@ -450,16 +552,14 @@ async function save(): Promise< void > {
 				<a-button @click="emit( 'close' )">
 					{{ __( 'Cancel', 'licensio-knowledge-base' ) }}
 				</a-button>
-				<ConfirmButton
+				<a-button
 					type="primary"
-					:title="__( 'Save category?', 'licensio-knowledge-base' )"
-					:ok-text="__( 'Save', 'licensio-knowledge-base' )"
 					:disabled="nameMissing"
 					:loading="saving"
-					@confirm="save"
+					@click="save"
 				>
 					{{ __( 'Save', 'licensio-knowledge-base' ) }}
-				</ConfirmButton>
+				</a-button>
 			</div>
 			<p v-if="nameMissing" class="lkb-drawer__hint">
 				{{ __( 'Enter a name to save.', 'licensio-knowledge-base' ) }}
@@ -479,6 +579,11 @@ async function save(): Promise< void > {
 	gap: 8px;
 }
 
+.lkb-drawer__slug {
+	display: flex;
+	gap: 8px;
+}
+
 .lkb-drawer__hint {
 	margin: 6px 0 0;
 	color: var( --lkb-ink-muted );
@@ -488,6 +593,15 @@ async function save(): Promise< void > {
 </style>
 
 <style>
+/*
+ * Fields 16px apart rather than Ant's 24px: with each field's help line the
+ * default left gaps of about 45px, too loose for a tool, and pushed the
+ * Image field below the fold.
+ */
+.lkb-category-drawer .ant-form-item {
+	margin-bottom: var( --lkb-gap );
+}
+
 /*
  * The drawer is teleported to the body, outside the scoped styles. Start it
  * below the WordPress admin bar, which sits above it and would otherwise

@@ -2,8 +2,8 @@
 /**
  * Unit tests for the category card template.
  *
- * Covers the icon precedence — inline SVG, then an uploaded attachment, then a
- * dashicon name — the one place in the plugin that prints stored markup without
+ * Covers the icon precedence — inline SVG, then an inline Base64 image, then
+ * an uploaded attachment, then a dashicon name — the one place in the plugin that prints stored markup without
  * escaping it, and the article list the card leads with.
  *
  * The sanitizer itself is not under test here; it has its own file, asserted
@@ -294,6 +294,45 @@ class Licensio_KB_Category_Card_Test extends Licensio_KB_Test_Case {
 
         $this->assertStringContainsString( 'licensio-kb-card__icon-image', $markup );
         $this->assertStringNotContainsString( 'dashicons-sos', $markup );
+    }
+
+    /**
+     * An inline Base64 image is drawn as an image, ahead of the attachment.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_inline_base64_image_is_drawn_as_an_image() {
+        $png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+
+        $this->meta['9|licensio_icon_data'] = $png;
+        $this->meta['9|licensio_icon_id']   = 42;
+        $this->meta['9|licensio_icon']      = 'dashicons-sos';
+
+        $markup = $this->render_card();
+
+        $this->assertStringContainsString( '<img class="licensio-kb-card__icon-image" src="' . $png . '" alt="" />', $markup );
+        $this->assertStringNotContainsString( 'example.test/icon.png', $markup );
+        $this->assertStringNotContainsString( 'dashicons-sos', $markup );
+        $this->assertNotContains( 'licensio_icon_id', $this->reads );
+    }
+
+    /**
+     * A Base64 value that is not an image is never printed.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_base64_value_that_is_not_an_image_falls_through() {
+        $this->meta['9|licensio_icon_data'] = 'data:image/png;base64,IiBvbmVycm9yPSJhbGVydCgxKQ==';
+        $this->meta['9|licensio_icon']      = 'dashicons-sos';
+
+        $markup = $this->render_card();
+
+        $this->assertStringContainsString( 'dashicons dashicons-sos', $markup );
+        $this->assertStringNotContainsString( 'data:', $markup );
     }
 
     /**
