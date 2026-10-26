@@ -424,7 +424,7 @@ test( 'a tag count links to the Articles app filtered by the tag', async ( {
 	await addTag( page, name );
 	await search( page, name );
 
-	const link = row( page, name ).getByRole( 'link', { name: '0' } );
+	const link = row( page, name ).getByRole( 'link', { name: 'Articles: 0' } );
 
 	await expect( link ).toHaveAttribute(
 		'href',

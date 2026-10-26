@@ -363,7 +363,16 @@ watch(
 				</template>
 
 				<template v-else-if="'count' === column.key">
-					<a :href="`${ articlesUrl }&tag=${ record.id }`">
+					<a
+						:href="`${ articlesUrl }&tag=${ record.id }`"
+						:aria-label="
+							sprintf(
+								/* translators: %d: number of articles. */
+								__( 'Articles: %d', 'licensio-knowledge-base' ),
+								record.count
+							)
+						"
+					>
 						{{ record.count }}
 					</a>
 				</template>
