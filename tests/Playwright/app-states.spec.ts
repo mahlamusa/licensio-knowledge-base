@@ -179,6 +179,16 @@ test.describe( 'App load failures and empty screens', () => {
 		await expect(
 			page.getByRole( 'link', { name: 'Feedback settings' } )
 		).toHaveAttribute( 'href', /licensio-kb-settings/ );
+
+		// Filtered to one article, an empty list is a filter that matched
+		// nothing, not an empty inbox.
+		await page.goto( `${ SUBMENU }licensio-kb-feedback&article_id=999999` );
+		await expect( page.locator( '.ant-table' ) ).toContainText(
+			'No feedback matches these filters.'
+		);
+		await expect( page.locator( '.ant-table' ) ).not.toContainText(
+			'No feedback yet.'
+		);
 	} );
 
 	test( 'Tags does not call a failed load an empty list', async ( {

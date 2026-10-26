@@ -395,7 +395,9 @@ onMounted( () => {
 								}}
 							</p>
 							<p
-								v-else-if="store.status || store.vote"
+								v-else-if="
+									store.status || store.vote || articleId > 0
+								"
 								class="lkb-empty"
 							>
 								{{
