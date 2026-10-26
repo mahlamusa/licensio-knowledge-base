@@ -25,7 +25,8 @@
  * knowledge base category. The save answers 400 `licensio_kb_not_in_category`
  * when an ID is not an article filed directly in the category, and 403
  * `licensio_kb_cannot_edit` when the user may not edit one of the articles.
- * Nothing is written unless every ID passes. The TypeScript types in
+ * Nothing is written unless every ID passes. It answers 500
+ * `licensio_kb_order_not_saved` when the write failed and was rolled back. The TypeScript types in
  * `apps/components/types/category-order.ts` describe the same shapes.
  *
  * Consumed by the categories app and the per-category article order.
@@ -263,7 +264,7 @@ class Licensio_KB_Category_Order_REST_Controller extends Licensio_KB_REST_Contro
      *
      * @param WP_REST_Request $request The request.
      *
-     * @return WP_REST_Response|WP_Error The order as saved, or an error naming the first problem.
+     * @return WP_REST_Response|WP_Error The order as saved, or an error naming the first problem; 500 `licensio_kb_order_not_saved` when the write was rolled back.
      */
     public function update_order( $request ) {
         $term_id = $this->category_id( $request );
@@ -317,7 +318,13 @@ class Licensio_KB_Category_Order_REST_Controller extends Licensio_KB_REST_Contro
             }
         }
 
-        return rest_ensure_response( array( 'ids' => Licensio_KB_Article_Order::save( $term_id, $ids ) ) );
+        $saved = Licensio_KB_Article_Order::save( $term_id, $ids );
+
+        if ( is_wp_error( $saved ) ) {
+            return $saved;
+        }
+
+        return rest_ensure_response( array( 'ids' => $saved ) );
     }
 
     /**

@@ -66,6 +66,14 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
     const IDS_CAP = 10000;
 
     /**
+     * The most categories, tags or bulk terms one request may name.
+     *
+     * @since 1.0.0
+     * @var int
+     */
+    const MAX_TERMS = 100;
+
+    /**
      * The user meta key holding the list preferences.
      *
      * @since 1.0.0
@@ -358,9 +366,11 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
             'title'          => array(
                 'type' => 'string',
             ),
+            // One argument: the REST server passes the request and key too,
+            // which sanitize_title() would take as its fallback and context.
             'slug'           => array(
                 'type'              => 'string',
-                'sanitize_callback' => 'sanitize_title',
+                'sanitize_callback' => array( $this, 'sanitize_slug' ),
             ),
             'status'         => array(
                 'type' => 'string',
@@ -375,14 +385,16 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
                 'maxLength' => 255,
             ),
             'categories'     => array(
-                'type'  => 'array',
-                'items' => array(
+                'type'     => 'array',
+                'maxItems' => self::MAX_TERMS,
+                'items'    => array(
                     'type'    => 'integer',
                     'minimum' => 1,
                 ),
             ),
             'tags'           => array(
                 'type'              => 'array',
+                'maxItems'          => self::MAX_TERMS,
                 'validate_callback' => array( __CLASS__, 'validate_tag_values' ),
             ),
             'author'         => array(
@@ -560,7 +572,8 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      * Validate a tag list: term IDs, or `{ name }` for a tag to create.
      *
      * A new name is checked as it will be saved, so a name that is only
-     * markup is refused here rather than failing when the tag is created.
+     * markup is refused here rather than failing when the tag is created. At
+     * most `MAX_TERMS` tags, so one request cannot create any number of tags.
      *
      * @since 1.0.0
      *
@@ -571,6 +584,11 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
     public static function validate_tag_values( $value ) {
         if ( ! is_array( $value ) ) {
             return new WP_Error( 'rest_invalid_param', __( 'Tags must be a list.', 'licensio-knowledge-base' ), array( 'status' => 400 ) );
+        }
+
+        if ( count( $value ) > self::MAX_TERMS ) {
+            /* translators: %d: the most tags one article can be given at once. */
+            return new WP_Error( 'rest_invalid_param', sprintf( __( 'Choose at most %d tags.', 'licensio-knowledge-base' ), self::MAX_TERMS ), array( 'status' => 400 ) );
         }
 
         foreach ( $value as $tag ) {
@@ -1446,6 +1464,11 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
 
                 if ( empty( $term_ids ) && 'replace' !== $mode ) {
                     return Licensio_KB_Article_Bulk::invalid( 'args', __( 'Choose at least one term.', 'licensio-knowledge-base' ) );
+                }
+
+                if ( count( $term_ids ) > self::MAX_TERMS ) {
+                    /* translators: %d: the most terms one bulk action can apply. */
+                    return Licensio_KB_Article_Bulk::invalid( 'args', sprintf( __( 'Choose at most %d terms.', 'licensio-knowledge-base' ), self::MAX_TERMS ) );
                 }
 
                 foreach ( $term_ids as $term_id ) {
