@@ -92,9 +92,9 @@ test.describe( 'Knowledge base block templates in the Site Editor', () => {
 		await openTemplateList( page );
 
 		/*
-		 * The search results template, because it is still built from blocks
-		 * the canvas can click into. The single article, archive and category
-		 * templates render their whole view through one HTML block.
+		 * Every plugin template renders its view through one HTML block, so the
+		 * customisation is a paragraph inserted after that block rather than an
+		 * edit of the shortcode inside it.
 		 */
 		await templateCard( page, 'Article Search Results' ).click();
 
@@ -105,11 +105,11 @@ test.describe( 'Knowledge base block templates in the Site Editor', () => {
 
 		const canvas = page.frameLocator( 'iframe[name="editor-canvas"]' );
 
-		await canvas
-			.locator( '[data-type="core/query-title"]' )
-			.first()
-			.click();
-		await page.keyboard.press( 'Enter' );
+		await canvas.locator( '[data-type="core/html"]' ).first().click();
+		await page.keyboard.press( 'ControlOrMeta+Alt+Y' );
+		await expect(
+			canvas.locator( '[data-type="core/paragraph"]' ).first()
+		).toBeFocused();
 		await page.keyboard.type( MARKER );
 
 		await page

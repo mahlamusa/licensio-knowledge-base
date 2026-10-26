@@ -3,11 +3,11 @@
  *
  * Proves the block templates serve the same views the classic templates do:
  * the category page has no stray line breaks in its cards and keeps each
- * article count on the line of its heading, and a single article carries the
+ * article count on the line of its heading, a single article carries the
  * breadcrumb trail, the search field, the On this page table of contents and
- * the sidebar.
+ * the sidebar, and the tag and search pages open with the same hero.
  *
- * The spec seeds its own category, sub-category and article with wp-cli and
+ * The spec seeds its own category, sub-category, tag and article with wp-cli and
  * deletes them afterwards, so besides `LICENSIO_KB_E2E=1` it needs
  * `LICENSIO_KB_WP_CLI`, the command that runs wp-cli against the same site.
  * It also needs a block theme to be active (Twenty Twenty-Five, for one), and
@@ -41,7 +41,15 @@ test.describe( 'Knowledge base views on a block theme', () => {
 		'Set LICENSIO_KB_E2E=1 and LICENSIO_KB_WP_CLI to run.'
 	);
 
-	let seeded = { parent: 0, child: 0, article: 0, category: '', single: '' };
+	let seeded = {
+		parent: 0,
+		child: 0,
+		tag: 0,
+		article: 0,
+		category: '',
+		single: '',
+		tagLink: '',
+	};
 
 	test.beforeAll( () => {
 		test.skip(
@@ -55,7 +63,9 @@ test.describe( 'Knowledge base views on a block theme', () => {
 				$child = wp_insert_term( 'Block view child ${ RUN }', 'licensio_category', array( 'parent' => $parent['term_id'] ) );
 				$article = wp_insert_post( array( 'post_type' => 'licensio_article', 'post_status' => 'publish', 'post_title' => 'Block view article ${ RUN }', 'post_content' => '${ BODY }' ) );
 				wp_set_object_terms( $article, array( (int) $parent['term_id'], (int) $child['term_id'] ), 'licensio_category' );
-				echo wp_json_encode( array( 'parent' => (int) $parent['term_id'], 'child' => (int) $child['term_id'], 'article' => (int) $article, 'category' => get_term_link( (int) $parent['term_id'], 'licensio_category' ), 'single' => get_permalink( $article ) ) );`
+				$tag = wp_insert_term( 'Block view tag ${ RUN }', 'licensio_tag' );
+				wp_set_object_terms( $article, array( (int) $tag['term_id'] ), 'licensio_tag' );
+				echo wp_json_encode( array( 'parent' => (int) $parent['term_id'], 'child' => (int) $child['term_id'], 'tag' => (int) $tag['term_id'], 'article' => (int) $article, 'category' => get_term_link( (int) $parent['term_id'], 'licensio_category' ), 'single' => get_permalink( $article ), 'tagLink' => get_term_link( (int) $tag['term_id'], 'licensio_tag' ) ) );`
 			)
 		);
 	} );
@@ -63,7 +73,7 @@ test.describe( 'Knowledge base views on a block theme', () => {
 	test.afterAll( () => {
 		if ( seeded.article > 0 ) {
 			wpEval(
-				`wp_delete_post( ${ seeded.article }, true ); wp_delete_term( ${ seeded.child }, 'licensio_category' ); wp_delete_term( ${ seeded.parent }, 'licensio_category' );`
+				`wp_delete_post( ${ seeded.article }, true ); wp_delete_term( ${ seeded.child }, 'licensio_category' ); wp_delete_term( ${ seeded.parent }, 'licensio_category' ); wp_delete_term( ${ seeded.tag }, 'licensio_tag' );`
 			);
 		}
 	} );
@@ -126,5 +136,39 @@ test.describe( 'Knowledge base views on a block theme', () => {
 		await expect(
 			page.locator( 'article.licensio-kb-article' )
 		).toHaveCount( 1 );
+	} );
+
+	test( 'the tag and search pages open with the hero and list the article', async ( {
+		page,
+	} ) => {
+		const views = [
+			{ url: seeded.tagLink, view: '.licensio-kb--tag' },
+			{
+				url: `/?s=${ encodeURIComponent(
+					`Block view article ${ RUN }`
+				) }&post_type=licensio_article`,
+				view: '.licensio-kb--search',
+			},
+		];
+
+		for ( const { url, view } of views ) {
+			await page.goto( url );
+
+			await expect( page.locator( '.licensio-kb__hero' ) ).toHaveCount(
+				1
+			);
+			await expect(
+				page.locator( '.licensio-kb__crumbs' )
+			).toBeVisible();
+			await expect(
+				page.locator( 'form.licensio-kb__search input[type="search"]' )
+			).toBeVisible();
+			await expect(
+				page.locator( view ).getByRole( 'link', {
+					name: `Block view article ${ RUN }`,
+				} )
+			).toBeVisible();
+			await expect( page.locator( `${ view } br` ) ).toHaveCount( 0 );
+		}
 	} );
 } );

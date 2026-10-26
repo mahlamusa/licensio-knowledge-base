@@ -879,12 +879,12 @@ class Licensio_KB_Block_Templates_Test extends Licensio_KB_Test_Case {
     /**
      * The redesigned views render the shared body through the view shortcode.
      *
-     * The archive, category and single article templates do not build their
-     * own markup from blocks: they render `[licensio_kb_view]`, which includes
-     * the same body template the classic layer includes, so a block theme and
-     * a classic theme serve the same markup. For the single article that is
-     * what brings the breadcrumbs, the search field, the table of contents and
-     * the sidebar to a block theme.
+     * Every knowledge base template renders `[licensio_kb_view]` rather than
+     * building its own markup from blocks. The shortcode includes the same body
+     * template the classic layer includes, so a block theme and a classic
+     * theme serve the same markup. For the single article that is what brings
+     * the breadcrumbs, the search field, the table of contents and the sidebar
+     * to a block theme; for the tag and search views, the hero.
      *
      * @since 1.0.0
      *
@@ -895,7 +895,12 @@ class Licensio_KB_Block_Templates_Test extends Licensio_KB_Test_Case {
             'archive-licensio_article'   => 'archive',
             'taxonomy-licensio_category' => 'category',
             'single-licensio_article'    => 'single',
+            'taxonomy-licensio_tag'      => 'tag',
+            'search-licensio_article'    => 'search',
         );
+
+        // Every shipped template is covered, so a new one cannot slip back to blocks unnoticed.
+        $this->assertEqualsCanonicalizing( array_keys( $this->block_templates->templates() ), array_keys( $views ) );
 
         foreach ( $views as $slug => $view ) {
             $template = $this->block_templates->build_template( $slug, 'wp_template' );
@@ -929,55 +934,6 @@ class Licensio_KB_Block_Templates_Test extends Licensio_KB_Test_Case {
             if ( false !== strpos( $template->content, '[licensio_kb_view ' ) ) {
                 $this->assertMatchesRegularExpression( '/<!-- wp:html -->\s*\[licensio_kb_view view="[a-z]+"\]\s*<!-- \/wp:html -->/', $template->content, $slug );
             }
-        }
-    }
-
-    /**
-     * The remaining listing templates drive a Query Loop over the article post type.
-     *
-     * @since 1.0.0
-     *
-     * @return void
-     */
-    public function test_the_listing_templates_drive_a_query_loop_over_articles() {
-        $listings = array(
-            'taxonomy-licensio_tag',
-            'search-licensio_article',
-        );
-
-        foreach ( $listings as $slug ) {
-            $template = $this->block_templates->build_template( $slug, 'wp_template' );
-
-            $this->assertInstanceOf( 'WP_Block_Template', $template, $slug );
-            $this->assertStringContainsString( '<!-- wp:query ', $template->content, $slug );
-            $this->assertStringContainsString( '"postType":"licensio_article"', $template->content, $slug );
-            $this->assertStringContainsString( '<!-- wp:post-template -->', $template->content, $slug );
-        }
-    }
-
-    /**
-     * The templates that still open with the hero pull in the shared header part.
-     *
-     * The redesigned archive, category and single article views dropped the
-     * part: the first two along with the hero band it carried, and the single
-     * article because its shared hero already renders a search field. Tag and
-     * search still open with it.
-     *
-     * @since 1.0.0
-     *
-     * @return void
-     */
-    public function test_every_template_pulls_in_the_shared_header_part() {
-        $with_part = array(
-            'taxonomy-' . Licensio_KB_Post_Types::TAXONOMY_TAG,
-            'search-' . Licensio_KB_Post_Types::POST_TYPE,
-        );
-
-        foreach ( $with_part as $slug ) {
-            $template = $this->block_templates->build_template( $slug, 'wp_template' );
-
-            $this->assertInstanceOf( 'WP_Block_Template', $template, $slug );
-            $this->assertStringContainsString( '"slug":"licensio-kb-header"', $template->content, $slug );
         }
     }
 }

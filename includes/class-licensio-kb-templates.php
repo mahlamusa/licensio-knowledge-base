@@ -13,7 +13,7 @@
  *
  * @package Licensio_KB
  * @since   1.0.0
- * @since   1.0.0 The view shortcode renders the single article body too.
+ * @since   1.0.0 The view shortcode renders the single article, tag and search bodies too.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -22,7 +22,7 @@ defined( 'ABSPATH' ) || exit;
  * Loads, styles and feeds the classic knowledge base templates.
  *
  * @since 1.0.0
- * @since 1.0.0 Serves the single article body to block templates.
+ * @since 1.0.0 Serves the single article, tag and search bodies to block templates.
  */
 class Licensio_KB_Templates {
 
@@ -63,13 +63,15 @@ class Licensio_KB_Templates {
      * `single-body` fires the article hooks itself, so it stands alone too.
      *
      * @since 1.0.0
-     * @since 1.0.0 Added the single article body.
+     * @since 1.0.0 Added the single article, tag and search bodies.
      * @var array<string, string>
      */
     const VIEW_BODIES = array(
         'archive'  => 'archive-body',
         'category' => 'category-body',
         'single'   => 'single-body',
+        'tag'      => 'tag-body',
+        'search'   => 'search-body',
     );
 
     /**
@@ -148,14 +150,14 @@ class Licensio_KB_Templates {
      *
      * A block theme resolves a knowledge base request to one of the plugin's
      * block templates, and those templates render this shortcode for the body
-     * of the view — the same `archive-body`, `category-body` or `single-body`
-     * template the classic layer includes between `get_header()` and
-     * `get_footer()`. That single shared body is what keeps the page identical under a classic
+     * of the view — the same `archive-body`, `category-body`, `single-body`,
+     * `tag-body` or `search-body` template the classic layer includes between
+     * `get_header()` and `get_footer()`. That single shared body is what keeps the page identical under a classic
      * theme, a block theme and any theme in between: one markup, one
      * stylesheet, no second design to drift.
      *
      * @since 1.0.0
-     * @since 1.0.0 Renders the single article body as well.
+     * @since 1.0.0 Renders the single article, tag and search bodies as well.
      *
      * @param array<string, mixed>|string $atts The shortcode attributes.
      *
