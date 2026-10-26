@@ -86,7 +86,9 @@ assert_red() {
         return
     fi
 
-    if printf '%s\n' "$output" | grep -qF "$expected"; then
+    # A substring test rather than a pipe into grep -q, which can lose the
+    # writer to SIGPIPE under pipefail and report a match as a miss.
+    if [[ "$output" == *"$expected"* ]]; then
         ok "$name"
     else
         bad "$name - failed, but not for the expected reason (wanted: ${expected})."
