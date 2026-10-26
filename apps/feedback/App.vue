@@ -370,6 +370,7 @@ onMounted( () => {
 						:columns="columns"
 						:data-source="store.items"
 						:loading="store.loading"
+						:scroll="{ x: true }"
 						:row-selection="{
 							selectedRowKeys: store.selected,
 							onChange: ( keys: unknown[] ) =>
@@ -539,6 +540,7 @@ onMounted( () => {
 
 .lkb-pills {
 	display: inline-flex;
+	flex-wrap: wrap;
 	padding: 3px;
 	border: 1px solid var( --lkb-border-wp );
 	border-radius: var( --lkb-radius );

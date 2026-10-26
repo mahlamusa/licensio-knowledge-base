@@ -497,7 +497,7 @@ const expandedKeys = computed( () =>
 						class="lkb-muted"
 						>—</span
 					>
-					<span v-else>{{
+					<span v-else class="lkb-termlist">{{
 						record[ col.key ]
 							.map( ( term: { name: string } ) => term.name )
 							.join( ', ' )
@@ -627,6 +627,15 @@ const expandedKeys = computed( () =>
 
 .lkb-muted {
 	color: var( --lkb-ink-faint );
+}
+
+/*
+ * A long term name (a tag such as woocommerce) may break inside the word
+ * when the column is at its narrowest, rather than push the table past the
+ * screen on a small laptop.
+ */
+.lkb-termlist {
+	overflow-wrap: anywhere;
 }
 
 .lkb-rating--low {
