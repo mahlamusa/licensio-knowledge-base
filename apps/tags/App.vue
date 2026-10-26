@@ -5,7 +5,7 @@
  * Lists the knowledge base tags with search, an Unused filter, sort and
  * paging; adds a tag; edits name, slug and description inline; and deletes,
  * merges or converts the selected tags from the bulk bar. Adding and saving
- * a tag send at once; delete, merge and convert ask in a Popconfirm first,
+ * a tag send at once; delete, merge and convert ask in a confirmation dialog first,
  * and Cancel sends nothing.
  *
  * Bulk actions work on the selected rows of the current page, at most 100,
