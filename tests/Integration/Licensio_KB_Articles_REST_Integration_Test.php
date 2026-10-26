@@ -13,6 +13,10 @@
  * order, and the LIMIT. Any argument the translator does not know fails the
  * test, so a change to the arguments cannot pass silently.
  *
+ * `perm => readable` is accepted but not mirrored: core limits private
+ * articles to their author for a user who cannot read private posts, while
+ * the translator returns them all, as core does for a user who can.
+ *
  * The translator is test code that mirrors core; what these tests prove is
  * that the controller's arguments pick the right rows, in the right order,
  * with the right totals, under core's SQL. The per-item fields and the views
@@ -68,8 +72,8 @@ class Licensio_KB_Articles_REST_Integration_Test extends Licensio_KB_Analytics_D
         Functions\when( 'wp_count_posts' )->alias(
             function ( $type ) {
                 $result = $this->db->query(
-                    'SELECT post_status, COUNT(*) AS total FROM ' . $this->table( 'posts' )
-                    . " WHERE post_type = '" . $this->db->real_escape_string( (string) $type ) . "' GROUP BY post_status"
+                    "SELECT post_status, COUNT(*) AS total FROM {$this->adapter->posts} WHERE post_type = "
+                    . $this->adapter->quote( $type ) . ' GROUP BY post_status'
                 );
                 $counts = array();
 
@@ -81,7 +85,7 @@ class Licensio_KB_Articles_REST_Integration_Test extends Licensio_KB_Analytics_D
             }
         );
 
-        $this->controller = new Licensio_KB_Articles_REST_Live_Controller( $this->db, $this->table( '' ) );
+        $this->controller = new Licensio_KB_Articles_REST_Live_Controller( $this->adapter );
     }
 
     /**
@@ -327,59 +331,21 @@ class Licensio_KB_Articles_REST_Integration_Test extends Licensio_KB_Analytics_D
         );
         $tag  = $this->make_term( 'How to' );
 
-        $match = $this->make_article(
-            array(
-                'categories' => array( $tree['Setup'] ),
-                'tags'       => array( $tag ),
-                'author'     => 2,
-                'date'       => '2026-05-05 10:00:00',
-                'status'     => 'draft',
-            )
+        $all   = array(
+            'categories' => array( $tree['Setup'] ),
+            'tags'       => array( $tag ),
+            'author'     => 2,
+            'date'       => '2026-05-05 10:00:00',
+            'status'     => 'draft',
         );
+        $match = $this->make_article( $all );
 
         // Each of these misses exactly one of the filters.
-        $this->make_article(
-            array(
-                'tags'   => array( $tag ),
-                'author' => 2,
-                'date'   => '2026-05-05 10:00:00',
-                'status' => 'draft',
-            )
-        );
-        $this->make_article(
-            array(
-                'categories' => array( $tree['Setup'] ),
-                'author'     => 2,
-                'date'       => '2026-05-05 10:00:00',
-                'status'     => 'draft',
-            )
-        );
-        $this->make_article(
-            array(
-                'categories' => array( $tree['Setup'] ),
-                'tags'       => array( $tag ),
-                'author'     => 3,
-                'date'       => '2026-05-05 10:00:00',
-                'status'     => 'draft',
-            )
-        );
-        $this->make_article(
-            array(
-                'categories' => array( $tree['Setup'] ),
-                'tags'       => array( $tag ),
-                'author'     => 2,
-                'date'       => '2026-05-07 10:00:00',
-                'status'     => 'draft',
-            )
-        );
-        $this->make_article(
-            array(
-                'categories' => array( $tree['Setup'] ),
-                'tags'       => array( $tag ),
-                'author'     => 2,
-                'date'       => '2026-05-05 10:00:00',
-            )
-        );
+        $this->make_article( array_diff_key( $all, array( 'categories' => true ) ) );
+        $this->make_article( array_diff_key( $all, array( 'tags' => true ) ) );
+        $this->make_article( array_merge( $all, array( 'author' => 3 ) ) );
+        $this->make_article( array_merge( $all, array( 'date' => '2026-05-07 10:00:00' ) ) );
+        $this->make_article( array_diff_key( $all, array( 'status' => true ) ) );
 
         $params = array(
             'status'   => 'draft',

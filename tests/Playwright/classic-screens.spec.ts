@@ -7,8 +7,9 @@
  * the setting off again, the core screens redirect to the apps.
  *
  * The setting is site-wide, so it is switched through wp-cli and put back
- * to what it was when the spec ends. Other specs expect it off: run this one
- * on its own or with one worker (as CI does), never in parallel with them.
+ * to what it was when the spec ends. Other specs expect it off, so this one
+ * is in the `site-wide` project of playwright.config.ts, which runs after
+ * every other spec. To run it on its own, add --no-deps.
  *
  * The suite needs a running WordPress with this plugin active, an
  * administrator account and `LICENSIO_KB_WP_CLI`, so it is skipped unless
@@ -17,11 +18,13 @@
  * @since 1.0.0
  */
 
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { failOnUnresolvedComponents } from './helpers/ant-components';
 import {
+	CONTENT_MANAGER_SLUGS,
 	contentManagerUrl,
 	openContentManager,
+	pathOf,
 	type ContentManagerApp,
 } from './helpers/content-manager';
 import { logIn, password, user } from './helpers/session';
@@ -46,17 +49,11 @@ const CORE_SCREENS: Record< ContentManagerApp, string > = {
 	tags: '/wp-admin/edit-tags.php?taxonomy=licensio_tag&post_type=licensio_article',
 };
 
-/** The Knowledge Base menu link of each core screen, as core writes it. */
-const CORE_MENU_LINKS: Record< ContentManagerApp, [ string, string ] > = {
-	articles: [ 'All Articles', 'edit.php?post_type=licensio_article' ],
-	categories: [
-		'Categories',
-		'edit-tags.php?taxonomy=licensio_category&post_type=licensio_article',
-	],
-	tags: [
-		'Tags',
-		'edit-tags.php?taxonomy=licensio_tag&post_type=licensio_article',
-	],
+/** The Knowledge Base menu label of each core screen. */
+const MENU_LABELS: Record< ContentManagerApp, string > = {
+	articles: 'All Articles',
+	categories: 'Categories',
+	tags: 'Tags',
 };
 
 const APPS = Object.keys( CORE_SCREENS ) as ContentManagerApp[];
@@ -76,21 +73,6 @@ function setClassicScreens( on: boolean ): void {
 			on ? 'true' : 'false'
 		} );`
 	);
-}
-
-/**
- * The path and query of the page's URL.
- *
- * @since 1.0.0
- *
- * @param {Page} page The browser page.
- *
- * @return {string} The path and query.
- */
-function pathOf( page: Page ): string {
-	const url = new URL( page.url() );
-
-	return url.pathname + url.search;
 }
 
 test.describe( 'Classic screens setting', () => {
@@ -127,22 +109,27 @@ test.describe( 'Classic screens setting', () => {
 
 		const menu = page.locator( '#menu-posts-licensio_article .wp-submenu' );
 
+		// Core writes the menu links relative to wp-admin.
 		for ( const app of APPS ) {
-			const [ label, href ] = CORE_MENU_LINKS[ app ];
-
 			await expect(
-				menu.getByRole( 'link', { name: label, exact: true } )
-			).toHaveAttribute( 'href', href );
+				menu.getByRole( 'link', {
+					name: MENU_LABELS[ app ],
+					exact: true,
+				} )
+			).toHaveAttribute(
+				'href',
+				CORE_SCREENS[ app ].replace( '/wp-admin/', '' )
+			);
 		}
 
 		await expect(
-			menu.locator( 'a[href*="page=licensio-kb-articles"]' ),
-			'the menu does not list All Articles twice'
-		).toHaveCount( 0 );
-		await expect(
 			menu.locator(
-				'a[href*="page=licensio-kb-categories"], a[href*="page=licensio-kb-tags"]'
-			)
+				APPS.map(
+					( app ) =>
+						`a[href*="page=${ CONTENT_MANAGER_SLUGS[ app ] }"]`
+				).join( ', ' )
+			),
+			'the menu links to no app, so nothing is listed twice'
 		).toHaveCount( 0 );
 
 		for ( const app of APPS ) {

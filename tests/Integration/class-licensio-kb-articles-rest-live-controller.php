@@ -62,20 +62,12 @@ class Licensio_KB_Articles_REST_Live_Controller extends Licensio_KB_Articles_RES
     );
 
     /**
-     * The live connection.
+     * The live $wpdb adapter on the scratch tables.
      *
      * @since 1.0.0
-     * @var mysqli
+     * @var Licensio_KB_Live_WPDB
      */
-    private $db;
-
-    /**
-     * The scratch table prefix.
-     *
-     * @since 1.0.0
-     * @var string
-     */
-    private $prefix;
+    private $wpdb;
 
     /**
      * How many queries have run.
@@ -90,14 +82,12 @@ class Licensio_KB_Articles_REST_Live_Controller extends Licensio_KB_Articles_RES
      *
      * @since 1.0.0
      *
-     * @param mysqli $db     The live connection.
-     * @param string $prefix The scratch table prefix.
+     * @param Licensio_KB_Live_WPDB $wpdb The live $wpdb adapter on the scratch tables.
      */
-    public function __construct( $db, $prefix ) {
+    public function __construct( Licensio_KB_Live_WPDB $wpdb ) {
         parent::__construct( new Licensio_KB_Article_Metrics( 50, 5 ), new Licensio_KB_Article_Bulk() );
 
-        $this->db     = $db;
-        $this->prefix = (string) $prefix;
+        $this->wpdb = $wpdb;
     }
 
     /**
@@ -141,10 +131,10 @@ class Licensio_KB_Articles_REST_Live_Controller extends Licensio_KB_Articles_RES
 
         ++$this->queries;
 
-        $posts = $this->prefix . 'posts';
+        $posts = $this->wpdb->posts;
         $where = array(
-            "{$posts}.post_type = " . $this->quote( $args['post_type'] ),
-            "{$posts}.post_status IN (" . implode( ', ', array_map( array( $this, 'quote' ), (array) $args['post_status'] ) ) . ')',
+            "{$posts}.post_type = " . $this->wpdb->quote( $args['post_type'] ),
+            "{$posts}.post_status IN (" . implode( ', ', array_map( array( $this->wpdb, 'quote' ), (array) $args['post_status'] ) ) . ')',
         );
 
         if ( isset( $args['author'] ) ) {
@@ -174,18 +164,16 @@ class Licensio_KB_Articles_REST_Live_Controller extends Licensio_KB_Articles_RES
         $columns  = $ids_only ? "{$posts}.ID" : "{$posts}.*";
         $filter   = ' WHERE 1=1 AND ' . implode( ' AND ', $where );
 
-        $rows  = $this->db->query( "SELECT {$columns} FROM {$posts}{$filter} ORDER BY " . implode( ', ', $order ) . " LIMIT {$offset}, {$per_page}" );
+        $rows  = $this->wpdb->get_results( "SELECT {$columns} FROM {$posts}{$filter} ORDER BY " . implode( ', ', $order ) . " LIMIT {$offset}, {$per_page}", ARRAY_A );
         $query = new WP_Query( $args );
 
-        Assert::assertInstanceOf( 'mysqli_result', $rows, $this->db->error );
-
-        while ( $row = $rows->fetch_assoc() ) {
+        foreach ( $rows as $row ) {
             $query->posts[] = $ids_only ? (int) $row['ID'] : new WP_Post( array_merge( $row, array( 'ID' => (int) $row['ID'] ) ) );
         }
 
         // Core leaves found_posts at 0 when the page is empty.
         if ( $query->posts ) {
-            $query->found_posts = (int) $this->db->query( "SELECT COUNT(*) AS total FROM {$posts}{$filter}" )->fetch_object()->total;
+            $query->found_posts = (int) $this->wpdb->get_var( "SELECT COUNT(*) FROM {$posts}{$filter}" );
         }
 
         return $query;
@@ -208,37 +196,36 @@ class Licensio_KB_Articles_REST_Live_Controller extends Licensio_KB_Articles_RES
         Assert::assertSame( 'AND', $tax_query['relation'] );
         unset( $tax_query['relation'] );
 
-        $posts         = $this->prefix . 'posts';
-        $relationships = $this->prefix . 'term_relationships';
-        $taxonomy      = $this->prefix . 'term_taxonomy';
+        $posts         = $this->wpdb->posts;
+        $relationships = $this->wpdb->term_relationships;
+        $taxonomy      = $this->wpdb->term_taxonomy;
         $where         = array();
 
         foreach ( $tax_query as $clause ) {
             if ( isset( $clause['operator'] ) ) {
                 Assert::assertSame( 'NOT EXISTS', $clause['operator'] );
 
-                $where[] = "NOT EXISTS ( SELECT 1 FROM {$relationships} INNER JOIN {$taxonomy} ON {$taxonomy}.term_taxonomy_id = {$relationships}.term_taxonomy_id WHERE {$taxonomy}.taxonomy = " . $this->quote( $clause['taxonomy'] ) . " AND {$relationships}.object_id = {$posts}.ID )";
+                $where[] = "NOT EXISTS ( SELECT 1 FROM {$relationships} INNER JOIN {$taxonomy} ON {$taxonomy}.term_taxonomy_id = {$relationships}.term_taxonomy_id WHERE {$taxonomy}.taxonomy = " . $this->wpdb->quote( $clause['taxonomy'] ) . " AND {$relationships}.object_id = {$posts}.ID )";
                 continue;
             }
 
             Assert::assertSame( 'term_id', $clause['field'] );
 
+            // Core expands children only for a hierarchical taxonomy.
+            if ( $clause['include_children'] ) {
+                Assert::assertSame( Licensio_KB_Post_Types::TAXONOMY_CATEGORY, $clause['taxonomy'] );
+            }
+
             $terms    = array_map( 'intval', (array) $clause['terms'] );
             $frontier = $terms;
 
             while ( $clause['include_children'] && $frontier ) {
-                $rows     = $this->db->query( "SELECT term_id FROM {$taxonomy} WHERE taxonomy = " . $this->quote( $clause['taxonomy'] ) . ' AND parent IN (' . implode( ', ', $frontier ) . ')' );
-                $frontier = array();
-
-                while ( $row = $rows->fetch_object() ) {
-                    if ( ! in_array( (int) $row->term_id, $terms, true ) ) {
-                        $frontier[] = (int) $row->term_id;
-                        $terms[]    = (int) $row->term_id;
-                    }
-                }
+                $children = array_map( 'intval', $this->wpdb->get_col( "SELECT term_id FROM {$taxonomy} WHERE taxonomy = " . $this->wpdb->quote( $clause['taxonomy'] ) . ' AND parent IN (' . implode( ', ', $frontier ) . ')' ) );
+                $frontier = array_values( array_diff( $children, $terms ) );
+                $terms    = array_merge( $terms, $frontier );
             }
 
-            $where[] = "{$posts}.ID IN ( SELECT object_id FROM {$relationships} WHERE term_taxonomy_id IN ( SELECT term_taxonomy_id FROM {$taxonomy} WHERE taxonomy = " . $this->quote( $clause['taxonomy'] ) . ' AND term_id IN (' . implode( ', ', $terms ) . ') ) )';
+            $where[] = "{$posts}.ID IN ( SELECT object_id FROM {$relationships} WHERE term_taxonomy_id IN ( SELECT term_taxonomy_id FROM {$taxonomy} WHERE taxonomy = " . $this->wpdb->quote( $clause['taxonomy'] ) . ' AND term_id IN (' . implode( ', ', $terms ) . ') ) )';
         }
 
         return $where;
@@ -260,7 +247,7 @@ class Licensio_KB_Articles_REST_Live_Controller extends Licensio_KB_Articles_RES
         Assert::assertCount( 1, $date_query );
 
         $clause = $date_query[0];
-        $posts  = $this->prefix . 'posts';
+        $posts  = $this->wpdb->posts;
         $where  = array();
 
         Assert::assertSame( 'post_date', $clause['column'] );
@@ -274,23 +261,10 @@ class Licensio_KB_Articles_REST_Live_Controller extends Licensio_KB_Articles_RES
         foreach ( $bounds as $bound => $sql ) {
             if ( isset( $clause[ $bound ] ) ) {
                 $day     = sprintf( '%04d-%02d-%02d', $clause[ $bound ]['year'], $clause[ $bound ]['month'], $clause[ $bound ]['day'] );
-                $where[] = "{$posts}.post_date {$sql[0]} " . $this->quote( $day . ' ' . $sql[1] );
+                $where[] = "{$posts}.post_date {$sql[0]} " . $this->wpdb->quote( $day . ' ' . $sql[1] );
             }
         }
 
         return $where;
-    }
-
-    /**
-     * Quote a string value for SQL.
-     *
-     * @since 1.0.0
-     *
-     * @param mixed $value The value.
-     *
-     * @return string The quoted value.
-     */
-    private function quote( $value ) {
-        return "'" . $this->db->real_escape_string( (string) $value ) . "'";
     }
 }
