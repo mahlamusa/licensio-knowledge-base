@@ -1,8 +1,8 @@
 /**
- * The Tools screen's Data Maintenance tab, end to end.
+ * The Tools screen's Data Maintenance and Search Index tabs, end to end.
  *
- * Checks that the recount asks first and sends nothing when cancelled, and
- * that its report is one translatable sentence with a plural, not words
+ * Checks that the recount and a resumed index rebuild ask first and send
+ * nothing when cancelled, and that the recount report is one translatable sentence with a plural, not words
  * joined around a number: the answer is rewritten to report a single article,
  * which only the singular form reads right for.
  *
@@ -85,4 +85,41 @@ test( 'the recount report reads as one sentence for a single article', async ( {
 	await expect(
 		page.locator( '.licensio-kb-data-maintenance__done' )
 	).toHaveText( 'Recounted the score of 1 article.' );
+} );
+
+test( 'resuming an index rebuild asks first', async ( { page } ) => {
+	await logIn( page );
+
+	const chunks: string[] = [];
+
+	// The status is rewritten to report a rebuild left part-way through.
+	await page.route( /admin-ajax\.php/, async ( route ) => {
+		const body = route.request().postData() ?? '';
+
+		if ( body.includes( 'action=licensio_tools_index_chunk' ) ) {
+			chunks.push( body );
+		}
+
+		if ( ! body.includes( 'action=licensio_tools_index_status' ) ) {
+			await route.continue();
+			return;
+		}
+
+		const response = await route.fetch();
+		const envelope = await response.json();
+
+		await route.fulfill( {
+			response,
+			json: { ...envelope, data: { ...envelope.data, rebuilding: true } },
+		} );
+	} );
+
+	await page.goto( TOOLS_URL );
+	await page.getByRole( 'tab', { name: 'Search Index' } ).click();
+	await page.getByRole( 'button', { name: 'Resume rebuild' } ).click();
+	await expect( openPopconfirm( page ) ).toContainText(
+		'Resume the rebuild from where it stopped?'
+	);
+	await cancelPopconfirm( page );
+	expect( chunks ).toHaveLength( 0 );
 } );

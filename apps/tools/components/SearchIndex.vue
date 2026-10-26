@@ -110,7 +110,8 @@ async function rebuild(): Promise< void > {
 }
 
 /**
- * Resume a rebuild that a previous session left part-way through.
+ * Resume a rebuild that a previous session left part-way through, once the
+ * user confirmed.
  *
  * @since 1.0.0
  *
@@ -189,9 +190,17 @@ onMounted( load );
 					</a-button>
 				</a-popconfirm>
 
-				<a-button v-if="rebuilding" :disabled="running" @click="resume">
-					{{ __( 'Resume rebuild', 'licensio-knowledge-base' ) }}
-				</a-button>
+				<a-popconfirm
+					v-if="rebuilding"
+					:title="__( 'Resume the rebuild from where it stopped?', 'licensio-knowledge-base' )"
+					:ok-text="__( 'Resume rebuild', 'licensio-knowledge-base' )"
+					:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
+					@confirm="resume"
+				>
+					<a-button :disabled="running">
+						{{ __( 'Resume rebuild', 'licensio-knowledge-base' ) }}
+					</a-button>
+				</a-popconfirm>
 			</div>
 		</template>
 	</div>

@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-26T07:24:36+00:00\n"
+"POT-Creation-Date: 2026-10-26T07:27:59+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.7.1\n"
 "X-Domain: licensio-knowledge-base\n"
@@ -133,9 +133,9 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/blocks/article-list/index.js:1
 #: dist/apps/articles/index.CVotsgDG.js:63
 #: dist/apps/tags/index.Bjwl0jqk.js:15
-#: dist/apps/tools/index.CDy_F_6g.js:3
-#: dist/apps/tools/index.CDy_F_6g.js:49
-#: dist/apps/tools/index.CDy_F_6g.js:53
+#: dist/apps/tools/index.CVsyCPOp.js:3
+#: dist/apps/tools/index.CVsyCPOp.js:49
+#: dist/apps/tools/index.CVsyCPOp.js:53
 #: dist/blocks/article-list/index.js:1
 msgid "Articles"
 msgstr ""
@@ -171,7 +171,7 @@ msgstr ""
 #: dist/apps/articles/index.CVotsgDG.js:39
 #: dist/apps/articles/index.CVotsgDG.js:61
 #: dist/apps/categories/index.BQKk77Ty.js:35
-#: dist/apps/tools/index.CDy_F_6g.js:47
+#: dist/apps/tools/index.CVsyCPOp.js:47
 #: dist/blocks/category-grid/index.js:1
 msgid "Categories"
 msgstr ""
@@ -385,7 +385,7 @@ msgstr ""
 #: includes/admin/class-licensio-kb-tools-admin.php:91
 #: includes/admin/class-licensio-kb-tools-admin.php:112
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
-#: dist/apps/tools/index.CDy_F_6g.js:53
+#: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Tools"
 msgstr ""
 
@@ -420,7 +420,7 @@ msgstr ""
 
 #: includes/class-licensio-kb-analytics-privacy.php:447
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:47
-#: dist/apps/tools/index.CDy_F_6g.js:47
+#: dist/apps/tools/index.CVsyCPOp.js:47
 msgid "Source"
 msgstr ""
 
@@ -497,7 +497,7 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/articles/index.CVotsgDG.js:38
 #: dist/apps/feedback/index.D_zG1Rx-.js:1
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Status"
 msgstr ""
 
@@ -1311,7 +1311,7 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:7
 #: dist/apps/analytics/index.D9liPAub.js:1
-#: dist/apps/tools/index.CDy_F_6g.js:7
+#: dist/apps/tools/index.CVsyCPOp.js:7
 msgid "Searches"
 msgstr ""
 
@@ -1338,7 +1338,7 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:7
 #: dist/apps/analytics/index.D9liPAub.js:1
-#: dist/apps/tools/index.CDy_F_6g.js:7
+#: dist/apps/tools/index.CVsyCPOp.js:7
 msgid "Votes"
 msgstr ""
 
@@ -2039,7 +2039,7 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/blocks/article-list/index.js:1
 #: .tmp/e2e/licensio-knowledge-base/dist/blocks/faq/index.js:1
 #: dist/apps/articles/index.CVotsgDG.js:63
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 #: dist/blocks/article-list/index.js:1
 #: dist/blocks/faq/index.js:1
 msgid "Category"
@@ -2081,7 +2081,7 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/blocks/faq/index.js:1
 #: dist/apps/articles/index.CVotsgDG.js:38
 #: dist/apps/articles/index.CVotsgDG.js:39
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 #: dist/blocks/article-list/index.js:1
 #: dist/blocks/faq/index.js:1
 msgid "Title"
@@ -2496,7 +2496,7 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:7
 #: dist/apps/analytics/index.D9liPAub.js:1
-#: dist/apps/tools/index.CDy_F_6g.js:7
+#: dist/apps/tools/index.CVsyCPOp.js:7
 msgid "Article views"
 msgstr ""
 
@@ -2913,13 +2913,13 @@ msgstr ""
 #: dist/apps/tags/index.Bjwl0jqk.js:15
 #: dist/apps/tags/index.Bjwl0jqk.js:19
 #: dist/apps/tags/index.Bjwl0jqk.js:29
-#: dist/apps/tools/index.CDy_F_6g.js:3
-#: dist/apps/tools/index.CDy_F_6g.js:7
-#: dist/apps/tools/index.CDy_F_6g.js:33
-#: dist/apps/tools/index.CDy_F_6g.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:49
-#: dist/apps/tools/index.CDy_F_6g.js:51
-#: dist/apps/tools/index.CDy_F_6g.js:53
+#: dist/apps/tools/index.CVsyCPOp.js:3
+#: dist/apps/tools/index.CVsyCPOp.js:7
+#: dist/apps/tools/index.CVsyCPOp.js:33
+#: dist/apps/tools/index.CVsyCPOp.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:49
+#: dist/apps/tools/index.CVsyCPOp.js:51
+#: dist/apps/tools/index.CVsyCPOp.js:53
 #: dist/chunks/ConfirmButton.vue_vue_type_script_setup_true_lang.BnADIlzD.js:1
 msgid "Cancel"
 msgstr ""
@@ -3229,14 +3229,14 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:61
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/articles/index.CVotsgDG.js:61
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Skipped"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:61
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/articles/index.CVotsgDG.js:61
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Failed"
 msgstr ""
 
@@ -3274,7 +3274,7 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/articles/index.CVotsgDG.js:63
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Tag"
 msgstr ""
 
@@ -3318,7 +3318,7 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/articles/index.CVotsgDG.js:63
 #: dist/apps/feedback/index.D_zG1Rx-.js:1
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "All"
 msgstr ""
 
@@ -3656,8 +3656,8 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/categories/index.BQKk77Ty.js:25
 #: dist/apps/tags/index.Bjwl0jqk.js:29
-#: dist/apps/tools/index.CDy_F_6g.js:7
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:7
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Delete"
 msgstr ""
 
@@ -3730,7 +3730,7 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:33
 #: dist/apps/categories/index.BQKk77Ty.js:29
 #: dist/apps/tags/index.Bjwl0jqk.js:15
-#: dist/apps/tools/index.CDy_F_6g.js:33
+#: dist/apps/tools/index.CVsyCPOp.js:33
 msgid "Merge"
 msgstr ""
 
@@ -3801,7 +3801,7 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:1
 #: .tmp/e2e/licensio-knowledge-base/dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.Cohcn86k.js:1
 #: dist/apps/feedback/index.D_zG1Rx-.js:1
-#: dist/apps/tools/index.CDy_F_6g.js:1
+#: dist/apps/tools/index.CVsyCPOp.js:1
 #: dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.G_TJ16ZC.js:1
 msgid "The request failed."
 msgstr ""
@@ -4183,199 +4183,199 @@ msgid "Select tags below to delete, merge or convert them"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:1
-#: dist/apps/tools/index.CDy_F_6g.js:1
+#: dist/apps/tools/index.CVsyCPOp.js:1
 msgid "This tool is not available."
 msgstr ""
 
 #. translators: %s: the date before which rows are deleted.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:3
-#: dist/apps/tools/index.CDy_F_6g.js:3
+#: dist/apps/tools/index.CVsyCPOp.js:3
 msgid "Rows older than %s"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:3
-#: dist/apps/tools/index.CDy_F_6g.js:3
+#: dist/apps/tools/index.CVsyCPOp.js:3
 msgid "The recount failed."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:3
-#: dist/apps/tools/index.CDy_F_6g.js:3
+#: dist/apps/tools/index.CVsyCPOp.js:3
 msgid "The backlog is too large for the browser; finish it with WP-CLI."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:3
-#: dist/apps/tools/index.CDy_F_6g.js:3
+#: dist/apps/tools/index.CVsyCPOp.js:3
 msgid "The deletion failed."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:3
-#: dist/apps/tools/index.CDy_F_6g.js:3
+#: dist/apps/tools/index.CVsyCPOp.js:3
 msgid "Failed to load the status."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:3
-#: dist/apps/tools/index.CDy_F_6g.js:3
+#: dist/apps/tools/index.CVsyCPOp.js:3
 msgid "Feedback usefulness scores"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:3
-#: dist/apps/tools/index.CDy_F_6g.js:3
+#: dist/apps/tools/index.CVsyCPOp.js:3
 msgid "Each article's helpfulness score is a cache over the vote table. Migrated, imported or hand-edited votes can leave it stale; this recounts every article from the raw rows."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:3
-#: dist/apps/tools/index.CDy_F_6g.js:3
+#: dist/apps/tools/index.CVsyCPOp.js:3
 msgid "Votes recorded"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:3
-#: dist/apps/tools/index.CDy_F_6g.js:3
+#: dist/apps/tools/index.CVsyCPOp.js:3
 msgid "Recount the score of every article?"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:3
-#: dist/apps/tools/index.CDy_F_6g.js:3
+#: dist/apps/tools/index.CVsyCPOp.js:3
 msgid "Recount scores"
 msgstr ""
 
 #. translators: %d: how many articles had their score recounted.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:5
-#: dist/apps/tools/index.CDy_F_6g.js:5
+#: dist/apps/tools/index.CVsyCPOp.js:5
 msgid "Recounted the score of %d article."
 msgid_plural "Recounted the score of %d articles."
 msgstr[0] ""
 msgstr[1] ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:5
-#: dist/apps/tools/index.CDy_F_6g.js:5
+#: dist/apps/tools/index.CVsyCPOp.js:5
 msgid "Analytics retention"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:5
-#: dist/apps/tools/index.CDy_F_6g.js:5
+#: dist/apps/tools/index.CVsyCPOp.js:5
 msgid "Analytics rows older than the retention window are deleted by a scheduled job. This runs the same deletion now."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:5
-#: dist/apps/tools/index.CDy_F_6g.js:5
+#: dist/apps/tools/index.CVsyCPOp.js:5
 msgid "Retention window"
 msgstr ""
 
 #. translators: %d: how many days analytics rows are kept.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:7
-#: dist/apps/tools/index.CDy_F_6g.js:7
+#: dist/apps/tools/index.CVsyCPOp.js:7
 msgid "%d day"
 msgid_plural "%d days"
 msgstr[0] ""
 msgstr[1] ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:7
-#: dist/apps/tools/index.CDy_F_6g.js:7
+#: dist/apps/tools/index.CVsyCPOp.js:7
 msgid "Permanently delete the expired rows?"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:7
-#: dist/apps/tools/index.CDy_F_6g.js:7
+#: dist/apps/tools/index.CVsyCPOp.js:7
 msgid "Delete expired rows"
 msgstr ""
 
 #. translators: %d: how many expired rows were deleted.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:9
-#: dist/apps/tools/index.CDy_F_6g.js:9
+#: dist/apps/tools/index.CVsyCPOp.js:9
 msgid "Deleted %d row:"
 msgid_plural "Deleted %d rows:"
 msgstr[0] ""
 msgstr[1] ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:9
-#: dist/apps/tools/index.CDy_F_6g.js:9
+#: dist/apps/tools/index.CVsyCPOp.js:9
 msgid "The scan failed."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:9
-#: dist/apps/tools/index.CDy_F_6g.js:9
+#: dist/apps/tools/index.CVsyCPOp.js:9
 msgid "The fix failed."
 msgstr ""
 
 #. translators: %d: a count from the merge report.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:11
-#: dist/apps/tools/index.CDy_F_6g.js:11
+#: dist/apps/tools/index.CVsyCPOp.js:11
 msgid "Article groups merged: %d"
 msgstr ""
 
 #. translators: %d: a count from the merge report.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:13
-#: dist/apps/tools/index.CDy_F_6g.js:13
+#: dist/apps/tools/index.CVsyCPOp.js:13
 msgid "Duplicates moved to trash: %d"
 msgstr ""
 
 #. translators: %d: a count from the merge report.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:15
-#: dist/apps/tools/index.CDy_F_6g.js:15
+#: dist/apps/tools/index.CVsyCPOp.js:15
 msgid "Meta keys copied: %d"
 msgstr ""
 
 #. translators: %d: a count from the merge report.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:17
-#: dist/apps/tools/index.CDy_F_6g.js:17
+#: dist/apps/tools/index.CVsyCPOp.js:17
 msgid "Votes moved: %d"
 msgstr ""
 
 #. translators: %d: a count from the merge report.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:19
-#: dist/apps/tools/index.CDy_F_6g.js:19
+#: dist/apps/tools/index.CVsyCPOp.js:19
 msgid "Views moved: %d"
 msgstr ""
 
 #. translators: %d: a count from the merge report.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:21
-#: dist/apps/tools/index.CDy_F_6g.js:21
+#: dist/apps/tools/index.CVsyCPOp.js:21
 msgid "Migration sources cleaned: %d"
 msgstr ""
 
 #. translators: %d: a count from the merge report.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:23
-#: dist/apps/tools/index.CDy_F_6g.js:23
+#: dist/apps/tools/index.CVsyCPOp.js:23
 msgid "Source posts moved to trash: %d"
 msgstr ""
 
 #. translators: %d: a count from the merge report.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:25
-#: dist/apps/tools/index.CDy_F_6g.js:25
+#: dist/apps/tools/index.CVsyCPOp.js:25
 msgid "Term groups merged: %d"
 msgstr ""
 
 #. translators: %d: a count from the merge report.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:27
-#: dist/apps/tools/index.CDy_F_6g.js:27
+#: dist/apps/tools/index.CVsyCPOp.js:27
 msgid "Terms deleted: %d"
 msgstr ""
 
 #. translators: %d: a count from the merge report.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:29
-#: dist/apps/tools/index.CDy_F_6g.js:29
+#: dist/apps/tools/index.CVsyCPOp.js:29
 msgid "Term meta keys copied: %d"
 msgstr ""
 
 #. translators: %d: a count from the merge report.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:31
-#: dist/apps/tools/index.CDy_F_6g.js:31
+#: dist/apps/tools/index.CVsyCPOp.js:31
 msgid "Article assignments moved: %d"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:31
-#: dist/apps/tools/index.CDy_F_6g.js:31
+#: dist/apps/tools/index.CVsyCPOp.js:31
 msgid "Duplicate articles share a title, a slug once any -2 style suffix is stripped, a date and the opening lines of their content; duplicate categories and tags share a name, a slug and a description. Merging keeps the member without a suffix: for articles the duplicate with the most meta provides the content and the rest go to the trash, for terms the meta and article assignments move across and the empty duplicate is deleted. Anything the knowledge base does not own is listed for you to resolve by hand."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:31
-#: dist/apps/tools/index.CDy_F_6g.js:31
+#: dist/apps/tools/index.CVsyCPOp.js:31
 msgid "Scan for duplicates"
 msgstr ""
 
 #. translators: %d: how many duplicate groups will be merged.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:33
-#: dist/apps/tools/index.CDy_F_6g.js:33
+#: dist/apps/tools/index.CVsyCPOp.js:33
 msgid "Merge %d group? Duplicated articles and migration source posts are moved to the trash; duplicated terms are deleted."
 msgid_plural "Merge %d groups? Duplicated articles and migration source posts are moved to the trash; duplicated terms are deleted."
 msgstr[0] ""
@@ -4383,572 +4383,572 @@ msgstr[1] ""
 
 #. translators: %d: how many duplicate groups can be merged.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:35
-#: dist/apps/tools/index.CDy_F_6g.js:35
+#: dist/apps/tools/index.CVsyCPOp.js:35
 msgid "Merge duplicates (%d)"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:35
-#: dist/apps/tools/index.CDy_F_6g.js:35
+#: dist/apps/tools/index.CVsyCPOp.js:35
 msgid "No duplicate articles, categories or tags detected."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:35
-#: dist/apps/tools/index.CDy_F_6g.js:35
+#: dist/apps/tools/index.CVsyCPOp.js:35
 msgid "Merge report"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:35
-#: dist/apps/tools/index.CDy_F_6g.js:35
+#: dist/apps/tools/index.CVsyCPOp.js:35
 msgid "What was done:"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:35
-#: dist/apps/tools/index.CDy_F_6g.js:35
+#: dist/apps/tools/index.CVsyCPOp.js:35
 msgid "Mergeable article groups"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:35
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:37
-#: dist/apps/tools/index.CDy_F_6g.js:35
-#: dist/apps/tools/index.CDy_F_6g.js:37
+#: dist/apps/tools/index.CVsyCPOp.js:35
+#: dist/apps/tools/index.CVsyCPOp.js:37
 msgid "keeps the slug"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:35
-#: dist/apps/tools/index.CDy_F_6g.js:35
+#: dist/apps/tools/index.CVsyCPOp.js:35
 msgid "provides the content"
 msgstr ""
 
 #. translators: %d: how many meta keys the duplicate has.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:37
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:39
-#: dist/apps/tools/index.CDy_F_6g.js:37
-#: dist/apps/tools/index.CDy_F_6g.js:39
+#: dist/apps/tools/index.CVsyCPOp.js:37
+#: dist/apps/tools/index.CVsyCPOp.js:39
 msgid "%d meta key"
 msgid_plural "%d meta keys"
 msgstr[0] ""
 msgstr[1] ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:37
-#: dist/apps/tools/index.CDy_F_6g.js:37
+#: dist/apps/tools/index.CVsyCPOp.js:37
 msgid "Migration sources to clean up"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:37
-#: dist/apps/tools/index.CDy_F_6g.js:37
+#: dist/apps/tools/index.CVsyCPOp.js:37
 msgid "Each pair is an article and the migration source post it replaced. Merging moves the source post to the trash; the article is left exactly as the site serves it."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:37
-#: dist/apps/tools/index.CDy_F_6g.js:37
+#: dist/apps/tools/index.CVsyCPOp.js:37
 msgid "stays"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:37
-#: dist/apps/tools/index.CDy_F_6g.js:37
+#: dist/apps/tools/index.CVsyCPOp.js:37
 msgid "moves to trash"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:37
-#: dist/apps/tools/index.CDy_F_6g.js:37
+#: dist/apps/tools/index.CVsyCPOp.js:37
 msgid "Mergeable term groups"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:37
-#: dist/apps/tools/index.CDy_F_6g.js:37
+#: dist/apps/tools/index.CVsyCPOp.js:37
 msgid "provides the meta"
 msgstr ""
 
 #. translators: %d: how many articles have the duplicate term.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "%d article"
 msgid_plural "%d articles"
 msgstr[0] ""
 msgstr[1] ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Flagged for manual review"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "These groups involve a post type the knowledge base does not own, or have no un-suffixed member to merge into. Nothing was changed."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Warnings"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Orphaned"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Created"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Adopted"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Merged"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Updated"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Info"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Type"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Source ID"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "New ID"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Details"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Dry run"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:47
-#: dist/apps/tools/index.CDy_F_6g.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:47
+#: dist/apps/tools/index.CVsyCPOp.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:47
 msgid "Import"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "failed"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "entries"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "would be created"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "would be adopted"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "would be merged"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "would be updated"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "The log could not be loaded."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "The log could not be cleared."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "No imports have been logged yet."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Run"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Download CSV"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Delete this run's log entries? The imported content is not affected."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Delete this run's log"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Clear the whole migration log? The imported content is not affected."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Clear log"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Clear all logs"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "No entries match this filter."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Categories and tags"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Meta"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Key"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Value"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Outcome"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Where"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/tools/index.CDy_F_6g.js:41
+#: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Create a new category"
 msgstr ""
 
 #. translators: %s: the target category's name.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:43
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:45
-#: dist/apps/tools/index.CDy_F_6g.js:43
-#: dist/apps/tools/index.CDy_F_6g.js:45
+#: dist/apps/tools/index.CVsyCPOp.js:43
+#: dist/apps/tools/index.CVsyCPOp.js:45
 msgid "Merge into: %s"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:45
-#: dist/apps/tools/index.CDy_F_6g.js:45
+#: dist/apps/tools/index.CVsyCPOp.js:45
 msgid "Complete"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:45
-#: dist/apps/tools/index.CDy_F_6g.js:45
+#: dist/apps/tools/index.CVsyCPOp.js:45
 msgid "Preparing…"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:45
-#: dist/apps/tools/index.CDy_F_6g.js:45
+#: dist/apps/tools/index.CVsyCPOp.js:45
 msgid "Wrapping up…"
 msgstr ""
 
 #. translators: %s: the name of the import phase being processed.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:47
-#: dist/apps/tools/index.CDy_F_6g.js:47
+#: dist/apps/tools/index.CVsyCPOp.js:47
 msgid "Processing phase: %s"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:47
-#: dist/apps/tools/index.CDy_F_6g.js:47
+#: dist/apps/tools/index.CVsyCPOp.js:47
 msgid "Failed to detect sources."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:47
-#: dist/apps/tools/index.CDy_F_6g.js:47
+#: dist/apps/tools/index.CVsyCPOp.js:47
 msgid "The categories could not be loaded."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:47
-#: dist/apps/tools/index.CDy_F_6g.js:47
+#: dist/apps/tools/index.CVsyCPOp.js:47
 msgid "The import failed."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:47
-#: dist/apps/tools/index.CDy_F_6g.js:47
+#: dist/apps/tools/index.CVsyCPOp.js:47
 msgid "Checking for import sources…"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:47
-#: dist/apps/tools/index.CDy_F_6g.js:47
+#: dist/apps/tools/index.CVsyCPOp.js:47
 msgid "No import sources detected on this installation. Earlier imports are in the log below."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:47
-#: dist/apps/tools/index.CDy_F_6g.js:47
+#: dist/apps/tools/index.CVsyCPOp.js:47
 msgid "These knowledge base plugins have data available for import:"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:47
-#: dist/apps/tools/index.CDy_F_6g.js:47
+#: dist/apps/tools/index.CVsyCPOp.js:47
 msgid "Totals as stored by the source. Records for deleted articles, and analytics from today, are not imported; the dry run shows the exact numbers."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:47
-#: dist/apps/tools/index.CDy_F_6g.js:47
+#: dist/apps/tools/index.CVsyCPOp.js:47
 msgid "An import from this source was interrupted. Resume it to carry on from where it stopped; nothing is imported twice."
 msgstr ""
 
 #. translators: %s: when the last import finished.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:49
-#: dist/apps/tools/index.CDy_F_6g.js:49
+#: dist/apps/tools/index.CVsyCPOp.js:49
 msgid "Last imported %s. Importing again adds new content and the analytics recorded since; content already imported is left as it is."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:49
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
-#: dist/apps/tools/index.CDy_F_6g.js:49
-#: dist/apps/tools/index.CDy_F_6g.js:53
+#: dist/apps/tools/index.CVsyCPOp.js:49
+#: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Resume the import from where it stopped?"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:49
-#: dist/apps/tools/index.CDy_F_6g.js:49
+#: dist/apps/tools/index.CVsyCPOp.js:49
 msgid "Resume import"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:49
-#: dist/apps/tools/index.CDy_F_6g.js:49
+#: dist/apps/tools/index.CVsyCPOp.js:49
 msgid "Next: categories"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:49
-#: dist/apps/tools/index.CDy_F_6g.js:49
+#: dist/apps/tools/index.CVsyCPOp.js:49
 msgid "Choose where each category goes. A new category is created by default; merging files its articles under an existing category and redirects its old address there."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:49
-#: dist/apps/tools/index.CDy_F_6g.js:49
+#: dist/apps/tools/index.CVsyCPOp.js:49
 msgid "This source has no categories."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:49
-#: dist/apps/tools/index.CDy_F_6g.js:49
+#: dist/apps/tools/index.CVsyCPOp.js:49
 msgid "Source category"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:49
-#: dist/apps/tools/index.CDy_F_6g.js:49
+#: dist/apps/tools/index.CVsyCPOp.js:49
 msgid "Import as"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:49
-#: dist/apps/tools/index.CDy_F_6g.js:49
+#: dist/apps/tools/index.CVsyCPOp.js:49
 msgid "Knowledge base"
 msgstr ""
 
 #. translators: %s: the source category's name.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:51
-#: dist/apps/tools/index.CDy_F_6g.js:51
+#: dist/apps/tools/index.CVsyCPOp.js:51
 msgid "Import “%s” as"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:51
-#: dist/apps/tools/index.CDy_F_6g.js:51
+#: dist/apps/tools/index.CVsyCPOp.js:51
 msgid "Also copy the matching settings (layout, columns, sidebars, search placeholder, feedback). URL slugs are never changed, and every change is in the log."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:51
-#: dist/apps/tools/index.CDy_F_6g.js:51
+#: dist/apps/tools/index.CVsyCPOp.js:51
 msgid "Back"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:51
-#: dist/apps/tools/index.CDy_F_6g.js:51
+#: dist/apps/tools/index.CVsyCPOp.js:51
 msgid "Start dry run"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:51
-#: dist/apps/tools/index.CDy_F_6g.js:51
+#: dist/apps/tools/index.CVsyCPOp.js:51
 msgid "Run the import now, without a dry run first?"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:51
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
-#: dist/apps/tools/index.CDy_F_6g.js:51
-#: dist/apps/tools/index.CDy_F_6g.js:53
+#: dist/apps/tools/index.CVsyCPOp.js:51
+#: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Run import"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:51
-#: dist/apps/tools/index.CDy_F_6g.js:51
+#: dist/apps/tools/index.CVsyCPOp.js:51
 msgid "Skip the dry run and import"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:51
-#: dist/apps/tools/index.CDy_F_6g.js:51
+#: dist/apps/tools/index.CVsyCPOp.js:51
 msgid "Verifying import (dry run)"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:51
-#: dist/apps/tools/index.CDy_F_6g.js:51
+#: dist/apps/tools/index.CVsyCPOp.js:51
 msgid "Importing data"
 msgstr ""
 
 #. translators: %d: how many items the latest batch processed.
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
-#: dist/apps/tools/index.CDy_F_6g.js:53
+#: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Processed %d item in the latest batch."
 msgid_plural "Processed %d items in the latest batch."
 msgstr[0] ""
 msgstr[1] ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
-#: dist/apps/tools/index.CDy_F_6g.js:53
+#: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Dry run complete. Nothing was imported; the counts below are what the import would do, and the log shows every item."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
-#: dist/apps/tools/index.CDy_F_6g.js:53
+#: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Download URL map (CSV)"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
-#: dist/apps/tools/index.CDy_F_6g.js:53
+#: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Run the import now?"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
-#: dist/apps/tools/index.CDy_F_6g.js:53
+#: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Looks good, run the import"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
-#: dist/apps/tools/index.CDy_F_6g.js:53
+#: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Resume"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
-#: dist/apps/tools/index.CDy_F_6g.js:53
+#: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "View knowledge base"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
-#: dist/apps/tools/index.CDy_F_6g.js:53
+#: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Back to sources"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
-#: dist/apps/tools/index.CDy_F_6g.js:53
+#: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Migration log"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
-#: dist/apps/tools/index.CDy_F_6g.js:53
+#: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "The rebuild did not finish."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
-#: dist/apps/tools/index.CDy_F_6g.js:53
+#: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "The rebuild failed."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
-#: dist/apps/tools/index.CDy_F_6g.js:53
+#: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Failed to load the index status."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
-#: dist/apps/tools/index.CDy_F_6g.js:53
+#: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "The search index holds one row per article. It is kept in sync automatically; rebuild it after bulk edits outside the editor, or when search results look stale."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
-#: dist/apps/tools/index.CDy_F_6g.js:53
+#: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Indexed articles"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
-#: dist/apps/tools/index.CDy_F_6g.js:53
+#: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "A rebuild is part-way through"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
-#: dist/apps/tools/index.CDy_F_6g.js:53
+#: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "The index was rebuilt."
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
-#: dist/apps/tools/index.CDy_F_6g.js:53
+#: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Empty the index and re-index every article?"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
-#: dist/apps/tools/index.CDy_F_6g.js:53
+#: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Rebuild"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
-#: dist/apps/tools/index.CDy_F_6g.js:53
+#: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Rebuild index"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
-#: dist/apps/tools/index.CDy_F_6g.js:53
+#: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Resume rebuild"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
-#: dist/apps/tools/index.CDy_F_6g.js:53
+#: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Migration"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
-#: dist/apps/tools/index.CDy_F_6g.js:53
+#: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Search Index"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
-#: dist/apps/tools/index.CDy_F_6g.js:53
+#: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Data Maintenance"
 msgstr ""
 
 #: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
-#: dist/apps/tools/index.CDy_F_6g.js:53
+#: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Duplicates"
 msgstr ""
 
@@ -4991,4 +4991,8 @@ msgstr ""
 #: .tmp/e2e/licensio-knowledge-base/dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.Cohcn86k.js:3
 #: dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.G_TJ16ZC.js:3
 msgid "The terms could not be loaded."
+msgstr ""
+
+#: dist/apps/tools/index.CVsyCPOp.js:53
+msgid "Resume the rebuild from where it stopped?"
 msgstr ""
