@@ -205,7 +205,11 @@ const expandedKeys = computed( () =>
 </script>
 
 <template>
-	<div ref="root" class="lkb-tablecard lkb-tablecard--core">
+	<div
+		ref="root"
+		class="lkb-tablecard lkb-tablecard--core"
+		:class="{ 'lkb-tablecard--trimmed': store.trimmed }"
+	>
 		<a-table
 			row-key="id"
 			:columns="columns"
@@ -405,8 +409,9 @@ const expandedKeys = computed( () =>
 								</a>
 								<a
 									v-if="
-										record.needs_attention ||
-										store.query.needs_attention
+										settings.feedbackUrl &&
+										( record.needs_attention ||
+											store.query.needs_attention )
 									"
 									:href="feedbackUrl( record.id )"
 								>
@@ -418,6 +423,7 @@ const expandedKeys = computed( () =>
 									}}
 								</a>
 								<ConfirmButton
+									v-if="record.can_delete"
 									type="link"
 									size="small"
 									danger
@@ -444,6 +450,7 @@ const expandedKeys = computed( () =>
 							</template>
 							<template v-else>
 								<a-button
+									v-if="record.can_delete"
 									type="link"
 									size="small"
 									:disabled="store.bulk.running"
@@ -461,6 +468,7 @@ const expandedKeys = computed( () =>
 									}}
 								</a-button>
 								<ConfirmButton
+									v-if="record.can_delete"
 									type="link"
 									size="small"
 									danger
@@ -589,7 +597,7 @@ const expandedKeys = computed( () =>
  * The table wraps to the screen rather than scrolling, and the auto layout
  * would otherwise share the spare width evenly, squeezing long titles into a
  * narrow column. A floor keeps the title the widest column, as in core. On
- * small laptop screens the floor is lower, so the default columns still fit
+ * small laptop screens the floor is lower, so the columns shown there fit
  * without a scroll bar down to 1024px.
  */
 @media ( min-width: 783px ) {
@@ -638,8 +646,11 @@ const expandedKeys = computed( () =>
  * Term lists wrap between words; a single word only breaks when it is wider
  * than the column. The minimum width stops the table squeezing the column to
  * one fragment per line: on a phone, where the table scrolls sideways, and on
- * large screens. Between the two the default columns fill the screen, so the
- * column keeps no minimum there and the table still fits without scrolling.
+ * large screens. Between the two the columns the user picked may fill the
+ * screen, so the column keeps no minimum there and the table still fits
+ * without scrolling. Until the user picks columns, the store leaves out
+ * Attachments, Rating, Views and Reading time there (the trimmed card), which
+ * leaves room for the minimum.
  */
 .lkb-termlist {
 	display: block;
@@ -650,6 +661,10 @@ const expandedKeys = computed( () =>
 	.lkb-termlist {
 		min-width: 120px;
 	}
+}
+
+.lkb-tablecard--trimmed .lkb-termlist {
+	min-width: 120px;
 }
 
 @media ( min-width: 1440px ) {

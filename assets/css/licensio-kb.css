@@ -119,13 +119,40 @@
 /*
  * The one heading band the redesigned archive views open with: a heading and
  * the hairline rule beneath it. Nothing else — the rule is what separates the
- * page header from the grid, and anything more (a band, a gradient, a search
- * box) is a different design than this one.
+ * page header from the grid, and anything more (a gradient, a search box) is a
+ * different design than this one.
+ *
+ * The one addition is the Archive header image. When it is set the header
+ * becomes a band with the image behind it. The plugin cannot know the colours
+ * of an arbitrary image or theme, so it chooses none: the heading sits on a
+ * panel that blurs the image behind it and keeps the theme's text colour.
+ * Blur keeps the heading legible over most images, but it cannot guarantee
+ * contrast: dark text over a dark image stays dark. A theme that needs more
+ * overrides `licensio-kb/page-header.php`.
  */
 .licensio-kb__pagehead {
 	margin: 0 0 2rem;
 	padding-bottom: 0.9rem;
 	border-bottom: 1px solid var(--licensio-kb-line);
+}
+
+.licensio-kb__pagehead--image {
+	padding: clamp(2rem, 8vw, 4.5rem) clamp(1rem, 4vw, 2rem);
+	border-radius: var(--licensio-kb-radius);
+	background-image: var(--licensio-kb-pagehead-image);
+	background-position: center;
+	background-size: cover;
+}
+
+.licensio-kb__pagehead--image .licensio-kb__pagehead-title,
+.licensio-kb__pagehead--image .licensio-kb__pagehead-subtitle {
+	display: table;
+	padding: 0.5rem 0.875rem;
+	border: 1px solid var(--licensio-kb-line);
+	border-radius: var(--licensio-kb-radius);
+	background: var(--licensio-kb-surface);
+	-webkit-backdrop-filter: blur(12px) saturate(0.6);
+	backdrop-filter: blur(12px) saturate(0.6);
 }
 
 .licensio-kb__pagehead-title {

@@ -196,6 +196,8 @@ class Licensio_KB_Blocks_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     protected function tearDown(): void {
+        unset( $GLOBALS['wpdb'] );
+
         if ( '' !== $this->theme_dir && is_dir( $this->theme_dir . '/licensio-kb' ) ) {
             foreach ( (array) glob( $this->theme_dir . '/licensio-kb/*' ) as $file ) {
                 unlink( (string) $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink, WordPress.WP.AlternativeFunctions.file_system_operations_unlink
@@ -1131,6 +1133,107 @@ class Licensio_KB_Blocks_Test extends Licensio_KB_Test_Case {
         $this->assertStringNotContainsString( '<img', $markup );
         $this->assertStringContainsString( '&lt;script&gt;', $markup );
         $this->assertStringContainsString( '&lt;img', $markup );
+    }
+
+    /**
+     * Limited to one category, the FAQ follows that category's article order.
+     *
+     * Only once the category has been ordered. Any other order the block is
+     * given, or no category at all, is left alone.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_faq_follows_the_category_order_when_limited_to_one_category() {
+        $this->stub_articles( array() );
+
+        // No object cache, so each render asks the double again.
+        Functions\when( 'wp_cache_get_last_changed' )->justReturn( '1' );
+        Functions\when( 'wp_cache_get' )->justReturn( false );
+        Functions\when( 'wp_cache_set' )->justReturn( true );
+
+        $ordered = true;
+
+        Functions\when( 'get_term_by' )->justReturn(
+            new WP_Term(
+                array(
+                    'term_id' => 12,
+                    'slug'    => 'billing',
+                )
+            )
+        );
+        $GLOBALS['wpdb'] = new class( $ordered ) { // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+            /**
+             * The post meta table.
+             *
+             * @var string
+             */
+            public $postmeta = 'wp_postmeta';
+
+            /**
+             * Whether the category has positions, shared with the test.
+             *
+             * @var bool
+             */
+            private $ordered;
+
+            /**
+             * Share the test's flag.
+             *
+             * @param bool $ordered Whether the category has positions.
+             */
+            public function __construct( &$ordered ) {
+                $this->ordered = &$ordered;
+            }
+
+            /**
+             * Keep the values.
+             *
+             * @param string $query   The query.
+             * @param mixed  ...$args The values.
+             *
+             * @return array<int, mixed> The values.
+             */
+            public function prepare( $query, ...$args ) {
+                return $args;
+            }
+
+            /**
+             * One row when the category has positions under its key.
+             *
+             * @param array<int, mixed> $args The prepared values.
+             *
+             * @return string|null The row, or null.
+             */
+            public function get_var( $args ) {
+                return $this->ordered && Licensio_KB_Article_Order::meta_key( 12 ) === $args[1] ? '1' : null;
+            }
+        };
+
+        $block = $this->render_callback( 'licensio-kb/faq' );
+
+        $block( array( 'category' => 'billing' ), '', null );
+        $this->assertSame( Licensio_KB_Article_Order::ORDERBY, $this->query_args['orderby'] );
+        $this->assertSame( 'ASC', $this->query_args['order'] );
+
+        $ordered = false;
+
+        $block( array( 'category' => 'billing' ), '', null );
+        $this->assertSame( 'menu_order', $this->query_args['orderby'], 'A category nobody ordered keeps the current order.' );
+
+        $block(
+            array(
+                'category' => 'billing',
+                'orderBy'  => 'title',
+            ),
+            '',
+            null
+        );
+        $this->assertSame( 'title', $this->query_args['orderby'] );
+
+        $block( array(), '', null );
+        $this->assertSame( 'menu_order', $this->query_args['orderby'] );
     }
 
     /**

@@ -39,6 +39,7 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
     protected function setUp(): void {
         parent::setUp();
 
+        Functions\when( '_prime_post_caches' )->justReturn( null );
         Functions\when( 'admin_url' )->alias(
             function ( $path = '' ) {
                 return 'https://example.test/wp-admin/' . ltrim( (string) $path, '/' );
@@ -523,6 +524,107 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
                     'licensio_category' => 'getting-started',
                     'licensio_tag'      => 'how-to',
                     'paged'             => '3',
+                )
+            )
+        );
+    }
+
+    /**
+     * A trash in the block editor arrives in the app with a single-use Undo.
+     *
+     * Only articles still in the trash that the user may restore are kept,
+     * each with the status core recorded when it was trashed. Reloading the
+     * redirect overwrites the same snapshot rather than storing another.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_block_editor_trash_carries_an_undo_to_the_app() {
+        $stored = array();
+        $posts  = array(
+            5 => 'trash',
+            6 => 'trash',
+            7 => 'publish',
+            8 => 'trash',
+        );
+
+        Functions\when( 'get_post' )->alias(
+            function ( $id ) use ( $posts ) {
+                return isset( $posts[ (int) $id ] ) ? new WP_Post(
+                    array(
+                        'ID'          => (int) $id,
+                        'post_type'   => 'licensio_article',
+                        'post_status' => $posts[ (int) $id ],
+                    )
+                ) : null;
+            }
+        );
+        Functions\when( 'current_user_can' )->alias(
+            function ( $capability, $id = 0 ) {
+                return 'delete_post' === $capability && 8 !== $id;
+            }
+        );
+        Functions\when( 'get_post_meta' )->alias(
+            function ( $id ) {
+                return 5 === $id ? 'publish' : 'pending';
+            }
+        );
+        Functions\when( 'get_current_user_id' )->justReturn( 3 );
+        Functions\when( 'wp_salt' )->justReturn( 'salt' );
+        Functions\when( 'set_transient' )->alias(
+            function ( $name, $value ) use ( &$stored ) {
+                $stored[ $name ] = $value;
+
+                return true;
+            }
+        );
+
+        $manager = new Licensio_KB_Content_Manager( $this->settings() );
+        $token   = substr( hash_hmac( 'sha256', '3|5,6', 'salt' ), 0, 32 );
+
+        $this->assertSame(
+            'https://example.test/wp-admin/admin.php?page=licensio-kb-articles&undo_count=2&undo=' . $token,
+            $manager->redirect_url(
+                'edit.php',
+                array(
+                    'post_type' => 'licensio_article',
+                    'trashed'   => '1',
+                    'ids'       => '5,6,7,8,99',
+                )
+            )
+        );
+
+        // Loading it again, in any ID order, overwrites the one snapshot.
+        $manager->redirect_url(
+            'edit.php',
+            array(
+                'post_type' => 'licensio_article',
+                'trashed'   => '1',
+                'ids'       => '6,5',
+            )
+        );
+        $this->assertSame( array( 'licensio_kb_undo_' . $token ), array_keys( $stored ) );
+        $this->assertEquals(
+            array(
+                'user'     => 3,
+                'previous' => array(
+                    5 => array( 'status' => 'publish' ),
+                    6 => array( 'status' => 'pending' ),
+                ),
+            ),
+            $stored[ 'licensio_kb_undo_' . $token ]
+        );
+
+        // Nothing left to restore: no Undo.
+        $this->assertSame(
+            'https://example.test/wp-admin/admin.php?page=licensio-kb-articles',
+            $manager->redirect_url(
+                'edit.php',
+                array(
+                    'post_type' => 'licensio_article',
+                    'trashed'   => '1',
+                    'ids'       => '7',
                 )
             )
         );

@@ -61,6 +61,15 @@ class Licensio_KB_Categories_REST_Integration_Test extends Licensio_KB_Analytics
         $this->install_content_schemas();
         $this->stub_category_term_api();
 
+        // The article checks a term move makes: an editor, holding no locks.
+        Brain\Monkey\Functions\when( 'get_post_type_object' )->justReturn(
+            (object) array(
+                'cap' => (object) Licensio_KB_Capabilities::post_type_capabilities(),
+            )
+        );
+        Brain\Monkey\Functions\when( 'get_current_user_id' )->justReturn( 1 );
+        Brain\Monkey\Functions\when( 'current_user_can' )->justReturn( true );
+
         $this->ids = $this->make_category_tree(
             array(
                 'Getting started' => array(
@@ -407,6 +416,163 @@ class Licensio_KB_Categories_REST_Integration_Test extends Licensio_KB_Analytics
         $this->assertSame( 'licensio_kb_category_cycle', $result->get_error_code() );
         $this->assertSame( 0, $this->parent_of( $this->ids['Billing'] ) );
         $this->assertSame( '', $this->live_get_term_meta( $this->ids['Billing'], 'licensio_order' ) );
+    }
+
+    /**
+     * Run the category placement hooks the way core fires them.
+     *
+     * Core fires `created_licensio_category` at the end of `wp_insert_term()`
+     * and `edit_terms` and `edited_licensio_category` around
+     * `wp_update_term()`; the live term API stands in for both, so this wraps
+     * it and calls the real hook callbacks.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    private function fire_placement_hooks() {
+        $term_meta = new Licensio_KB_Term_Meta();
+
+        Brain\Monkey\Functions\when( 'wp_insert_term' )->alias(
+            function ( $name, $taxonomy, $args = array() ) use ( $term_meta ) {
+                $result = $this->live_insert_term( $name, $taxonomy, $args );
+
+                if ( ! $result instanceof WP_Error && Licensio_KB_Post_Types::TAXONOMY_CATEGORY === $taxonomy ) {
+                    $term_meta->place_new_category( $result['term_id'] );
+                }
+
+                return $result;
+            }
+        );
+        Brain\Monkey\Functions\when( 'wp_update_term' )->alias(
+            function ( $term_id, $taxonomy, $args = array() ) use ( $term_meta ) {
+                $term_meta->remember_place( $term_id, $taxonomy );
+
+                $result = $this->live_update_term( $term_id, $taxonomy, $args );
+
+                if ( ! $result instanceof WP_Error && Licensio_KB_Post_Types::TAXONOMY_CATEGORY === $taxonomy ) {
+                    $term_meta->place_moved_category( $term_id );
+                }
+
+                return $result;
+            }
+        );
+    }
+
+    /**
+     * A new category goes after its siblings, and one moved goes after its new siblings.
+     *
+     * The highest sibling order is read from the database in one query.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_new_and_moved_categories_go_last_among_their_siblings() {
+        $this->fire_placement_hooks();
+        $this->live_update_term_meta( $this->ids['Install'], 'licensio_order', '10' );
+        $this->live_update_term_meta( $this->ids['Upgrade'], 'licensio_order', '40' );
+
+        $created = $this->controller->create_item(
+            $this->request(
+                array(
+                    'name'   => 'Security',
+                    'parent' => $this->ids['Getting started'],
+                )
+            )
+        );
+        $id      = $created->get_data()['id'];
+
+        $this->assertSame( '50', $this->live_get_term_meta( $id, 'licensio_order' ) );
+
+        $first = $this->controller->create_item(
+            $this->request(
+                array(
+                    'name'   => 'Refunds',
+                    'parent' => $this->ids['Billing'],
+                )
+            )
+        );
+
+        $this->assertSame( '10', $this->live_get_term_meta( $first->get_data()['id'], 'licensio_order' ), 'The first child of a level.' );
+
+        $this->controller->update_item(
+            $this->request(
+                array(
+                    'id'     => $this->ids['Billing'],
+                    'parent' => $this->ids['Getting started'],
+                )
+            )
+        );
+
+        $this->assertSame( '60', $this->live_get_term_meta( $this->ids['Billing'], 'licensio_order' ) );
+    }
+
+    /**
+     * An order save writes exactly the positions it lists; nothing else is placed.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_order_save_is_not_placed_twice() {
+        $this->fire_placement_hooks();
+        $this->live_update_term_meta( $this->ids['Billing'], 'licensio_order', '70' );
+
+        $queries = count( $GLOBALS['wpdb']->queries );
+
+        $this->controller->update_order(
+            $this->request(
+                array(
+                    'parent' => $this->ids['Billing'],
+                    'ids'    => array( $this->ids['Upgrade'], $this->ids['Install'] ),
+                )
+            )
+        );
+
+        $this->assertSame( '10', $this->live_get_term_meta( $this->ids['Upgrade'], 'licensio_order' ) );
+        $this->assertSame( '20', $this->live_get_term_meta( $this->ids['Install'], 'licensio_order' ) );
+
+        foreach ( array_slice( $GLOBALS['wpdb']->queries, $queries ) as $query ) {
+            $this->assertStringNotContainsString( 'MAX(CAST', $query, 'The moves of an order save are not placed.' );
+        }
+    }
+
+    /**
+     * A merge that fails after moving the children puts them back with their order.
+     *
+     * The move placed each child after the target's children; the rollback
+     * restores the order it had, or none.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_failed_merge_puts_the_children_back_in_their_place() {
+        $this->fire_placement_hooks();
+        $this->live_update_term_meta( $this->ids['Requirements'], 'licensio_order', '30' );
+
+        /**
+         * The term operations, mocked.
+         *
+         * @var Licensio_KB_Term_Operations&Mockery\MockInterface $operations
+         */
+        $operations = Mockery::mock( Licensio_KB_Term_Operations::class )->makePartial();
+        $operations->shouldReceive( 'merge_terms' )->andReturn( new WP_Error( 'licensio_kb_merge_failed', 'Nope.' ) );
+
+        $controller = new Licensio_KB_Categories_REST_Controller( $operations );
+        $result     = $controller->merge(
+            $this->request(
+                array(
+                    'sources' => array( $this->ids['Install'] ),
+                    'target'  => $this->ids['Billing'],
+                )
+            )
+        );
+
+        $this->assertInstanceOf( WP_Error::class, $result );
+        $this->assertSame( $this->ids['Install'], $this->parent_of( $this->ids['Requirements'] ) );
+        $this->assertSame( '30', $this->live_get_term_meta( $this->ids['Requirements'], 'licensio_order' ), 'The rollback restores the order.' );
     }
 
     /**

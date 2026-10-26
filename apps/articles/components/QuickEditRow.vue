@@ -26,7 +26,7 @@ import TermSelect from '../../components/TermSelect.vue';
 import { useEscapeClose } from '../../components/popover-focus';
 import { errorMessage, RestError } from '../../components/rest';
 import { __, sprintf } from '../../components/i18n';
-import { updateArticle } from '../api';
+import { config, updateArticle } from '../api';
 import { useArticlesStore } from '../store';
 import AuthorSelect from './AuthorSelect.vue';
 import type { TermValue } from '../../components/types/terms';
@@ -42,6 +42,9 @@ const emit = defineEmits< {
 } >();
 
 const store = useArticlesStore();
+
+// What the current user may do; fields they cannot use are not shown.
+const can = config().can;
 
 /**
  * The form values an article starts with.
@@ -122,10 +125,14 @@ onBeforeUnmount( () => {
 
 const statusOptions = computed( () => {
 	const options = [
-		{
-			value: 'publish',
-			label: __( 'Published', 'licensio-knowledge-base' ),
-		},
+		...( can.publish || 'publish' === start.status
+			? [
+					{
+						value: 'publish',
+						label: __( 'Published', 'licensio-knowledge-base' ),
+					},
+			  ]
+			: [] ),
 		{ value: 'draft', label: __( 'Draft', 'licensio-knowledge-base' ) },
 		{
 			value: 'pending',
@@ -388,6 +395,7 @@ function statusOf( field: string ): 'error' | undefined {
 			</a-form-item>
 
 			<a-form-item
+				v-if="can.publish"
 				:label="__( 'Visibility', 'licensio-knowledge-base' )"
 				:validate-status="statusOf( 'password' )"
 				:help="errors.password"
@@ -428,6 +436,7 @@ function statusOf( field: string ): 'error' | undefined {
 			</a-form-item>
 
 			<a-form-item
+				v-if="can.editOthers"
 				:label="__( 'Author', 'licensio-knowledge-base' )"
 				:validate-status="statusOf( 'author' )"
 				:help="errors.author"
@@ -465,7 +474,7 @@ function statusOf( field: string ): 'error' | undefined {
 					v-model="form.tags"
 					taxonomy="licensio_tag"
 					multiple
-					allow-create
+					:allow-create="can.createTags"
 					:aria-label="__( 'Tags', 'licensio-knowledge-base' )"
 				/>
 			</a-form-item>

@@ -91,6 +91,8 @@ export interface ArticleItem {
 	has_password: boolean;
 	/** Another user is editing; null when free. */
 	lock: ArticleLock | null;
+	/** Whether the current user may trash, restore or delete it. */
+	can_delete: boolean;
 	/** Block editor URL; empty when the user cannot edit. */
 	edit_url: string;
 	/** Permalink, or the preview link for an unpublished article. */
@@ -219,35 +221,18 @@ export type SkipReason =
 	| 'in_trash';
 
 /**
- * What an article was before a bulk change, for Undo.
- *
- * `status` is set for trash, restore and status changes; `terms` for term
- * changes, holding the full earlier term ID list of the changed taxonomy.
- * `password` is set beside `status` when making an article private cleared
- * its password, so Undo puts it back.
- */
-export interface Snapshot {
-	status?: ArticleStatus;
-	terms?: Partial< Record< TermTaxonomy, number[] > >;
-	password?: string;
-}
-
-/**
  * `POST articles/bulk` answer.
  *
- * `previous` is empty for actions that cannot be undone (delete, author,
- * comments). `snapshot_at` (unix seconds) and `token` must be sent back
- * unchanged with the snapshots to `POST articles/revert`.
+ * `token` undoes the batch once through `POST articles/revert`, within
+ * 15 minutes. It is empty for actions that cannot be undone (delete, author,
+ * comments) or when nothing changed. The earlier values stay on the server.
  */
 export interface BulkResult extends RevertRequest, RevertResult {}
 
 /**
- * `POST articles/revert` body. At most 100 snapshots, no older than
- * 15 minutes. Only `status`, `terms` and `password` are accepted.
+ * `POST articles/revert` body.
  */
 export interface RevertRequest {
-	previous: Record< string, Snapshot >;
-	snapshot_at: number;
 	token: string;
 }
 
@@ -282,6 +267,22 @@ export interface AuthorPage {
 export interface ListPreferences {
 	columns: ArticleColumn[];
 	per_page: PerPage;
+	/** True once the user picked their columns in the Columns picker. */
+	columns_chosen: boolean;
+	/** The columns hidden on medium screens that the user turned on there. */
+	medium_columns: ArticleColumn[];
+}
+
+/**
+ * What the current user may do, as the page localises it.
+ */
+export interface ArticlesCan {
+	/** Edit other people's articles, and so choose an author. */
+	editOthers: boolean;
+	/** Publish, schedule and make articles private. */
+	publish: boolean;
+	/** Create tags by name. */
+	createTags: boolean;
 }
 
 /**
@@ -294,8 +295,10 @@ export interface ArticlesConfig {
 	settingsUrl: string;
 	/** `post-new.php?post_type=licensio_article`. */
 	newUrl: string;
-	/** The Feedback inbox URL; append `&article_id={id}`. */
+	/** The Feedback inbox URL; append `&article_id={id}`. Empty for users who cannot manage the knowledge base. */
 	feedbackUrl: string;
+	/** What the current user may do. */
+	can: ArticlesCan;
 	/** The current user's saved list preferences. */
 	preferences: ListPreferences;
 	/** The Needs attention rule, for its help text. */

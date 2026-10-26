@@ -22,6 +22,9 @@
  * without. The `archive_columns` setting overrides that pair when it holds an
  * explicit count.
  *
+ * The page header carries the Archive header image as its background when one
+ * is set, and stays plain otherwise.
+ *
  * @package Licensio_KB
  * @since   1.0.0
  */
@@ -48,6 +51,7 @@ if ( $licensio_kb_columns < 1 ) {
         'page-header',
         array(
             'title' => Licensio_KB_Templates::archive_title(),
+            'image' => Licensio_KB_Templates::archive_header_image_url(),
         )
     );
     ?>

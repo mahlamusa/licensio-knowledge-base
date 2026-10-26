@@ -963,15 +963,115 @@ class Licensio_KB_Templates_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * The archive header takes the header image as its background.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_archive_header_shows_the_header_image() {
+        $this->stub_header_image( 42, 'https://example.test/uploads/header.jpg' );
+
+        $markup = $this->render_archive( 'Help Topics', array( 'header_image_id' => 42 ) );
+
+        $this->assertStringContainsString( 'class="licensio-kb__pagehead licensio-kb__pagehead--image"', $markup );
+        $this->assertStringContainsString( '--licensio-kb-pagehead-image:url(&quot;https://example.test/uploads/header.jpg&quot;)', $markup );
+        $this->assertStringContainsString( '<h1 class="licensio-kb__pagehead-title">Help Topics</h1>', $markup );
+    }
+
+    /**
+     * Without a header image the archive header stays plain.
+     *
+     * A solid or gradient style an older install saved is not read any more,
+     * so it renders the same plain header as no style at all.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_archive_header_is_plain_without_an_image() {
+        $this->stub_header_image( 42, 'https://example.test/uploads/header.jpg' );
+
+        foreach ( array( array(), array( 'header_style' => 'solid' ), array( 'header_style' => 'gradient' ) ) as $stored ) {
+            $markup = $this->render_archive( 'Help Topics', $stored );
+
+            $this->assertStringContainsString( '<header class="licensio-kb__pagehead">', $markup );
+            $this->assertStringNotContainsString( 'licensio-kb__pagehead--image', $markup );
+            $this->assertStringNotContainsString( 'url(', $markup );
+        }
+    }
+
+    /**
+     * A legacy header style does not hide a header image that is set.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_legacy_header_style_keeps_the_header_image() {
+        $this->stub_header_image( 42, 'https://example.test/uploads/header.jpg' );
+
+        $markup = $this->render_archive(
+            'Help Topics',
+            array(
+                'header_style'    => 'solid',
+                'header_image_id' => 42,
+            )
+        );
+
+        $this->assertStringContainsString( 'licensio-kb__pagehead--image', $markup );
+    }
+
+    /**
+     * An attachment that has no image URL leaves the header plain.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_attachment_without_an_image_leaves_the_header_plain() {
+        $this->stub_header_image( 42, false );
+
+        $markup = $this->render_archive( 'Help Topics', array( 'header_image_id' => 42 ) );
+
+        $this->assertStringContainsString( '<header class="licensio-kb__pagehead">', $markup );
+        $this->assertStringNotContainsString( 'url(', $markup );
+    }
+
+    /**
+     * Stub the attachment lookups behind the header image.
+     *
+     * @since 1.0.0
+     *
+     * @param int          $attachment_id The one ID that is an attachment.
+     * @param string|false $url           What the image URL lookup answers for it.
+     *
+     * @return void
+     */
+    private function stub_header_image( $attachment_id, $url ) {
+        Functions\when( 'get_post_type' )->alias(
+            function ( $id ) use ( $attachment_id ) {
+                return (int) $id === $attachment_id ? 'attachment' : false;
+            }
+        );
+        Functions\when( 'wp_get_attachment_image_url' )->alias(
+            function ( $id ) use ( $attachment_id, $url ) {
+                return (int) $id === $attachment_id ? $url : false;
+            }
+        );
+    }
+
+    /**
      * Render templates/archive.php against one category holding one article.
      *
      * @since 1.0.0
      *
-     * @param string $title The post type archive title.
+     * @param string               $title    The post type archive title.
+     * @param array<string, mixed> $settings Optional. Other stored settings. Default empty.
      *
      * @return string The rendered markup.
      */
-    private function render_archive( $title = 'Knowledge Base' ) {
+    private function render_archive( $title = 'Knowledge Base', array $settings = array() ) {
         $this->stub_conditionals( 'archive' );
 
         /*
@@ -981,9 +1081,9 @@ class Licensio_KB_Templates_Test extends Licensio_KB_Test_Case {
          * post_type_archive_title() the old hero used to read.
          */
         Functions\when( 'get_option' )->alias(
-            function ( $name, $default_value = false ) use ( $title ) {
+            function ( $name, $default_value = false ) use ( $title, $settings ) {
                 if ( Licensio_KB_Settings::OPTION_NAME === $name ) {
-                    return array( 'archive_header_text' => $title );
+                    return array_merge( array( 'archive_header_text' => $title ), $settings );
                 }
 
                 return $default_value;

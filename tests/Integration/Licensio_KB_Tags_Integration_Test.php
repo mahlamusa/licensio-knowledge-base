@@ -53,6 +53,15 @@ class Licensio_KB_Tags_Integration_Test extends Licensio_KB_Analytics_DB_Test_Ca
         $this->install_content_schemas();
         $this->stub_category_term_api();
 
+        // The article checks a term move makes: an editor, holding no locks.
+        Brain\Monkey\Functions\when( 'get_post_type_object' )->justReturn(
+            (object) array(
+                'cap' => (object) Licensio_KB_Capabilities::post_type_capabilities(),
+            )
+        );
+        Brain\Monkey\Functions\when( 'get_current_user_id' )->justReturn( 1 );
+        Brain\Monkey\Functions\when( 'current_user_can' )->justReturn( true );
+
         Brain\Monkey\Functions\when( 'rest_sanitize_boolean' )->alias(
             function ( $value ) {
                 return (bool) $value;
@@ -139,7 +148,7 @@ class Licensio_KB_Tags_Integration_Test extends Licensio_KB_Analytics_DB_Test_Ca
     /**
      * Seed four tags across three articles, one of them a draft.
      *
-     * Counts: Billing 2, Invoices 1, Q&A 1 (only on a draft), Unused 0.
+     * Published counts: Billing 2, Invoices 1, Q&A 0 (only on a draft), Unused 0.
      *
      * @since 1.0.0
      *
@@ -183,16 +192,17 @@ class Licensio_KB_Tags_Integration_Test extends Licensio_KB_Analytics_DB_Test_Ca
     }
 
     /**
-     * The count and the Unused filter count articles in every status but trash and auto-draft.
+     * The count is published articles only; the Unused filter counts every status but trash and auto-draft.
      *
-     * A tag only a draft, scheduled, pending or private article uses is not
-     * unused, so deleting the Unused list never strips a tag from them.
+     * A tag only a draft, scheduled, pending or private article uses shows a
+     * count of 0, as category counts do, but is not unused, so deleting the
+     * Unused list never strips a tag from them.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_unused_counts_every_status_but_trash_and_auto_draft() {
+    public function test_count_is_published_only_and_unused_counts_every_status_but_trash_and_auto_draft() {
         $tags = $this->seed_tags();
 
         foreach ( array( 'private', 'future', 'pending', 'trash', 'auto-draft' ) as $status ) {
@@ -216,15 +226,15 @@ class Licensio_KB_Tags_Integration_Test extends Licensio_KB_Analytics_DB_Test_Ca
                 'Billing'         => 2,
                 'Invoices'        => 1,
                 'Only auto-draft' => 0,
-                'Only future'     => 1,
-                'Only pending'    => 1,
-                'Only private'    => 1,
+                'Only future'     => 0,
+                'Only pending'    => 0,
+                'Only private'    => 0,
                 'Only trash'      => 0,
-                'Q&A'             => 1,
+                'Q&A'             => 0,
                 'Unused'          => 0,
             ),
             array_column( $this->list_tags()['items'], 'count', 'name' ),
-            'The draft, private, scheduled and pending articles are counted.'
+            'Only published articles are counted.'
         );
         $this->assertSame(
             array( 'Unused' ),
@@ -252,6 +262,35 @@ class Licensio_KB_Tags_Integration_Test extends Licensio_KB_Analytics_DB_Test_Ca
     }
 
     /**
+     * A tag only a draft uses counts 0, and one published article counts 1.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_draft_only_tag_counts_zero_and_published_article_counts_one() {
+        $draft     = $this->make_term( 'Draft only' );
+        $published = $this->make_term( 'Published' );
+
+        $this->make_article(
+            array(
+                'status' => 'draft',
+                'tags'   => array( $draft ),
+            )
+        );
+        $this->make_article( array( 'tags' => array( $published ) ) );
+
+        $this->assertSame(
+            array(
+                'Draft only' => 0,
+                'Published'  => 1,
+            ),
+            array_column( $this->list_tags()['items'], 'count', 'name' )
+        );
+        $this->assertSame( array(), $this->list_tags( array( 'unused' => true ) )['items'], 'A tag only a draft uses is not unused.' );
+    }
+
+    /**
      * Tags sort by name or count in either direction, and page.
      *
      * @since 1.0.0
@@ -272,7 +311,7 @@ class Licensio_KB_Tags_Integration_Test extends Licensio_KB_Analytics_DB_Test_Ca
             ),
             'Equal counts fall back to the name.'
         );
-        $this->assertSame( array( 'Unused', 'Invoices', 'Q&A', 'Billing' ), $this->names( array( 'orderby' => 'count' ) ) );
+        $this->assertSame( array( 'Q&A', 'Unused', 'Invoices', 'Billing' ), $this->names( array( 'orderby' => 'count' ) ), 'A tag only a draft uses sorts as 0.' );
 
         $page = $this->list_tags(
             array(

@@ -38,6 +38,11 @@ const FALLBACK_CONFIG: ArticlesConfig = {
 	settingsUrl: '',
 	newUrl: '',
 	feedbackUrl: '',
+	can: {
+		editOthers: true,
+		publish: true,
+		createTags: true,
+	},
 	preferences: {
 		columns: [
 			'author',
@@ -50,6 +55,8 @@ const FALLBACK_CONFIG: ArticlesConfig = {
 			'date',
 		],
 		per_page: PER_PAGE,
+		columns_chosen: false,
+		medium_columns: [],
 	},
 	lowRating: { threshold: 50, minVotes: 5 },
 };
@@ -69,6 +76,7 @@ export function config(): ArticlesConfig {
 		...FALLBACK_CONFIG,
 		...given,
 		preferences: given.preferences ?? FALLBACK_CONFIG.preferences,
+		can: { ...FALLBACK_CONFIG.can, ...( given.can ?? {} ) },
 		lowRating: {
 			threshold: Number( lowRating.threshold ),
 			minVotes: Number( lowRating.minVotes ),
@@ -168,7 +176,7 @@ export function runBulk( request: BulkRequest ): Promise< BulkResult > {
  *
  * @since 1.0.0
  *
- * @param {RevertRequest} request The batch's snapshots and token.
+ * @param {RevertRequest} request The batch's undo token.
  *
  * @return {Promise<RevertResult>} What was reverted.
  */

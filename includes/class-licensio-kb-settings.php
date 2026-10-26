@@ -58,14 +58,6 @@ class Licensio_KB_Settings {
     const CARD_STYLES = array( 'shadow', 'border', 'flat' );
 
     /**
-     * Accepted values for the `header_style` setting.
-     *
-     * @since 1.0.0
-     * @var string[]
-     */
-    const HEADER_STYLES = array( 'solid', 'gradient', 'image' );
-
-    /**
      * Accepted values for every sidebar position setting.
      *
      * The archive, the article and the category page each choose a side
@@ -153,11 +145,6 @@ class Licensio_KB_Settings {
                 'type'     => 'string',
                 'default'  => 'shadow',
                 'sanitize' => array( 'Licensio_KB_Settings', 'sanitize_card_style' ),
-            ),
-            'header_style'              => array(
-                'type'     => 'string',
-                'default'  => 'solid',
-                'sanitize' => array( 'Licensio_KB_Settings', 'sanitize_header_style' ),
             ),
             'header_image_id'           => array(
                 'type'     => 'int',
@@ -382,24 +369,6 @@ class Licensio_KB_Settings {
      */
     public static function sanitize_card_style( $value ) {
         return in_array( (string) $value, self::CARD_STYLES, true ) ? (string) $value : null;
-    }
-
-    /**
-     * Restrict the archive header style to a known value.
-     *
-     * The value names a header treatment the theme renders, so an unknown one
-     * is not a harmless typo: it either selects nothing at all or, if a theme
-     * interpolates it into a class name, injects an attacker-chosen token into
-     * markup. The allowlist closes both.
-     *
-     * @since 1.0.0
-     *
-     * @param mixed $value The raw value.
-     *
-     * @return string|null The header style, or null when it is not a known one.
-     */
-    public static function sanitize_header_style( $value ) {
-        return in_array( (string) $value, self::HEADER_STYLES, true ) ? (string) $value : null;
     }
 
     /**

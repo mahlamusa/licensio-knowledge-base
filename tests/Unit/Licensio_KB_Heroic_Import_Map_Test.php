@@ -613,17 +613,17 @@ class Licensio_KB_Heroic_Import_Map_Test extends Licensio_KB_Test_Case {
                 'archive_sidebar_position' => 'left',
                 'show_subcategories'       => true,
                 'enable_feedback'          => false,
-                'header_style'             => 'gradient',
             ),
             $mapped['settings']
         );
         $this->assertArrayHasKey( 'kb-article-slug', $mapped['excluded'] );
+        $this->assertArrayHasKey( 'kb-headerstyle', $mapped['excluded'] );
         $this->assertSame( array( 'kb-license-key', 'sort-by' ), $mapped['unmapped'] );
         $this->assertStringNotContainsString( 'SECRET', wp_json_encode( $mapped ) );
     }
 
     /**
-     * An unknown sidebar position or header style is not carried.
+     * An unknown sidebar position is not carried.
      *
      * @since 1.0.0
      *
@@ -633,11 +633,37 @@ class Licensio_KB_Heroic_Import_Map_Test extends Licensio_KB_Test_Case {
         $mapped = Licensio_KB_Heroic_Import_Map::settings(
             array(
                 'article-sidebar-position' => 'middle',
-                'kb-headerstyle'           => 'video',
             )
         );
 
         $this->assertSame( array(), $mapped['settings'] );
-        $this->assertSame( array( 'article-sidebar-position', 'kb-headerstyle' ), $mapped['unmapped'] );
+        $this->assertSame( array( 'article-sidebar-position' ), $mapped['unmapped'] );
+    }
+
+    /**
+     * The Heroic header style is dropped and its image is carried.
+     *
+     * The archive header shows the header image when one is set and is plain
+     * otherwise, so the solid, gradient or image choice has nothing to land
+     * on. It is reported as excluded rather than unmapped so the dry run says
+     * why.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_settings_drop_the_header_style_and_keep_the_image() {
+        foreach ( array( 'solid', 'gradient', 'image', 'video' ) as $style ) {
+            $mapped = Licensio_KB_Heroic_Import_Map::settings(
+                array(
+                    'kb-headerstyle'                   => $style,
+                    'kb-headerstyle-img-attachment-id' => '42',
+                )
+            );
+
+            $this->assertSame( array( 'header_image_id' => '42' ), $mapped['settings'], $style );
+            $this->assertArrayHasKey( 'kb-headerstyle', $mapped['excluded'], $style );
+            $this->assertSame( array(), $mapped['unmapped'], $style );
+        }
     }
 }

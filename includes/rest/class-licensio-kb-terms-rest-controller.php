@@ -17,7 +17,9 @@
  * text: core stores `&` as `&amp;`, so they are decoded here for the apps,
  * which render them as text.
  *
- * Consumed by the articles, categories and tags apps.
+ * Consumed by the articles, categories and tags apps. Anyone who may write
+ * articles may search, since authors and contributors pick the categories and
+ * tags of their own articles; core's `wp/v2` term routes are public anyway.
  *
  * @package Licensio_KB
  * @since   1.0.0
@@ -51,7 +53,7 @@ class Licensio_KB_Terms_REST_Controller extends Licensio_KB_REST_Controller {
     /**
      * Register the term search route.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Open to every user who may write articles or manage the knowledge base.
      *
      * @return void
      */
@@ -63,11 +65,28 @@ class Licensio_KB_Terms_REST_Controller extends Licensio_KB_REST_Controller {
                 array(
                     'methods'             => 'GET',
                     'callback'            => array( $this, 'get_items' ),
-                    'permission_callback' => array( $this, 'manage_permissions_check' ),
+                    'permission_callback' => array( $this, 'search_permissions_check' ),
                     'args'                => $this->get_items_args(),
                 ),
             )
         );
+    }
+
+    /**
+     * Permission for the term search: write articles or manage the knowledge base.
+     *
+     * @since 1.0.0
+     *
+     * @param WP_REST_Request $request The request.
+     *
+     * @return true|WP_Error True when allowed.
+     */
+    public function search_permissions_check( $request ) {
+        if ( true === $this->edit_articles_permissions_check( $request ) ) {
+            return true;
+        }
+
+        return $this->manage_permissions_check( $request );
     }
 
     /**

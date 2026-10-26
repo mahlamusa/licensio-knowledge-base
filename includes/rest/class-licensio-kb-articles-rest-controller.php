@@ -14,9 +14,17 @@
  *   for "select all matching".
  * - `PATCH articles/{id}`: quick edit. 409 when another user holds the lock.
  * - `POST articles/bulk` and `POST articles/revert`: batched bulk actions and
- *   their undo, through Licensio_KB_Article_Bulk.
+ *   their single-use undo by token, through Licensio_KB_Article_Bulk.
  * - `GET authors`: the users who can edit articles.
  * - `GET` and `PUT preferences`: the current user's columns and page size.
+ *
+ * Anyone who may write articles (`edit_licensio_articles`: administrators,
+ * editors, authors and contributors) may use these routes, and each one checks
+ * the articles it touches with core's per-article capabilities. A user who may
+ * not edit other people's articles only ever sees their own: the list, the
+ * IDs and the status counts are limited to articles they wrote. `GET authors`
+ * needs `edit_others_licensio_articles`, since only those users can choose
+ * another author.
  *
  * The list runs through WP_Query, so core's status, search, taxonomy and date
  * handling apply. The views and rating joins come from
@@ -155,12 +163,12 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
     /**
      * Register the routes.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Opens the routes to every user who may write articles.
      *
      * @return void
      */
     public function register_routes() {
-        $manage = array( $this, 'manage_permissions_check' );
+        $manage = array( $this, 'edit_articles_permissions_check' );
 
         register_rest_route(
             $this->namespace,
@@ -234,7 +242,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
                 array(
                     'methods'             => 'GET',
                     'callback'            => array( $this, 'get_authors' ),
-                    'permission_callback' => $manage,
+                    'permission_callback' => array( $this, 'authors_permissions_check' ),
                     'args'                => $this->get_authors_args(),
                 ),
             )
@@ -447,25 +455,19 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
     }
 
     /**
-     * The arguments of `POST articles/revert`.
+     * The arguments of `POST articles/revert`: only the token a bulk answer gave.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Takes only the token.
      *
      * @return array<string, array<string, mixed>> The argument schema.
      */
     public function get_revert_args() {
         return array(
-            'previous'    => array(
-                'type'     => 'object',
-                'required' => true,
-            ),
-            'snapshot_at' => array(
-                'type'     => 'integer',
-                'required' => true,
-            ),
-            'token'       => array(
-                'type'     => 'string',
-                'required' => true,
+            'token' => array(
+                'type'      => 'string',
+                'required'  => true,
+                'minLength' => Licensio_KB_Article_Bulk::TOKEN_LENGTH,
+                'maxLength' => Licensio_KB_Article_Bulk::TOKEN_LENGTH,
             ),
         );
     }
@@ -516,7 +518,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      */
     public function get_preferences_args() {
         return array(
-            'columns'  => array(
+            'columns'        => array(
                 'type'     => 'array',
                 'required' => true,
                 'items'    => array(
@@ -524,10 +526,22 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
                     'enum' => self::COLUMNS,
                 ),
             ),
-            'per_page' => array(
+            'per_page'       => array(
                 'type'     => 'integer',
                 'required' => true,
                 'enum'     => self::PER_PAGE_OPTIONS,
+            ),
+            'columns_chosen' => array(
+                'type'    => 'boolean',
+                'default' => false,
+            ),
+            'medium_columns' => array(
+                'type'    => 'array',
+                'default' => array(),
+                'items'   => array(
+                    'type' => 'string',
+                    'enum' => self::COLUMNS,
+                ),
             ),
         );
     }
@@ -608,7 +622,10 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
     /**
      * The WP_Query arguments for a set of list filters.
      *
-     * @since 1.0.0
+     * A user who may not edit other people's articles is limited to their own,
+     * whatever author the request names.
+     *
+     * @since 1.0.0 Limits users without `edit_others_licensio_articles` to their own articles.
      *
      * @param array<string, mixed> $params  The request parameters, validated against the schema.
      * @param bool                 $ids_only True for `GET articles/ids`: every match, as IDs, unsorted by metrics.
@@ -637,6 +654,10 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
 
         if ( ! empty( $params['author'] ) ) {
             $args['author'] = (int) $params['author'];
+        }
+
+        if ( ! self::sees_others() ) {
+            $args['author'] = get_current_user_id();
         }
 
         $tax_query = $this->tax_query( $params );
@@ -889,14 +910,16 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      * The status counts the pills show.
      *
      * Read from `wp_count_posts()`, which core caches, so they match core's
-     * own list. "All" adds up every status but the trash, as core does.
+     * own list. "All" adds up every status but the trash, as core does. A
+     * user limited to their own articles gets the counts of their own
+     * articles only, in one grouped query.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Counts only the current user's articles when they may not edit others'.
      *
      * @return array<string, int> Status to count, plus `all`.
      */
     public static function status_counts() {
-        $counted = (array) wp_count_posts( Licensio_KB_Post_Types::POST_TYPE, 'readable' );
+        $counted = self::sees_others() ? (array) wp_count_posts( Licensio_KB_Post_Types::POST_TYPE, 'readable' ) : self::own_status_counts( get_current_user_id() );
         $counts  = array( 'all' => 0 );
 
         foreach ( array_merge( self::LIST_STATUSES, array( 'trash' ) ) as $status ) {
@@ -908,6 +931,48 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
         }
 
         return $counts;
+    }
+
+    /**
+     * The number of articles one user wrote, by status.
+     *
+     * @since 1.0.0
+     *
+     * @param int $user_id The author.
+     *
+     * @return array<string, int> Status to count.
+     */
+    private static function own_status_counts( $user_id ) {
+        global $wpdb;
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- One grouped count per list load; wp_count_posts() cannot count by author.
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                'SELECT post_status, COUNT( * ) AS num FROM %i WHERE post_type = %s AND post_author = %d GROUP BY post_status',
+                $wpdb->posts,
+                Licensio_KB_Post_Types::POST_TYPE,
+                (int) $user_id
+            )
+        );
+
+        $counts = array();
+
+        foreach ( (array) $rows as $row ) {
+            $counts[ (string) $row->post_status ] = (int) $row->num;
+        }
+
+        return $counts;
+    }
+
+    /**
+     * Whether the current user may see and edit other people's articles.
+     *
+     * @since 1.0.0
+     *
+     * @return bool True for users with `edit_others_licensio_articles`.
+     */
+    public static function sees_others() {
+        return current_user_can( Licensio_KB_Article_Bulk::type_cap( 'edit_others_posts' ) );
     }
 
     /**
@@ -968,9 +1033,11 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      *
      * `title` is the title as plain text, for display. `title_raw` is the
      * title as stored, for editing, so a save that leaves it alone writes
-     * back the same bytes and never decodes `&lt;` into markup.
+     * back the same bytes and never decodes `&lt;` into markup. `can_delete`
+     * says whether the current user may trash, restore or delete it, so the app
+     * only offers those actions where they can work.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Adds `can_delete`.
      *
      * @param WP_Post              $post        The article.
      * @param array<string, mixed> $figures     Its views and votes in the window.
@@ -1013,6 +1080,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
                 'user_id' => $lock_user,
                 'name'    => $holder ? self::plain_text( $holder->display_name ) : '',
             ) : null,
+            'can_delete'      => current_user_can( 'delete_post', $id ),
             'edit_url'        => (string) get_edit_post_link( $id, 'raw' ),
             'view_url'        => (string) ( 'publish' === $post->post_status ? get_permalink( $post ) : get_preview_post_link( $post ) ),
         );
@@ -1384,16 +1452,16 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
     }
 
     /**
-     * Permission for quick edit: manage the knowledge base and edit this article.
+     * Permission for quick edit: write articles and edit this one.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Needs the article capability rather than the management one.
      *
      * @param WP_REST_Request $request The request.
      *
      * @return true|WP_Error True when allowed.
      */
     public function update_item_permissions_check( $request ) {
-        $allowed = $this->manage_permissions_check( $request );
+        $allowed = $this->edit_articles_permissions_check( $request );
 
         if ( true !== $allowed ) {
             return $allowed;
@@ -1407,9 +1475,39 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
     }
 
     /**
-     * Run a bulk action over a batch of articles.
+     * Permission for the author list: edit other people's articles.
+     *
+     * Only those users can choose another author, and the list would
+     * otherwise tell any contributor who else can write.
      *
      * @since 1.0.0
+     *
+     * @param WP_REST_Request $request The request.
+     *
+     * @return true|WP_Error True when allowed.
+     */
+    public function authors_permissions_check( $request ) {
+        $allowed = $this->edit_articles_permissions_check( $request );
+
+        if ( true !== $allowed ) {
+            return $allowed;
+        }
+
+        if ( ! self::sees_others() ) {
+            return self::forbidden( __( 'You are not allowed to choose another author.', 'licensio-knowledge-base' ) );
+        }
+
+        return true;
+    }
+
+    /**
+     * Run a bulk action over a batch of articles.
+     *
+     * Answers `{ done, skipped, failed, token }`; `token` undoes the batch
+     * once through `POST articles/revert`, and is empty when nothing can be
+     * undone.
+     *
+     * @since 1.0.0 Answers the undo token instead of the snapshot.
      *
      * @param WP_REST_Request $request The request.
      *
@@ -1429,12 +1527,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
             return Licensio_KB_Article_Bulk::invalid( 'ids', __( 'Send between 1 and 100 article IDs.', 'licensio-knowledge-base' ) );
         }
 
-        $result = $this->bulk->run( $ids, $action, $args );
-
-        // An object, even when empty, so the app always reads a map.
-        $result['previous'] = (object) $result['previous'];
-
-        return rest_ensure_response( $result );
+        return rest_ensure_response( $this->bulk->run( $ids, $action, $args ) );
     }
 
     /**
@@ -1513,20 +1606,16 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
     }
 
     /**
-     * Undo a bulk action from its snapshot.
+     * Undo a bulk action, once, from the snapshot its token names.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Takes only the token.
      *
      * @param WP_REST_Request $request The request.
      *
-     * @return WP_REST_Response|WP_Error What happened to each ID, or why the snapshot was refused.
+     * @return WP_REST_Response|WP_Error What happened to each ID, or why the token was refused.
      */
     public function revert_items( $request ) {
-        $result = $this->bulk->revert(
-            (array) $request->get_param( 'previous' ),
-            (int) $request->get_param( 'snapshot_at' ),
-            (string) $request->get_param( 'token' )
-        );
+        $result = $this->bulk->revert( (string) $request->get_param( 'token' ) );
 
         return is_wp_error( $result ) ? $result : rest_ensure_response( $result );
     }
@@ -1534,7 +1623,11 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
     /**
      * The users who can write articles.
      *
-     * @since 1.0.0
+     * The search matches the display name and the nicename only, never the
+     * login name, so the list cannot be used to find out what people sign in
+     * with.
+     *
+     * @since 1.0.0 No longer searches login names.
      *
      * @param WP_REST_Request $request The request.
      *
@@ -1555,7 +1648,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
 
         if ( '' !== $search ) {
             $args['search']         = '*' . $search . '*';
-            $args['search_columns'] = array( 'user_login', 'user_nicename', 'display_name' );
+            $args['search_columns'] = array( 'user_nicename', 'display_name' );
         }
 
         if ( ! empty( $include ) ) {
@@ -1607,8 +1700,10 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
     public function update_preferences( $request ) {
         $preferences = self::sanitize_preferences(
             array(
-                'columns'  => $request->get_param( 'columns' ),
-                'per_page' => $request->get_param( 'per_page' ),
+                'columns'        => $request->get_param( 'columns' ),
+                'per_page'       => $request->get_param( 'per_page' ),
+                'columns_chosen' => $request->get_param( 'columns_chosen' ),
+                'medium_columns' => $request->get_param( 'medium_columns' ),
             )
         );
 
@@ -1624,7 +1719,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      *
      * @param int $user_id The user ID.
      *
-     * @return array{columns: string[], per_page: int} The preferences.
+     * @return array{columns: string[], per_page: int, columns_chosen: bool, medium_columns: string[]} The preferences.
      */
     public static function preferences( $user_id ) {
         return self::sanitize_preferences( get_user_meta( (int) $user_id, self::PREFERENCES_META, true ) );
@@ -1633,11 +1728,20 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
     /**
      * Hold preferences to the allow-listed columns and page sizes.
      *
-     * @since 1.0.0
+     * `columns_chosen` is true once the user picked their columns in the
+     * Columns picker. Until then the app may hide the less used default
+     * columns on medium screens, so the term columns stay readable; a choice
+     * the user made is shown exactly. Columns saved before the key existed
+     * were picked by the user, so stored columns without the key count as
+     * chosen. `medium_columns` lists the columns hidden on medium screens
+     * that the user turned on there, which shows them on medium screens
+     * without changing the columns shown on wider ones.
+     *
+     * @since 1.0.0 Counts columns stored without `columns_chosen` as chosen, and adds `medium_columns`.
      *
      * @param mixed $value The stored or submitted preferences.
      *
-     * @return array{columns: string[], per_page: int} The clean preferences.
+     * @return array{columns: string[], per_page: int, columns_chosen: bool, medium_columns: string[]} The clean preferences.
      */
     public static function sanitize_preferences( $value ) {
         $value    = is_array( $value ) ? $value : array();
@@ -1646,8 +1750,10 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
 
         return array(
             // Kept in table order, whatever order they were sent in.
-            'columns'  => array_values( array_intersect( self::COLUMNS, array_map( 'strval', $columns ) ) ),
-            'per_page' => in_array( $per_page, self::PER_PAGE_OPTIONS, true ) ? $per_page : self::PER_PAGE_OPTIONS[0],
+            'columns'        => array_values( array_intersect( self::COLUMNS, array_map( 'strval', $columns ) ) ),
+            'per_page'       => in_array( $per_page, self::PER_PAGE_OPTIONS, true ) ? $per_page : self::PER_PAGE_OPTIONS[0],
+            'columns_chosen' => array_key_exists( 'columns_chosen', $value ) ? ! empty( $value['columns_chosen'] ) : isset( $value['columns'] ),
+            'medium_columns' => isset( $value['medium_columns'] ) && is_array( $value['medium_columns'] ) ? array_values( array_intersect( self::COLUMNS, array_map( 'strval', $value['medium_columns'] ) ) ) : array(),
         );
     }
 

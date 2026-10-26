@@ -116,6 +116,13 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
     protected function setUp(): void {
         parent::setUp();
 
+        Functions\when( 'get_post_type_object' )->justReturn(
+            (object) array(
+                'cap' => (object) Licensio_KB_Capabilities::post_type_capabilities(),
+            )
+        );
+        Functions\when( 'get_current_user_id' )->justReturn( 1 );
+
         $this->routes      = array();
         $this->events      = array();
         $this->cap_calls   = array();
@@ -647,6 +654,29 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * An order request loads the terms it checks in one go.
+     *
+     * Without it every `get_term()` and `edit_term` check of a thousand-ID
+     * order is its own query.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_order_request_primes_the_terms_it_checks() {
+        $primed = array();
+
+        Functions\when( '_prime_term_caches' )->alias(
+            function ( $ids ) use ( &$primed ) {
+                $primed[] = array_values( (array) $ids );
+            }
+        );
+
+        $this->assertTrue( $this->controller->update_order_permissions_check( $this->request( array( 'ids' => array( 3, 2 ) ) ) ) );
+        $this->assertContains( array( 3, 2 ), $primed );
+    }
+
+    /**
      * A category that does not exist answers 404, not forbidden.
      *
      * @since 1.0.0
@@ -880,30 +910,6 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * Descendants are found at every depth, nearest first, never the category itself.
-     *
-     * @since 1.0.0
-     *
-     * @return void
-     */
-    public function test_descendants_are_found_at_every_depth() {
-        $this->assertSame( array( 2, 3 ), Licensio_KB_Categories_REST_Controller::descendants_of( 1, $this->parents() ) );
-        $this->assertSame( array( 5 ), Licensio_KB_Categories_REST_Controller::descendants_of( 4, $this->parents() ) );
-        $this->assertSame( array(), Licensio_KB_Categories_REST_Controller::descendants_of( 3, $this->parents() ) );
-        $this->assertSame(
-            array( 2 ),
-            Licensio_KB_Categories_REST_Controller::descendants_of(
-                1,
-                array(
-                    1 => 2,
-                    2 => 1,
-                )
-            ),
-            'Stored loops do not hang the walk.'
-        );
-    }
-
-    /**
      * A move under the category itself or a descendant is a cycle.
      *
      * @since 1.0.0
@@ -918,6 +924,48 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
         $this->assertFalse( Licensio_KB_Categories_REST_Controller::would_cycle( 3, 1, $parents ) );
         $this->assertFalse( Licensio_KB_Categories_REST_Controller::would_cycle( 1, 4, $parents ) );
         $this->assertFalse( Licensio_KB_Categories_REST_Controller::would_cycle( 1, 0, $parents ) );
+    }
+
+    /**
+     * The cycle check survives a stored loop and stays cheap on a large order.
+     *
+     * The check walks up from the parent, so a thousand categories each cost
+     * the depth of the tree rather than a scan of every category.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_cycle_check_handles_loops_and_large_orders() {
+        $looped = array(
+            1 => 2,
+            2 => 1,
+            3 => 0,
+        );
+
+        $this->assertFalse( Licensio_KB_Categories_REST_Controller::would_cycle( 3, 1, $looped ), 'A stored loop must not hang the walk.' );
+        $this->assertTrue( Licensio_KB_Categories_REST_Controller::would_cycle( 2, 1, $looped ) );
+
+        // A chain 1 > 2 > … > 3000, and 3000 siblings under the top of it.
+        $parents = array();
+
+        for ( $id = 1; $id <= 3000; $id++ ) {
+            $parents[ $id ] = $id - 1;
+        }
+
+        $this->assertTrue( Licensio_KB_Categories_REST_Controller::would_cycle( 1, 3000, $parents ) );
+        $this->assertFalse( Licensio_KB_Categories_REST_Controller::would_cycle( 3000, 1, $parents ) );
+
+        $flat = array( 1 => 0 );
+
+        for ( $id = 2; $id <= 3001; $id++ ) {
+            $flat[ $id ] = 1;
+        }
+
+        $started = microtime( true );
+
+        $this->assertTrue( Licensio_KB_Categories_REST_Controller::check_order( 0, range( 2, 3001 ), $flat ) );
+        $this->assertLessThan( 0.5, microtime( true ) - $started, 'Checking a large order must not scan the whole tree per category.' );
     }
 
     /**
@@ -1716,6 +1764,46 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
             $this->events
         );
         $this->assertSame( array( 101, 102, 103, 104 ), $this->assignments[1] );
+    }
+
+    /**
+     * A merge or a delete that would move an article someone is editing changes nothing.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_merge_or_delete_with_an_article_being_edited_changes_nothing() {
+        Functions\when( 'apply_filters' )->returnArg( 2 );
+
+        $GLOBALS['wpdb']->edit_locks = array( 103 => time() . ':9' );
+
+        $merged = $this->controller->merge(
+            $this->request(
+                array(
+                    'sources' => array( 2, 4 ),
+                    'target'  => 1,
+                )
+            )
+        );
+
+        $this->assertInstanceOf( 'WP_Error', $merged );
+        $this->assertSame( 'licensio_kb_articles_locked', $merged->get_error_code() );
+        $this->assertSame( array( 103 ), $merged->get_error_data()['ids'] );
+
+        $deleted = $this->controller->delete_item(
+            $this->request(
+                array(
+                    'id'                => 2,
+                    'reassign_articles' => '1',
+                    'reassign_children' => 'parent',
+                )
+            )
+        );
+
+        $this->assertInstanceOf( 'WP_Error', $deleted );
+        $this->assertSame( 'licensio_kb_articles_locked', $deleted->get_error_code() );
+        $this->assertSame( array(), $this->events, 'Nothing is written.' );
     }
 
     /**

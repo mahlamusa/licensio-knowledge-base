@@ -235,13 +235,14 @@ The salt lives in an autoloaded option and is rotated daily by the `licensio_rot
 
 ### REST API
 
-Namespace `licensio-kb/v1`. Extend `Licensio_KB_REST_Controller` and register the class through the `licensio_rest_controllers` filter — do not hook `rest_api_init` yourself. The base class supplies three permission callbacks:
+Namespace `licensio-kb/v1`. Extend `Licensio_KB_REST_Controller` and register the class through the `licensio_rest_controllers` filter — do not hook `rest_api_init` yourself. The base class supplies four permission callbacks:
 
 | Callback | Use for |
 |---|---|
 | `public_permissions_check` | public reads |
 | `public_write_permissions_check` | public writes; requires a valid `wp_rest` nonce |
 | `manage_permissions_check` | `manage_licensio_kb` (falls back to `manage_options` until #3 lands) |
+| `edit_articles_permissions_check` | routes article writers use: the article type's `edit_posts` capability (`edit_licensio_articles`), held by administrators, editors, authors and contributors; check each article with core's per-object capabilities as well |
 
 **Know what the nonce buys on a public write.** For a logged-in user it is bound to their user ID and session token, so it is a real CSRF control. For an anonymous visitor it is not a per-visitor secret: core computes it over user ID 0 with an empty session token, so one value is valid for every logged-out visitor site-wide for the whole 12–24 hour tick, and it is printed into public markup. It proves the caller read a page of this site recently, and little else.
 
@@ -440,7 +441,7 @@ It cannot be a module: module scripts are always deferred and execute after ever
 | `licensio_settings_registry`, `licensio_settings` | filter | Extend or override settings. |
 | `licensio_settings_schema` | filter | The groups and fields the settings screen renders itself from. |
 | `licensio_admin_menu_pages` | filter | Register a page under the Knowledge Base menu. |
-| `licensio_kb_use_content_manager` | filter | Return false to keep the core article list and category and tag screens instead of the All Articles, Categories and Tags apps. The **Classic screens** setting does the same. Either way the core menu items come back, nothing redirects, and the apps stay reachable at `admin.php?page=licensio-kb-{articles,categories,tags}`. |
+| `licensio_kb_use_content_manager` | filter | Return false to keep the core article list and category and tag screens instead of the All Articles, Categories and Tags apps. The **Classic screens** setting does the same, and wins: the filter can only switch the apps off, so returning true never brings them back while that setting is on. Either way the core menu items come back, nothing redirects, and the apps stay reachable at `admin.php?page=licensio-kb-{articles,categories,tags}`. |
 | `licensio_article_post_type_args`, `licensio_category_taxonomy_args`, `licensio_tag_taxonomy_args` | filter | Content model registration arguments. |
 | `licensio_supports_fulltext` | filter | Override the FULLTEXT capability probe. |
 | `licensio_visitor_ip` | filter | Supply the client IP behind a trusted proxy. Hashed immediately, never stored. |

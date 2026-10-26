@@ -55,8 +55,14 @@ class Licensio_KB_Article_Order_Integration_Test extends Licensio_KB_Analytics_D
         $this->stub_category_term_api();
         Brain\Monkey\Functions\when( 'rest_authorization_required_code' )->justReturn( 403 );
         Brain\Monkey\Functions\when( 'current_user_can' )->justReturn( true );
+        Brain\Monkey\Functions\when( 'wp_check_post_lock' )->justReturn( false );
+        Brain\Monkey\Functions\when( '_prime_post_caches' )->justReturn( null );
         Brain\Monkey\Functions\when( 'wp_cache_delete_multiple' )->justReturn( array() );
         Brain\Monkey\Functions\when( 'wp_cache_set_posts_last_changed' )->justReturn( null );
+        // No object cache: `has_positions()` asks the live table every time.
+        Brain\Monkey\Functions\when( 'wp_cache_get_last_changed' )->justReturn( '1' );
+        Brain\Monkey\Functions\when( 'wp_cache_get' )->justReturn( false );
+        Brain\Monkey\Functions\when( 'wp_cache_set' )->justReturn( true );
 
         Brain\Monkey\Functions\when( 'get_post_meta' )->alias(
             function ( $post_id, $key ) {
@@ -469,6 +475,28 @@ class Licensio_KB_Article_Order_Integration_Test extends Licensio_KB_Analytics_D
             Licensio_KB_Article_Order::positions( $term )
         );
         $this->assertCount( $before + 1, $this->adapter->queries );
+    }
+
+    /**
+     * A category has positions once one article is ordered in it, and not before.
+     *
+     * The FAQ block keeps its plain `menu_order` for a category nobody ordered.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_category_has_positions_once_ordered() {
+        $billing  = $this->make_term( 'Billing', Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
+        $accounts = $this->make_term( 'Accounts', Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
+        $article  = $this->make_article( array( 'title' => 'Refunds' ) );
+
+        $this->assertFalse( Licensio_KB_Article_Order::has_positions( $billing ) );
+
+        $this->set_order_row( $article, Licensio_KB_Article_Order::meta_key( $billing ), '10' );
+
+        $this->assertTrue( Licensio_KB_Article_Order::has_positions( $billing ) );
+        $this->assertFalse( Licensio_KB_Article_Order::has_positions( $accounts ) );
     }
 
     /**

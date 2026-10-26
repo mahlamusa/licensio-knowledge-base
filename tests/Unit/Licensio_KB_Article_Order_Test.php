@@ -570,6 +570,58 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * Whether a category has positions is asked once until the posts change.
+     *
+     * The FAQ block asks on every render, so the answer, a no included, is
+     * kept in the object cache under the posts `last_changed` value, which a
+     * save bumps.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_has_positions_is_cached_until_an_order_is_saved() {
+        /**
+         * The object cache double: group to key to value.
+         *
+         * @var array<string, array<string, int>> $store
+         */
+        $store = array();
+
+        Functions\when( 'wp_cache_get_last_changed' )->alias(
+            function () {
+                return (string) count( array_keys( $this->cache, 'last_changed', true ) );
+            }
+        );
+        Functions\when( 'wp_cache_get' )->alias(
+            function ( $key, $group ) use ( &$store ) {
+                return $store[ $group ][ $key ] ?? false;
+            }
+        );
+        Functions\when( 'wp_cache_set' )->alias(
+            function ( $key, $value, $group ) use ( &$store ) {
+                $store[ $group ][ $key ] = $value;
+
+                return true;
+            }
+        );
+
+        $this->assertFalse( Licensio_KB_Article_Order::has_positions( 7 ) );
+        $this->assertFalse( Licensio_KB_Article_Order::has_positions( 7 ) );
+        $this->assertCount( 1, $GLOBALS['wpdb']->presence_reads, 'A no is cached too.' );
+        $this->assertStringContainsString( "SELECT 1 FROM `wptests_postmeta` WHERE meta_key = 'licensio_order_7' LIMIT 1", $GLOBALS['wpdb']->presence_reads[0] );
+
+        Licensio_KB_Article_Order::save( 7, array( 3 ) );
+
+        $this->assertTrue( Licensio_KB_Article_Order::has_positions( 7 ) );
+        $this->assertTrue( Licensio_KB_Article_Order::has_positions( 7 ) );
+        $this->assertCount( 2, $GLOBALS['wpdb']->presence_reads, 'A save asks again, once.' );
+
+        $this->assertFalse( Licensio_KB_Article_Order::has_positions( 8 ) );
+        $this->assertCount( 3, $GLOBALS['wpdb']->presence_reads, 'Each category is cached on its own.' );
+    }
+
+    /**
      * Saving writes 10, 20, 30 in the order given.
      *
      * @since 1.0.0

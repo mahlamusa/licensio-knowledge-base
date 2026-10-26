@@ -256,7 +256,6 @@ class Licensio_KB_Settings_Schema_Test extends Licensio_KB_Test_Case {
         $fields = $this->fields();
 
         $expected = array(
-            'header_style'              => 'appearance',
             'header_image_id'           => 'appearance',
             'archive_header_text'       => 'appearance',
             'search_placeholder'        => 'appearance',
@@ -292,7 +291,6 @@ class Licensio_KB_Settings_Schema_Test extends Licensio_KB_Test_Case {
         $map = ( new Licensio_KB_Settings_Schema( new Licensio_KB_Settings() ) )->field_map();
 
         $keys = array(
-            'header_style',
             'header_image_id',
             'archive_header_text',
             'search_placeholder',
@@ -326,7 +324,6 @@ class Licensio_KB_Settings_Schema_Test extends Licensio_KB_Test_Case {
     public function test_the_presentation_settings_get_the_right_controls() {
         $fields = $this->fields();
 
-        $this->assertSame( 'select', $fields['header_style']['control'] );
         $this->assertSame( 'number', $fields['header_image_id']['control'] );
         $this->assertSame( 'text', $fields['archive_header_text']['control'] );
         $this->assertSame( 'text', $fields['search_placeholder']['control'] );
@@ -339,16 +336,20 @@ class Licensio_KB_Settings_Schema_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * The header style select offers exactly the values the sanitiser accepts.
+     * The settings screen offers no archive header style.
+     *
+     * The archive header shows the header image or nothing, so the screen
+     * offers only the image field.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_the_header_style_choices_match_the_allowlist() {
-        $values = array_column( $this->fields()['header_style']['choices'], 'value' );
+    public function test_there_is_no_header_style_field() {
+        $fields = $this->fields();
 
-        $this->assertSame( Licensio_KB_Settings::HEADER_STYLES, $values );
+        $this->assertArrayNotHasKey( 'header_style', $fields );
+        $this->assertArrayHasKey( 'header_image_id', $fields );
     }
 
     /**

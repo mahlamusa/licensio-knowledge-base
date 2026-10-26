@@ -325,7 +325,15 @@ onUnmounted( () => {
 								</template>
 							</a-input-search>
 
-							<label class="lkb-tags__toggle">
+							<label
+								class="lkb-tags__toggle"
+								:title="
+									__(
+										'Tags with no articles in any status, drafts included',
+										'licensio-knowledge-base'
+									)
+								"
+							>
 								<a-switch
 									:checked="store.unused"
 									@change="

@@ -15,11 +15,19 @@
  * deferred while articles move. `check_slug()` holds the rule both apps
  * follow when a term is edited to a slug another term already uses.
  *
- * Writing the rows directly skips core's per-object relationship hooks
- * (`set_object_terms`, `added_term_relationship`, `deleted_term_relationships`
- * and the like). `licensio_kb_term_assignments_changed` ( int[] $object_ids,
- * string $taxonomy ) fires instead, once per taxonomy for every move, merge or
- * undo, so the search index can refresh the articles that changed.
+ * Writing the rows directly would skip core's per-object relationship hooks,
+ * so core's after-write hooks are fired for each object as its rows are
+ * written: `added_term_relationship` ( $object_id, $tt_id, $taxonomy ) and
+ * `deleted_term_relationships` ( $object_id, array( $tt_id ), $taxonomy ).
+ * `set_object_terms` is not fired, since no object's whole term list is set.
+ * `licensio_kb_term_assignments_changed` ( int[] $object_ids, string
+ * $taxonomy ) also fires, once per taxonomy for every move, merge or undo, so
+ * the search index can refresh the articles that changed.
+ *
+ * A move rewrites articles the user may not be able to open, so the REST
+ * routes ask `check_articles()` first: every article filed under the source
+ * terms must be one the user may edit and nobody else has open in the editor,
+ * or nothing is moved and the error names the articles.
  *
  * Two hooks form the contract the per-category article order relies on:
  *
@@ -204,8 +212,8 @@ class Licensio_KB_Term_Operations {
                     $restored = array();
                     $dropped  = array();
 
-                    $this->write_relationships( 'add', $entry['removed'], $entry['from_tt'], $restored );
-                    $this->write_relationships( 'remove', $entry['added'], $entry['to_tt'], $dropped );
+                    $this->write_relationships( 'add', $entry['removed'], $entry['from_tt'], $entry['from_taxonomy'], $restored );
+                    $this->write_relationships( 'remove', $entry['added'], $entry['to_tt'], $entry['to_taxonomy'], $dropped );
                 }
 
                 $this->refresh( $record );
@@ -322,13 +330,13 @@ class Licensio_KB_Term_Operations {
         );
 
         $missing = array_values( array_diff( $object_ids, array_map( 'intval', (array) $on_target ) ) );
-        $written = $this->write_relationships( 'add', $missing, $record[ $index ]['to_tt'], $record[ $index ]['added'] );
+        $written = $this->write_relationships( 'add', $missing, $record[ $index ]['to_tt'], (string) $target_taxonomy, $record[ $index ]['added'] );
 
         if ( is_wp_error( $written ) ) {
             return $written;
         }
 
-        $written = $this->write_relationships( 'remove', $object_ids, $record[ $index ]['from_tt'], $record[ $index ]['removed'] );
+        $written = $this->write_relationships( 'remove', $object_ids, $record[ $index ]['from_tt'], (string) $source_taxonomy, $record[ $index ]['removed'] );
 
         if ( is_wp_error( $written ) ) {
             return $written;
@@ -343,17 +351,21 @@ class Licensio_KB_Term_Operations {
      * One statement per batch of `BATCH_SIZE` objects, prepared with the
      * object and term taxonomy IDs as integers. Stops at the first statement
      * that fails; `$done` holds the objects of the batches already written.
+     * After each batch, core's `added_term_relationship` or
+     * `deleted_term_relationships` fires for each of its objects, as core's
+     * own term writes do.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Fires core's relationship hooks.
      *
      * @param string $action     `add` to insert the rows, `remove` to delete them.
      * @param int[]  $object_ids The objects.
      * @param int    $tt_id      The term taxonomy ID.
+     * @param string $taxonomy   The term's taxonomy, for the hooks.
      * @param int[]  $done       Receives the objects whose rows were written.
      *
      * @return true|WP_Error True when every batch was written, or an error.
      */
-    private function write_relationships( $action, array $object_ids, $tt_id, &$done ) {
+    private function write_relationships( $action, array $object_ids, $tt_id, $taxonomy, &$done ) {
         global $wpdb;
 
         $done = array();
@@ -389,6 +401,16 @@ class Licensio_KB_Term_Operations {
                     __( 'The article assignments could not be saved.', 'licensio-knowledge-base' ),
                     array( 'status' => 500 )
                 );
+            }
+
+            foreach ( $batch as $object_id ) {
+                if ( 'add' === $action ) {
+                    /** This action is documented in wp-includes/taxonomy.php */
+                    do_action( 'added_term_relationship', $object_id, (int) $tt_id, $taxonomy ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core's own hook, fired as core's term writes fire it.
+                } else {
+                    /** This action is documented in wp-includes/taxonomy.php */
+                    do_action( 'deleted_term_relationships', $object_id, array( (int) $tt_id ), $taxonomy ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core's own hook, fired as core's term writes fire it.
+                }
             }
 
             $done = array_merge( $done, $batch );
@@ -479,6 +501,133 @@ class Licensio_KB_Term_Operations {
                 wp_defer_term_counting( false );
             }
         }
+    }
+
+    /**
+     * Check that the current user may rewrite every article filed under some terms.
+     *
+     * Each article must be one the user may edit (`edit_post`), and nobody
+     * else may have it open in the editor, whose next save would quietly put
+     * the old terms back. A user who may edit every article, published and
+     * private, others' included, skips the per-article capability check;
+     * the edit locks are read in one query per batch either way.
+     *
+     * @since 1.0.0
+     *
+     * @param int[]  $term_ids The terms whose articles would move.
+     * @param string $taxonomy Their taxonomy.
+     *
+     * @return true|WP_Error True when every article may be moved; 403 `licensio_kb_articles_forbidden` or 409 `licensio_kb_articles_locked` naming the articles otherwise.
+     */
+    public function check_articles( array $term_ids, $taxonomy ) {
+        $object_ids = array();
+
+        foreach ( array_filter( array_map( 'absint', $term_ids ) ) as $term_id ) {
+            $found = get_objects_in_term( $term_id, $taxonomy );
+
+            if ( is_wp_error( $found ) ) {
+                return $found;
+            }
+
+            $object_ids = array_merge( $object_ids, array_map( 'intval', (array) $found ) );
+        }
+
+        $object_ids = array_values( array_unique( $object_ids ) );
+
+        if ( array() === $object_ids ) {
+            return true;
+        }
+
+        $forbidden = array();
+        $edits_all = current_user_can( Licensio_KB_Article_Bulk::type_cap( 'edit_others_posts' ) )
+            && current_user_can( Licensio_KB_Article_Bulk::type_cap( 'edit_published_posts' ) )
+            && current_user_can( Licensio_KB_Article_Bulk::type_cap( 'edit_private_posts' ) );
+
+        if ( ! $edits_all ) {
+            foreach ( array_chunk( $object_ids, self::BATCH_SIZE ) as $batch ) {
+                _prime_post_caches( $batch, false, false );
+
+                foreach ( $batch as $object_id ) {
+                    if ( ! current_user_can( 'edit_post', $object_id ) ) {
+                        $forbidden[] = $object_id;
+                    }
+                }
+            }
+        }
+
+        if ( ! empty( $forbidden ) ) {
+            return new WP_Error(
+                'licensio_kb_articles_forbidden',
+                __( 'You are not allowed to edit some of the articles this would move.', 'licensio-knowledge-base' ),
+                array(
+                    'status' => rest_authorization_required_code(),
+                    'ids'    => $forbidden,
+                )
+            );
+        }
+
+        $locked = $this->locked_objects( $object_ids );
+
+        if ( ! empty( $locked ) ) {
+            return new WP_Error(
+                'licensio_kb_articles_locked',
+                _n(
+                    'Someone is editing an article this would move. Try again when they have finished.',
+                    'Someone is editing articles this would move. Try again when they have finished.',
+                    count( $locked ),
+                    'licensio-knowledge-base'
+                ),
+                array(
+                    'status' => 409,
+                    'ids'    => $locked,
+                )
+            );
+        }
+
+        return true;
+    }
+
+    /**
+     * The objects another user holds the edit lock on.
+     *
+     * Reads `_edit_lock` the way `wp_check_post_lock()` does, but for a batch
+     * of objects in one query rather than loading every object's meta.
+     *
+     * @since 1.0.0
+     *
+     * @param int[] $object_ids The objects.
+     *
+     * @return int[] The locked objects.
+     */
+    private function locked_objects( array $object_ids ) {
+        global $wpdb;
+
+        /** This filter is documented in wp-admin/includes/ajax-actions.php */
+        $window = (int) apply_filters( 'wp_check_post_lock_window', 150 ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core's own filter, read as wp_check_post_lock() reads it.
+        $user   = get_current_user_id();
+        $locked = array();
+
+        foreach ( array_chunk( $object_ids, self::BATCH_SIZE ) as $batch ) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- One read per batch instead of loading every article's meta.
+            $rows = $wpdb->get_results(
+                $wpdb->prepare(
+                    'SELECT post_id, meta_value FROM %i WHERE meta_key = %s AND post_id IN ( ' . implode( ', ', array_fill( 0, count( $batch ), '%d' ) ) . ' )',
+                    array_merge( array( $wpdb->postmeta, '_edit_lock' ), $batch )
+                )
+            );
+
+            foreach ( (array) $rows as $row ) {
+                $parts = explode( ':', (string) $row->meta_value );
+                $time  = (int) $parts[0];
+                $owner = isset( $parts[1] ) ? (int) $parts[1] : 0;
+
+                if ( $owner > 0 && $owner !== $user && $time > time() - $window ) {
+                    $locked[] = (int) $row->post_id;
+                }
+            }
+        }
+
+        return array_values( array_unique( $locked ) );
     }
 
     /**

@@ -11,6 +11,7 @@
  * @since 1.0.0
  */
 
+import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { errorMessage, PER_PAGE } from '../components/rest';
 import {
@@ -76,6 +77,27 @@ interface State {
 	bulk: BulkRun;
 }
 
+/**
+ * The default columns hidden on medium screens (783 to 1279px, the range the
+ * table's styles call small laptop screens) until the user picks their own
+ * columns, so Categories and Tags get a readable width there.
+ */
+const MEDIUM_HIDDEN: ArticleColumn[] = [
+	'attachments',
+	'rating',
+	'views',
+	'reading_time',
+];
+
+const mediumQuery = window.matchMedia?.(
+	'(min-width: 783px) and (max-width: 1279px)'
+);
+const medium = ref( mediumQuery?.matches ?? false );
+
+mediumQuery?.addEventListener( 'change', ( event ) => {
+	medium.value = event.matches;
+} );
+
 let preferencesTimer: ReturnType< typeof setTimeout > | undefined;
 let latestLoad = 0;
 let latestSelect = 0;
@@ -126,6 +148,8 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 			preferences: {
 				columns: [ ...preferences.columns ],
 				per_page: perPage,
+				columns_chosen: !! preferences.columns_chosen,
+				medium_columns: [ ...( preferences.medium_columns ?? [] ) ],
 			},
 			quickEditId: 0,
 			bulk: emptyRun(),
@@ -195,12 +219,55 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 		/**
 		 * Whether a column is shown.
 		 *
-		 * @param {State} state The store state.
-		 *
 		 * @return {(column: ArticleColumn) => boolean} The check.
 		 */
-		shows( state ): ( column: ArticleColumn ) => boolean {
-			return ( column ) => state.preferences.columns.includes( column );
+		shows(): ( column: ArticleColumn ) => boolean {
+			const visible = this.visibleColumns;
+
+			return ( column ) => visible.includes( column );
+		},
+
+		/**
+		 * The columns shown at the current width, which the Columns picker
+		 * shows ticked.
+		 *
+		 * Until the user picks their columns on a wider screen, the less used
+		 * defaults are left out on medium screens, except those the user
+		 * turned on there.
+		 *
+		 * @param {State} state The store state.
+		 *
+		 * @return {ArticleColumn[]} The columns.
+		 */
+		visibleColumns( state ): ArticleColumn[] {
+			const {
+				columns,
+				columns_chosen: chosen,
+				medium_columns: mediumColumns,
+			} = state.preferences;
+
+			if ( chosen || ! medium.value ) {
+				return columns;
+			}
+
+			return columns.filter(
+				( column ) =>
+					! MEDIUM_HIDDEN.includes( column ) ||
+					mediumColumns.includes( column )
+			);
+		},
+
+		/**
+		 * Whether columns are left out at the current width.
+		 *
+		 * @param {State} state The store state.
+		 *
+		 * @return {boolean} True when some are.
+		 */
+		trimmed( state ): boolean {
+			return (
+				this.visibleColumns.length < state.preferences.columns.length
+			);
 		},
 	},
 
@@ -430,7 +497,10 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 				undefined !== preferences.per_page &&
 				preferences.per_page !== this.preferences.per_page;
 
-			this.preferences = { ...this.preferences, ...preferences };
+			this.preferences = {
+				...this.preferences,
+				...preferences,
+			};
 
 			clearTimeout( preferencesTimer );
 			preferencesTimer = setTimeout( () => {
@@ -446,6 +516,64 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 				this.syncUrl( false );
 				this.load();
 			}
+		},
+
+		/**
+		 * Apply a change made in the Columns picker.
+		 *
+		 * The picker ticks the columns shown at the current width. On a
+		 * medium screen, before the user picked columns on a wider one, only
+		 * the clicked column changes: a column hidden there is turned on or
+		 * off for medium screens (and added back to the user's columns if
+		 * they had removed it), and any other column everywhere, so a pick
+		 * there never drops the columns wider screens show. Anywhere
+		 * else the ticked columns are the user's columns, shown exactly from
+		 * then on.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param {ArticleColumn[]} picked The columns ticked.
+		 *
+		 * @return {void}
+		 */
+		pickColumns( picked: ArticleColumn[] ): void {
+			if ( this.preferences.columns_chosen || ! medium.value ) {
+				this.setPreferences( {
+					columns: picked,
+					columns_chosen: true,
+				} );
+
+				return;
+			}
+
+			const shown = this.visibleColumns;
+			const added = picked.filter(
+				( column ) => ! shown.includes( column )
+			);
+			const removed = shown.filter(
+				( column ) => ! picked.includes( column )
+			);
+			const hidden = ( column: ArticleColumn ) =>
+				MEDIUM_HIDDEN.includes( column );
+			const { columns, medium_columns: mediumColumns } = this.preferences;
+
+			this.setPreferences( {
+				columns: [
+					...columns.filter(
+						( column ) =>
+							hidden( column ) || ! removed.includes( column )
+					),
+					...added.filter(
+						( column ) => ! columns.includes( column )
+					),
+				],
+				medium_columns: [
+					...mediumColumns.filter(
+						( column ) => ! removed.includes( column )
+					),
+					...added.filter( hidden ),
+				],
+			} );
 		},
 
 		/**
@@ -616,15 +744,15 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 		},
 
 		/**
-		 * Undo the batches of a bulk run.
+		 * Undo the batches of a bulk run, or an editor trash, by their tokens.
 		 *
 		 * @since 1.0.0
 		 *
-		 * @param {BulkResult[]} results The batches to undo.
+		 * @param {string[]} tokens The undo token of each batch; empty ones are passed over.
 		 *
 		 * @return {Promise<RevertResult>} What was put back, skipped or failed, over every batch.
 		 */
-		async undo( results: BulkResult[] ): Promise< RevertResult > {
+		async undo( tokens: string[] ): Promise< RevertResult > {
 			const reverted: RevertResult = {
 				done: [],
 				skipped: [],
@@ -632,16 +760,12 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 			};
 
 			try {
-				for ( const result of results ) {
-					if ( 0 === Object.keys( result.previous ?? {} ).length ) {
+				for ( const token of tokens ) {
+					if ( ! token ) {
 						continue;
 					}
 
-					const answer = await revert( {
-						previous: result.previous,
-						snapshot_at: result.snapshot_at,
-						token: result.token,
-					} );
+					const answer = await revert( { token } );
 
 					reverted.done.push( ...answer.done );
 					reverted.skipped.push( ...answer.skipped );

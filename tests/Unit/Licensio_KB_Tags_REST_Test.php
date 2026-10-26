@@ -76,10 +76,18 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
     protected function setUp(): void {
         parent::setUp();
 
+        Functions\when( 'get_post_type_object' )->justReturn(
+            (object) array(
+                'cap' => (object) Licensio_KB_Capabilities::post_type_capabilities(),
+            )
+        );
+        Functions\when( 'get_current_user_id' )->justReturn( 1 );
+        Functions\when( '_prime_post_caches' )->justReturn( null );
+
         $this->routes       = array();
         $this->calls        = array();
         $this->denied_terms = array();
-        $this->caps         = array( 'manage_licensio_kb', 'manage_tags', 'edit_tags', 'delete_tags', 'assign_tags', 'edit_categories', 'assign_categories' );
+        $this->caps         = array( 'manage_licensio_kb', 'manage_tags', 'edit_tags', 'delete_tags', 'assign_tags', 'edit_categories', 'assign_categories', 'edit_others_licensio_articles', 'edit_published_licensio_articles', 'edit_private_licensio_articles' );
         $this->terms        = array(
             'licensio_tag'      => array(
                 10 => $this->term( 10, 'Billing', 'licensio_tag', 'About money' ),
@@ -897,6 +905,61 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
         $this->assertSame( 3, $result['moved'] );
         $this->assertSame( array( 11 ), $result['deleted'] );
         $this->assertSame( 10, $result['target']['id'] );
+    }
+
+    /**
+     * Merge and convert move nothing when an article of the tag is refused.
+     *
+     * The routes ask `check_articles()` first; a tag with an article the
+     * user may not edit, or that someone else has open in the editor, is
+     * left as it was.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_merge_and_convert_check_every_article_first() {
+        /**
+         * The term operations, mocked.
+         *
+         * @var Licensio_KB_Term_Operations&Mockery\MockInterface $operations
+         */
+        $operations = Mockery::mock( Licensio_KB_Term_Operations::class );
+        $operations->shouldReceive( 'check_articles' )
+            ->with( array( 11 ), 'licensio_tag' )
+            ->andReturn( new WP_Error( 'licensio_kb_articles_locked', 'Article 100 is being edited.', array( 'status' => 409 ) ) );
+        $operations->shouldReceive( 'check_articles' )
+            ->with( array( 10 ), 'licensio_tag' )
+            ->andReturn( new WP_Error( 'licensio_kb_articles_forbidden', 'You may not edit article 100.', array( 'status' => 403 ) ) );
+        $operations->shouldNotReceive( 'merge_terms', 'move_across_taxonomies' );
+
+        $this->routes = array();
+        ( new Licensio_KB_Tags_REST_Controller( $operations ) )->register_routes();
+
+        $merged = $this->call(
+            '/tags/merge',
+            'POST',
+            array(
+                'sources' => array( 11 ),
+                'target'  => 10,
+            )
+        );
+
+        $this->assertInstanceOf( WP_Error::class, $merged );
+        $this->assertSame( 'licensio_kb_articles_locked', $merged->get_error_code() );
+
+        $converted = $this->call(
+            '/tags/convert',
+            'POST',
+            array(
+                'ids'    => array( 10 ),
+                'parent' => 20,
+            )
+        );
+
+        $this->assertSame( array(), $converted['converted'] );
+        $this->assertSame( array( 10 ), array_column( $converted['failed'], 'id' ) );
+        $this->assertSame( array(), $this->calls, 'Nothing was created, moved or deleted.' );
     }
 
     /**

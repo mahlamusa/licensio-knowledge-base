@@ -2,9 +2,9 @@
 /**
  * Unit tests for the capability model.
  *
- * Covers which roles are granted the management capability, that the grant is
- * filterable, and that the capability is actually mapped onto the post type and
- * both taxonomies rather than only being handed out.
+ * Covers which roles are granted the management and article capabilities,
+ * that the grant is filterable, and that the capabilities are actually mapped
+ * onto the post type and both taxonomies rather than only being handed out.
  *
  * @package Licensio_KB
  * @since   1.0.0
@@ -41,6 +41,8 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
         $this->roles = array(
             'administrator' => new WP_Role( 'administrator', array( 'manage_options' => true ) ),
             'editor'        => new WP_Role( 'editor', array( 'edit_others_posts' => true ) ),
+            'author'        => new WP_Role( 'author', array( 'publish_posts' => true ) ),
+            'contributor'   => new WP_Role( 'contributor', array( 'edit_posts' => true ) ),
             'subscriber'    => new WP_Role( 'subscriber', array( 'read' => true ) ),
         );
 
@@ -92,10 +94,9 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
     /**
      * Granting a capability a role already holds writes nothing.
      *
-     * The grant runs on `admin_init`, so it happens on every admin request.
      * Core's `WP_Role::add_cap()` rewrites the autoloaded `wp_user_roles`
-     * option each time it is called, so an unguarded grant would mean a
-     * database write on every single page of wp-admin.
+     * option each time it is called, so a direct call to the grant on a site
+     * that already holds every capability must write nothing.
      *
      * @since 1.0.0
      *
@@ -106,9 +107,74 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
         Licensio_KB_Capabilities::add_capabilities();
         Licensio_KB_Capabilities::add_capabilities();
 
-        $this->assertSame( 1, $this->roles['administrator']->add_cap_calls );
-        $this->assertSame( 1, $this->roles['editor']->add_cap_calls );
+        $granted = 1 + count( Licensio_KB_Capabilities::ARTICLE_CAPABILITIES );
+
+        $this->assertSame( $granted, $this->roles['administrator']->add_cap_calls );
+        $this->assertSame( $granted, $this->roles['editor']->add_cap_calls );
         $this->assertTrue( $this->roles['administrator']->has_cap( 'manage_licensio_kb' ) );
+    }
+
+    /**
+     * The capabilities are granted once per capability set version.
+     *
+     * A capability the site owner removes afterwards stays removed, as the
+     * readme promises, and the current user's capabilities are read again
+     * so the request that granted them can already use them.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_grant_runs_once_per_capability_set_version() {
+        $user = new WP_User( 7 );
+        Functions\when( 'wp_get_current_user' )->justReturn( $user );
+
+        Licensio_KB_Capabilities::maybe_add_capabilities();
+
+        $this->assertSame( 1, $user->role_caps_reads, 'The current user is read again.' );
+        $this->assertTrue( $this->roles['author']->has_cap( 'publish_licensio_articles' ) );
+        $this->assertSame( Licensio_KB_Capabilities::CAPS_VERSION, $this->options[ Licensio_KB_Capabilities::VERSION_OPTION ] );
+
+        $this->roles['author']->remove_cap( 'publish_licensio_articles' );
+
+        Licensio_KB_Capabilities::maybe_add_capabilities();
+
+        $this->assertFalse( $this->roles['author']->has_cap( 'publish_licensio_articles' ), 'A capability the owner removed is not granted back.' );
+    }
+
+    /**
+     * A site behind the current capability set is granted it again.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_site_behind_the_capability_set_is_granted_it() {
+        Functions\when( 'wp_get_current_user' )->justReturn( null );
+
+        $this->options[ Licensio_KB_Capabilities::VERSION_OPTION ] = Licensio_KB_Capabilities::CAPS_VERSION - 1;
+
+        Licensio_KB_Capabilities::maybe_add_capabilities();
+
+        $this->assertTrue( $this->roles['contributor']->has_cap( 'edit_licensio_articles' ) );
+        $this->assertSame( Licensio_KB_Capabilities::CAPS_VERSION, $this->options[ Licensio_KB_Capabilities::VERSION_OPTION ] );
+    }
+
+    /**
+     * A capability the site owner explicitly denied stays denied.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_explicit_denial_survives_a_grant() {
+        $this->roles['author']->add_cap( 'publish_licensio_articles', false );
+
+        Licensio_KB_Capabilities::add_capabilities();
+
+        $this->assertFalse( $this->roles['author']->has_cap( 'publish_licensio_articles' ) );
+        $this->assertArrayHasKey( 'publish_licensio_articles', $this->roles['author']->capabilities );
+        $this->assertTrue( $this->roles['author']->has_cap( 'edit_licensio_articles' ) );
     }
 
     /**
@@ -150,7 +216,9 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
         Licensio_KB_Capabilities::add_capabilities();
 
         $this->assertTrue( $this->roles['shop_manager']->has_cap( 'manage_licensio_kb' ) );
+        $this->assertTrue( $this->roles['shop_manager']->has_cap( 'edit_others_licensio_articles' ), 'Managing includes the articles.' );
         $this->assertFalse( $this->roles['administrator']->has_cap( 'manage_licensio_kb' ) );
+        $this->assertFalse( $this->roles['author']->has_cap( 'edit_licensio_articles' ) );
     }
 
     /**
@@ -182,22 +250,29 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
         $this->assertFalse( $this->roles['administrator']->has_cap( 'manage_licensio_kb' ) );
         $this->assertFalse( $this->roles['editor']->has_cap( 'manage_licensio_kb' ) );
         $this->assertTrue( $this->roles['administrator']->has_cap( 'manage_options' ) );
+
+        foreach ( array( 'administrator', 'editor', 'author', 'contributor' ) as $role ) {
+            foreach ( Licensio_KB_Capabilities::ARTICLE_CAPABILITIES as $capability ) {
+                $this->assertFalse( $this->roles[ $role ]->has_cap( $capability ), sprintf( '%s kept %s.', $role, $capability ) );
+            }
+        }
     }
 
     /**
-     * Removal sweeps every role for the management capability, and nothing else.
+     * Removal sweeps every role for the plugin's own capabilities, and nothing else.
      *
-     * A role granted the capability by hand, or through a filter that has
+     * A role granted a capability by hand, or through a filter that has
      * since been removed, is not in the filtered role list at uninstall time.
      * An explicit denial is residue as well. Core capabilities, including any
      * a filter lists, are left on roles the filter does not name.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Sweeps the article capabilities too.
      *
      * @return void
      */
-    public function test_removal_sweeps_every_role_for_the_management_capability() {
+    public function test_removal_sweeps_every_role_for_the_plugin_capabilities() {
         $this->roles['subscriber']->add_cap( 'manage_licensio_kb' );
+        $this->roles['subscriber']->add_cap( 'edit_licensio_articles' );
         $this->roles['author'] = new WP_Role(
             'author',
             array(
@@ -209,6 +284,7 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
         Licensio_KB_Capabilities::remove_capabilities();
 
         $this->assertArrayNotHasKey( 'manage_licensio_kb', $this->roles['subscriber']->capabilities );
+        $this->assertArrayNotHasKey( 'edit_licensio_articles', $this->roles['subscriber']->capabilities );
         $this->assertArrayNotHasKey( 'manage_licensio_kb', $this->roles['author']->capabilities, 'An explicit denial is residue too.' );
         $this->assertTrue( $this->roles['subscriber']->has_cap( 'read' ) );
         $this->assertTrue( $this->roles['author']->has_cap( 'edit_posts' ) );
@@ -216,7 +292,70 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * Every article primitive capability resolves to the management capability.
+     * Administrators and editors hold every article capability.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_administrator_and_editor_hold_every_article_capability() {
+        Licensio_KB_Capabilities::add_capabilities();
+
+        foreach ( array( 'administrator', 'editor' ) as $role ) {
+            foreach ( Licensio_KB_Capabilities::ARTICLE_CAPABILITIES as $capability ) {
+                $this->assertTrue( $this->roles[ $role ]->has_cap( $capability ), sprintf( '%s lacks %s.', $role, $capability ) );
+            }
+        }
+    }
+
+    /**
+     * Authors write, publish and delete their own articles, and manage nothing.
+     *
+     * The same capabilities core gives an author for posts.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_author_gets_the_core_author_article_capabilities() {
+        Licensio_KB_Capabilities::add_capabilities();
+
+        $expected = array(
+            'edit_licensio_articles',
+            'edit_published_licensio_articles',
+            'publish_licensio_articles',
+            'delete_licensio_articles',
+            'delete_published_licensio_articles',
+        );
+
+        foreach ( Licensio_KB_Capabilities::ARTICLE_CAPABILITIES as $capability ) {
+            $this->assertSame( in_array( $capability, $expected, true ), $this->roles['author']->has_cap( $capability ), $capability );
+        }
+
+        $this->assertFalse( $this->roles['author']->has_cap( 'manage_licensio_kb' ) );
+    }
+
+    /**
+     * Contributors write and delete their own drafts only.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_contributor_gets_the_core_contributor_article_capabilities() {
+        Licensio_KB_Capabilities::add_capabilities();
+
+        $expected = array( 'edit_licensio_articles', 'delete_licensio_articles' );
+
+        foreach ( Licensio_KB_Capabilities::ARTICLE_CAPABILITIES as $capability ) {
+            $this->assertSame( in_array( $capability, $expected, true ), $this->roles['contributor']->has_cap( $capability ), $capability );
+        }
+
+        $this->assertFalse( $this->roles['contributor']->has_cap( 'manage_licensio_kb' ) );
+    }
+
+    /**
+     * Every article primitive capability resolves to an article capability a role is granted.
      *
      * Granting a capability that nothing is mapped onto would leave a holder
      * with a capability and no access, which is exactly the failure this test
@@ -227,7 +366,7 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
      *
      * @return void
      */
-    public function test_every_article_capability_maps_to_the_management_capability() {
+    public function test_every_article_capability_maps_to_a_granted_article_capability() {
         $capabilities = new Licensio_KB_Capabilities();
         $args         = $capabilities->filter_post_type_args( array( 'capability_type' => 'post' ) );
 
@@ -240,16 +379,18 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
                 continue;
             }
 
-            $this->assertSame(
-                'manage_licensio_kb',
+            $this->assertContains(
                 $mapped,
-                sprintf( 'The %s capability must map onto manage_licensio_kb.', $capability )
+                Licensio_KB_Capabilities::role_capabilities()['administrator'],
+                sprintf( 'The %s capability must map onto a capability administrators are granted.', $capability )
             );
         }
 
         foreach ( array( 'create_posts', 'edit_posts', 'edit_others_posts', 'publish_posts', 'delete_posts' ) as $required ) {
             $this->assertArrayHasKey( $required, $args['capabilities'] );
         }
+
+        $this->assertSame( 'edit_licensio_articles', $args['capabilities']['create_posts'], 'Creating follows editing, as in core.' );
     }
 
     /**
@@ -267,8 +408,10 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
     /**
      * Both taxonomies map every term capability, including assigning terms.
      *
-     * Leaving `assign_terms` at core's `edit_posts` default would let any
-     * author file their own posts into knowledge base categories.
+     * Managing terms needs the management capability. Assigning existing
+     * terms follows the article capability, as in core, rather than core's
+     * `edit_posts`, which would let anyone who writes blog posts file
+     * knowledge base articles.
      *
      * @since 1.0.0
      *
@@ -283,7 +426,7 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
                 'manage_terms' => 'manage_licensio_kb',
                 'edit_terms'   => 'manage_licensio_kb',
                 'delete_terms' => 'manage_licensio_kb',
-                'assign_terms' => 'manage_licensio_kb',
+                'assign_terms' => 'edit_licensio_articles',
             ),
             $args['capabilities']
         );
@@ -306,10 +449,19 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
         $this->assertNotFalse( has_filter( 'licensio_article_post_type_args', array( $capabilities, 'filter_post_type_args' ) ) );
         $this->assertNotFalse( has_filter( 'licensio_category_taxonomy_args', array( $capabilities, 'filter_taxonomy_args' ) ) );
         $this->assertNotFalse( has_filter( 'licensio_tag_taxonomy_args', array( $capabilities, 'filter_taxonomy_args' ) ) );
-        $this->assertNotFalse(
-            has_action( 'admin_init', array( 'Licensio_KB_Capabilities', 'add_capabilities' ) ),
-            'A site whose code changed without an activation must still receive the capability.'
+        $this->assertSame(
+            1,
+            has_action( 'init', array( 'Licensio_KB_Capabilities', 'maybe_add_capabilities' ) ),
+            'A site whose code changed without an activation must receive the capabilities before the menu and REST check them.'
         );
+        $this->assertFalse( has_action( 'admin_init', array( 'Licensio_KB_Capabilities', 'add_capabilities' ) ), 'No grant on every admin request.' );
+        $this->assertNotFalse( has_filter( 'user_has_cap', array( 'Licensio_KB_Capabilities', 'managers_write_articles' ) ) );
+        $this->assertNotFalse( has_filter( 'pre_insert_term', array( 'Licensio_KB_Capabilities', 'guard_term_creation' ) ) );
+        $this->assertNotFalse( has_filter( 'rest_prepare_licensio_article', array( 'Licensio_KB_Capabilities', 'hide_term_creation' ) ) );
+        $this->assertNotFalse( has_filter( 'licensio_tag_taxonomy_args', array( 'Licensio_KB_Capabilities', 'filter_tag_box_args' ) ) );
+        $this->assertNotFalse( has_filter( 'redirect_post_location', array( 'Licensio_KB_Capabilities', 'flag_refused_tags' ) ) );
+        $this->assertNotFalse( has_filter( 'removable_query_args', array( 'Licensio_KB_Capabilities', 'removable_query_args' ) ) );
+        $this->assertNotFalse( has_action( 'admin_notices', array( 'Licensio_KB_Capabilities', 'render_refused_tags_notice' ) ) );
     }
 
     /**
@@ -332,6 +484,311 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
 
         $this->assertTrue( Licensio_KB_Capabilities::current_user_can_manage() );
         $this->assertSame( array( 'manage_licensio_kb' ), $asked );
+    }
+
+    /**
+     * Each role, as the current user, with the capabilities its role was granted.
+     *
+     * @since 1.0.0
+     *
+     * @return array<string, array{0: string, 1: bool}> Role name and whether it may create terms.
+     */
+    public function term_creation_roles() {
+        return array(
+            'administrator' => array( 'administrator', true ),
+            'editor'        => array( 'editor', true ),
+            'author'        => array( 'author', false ),
+            'contributor'   => array( 'contributor', false ),
+            'subscriber'    => array( 'subscriber', false ),
+        );
+    }
+
+    /**
+     * Only a role that manages the knowledge base may create categories and tags.
+     *
+     * Core lets anyone who may assign a tag create one; article writers may
+     * only file articles under existing terms, whatever route asks.
+     *
+     * @since 1.0.0
+     *
+     * @dataProvider term_creation_roles
+     *
+     * @param string $role    The current user's role.
+     * @param bool   $creates Whether the role may create terms.
+     *
+     * @return void
+     */
+    public function test_only_managers_create_categories_and_tags( $role, $creates ) {
+        Licensio_KB_Capabilities::add_capabilities();
+
+        Functions\when( 'get_current_user_id' )->justReturn( 7 );
+        Functions\when( 'current_user_can' )->alias(
+            function ( $capability ) use ( $role ) {
+                return $this->roles[ $role ]->has_cap( $capability );
+            }
+        );
+
+        $guard = $this->outside_cli();
+
+        foreach ( array( 'licensio_tag', 'licensio_category' ) as $taxonomy ) {
+            $result = $guard::guard_term_creation( 'New term', $taxonomy );
+
+            if ( $creates ) {
+                $this->assertSame( 'New term', $result, sprintf( '%s may create a %s.', $role, $taxonomy ) );
+                continue;
+            }
+
+            $this->assertInstanceOf( WP_Error::class, $result, sprintf( '%s must not create a %s.', $role, $taxonomy ) );
+            $this->assertSame( 'licensio_kb_cannot_create_term', $result->get_error_code() );
+            $this->assertSame( array( 'status' => 403 ), $result->get_error_data() );
+        }
+    }
+
+    /**
+     * System inserts, WP-CLI and other taxonomies are left alone.
+     *
+     * Imports run from cron or WP-CLI, with no user or as the command's user.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_term_creation_is_only_guarded_for_a_signed_in_user_outside_cli() {
+        Functions\when( 'current_user_can' )->justReturn( false );
+        Functions\when( 'get_current_user_id' )->justReturn( 0 );
+
+        $guard = $this->outside_cli();
+
+        $this->assertSame( 'Imported', $guard::guard_term_creation( 'Imported', 'licensio_tag' ), 'No user is a system insert.' );
+
+        Functions\when( 'get_current_user_id' )->justReturn( 7 );
+
+        $this->assertSame( 'Imported', Licensio_KB_Capabilities::guard_term_creation( 'Imported', 'licensio_tag' ), 'WP-CLI may create terms.' );
+        $this->assertSame( 'Blog tag', $guard::guard_term_creation( 'Blog tag', 'post_tag' ), 'Other taxonomies are not ours.' );
+
+        $earlier = new WP_Error( 'earlier', 'Refused before.' );
+
+        $this->assertSame( $earlier, $guard::guard_term_creation( $earlier, 'licensio_tag' ) );
+    }
+
+    /**
+     * The classic tag box sanitizes its input with the plugin's callback.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_tag_box_uses_the_plugin_sanitize_callback() {
+        $args = Licensio_KB_Capabilities::filter_tag_box_args( array( 'hierarchical' => false ) );
+
+        $this->assertSame( array( 'Licensio_KB_Capabilities', 'sanitize_tag_box' ), $args['meta_box_sanitize_cb'] );
+        $this->assertFalse( $args['hierarchical'] );
+    }
+
+    /**
+     * The classic tag box drops a name a writer may not create and keeps every existing tag.
+     *
+     * Core stopped assigning tags at the first name it could not create, so
+     * the tags after it were lost without a word. The save now flags the
+     * redirect so the article editor can say so.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_tag_box_drops_new_names_for_a_writer_and_flags_the_redirect() {
+        $this->reset_refused_tags();
+
+        Functions\when( 'get_current_user_id' )->justReturn( 7 );
+        Functions\when( 'current_user_can' )->justReturn( false );
+        Functions\expect( 'taxonomy_meta_box_sanitize_cb_input' )
+            ->once()
+            ->with( 'licensio_tag', 'Billing, Brand new, Refunds' )
+            ->andReturn( array( 5, 'Brand new', 6 ) );
+        Functions\when( 'add_query_arg' )->alias(
+            function ( $key, $value, $url ) {
+                return $url . '&' . $key . '=' . $value;
+            }
+        );
+
+        $guard = $this->outside_cli();
+
+        $this->assertSame( array( 5, 6 ), $guard::sanitize_tag_box( 'licensio_tag', 'Billing, Brand new, Refunds' ) );
+        $this->assertSame(
+            'post.php?post=3&action=edit&message=1&licensio_kb_tags_refused=1',
+            Licensio_KB_Capabilities::flag_refused_tags( 'post.php?post=3&action=edit&message=1' )
+        );
+
+        $this->reset_refused_tags();
+    }
+
+    /**
+     * A manager's new tag names are kept, so they are created, and the redirect is not flagged.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_tag_box_keeps_new_names_for_a_manager() {
+        $this->reset_refused_tags();
+
+        Functions\when( 'get_current_user_id' )->justReturn( 7 );
+        Functions\when( 'current_user_can' )->justReturn( true );
+        Functions\when( 'taxonomy_meta_box_sanitize_cb_input' )->justReturn( array( 5, 'Brand new' ) );
+        Functions\expect( 'add_query_arg' )->never();
+
+        $guard = $this->outside_cli();
+
+        $this->assertSame( array( 5, 'Brand new' ), $guard::sanitize_tag_box( 'licensio_tag', 'Billing, Brand new' ) );
+        $this->assertSame( 'post.php?post=3', Licensio_KB_Capabilities::flag_refused_tags( 'post.php?post=3' ) );
+    }
+
+    /**
+     * The article editor shows the refused tags notice only when the save flagged it.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_refused_tags_notice_shows_on_the_article_editor_only() {
+        $screen            = new WP_Screen( '', 'licensio_article' );
+        $screen->base      = 'post';
+        $screen->post_type = 'licensio_article';
+        $notices           = array();
+
+        Functions\when( 'get_current_screen' )->alias(
+            function () use ( &$screen ) {
+                return $screen;
+            }
+        );
+        Functions\when( 'wp_admin_notice' )->alias(
+            function ( $message, $args ) use ( &$notices ) {
+                $notices[] = array( $message, $args['type'] );
+            }
+        );
+
+        Licensio_KB_Capabilities::render_refused_tags_notice();
+        $this->assertSame( array(), $notices, 'No flag, no notice.' );
+
+        $_GET['licensio_kb_tags_refused'] = '1';
+
+        Licensio_KB_Capabilities::render_refused_tags_notice();
+        $this->assertSame(
+            array( array( 'New tags were not added: you are not allowed to create tags. The article was saved with its existing tags.', 'warning' ) ),
+            $notices
+        );
+
+        $screen->post_type = 'post';
+
+        Licensio_KB_Capabilities::render_refused_tags_notice();
+        $this->assertCount( 1, $notices, 'Another post type is not ours.' );
+
+        unset( $_GET['licensio_kb_tags_refused'] );
+
+        $this->assertSame( array( 'message', 'licensio_kb_tags_refused' ), Licensio_KB_Capabilities::removable_query_args( array( 'message' ) ) );
+    }
+
+    /**
+     * Clear the refused tags flag a tag box save leaves for the request.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    private function reset_refused_tags() {
+        $flag = new ReflectionProperty( 'Licensio_KB_Capabilities', 'tags_refused' );
+        $flag->setAccessible( true );
+        $flag->setValue( null, false );
+    }
+
+    /**
+     * A user holding the management capability by hand writes every article.
+     *
+     * A role editor grants `manage_licensio_kb` without the article
+     * capabilities; the user still manages articles, while a capability set
+     * on the role, including a denial, is kept.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_hand_granted_manager_holds_every_article_capability() {
+        $manager = Licensio_KB_Capabilities::managers_write_articles(
+            array(
+                'read'                            => true,
+                'manage_licensio_kb'              => true,
+                'delete_others_licensio_articles' => false,
+            )
+        );
+
+        foreach ( Licensio_KB_Capabilities::ARTICLE_CAPABILITIES as $capability ) {
+            $this->assertSame( 'delete_others_licensio_articles' !== $capability, $manager[ $capability ], $capability );
+        }
+
+        $writer = array(
+            'read'                   => true,
+            'edit_licensio_articles' => true,
+        );
+
+        $this->assertSame( $writer, Licensio_KB_Capabilities::managers_write_articles( $writer ), 'A writer gains nothing.' );
+        $this->assertSame(
+            array( 'manage_licensio_kb' => false ),
+            Licensio_KB_Capabilities::managers_write_articles( array( 'manage_licensio_kb' => false ) ),
+            'A denied manager gains nothing.'
+        );
+    }
+
+    /**
+     * The block editor is not offered to create terms by a user who cannot.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_create_term_actions_are_hidden_from_non_managers() {
+        Functions\when( 'get_taxonomy' )->alias(
+            function ( $taxonomy ) {
+                return (object) array( 'rest_base' => 'licensio_tag' === $taxonomy ? 'licensio_tags' : 'licensio_categories' );
+            }
+        );
+
+        $response = new WP_REST_Response( array() );
+        $response->add_link( 'https://api.w.org/action-create-licensio_tags', 'x' );
+        $response->add_link( 'https://api.w.org/action-assign-licensio_tags', 'x' );
+
+        Functions\when( 'current_user_can' )->justReturn( true );
+        Licensio_KB_Capabilities::hide_term_creation( $response );
+        $this->assertArrayHasKey( 'https://api.w.org/action-create-licensio_tags', $response->get_links(), 'A manager keeps it.' );
+
+        Functions\when( 'current_user_can' )->justReturn( false );
+        Licensio_KB_Capabilities::hide_term_creation( $response );
+        $this->assertSame( array( 'https://api.w.org/action-assign-licensio_tags' ), array_keys( $response->get_links() ) );
+    }
+
+    /**
+     * The term guard as it runs outside WP-CLI.
+     *
+     * The unit suite defines `WP_CLI`, which the guard lets through.
+     *
+     * @since 1.0.0
+     *
+     * @return string The class name to call the guard on.
+     */
+    private function outside_cli() {
+        $guard = new class() extends Licensio_KB_Capabilities {
+            /**
+             * Never WP-CLI.
+             *
+             * @since 1.0.0
+             *
+             * @return bool False.
+             */
+            protected static function running_cli() {
+                return false;
+            }
+        };
+
+        return get_class( $guard );
     }
 
     /**
@@ -378,7 +835,7 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
 
         foreach ( array( 'edit_posts', 'edit_others_posts', 'edit_published_posts', 'edit_private_posts', 'delete_posts', 'delete_others_posts', 'delete_published_posts', 'delete_private_posts', 'read_private_posts', 'publish_posts' ) as $primitive ) {
             $this->assertArrayHasKey( $primitive, $map, sprintf( 'Core needs %s to derive the meta capabilities.', $primitive ) );
-            $this->assertSame( Licensio_KB_Capabilities::CAPABILITY, $map[ $primitive ] );
+            $this->assertSame( Licensio_KB_Capabilities::ARTICLE_CAPABILITIES[ $primitive ], $map[ $primitive ] );
         }
     }
 }

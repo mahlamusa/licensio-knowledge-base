@@ -75,10 +75,10 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
     /**
      * The gap between two siblings' `licensio_order` values.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Shares the step new categories are placed with.
      * @var int
      */
-    const ORDER_STEP = 10;
+    const ORDER_STEP = Licensio_KB_Term_Meta::ORDER_STEP;
 
     /**
      * The request fields that are stored as term meta, and their meta keys.
@@ -101,6 +101,14 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      * @var Licensio_KB_Term_Operations
      */
     private $operations;
+
+    /**
+     * Each category's stored order before `reparent()` moved it, for a rollback.
+     *
+     * @since 1.0.0
+     * @var array<int, string>
+     */
+    private $orders_before = array();
 
     /**
      * Build the controller.
@@ -642,9 +650,10 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      * Check `edit_term` on each category that exists.
      *
      * A category that does not exist is skipped here: the handler refuses it
-     * with a 400 that names the problem.
+     * with a 400 that names the problem. The terms are loaded in one query
+     * first.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Primes the term cache.
      *
      * @param int[]           $ids     The categories the request writes to.
      * @param array<int, int> $parents Every category ID to its parent ID.
@@ -652,7 +661,12 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      * @return true|WP_Error True when allowed.
      */
     private static function can_edit_existing( array $ids, array $parents ) {
-        foreach ( array_unique( $ids ) as $id ) {
+        $ids = array_unique( $ids );
+
+        // One query loads every term `edit_term` reads, rather than one each.
+        _prime_term_caches( array_values( array_intersect( $ids, array_keys( $parents ) ) ) );
+
+        foreach ( $ids as $id ) {
             if ( isset( $parents[ $id ] ) && ! current_user_can( 'edit_term', $id ) ) {
                 return self::forbidden();
             }
@@ -691,9 +705,10 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      * Check the taxonomy capability, then the per-term capability for each ID.
      *
      * A category that does not exist answers 404 before the per-term check,
-     * which would otherwise refuse it as forbidden.
+     * which would otherwise refuse it as forbidden. The terms are loaded in
+     * one query first.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Primes the term cache.
      *
      * @param WP_REST_Request $request  The request.
      * @param string          $cap      The taxonomy capability key.
@@ -708,6 +723,9 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
         if ( true !== $allowed ) {
             return $allowed;
         }
+
+        // One query loads every term the loop reads, rather than one each.
+        _prime_term_caches( array_map( 'absint', $ids ) );
 
         foreach ( $ids as $id ) {
             if ( ! $this->get_category( $id ) instanceof WP_Term ) {
@@ -844,9 +862,10 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      * The articles are moved first, then the child categories, then the
      * category is deleted. All or nothing: if a step fails, the articles and
      * child categories already moved are put back, the category is kept and
-     * the error is returned.
+     * the error is returned. Articles are only moved when the user may edit
+     * every one of them and nobody else has one open in the editor.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Checks each article before moving it.
      *
      * @param WP_REST_Request $request The request.
      *
@@ -883,6 +902,12 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
         $record = array();
 
         if ( $plan['articles'] > 0 ) {
+            $checked = $this->operations->check_articles( array( $id ), Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
+
+            if ( is_wp_error( $checked ) ) {
+                return $checked;
+            }
+
             $moved = $this->operations->move_assignments( $id, $plan['articles'], Licensio_KB_Post_Types::TAXONOMY_CATEGORY, $record );
 
             if ( is_wp_error( $moved ) ) {
@@ -1020,7 +1045,12 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
                 return $parents[ $id ] !== $parent;
             }
         );
-        $moved   = $this->reparent( $movers, $parent, $parents );
+        // Every position is written below, so the moves are not placed first.
+        $moved = Licensio_KB_Term_Meta::without_placement(
+            function () use ( $movers, $parent, $parents ) {
+                return $this->reparent( $movers, $parent, $parents );
+            }
+        );
 
         if ( is_wp_error( $moved ) ) {
             return $moved;
@@ -1107,9 +1137,11 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      * Licensio_KB_Term_Operations::merge_terms(), which puts the articles
      * back itself if they cannot all be moved; the children are then put
      * back too. Once the articles have moved the merge stands: a source that
-     * cannot be deleted is left out of `deleted`.
+     * cannot be deleted is left out of `deleted`. Nothing changes unless the
+     * user may edit every article of the sources and nobody else has one open
+     * in the editor.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Checks each article first.
      *
      * @param WP_REST_Request $request The request.
      *
@@ -1125,6 +1157,12 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
         }
 
         $checked = self::check_merge( $sources, $target, $parents );
+
+        if ( is_wp_error( $checked ) ) {
+            return $checked;
+        }
+
+        $checked = $this->operations->check_articles( $sources, Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
 
         if ( is_wp_error( $checked ) ) {
             return $checked;
@@ -1214,9 +1252,10 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      * Move categories under a new parent.
      *
      * If one move fails, the categories already moved are put back under
-     * their old parents, so a failed request leaves the tree as it was.
+     * their old parents, so a failed request leaves the tree as it was. Each
+     * category's order is noted first, for `restore_parents()`.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Notes each category's order before moving it.
      *
      * @param int[]           $ids       The categories to move.
      * @param int             $parent_id The new parent, 0 for the top level.
@@ -1228,6 +1267,8 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
         $moved = array();
 
         foreach ( $ids as $id ) {
+            $this->orders_before[ (int) $id ] = (string) get_term_meta( (int) $id, Licensio_KB_Term_Meta::META_ORDER, true );
+
             $result = wp_update_term( $id, Licensio_KB_Post_Types::TAXONOMY_CATEGORY, array( 'parent' => $parent_id ) );
 
             if ( is_wp_error( $result ) ) {
@@ -1243,12 +1284,15 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
     }
 
     /**
-     * Put categories back under the parents they had before a move.
+     * Put categories back under the parents they had before a move, in their old place.
      *
      * Best effort: a category that cannot be put back is skipped, since the
-     * caller is already reporting the error that made it undo.
+     * caller is already reporting the error that made it undo. The move
+     * placed each category after its new siblings, so its order from before
+     * the move is written back when it changed, and placement is paused so
+     * moving back does not place it again.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Puts back each category's order too.
      *
      * @param int[]           $ids     The categories that were moved.
      * @param array<int, int> $parents Every category ID to its parent ID before the move.
@@ -1256,9 +1300,25 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      * @return void
      */
     private function restore_parents( array $ids, array $parents ) {
-        foreach ( $ids as $id ) {
-            wp_update_term( $id, Licensio_KB_Post_Types::TAXONOMY_CATEGORY, array( 'parent' => $parents[ $id ] ) );
-        }
+        Licensio_KB_Term_Meta::without_placement(
+            function () use ( $ids, $parents ) {
+                foreach ( $ids as $id ) {
+                    wp_update_term( $id, Licensio_KB_Post_Types::TAXONOMY_CATEGORY, array( 'parent' => $parents[ $id ] ) );
+
+                    $order = isset( $this->orders_before[ $id ] ) ? $this->orders_before[ $id ] : '';
+
+                    if ( (string) get_term_meta( $id, Licensio_KB_Term_Meta::META_ORDER, true ) === $order ) {
+                        continue;
+                    }
+
+                    if ( '' === $order ) {
+                        delete_term_meta( $id, Licensio_KB_Term_Meta::META_ORDER );
+                    } else {
+                        update_term_meta( $id, Licensio_KB_Term_Meta::META_ORDER, $order );
+                    }
+                }
+            }
+        );
     }
 
     /**
@@ -1455,34 +1515,6 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
     }
 
     /**
-     * Every descendant of a category.
-     *
-     * @since 1.0.0
-     *
-     * @param int             $id      The category.
-     * @param array<int, int> $parents Every category ID to its parent ID.
-     *
-     * @return int[] The descendant IDs, nearest first.
-     */
-    public static function descendants_of( $id, array $parents ) {
-        $found = array();
-        $queue = array( (int) $id );
-
-        while ( ! empty( $queue ) ) {
-            $current = array_shift( $queue );
-
-            foreach ( $parents as $child => $parent_id ) {
-                if ( $parent_id === $current && ! in_array( $child, $found, true ) && $child !== (int) $id ) {
-                    $found[] = $child;
-                    $queue[] = $child;
-                }
-            }
-        }
-
-        return $found;
-    }
-
-    /**
      * The direct children of a category.
      *
      * @since 1.0.0
@@ -1499,7 +1531,12 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
     /**
      * Whether putting a category under a parent would make a loop.
      *
-     * @since 1.0.0
+     * Walks up from the parent instead of collecting the category's
+     * descendants: the parent is a descendant exactly when the category is
+     * one of the parent's ancestors. That costs the depth of the tree, not its
+     * size, so an order request naming a thousand categories stays linear.
+     *
+     * @since 1.0.0 Walks up from the parent instead of collecting descendants.
      *
      * @param int             $id        The category being moved.
      * @param int             $parent_id The parent it would go under, 0 for the top level.
@@ -1508,11 +1545,21 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      * @return bool True when the parent is the category itself or one of its descendants.
      */
     public static function would_cycle( $id, $parent_id, array $parents ) {
-        if ( 0 === (int) $parent_id ) {
-            return false;
+        $id      = (int) $id;
+        $current = (int) $parent_id;
+        $seen    = array();
+
+        // A stored loop ends the walk rather than spinning forever.
+        while ( $current > 0 && ! isset( $seen[ $current ] ) ) {
+            if ( $current === $id ) {
+                return true;
+            }
+
+            $seen[ $current ] = true;
+            $current          = isset( $parents[ $current ] ) ? (int) $parents[ $current ] : 0;
         }
 
-        return (int) $parent_id === (int) $id || in_array( (int) $parent_id, self::descendants_of( $id, $parents ), true );
+        return false;
     }
 
     /**

@@ -92,7 +92,7 @@ class Licensio_KB_Articles_Admin {
     /**
      * Take `/articles` off the scaffold's not-implemented stub list.
      *
-     * The articles controller registers the real, manager-only `/articles`
+     * The articles controller registers the real, writers-only `/articles`
      * route. Left reserved, the stub would add a second, public GET handler to
      * the same route in the REST index.
      *
@@ -113,7 +113,10 @@ class Licensio_KB_Articles_Admin {
     /**
      * Register the page, first in the menu, before Add New.
      *
-     * @since 1.0.0
+     * Open to everyone who may write articles, as core's article list is,
+     * rather than to managers only.
+     *
+     * @since 1.0.0 Needs the article capability rather than the management one.
      *
      * @return void
      */
@@ -124,10 +127,22 @@ class Licensio_KB_Articles_Admin {
                 'menu_title'       => __( 'All Articles', 'licensio-knowledge-base' ),
                 'page_title'       => __( 'Articles', 'licensio-knowledge-base' ),
                 'callback'         => array( $this, 'render_page' ),
+                'capability'       => self::capability(),
                 'position'         => 1,
                 'submenu_position' => 1,
             )
         );
+    }
+
+    /**
+     * The capability the page and its bundle need.
+     *
+     * @since 1.0.0
+     *
+     * @return string The article post type's `edit_posts` capability.
+     */
+    public static function capability() {
+        return Licensio_KB_Article_Bulk::type_cap( 'edit_posts' );
     }
 
     /**
@@ -144,7 +159,7 @@ class Licensio_KB_Articles_Admin {
     /**
      * Enqueue the app on its own page only.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Needs the article capability rather than the management one.
      *
      * @param string $hook_suffix The screen being loaded.
      *
@@ -155,7 +170,7 @@ class Licensio_KB_Articles_Admin {
             return;
         }
 
-        if ( ! Licensio_KB_Capabilities::current_user_can_manage() ) {
+        if ( ! current_user_can( self::capability() ) ) {
             return;
         }
 
@@ -171,19 +186,32 @@ class Licensio_KB_Articles_Admin {
     /**
      * The configuration the app reads.
      *
-     * @since 1.0.0
+     * `can` tells the app what the current user may do, so it hides what they
+     * cannot use: the author picker and filter without `editOthers`, publishing
+     * and private visibility without `publish`, creating tags without
+     * `createTags`. The Settings and Feedback links are left empty for users
+     * who cannot manage the knowledge base, and the app hides an empty link.
+     * The server checks every write again whatever the app shows.
+     *
+     * @since 1.0.0 Adds `can`, and leaves the Settings and Feedback links empty for users who cannot open them.
      *
      * @return array<string, mixed> The localised configuration.
      */
     public function app_data() {
         $metrics = Licensio_KB_Article_Metrics::from_settings( licensio_kb()->settings() );
+        $manage  = Licensio_KB_Capabilities::current_user_can_manage();
 
         return array(
             'root'        => esc_url_raw( Licensio_KB_REST_API::url() ),
             'nonce'       => wp_create_nonce( 'wp_rest' ),
-            'settingsUrl' => Licensio_KB_Admin_Page::settings_url(),
+            'settingsUrl' => $manage ? Licensio_KB_Admin_Page::settings_url() : '',
             'newUrl'      => admin_url( 'post-new.php?post_type=' . Licensio_KB_Post_Types::POST_TYPE ),
-            'feedbackUrl' => admin_url( 'edit.php?post_type=' . Licensio_KB_Post_Types::POST_TYPE . '&page=' . Licensio_KB_Feedback_Admin::PAGE_SLUG ),
+            'feedbackUrl' => $manage ? admin_url( 'edit.php?post_type=' . Licensio_KB_Post_Types::POST_TYPE . '&page=' . Licensio_KB_Feedback_Admin::PAGE_SLUG ) : '',
+            'can'         => array(
+                'editOthers' => Licensio_KB_Articles_REST_Controller::sees_others(),
+                'publish'    => current_user_can( Licensio_KB_Article_Bulk::type_cap( 'publish_posts' ) ),
+                'createTags' => current_user_can( Licensio_KB_Article_Bulk::taxonomy_cap( Licensio_KB_Post_Types::TAXONOMY_TAG, 'edit_terms' ) ),
+            ),
             'preferences' => Licensio_KB_Articles_REST_Controller::preferences( get_current_user_id() ),
             'lowRating'   => array(
                 'threshold' => $metrics->threshold(),
@@ -195,13 +223,13 @@ class Licensio_KB_Articles_Admin {
     /**
      * Render the mount point.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Needs the article capability rather than the management one.
      *
      * @return void
      */
     public function render_page() {
-        if ( ! Licensio_KB_Capabilities::current_user_can_manage() ) {
-            wp_die( esc_html__( 'You are not allowed to manage the knowledge base.', 'licensio-knowledge-base' ) );
+        if ( ! current_user_can( self::capability() ) ) {
+            wp_die( esc_html__( 'You are not allowed to edit knowledge base articles.', 'licensio-knowledge-base' ) );
         }
 
         Licensio_KB_Admin_Page::shell(

@@ -111,6 +111,14 @@ class Licensio_KB_Article_Order {
     const INSERT_BATCH = 500;
 
     /**
+     * The object cache group `has_positions()` keeps its answers in.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    const CACHE_GROUP = 'licensio_kb_article_order';
+
+    /**
      * Register the WordPress hooks.
      *
      * @since 1.0.0
@@ -447,6 +455,48 @@ class Licensio_KB_Article_Order {
         }
 
         return $positions;
+    }
+
+    /**
+     * Whether any article has a position stored for one category.
+     *
+     * One indexed lookup on the meta key, stopping at the first row. The
+     * answer is kept in the object cache under the posts `last_changed`
+     * value, as core's query cache is, so the FAQ block does not ask again
+     * on every render. Saving or merging an order bumps that value, and so
+     * does core whenever post meta is added, changed or deleted, or a post
+     * is deleted, so a stale answer is never read.
+     *
+     * @since 1.0.0
+     *
+     * @param int $term_id The category term ID.
+     *
+     * @return bool True when the category has been ordered.
+     */
+    public static function has_positions( $term_id ) {
+        global $wpdb;
+
+        $key       = self::meta_key( $term_id );
+        $cache_key = $key . ':' . wp_cache_get_last_changed( 'posts' );
+        $answer    = wp_cache_get( $cache_key, self::CACHE_GROUP );
+
+        // The answer is stored as 1 or 0, so only a miss reads as false.
+        if ( false !== $answer ) {
+            return (bool) $answer;
+        }
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Cached above under the posts last_changed value.
+        $found = null !== $wpdb->get_var(
+            $wpdb->prepare(
+                'SELECT 1 FROM %i WHERE meta_key = %s LIMIT 1',
+                $wpdb->postmeta,
+                $key
+            )
+        );
+
+        wp_cache_set( $cache_key, (int) $found, self::CACHE_GROUP );
+
+        return $found;
     }
 
     /**

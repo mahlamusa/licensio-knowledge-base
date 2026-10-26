@@ -7,13 +7,15 @@
  *
  * - `GET /tags`: `search`, `unused`, `include[]`, `orderby` (`name`, `count`),
  *   `order`, `page`, `per_page`. Answers `{ items, total, pages, page, per_page }`.
- *   Each item's `count` is the number of articles with the tag in any status
- *   but trash and auto-draft, so a tag only drafts, scheduled, pending or
- *   private articles use is not unused. The Unused filter and the count sort
- *   use the same number. Core's own term count, which only counts published
- *   articles and which the front end reads, is left untouched. The single-tag
- *   answers of the write routes carry core's count; the app reads counts only
- *   from this list, which it reloads after every write.
+ *   Each item's `count` is the number of published articles with the tag,
+ *   like category counts and core's own term count, so converting a tag to a
+ *   category keeps the number shown. The count sort uses the same number.
+ *   The Unused filter instead counts articles in any status but trash and
+ *   auto-draft, so a tag only drafts, scheduled, pending or private articles
+ *   use is not unused and deleting the Unused list never strips it from them;
+ *   such a tag shows a count of 0. The single-tag answers of the write routes
+ *   carry core's count; the app reads counts only from this list, which it
+ *   reloads after every write.
  * - `POST /tags` and `PATCH /tags/{id}`: `name`, `slug`, `description`. As in
  *   core, a new tag with a taken slug gets a unique one; editing a tag to a
  *   slug another tag uses, or adding one with a name a tag has, is refused
@@ -226,7 +228,7 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
                 'type'        => 'string',
                 'enum'        => array( 'name', 'count' ),
                 'default'     => 'name',
-                'description' => __( 'Sort by name or by article count.', 'licensio-knowledge-base' ),
+                'description' => __( 'Sort by name or by published article count.', 'licensio-knowledge-base' ),
             ),
             'order'    => array(
                 'type'        => 'string',
@@ -530,10 +532,13 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
      * "off" value, and the sort is a set of CASE expressions of which only the
      * chosen one is not null.
      *
-     * The article count comes from a derived table over the tag
-     * relationships of articles in any status but trash and auto-draft, not
-     * from core's published-only `count` column, so the Unused filter never
-     * lists a tag a draft, scheduled, pending or private article still uses.
+     * The counts come from a derived table over the tag relationships of
+     * articles in any status but trash and auto-draft, not from core's
+     * stored `count` column. It gives two numbers: the published articles,
+     * which is the `count` answered and sorted by, as category counts and
+     * core term counts are; and every article it covers, which the Unused
+     * filter reads, so it never lists a tag a draft, scheduled, pending or
+     * private article still uses.
      *
      * @since 1.0.0
      *
@@ -559,17 +564,18 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
             $wpdb->prepare(
                 'SELECT COUNT(*) FROM %i AS t INNER JOIN %i AS tt ON tt.term_id = t.term_id
                 LEFT JOIN (
-                    SELECT r.term_taxonomy_id, COUNT(*) AS n FROM %i AS r INNER JOIN %i AS p ON p.ID = r.object_id
+                    SELECT r.term_taxonomy_id, COUNT(*) AS used, SUM( CASE WHEN p.post_status = %s THEN 1 ELSE 0 END ) AS n FROM %i AS r INNER JOIN %i AS p ON p.ID = r.object_id
                     INNER JOIN %i AS rt ON rt.term_taxonomy_id = r.term_taxonomy_id AND rt.taxonomy = %s
                     WHERE p.post_type = %s AND p.post_status NOT IN ( %s, %s )
                     GROUP BY r.term_taxonomy_id
                 ) AS c ON c.term_taxonomy_id = tt.term_taxonomy_id
                 WHERE tt.taxonomy = %s
                     AND ( %s = \'\' OR t.name LIKE %s OR t.slug LIKE %s )
-                    AND ( %d = 0 OR COALESCE( c.n, 0 ) = 0 )
+                    AND ( %d = 0 OR COALESCE( c.used, 0 ) = 0 )
                     AND ( %s = \'\' OR FIND_IN_SET( t.term_id, %s ) > 0 )',
                 $wpdb->terms,
                 $wpdb->term_taxonomy,
+                'publish',
                 $wpdb->term_relationships,
                 $wpdb->posts,
                 $wpdb->term_taxonomy,
@@ -592,14 +598,14 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
             $wpdb->prepare(
                 'SELECT t.term_id, t.name, t.slug, tt.description, COALESCE( c.n, 0 ) AS count FROM %i AS t INNER JOIN %i AS tt ON tt.term_id = t.term_id
                 LEFT JOIN (
-                    SELECT r.term_taxonomy_id, COUNT(*) AS n FROM %i AS r INNER JOIN %i AS p ON p.ID = r.object_id
+                    SELECT r.term_taxonomy_id, COUNT(*) AS used, SUM( CASE WHEN p.post_status = %s THEN 1 ELSE 0 END ) AS n FROM %i AS r INNER JOIN %i AS p ON p.ID = r.object_id
                     INNER JOIN %i AS rt ON rt.term_taxonomy_id = r.term_taxonomy_id AND rt.taxonomy = %s
                     WHERE p.post_type = %s AND p.post_status NOT IN ( %s, %s )
                     GROUP BY r.term_taxonomy_id
                 ) AS c ON c.term_taxonomy_id = tt.term_taxonomy_id
                 WHERE tt.taxonomy = %s
                     AND ( %s = \'\' OR t.name LIKE %s OR t.slug LIKE %s )
-                    AND ( %d = 0 OR COALESCE( c.n, 0 ) = 0 )
+                    AND ( %d = 0 OR COALESCE( c.used, 0 ) = 0 )
                     AND ( %s = \'\' OR FIND_IN_SET( t.term_id, %s ) > 0 )
                 ORDER BY
                     CASE WHEN %s = \'count\' AND %s = \'asc\' THEN COALESCE( c.n, 0 ) END ASC,
@@ -610,6 +616,7 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
                 LIMIT %d OFFSET %d',
                 $wpdb->terms,
                 $wpdb->term_taxonomy,
+                'publish',
                 $wpdb->term_relationships,
                 $wpdb->posts,
                 $wpdb->term_taxonomy,
@@ -811,21 +818,25 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
      * Merge tags into one.
      *
      * The articles of every source tag gain the target tag, then the sources
-     * are deleted.
+     * are deleted. Nothing moves unless the user may edit every article of the
+     * sources and nobody else has one open in the editor.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Checks each article first.
      *
      * @param WP_REST_Request $request The request.
      *
      * @return WP_REST_Response|WP_Error The result: `moved`, the `deleted` IDs and the updated `target`.
      */
     public function merge( $request ) {
-        $target = absint( $request->get_param( 'target' ) );
-        $result = $this->term_operations->merge_terms(
-            self::ids( $request->get_param( 'sources' ) ),
-            $target,
-            Licensio_KB_Post_Types::TAXONOMY_TAG
-        );
+        $target  = absint( $request->get_param( 'target' ) );
+        $sources = self::ids( $request->get_param( 'sources' ) );
+        $checked = $this->term_operations->check_articles( $sources, Licensio_KB_Post_Types::TAXONOMY_TAG );
+
+        if ( is_wp_error( $checked ) ) {
+            return $checked;
+        }
+
+        $result = $this->term_operations->merge_terms( $sources, $target, Licensio_KB_Post_Types::TAXONOMY_TAG );
 
         if ( is_wp_error( $result ) ) {
             return $result;
@@ -846,9 +857,12 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
      * Turn tags into categories.
      *
      * For each tag: the category with the tag's slug is reused if there is
-     * one, wherever it sits in the tree, and is left where it is. Otherwise a
-     * category is created under `parent` with the tag's name, slug and
-     * description. Every article with the tag moves to the category, through
+     * one, wherever it sits in the tree, and is left where it is. Failing
+     * that, the child of `parent` with the tag's name is reused. Both are
+     * intended: a convert never makes a second category with the same slug,
+     * or with the same name under the same parent, and joins the tag's
+     * articles to the existing one instead. Otherwise a category is created
+     * under `parent` with the tag's name, slug and description. Every article with the tag moves to the category, through
      * `Licensio_KB_Term_Operations::move_across_taxonomies()`, then the tag is
      * deleted. A tag that fails is kept as it was, and reported as failed.
      *
@@ -906,9 +920,11 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
      *
      * If the articles cannot all be given the category, or the tag cannot be
      * deleted, the articles lose the category again and a category created
-     * here is deleted, so the tag is left as it was.
+     * here is deleted, so the tag is left as it was. A tag with an article the
+     * user may not edit, or that someone else has open in the editor, is kept
+     * as it was and reported.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Checks each article first.
      *
      * @param int $id        The tag ID.
      * @param int $parent_id The parent for a new category, or 0 for the top level.
@@ -920,6 +936,12 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
 
         if ( ! $tag instanceof WP_Term ) {
             return new WP_Error( 'licensio_kb_invalid_term', __( 'The tag does not exist.', 'licensio-knowledge-base' ) );
+        }
+
+        $checked = $this->term_operations->check_articles( array( $id ), Licensio_KB_Post_Types::TAXONOMY_TAG );
+
+        if ( is_wp_error( $checked ) ) {
+            return $checked;
         }
 
         $category = get_term_by( 'slug', $tag->slug, Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
@@ -1052,8 +1074,8 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
     /**
      * A tag, as the app reads it.
      *
-     * The list query's `count` counts articles in every status but trash and
-     * auto-draft; a `WP_Term` carries core's published-only count. The name
+     * The list query's `count` counts published articles, as the
+     * published-only count a `WP_Term` carries does. The name
      * is decoded to plain text; the description is kept as stored, so it
      * round-trips unchanged.
      *

@@ -28,6 +28,7 @@ import {
 	openContentManager,
 } from './helpers/content-manager';
 import { failOnUnresolvedComponents } from './helpers/ant-components';
+import { switchOffWelcomeGuides } from './helpers/editor';
 import { measureFrame } from './helpers/layout';
 import { logIn, password, user } from './helpers/session';
 import { wpCli, wpEval } from './helpers/wp-cli';
@@ -631,6 +632,85 @@ test.describe( 'Articles app', () => {
 			await expect( page.locator( '.lkb-page__title' ) ).toBeFocused();
 		} finally {
 			await articleRequest( page, 'DELETE', '/' + id );
+		}
+	} );
+
+	test( 'trashing in the block editor offers Undo in the app', async ( {
+		page,
+	} ) => {
+		test.skip( '' === wpCli, 'Needs LICENSIO_KB_WP_CLI.' );
+		test.setTimeout( 60_000 );
+
+		const title = `Editor trash E2E ${ Date.now() }`;
+		const id = Number(
+			wpEval(
+				`echo wp_insert_post( array( 'post_type' => 'licensio_article', 'post_title' => '${ title }', 'post_status' => 'publish' ) );`
+			)
+		);
+
+		try {
+			await page.goto( `/wp-admin/post.php?post=${ id }&action=edit` );
+			await switchOffWelcomeGuides( page, 'core/edit-post', [
+				'welcomeGuide',
+			] );
+
+			const settings = page.getByRole( 'region', {
+				name: 'Editor settings',
+			} );
+
+			if ( ! ( await settings.isVisible() ) ) {
+				await page
+					.getByRole( 'region', { name: 'Editor top bar' } )
+					.getByRole( 'button', { name: 'Settings', exact: true } )
+					.click();
+			}
+
+			await settings
+				.getByRole( 'button', { name: 'Move to trash' } )
+				.click();
+			await page
+				.getByRole( 'dialog' )
+				.getByRole( 'button', {
+					name: /^(Trash|Move to trash|Delete)$/,
+				} )
+				.click();
+
+			// Core sends the editor to the article list, which is the app.
+			await page.waitForURL( /page=licensio-kb-articles/ );
+
+			const toast = page.locator( '.ant-notification-notice' );
+			const undo = toast.getByRole( 'button', { name: 'Undo' } );
+
+			await expect( undo ).toBeFocused();
+			await expect( undo ).toHaveAccessibleDescription(
+				'1 article moved to the trash.'
+			);
+			expect(
+				new URL( page.url() ).searchParams.has( 'undo' ),
+				'The token leaves the address at once.'
+			).toBe( false );
+			expect(
+				new URL( page.url() ).searchParams.has( 'undo_count' )
+			).toBe( false );
+
+			await page.keyboard.press( 'Enter' );
+			await expect( toast ).toBeHidden();
+			await expect(
+				page.getByText( '1 article put back.' )
+			).toBeVisible();
+			await expect( page.locator( '.lkb-page__title' ) ).toBeFocused();
+			expect( wpEval( `echo get_post_status( ${ id } );` ) ).toBe(
+				'publish'
+			);
+
+			// A reload offers nothing again.
+			await page.reload();
+			await expect(
+				page.locator( '#licensio-kb-articles #lkb-main' )
+			).toBeVisible();
+			await expect( toast ).toHaveCount( 0 );
+		} finally {
+			wpEval( `wp_delete_post( ${ id }, true );` );
 		}
 	} );
 

@@ -208,6 +208,10 @@ class Licensio_KB_Content_Manager {
          * Return false to keep the core article, category and tag screens.
          * The Vue apps stay reachable by URL either way.
          *
+         * The filter can only switch the apps off. It runs only while the
+         * Classic screens setting is off, so returning true cannot bring the
+         * apps back over that setting: the setting always wins.
+         *
          * @since 1.0.0
          *
          * @param bool $use_content_manager Whether to use the content manager. Default true.
@@ -635,7 +639,17 @@ class Licensio_KB_Content_Manager {
      * a positive ID, the sort only when the app can sort by it, and the page
      * only past the first. A negative number is dropped, not made positive.
      *
-     * @since 1.0.0
+     * After an article is trashed in the block editor, core sends the user to
+     * the article list with `trashed=1&ids=…` so its list can offer Undo. The
+     * app offers the same Undo: the articles still in the trash that the user
+     * may restore get a single-use undo snapshot of the status each had, and
+     * the app URL carries its token as `undo` and the count as `undo_count`.
+     * Loading the same redirect again overwrites that snapshot; once undone,
+     * the articles are out of the trash and nothing is stored.
+     * Not `trashed`: core lists that among the removable query arguments and
+     * takes it out of the address before the app can read it.
+     *
+     * @since 1.0.0 Carries the block editor's trash over as an Undo, one snapshot per user and articles.
      *
      * @param array<string, mixed> $query The request's query arguments, unslashed.
      *
@@ -698,7 +712,73 @@ class Licensio_KB_Content_Manager {
             $args['paged'] = $paged;
         }
 
+        if ( '' !== self::arg( $query, 'trashed' ) ) {
+            $previous = self::trashed_snapshot( self::arg( $query, 'ids' ) );
+            $token    = Licensio_KB_Article_Bulk::store_snapshot( $previous, self::trashed_token( array_keys( $previous ) ) );
+
+            if ( '' !== $token ) {
+                $args['undo_count'] = count( $previous );
+                $args['undo']       = $token;
+            }
+        }
+
         return self::page_url( self::ARTICLES_SLUG, $args );
+    }
+
+    /**
+     * The undo token for a block editor trash, the same for the same user and articles.
+     *
+     * Every load of the redirect stores the snapshot again, so a fixed key
+     * means a reload or a replayed link overwrites one snapshot rather than
+     * adding another. Keyed with a site secret, so it cannot be worked out
+     * from the IDs, and it is still bound to the user when claimed.
+     *
+     * @since 1.0.0
+     *
+     * @param int[] $ids The trashed article IDs.
+     *
+     * @return string The token, `Licensio_KB_Article_Bulk::TOKEN_LENGTH` hexadecimal digits.
+     */
+    private static function trashed_token( array $ids ) {
+        $ids = array_map( 'intval', $ids );
+
+        sort( $ids );
+
+        return substr( hash_hmac( 'sha256', get_current_user_id() . '|' . implode( ',', $ids ), wp_salt( 'auth' ) ), 0, Licensio_KB_Article_Bulk::TOKEN_LENGTH );
+    }
+
+    /**
+     * What the trashed articles of a block editor redirect were before the trash.
+     *
+     * Only articles still in the trash that the current user may restore are
+     * kept, each with the status core recorded when it was trashed. At most
+     * as many as one bulk request carries.
+     *
+     * @since 1.0.0
+     *
+     * @param string $ids The comma separated article IDs core passed.
+     *
+     * @return array<int, array{status: string}> Article ID to its earlier status.
+     */
+    private static function trashed_snapshot( $ids ) {
+        $ids      = array_slice( Licensio_KB_Article_Bulk::clean_ids( explode( ',', (string) $ids ) ), 0, Licensio_KB_Article_Bulk::MAX_IDS );
+        $previous = array();
+
+        _prime_post_caches( $ids, false, true );
+
+        foreach ( $ids as $id ) {
+            $post = get_post( $id );
+
+            if ( ! $post instanceof WP_Post || Licensio_KB_Post_Types::POST_TYPE !== $post->post_type || 'trash' !== $post->post_status || ! current_user_can( 'delete_post', $id ) ) {
+                continue;
+            }
+
+            $status = (string) get_post_meta( $id, '_wp_trash_meta_status', true );
+
+            $previous[ $id ] = array( 'status' => in_array( $status, Licensio_KB_Articles_REST_Controller::LIST_STATUSES, true ) ? $status : 'draft' );
+        }
+
+        return $previous;
     }
 
     /**

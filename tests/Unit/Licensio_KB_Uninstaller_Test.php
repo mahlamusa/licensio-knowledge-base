@@ -831,18 +831,56 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
 
         Licensio_KB_Uninstaller::uninstall_site();
 
-        $this->assertSame( array(), $this->options_deletes(), 'Keeping the data issues no transient delete.' );
+        $this->assertSame( array(), $this->rate_limit_deletes(), 'Keeping the data issues no counter delete.' );
 
         $this->seed_site( true );
 
         Licensio_KB_Uninstaller::uninstall_site();
 
-        $deletes = $this->options_deletes();
+        $deletes = $this->rate_limit_deletes();
 
         $this->assertCount( 1, $deletes );
         $this->assertStringContainsString( '`wptests_options`', $deletes[0] );
         $this->assertStringContainsString( "'\\_transient\\_licensio\\_rl\\_%'", $deletes[0], 'The underscores must be escaped so they match only themselves.' );
         $this->assertStringContainsString( "'\\_transient\\_timeout\\_licensio\\_rl\\_%'", $deletes[0] );
+    }
+
+    /**
+     * The statements that delete the rate-limit counters.
+     *
+     * @since 1.0.0
+     *
+     * @return string[] The statements.
+     */
+    private function rate_limit_deletes() {
+        return array_values(
+            array_filter(
+                $this->options_deletes(),
+                function ( $sql ) {
+                    return false !== strpos( $sql, 'licensio\\_rl' );
+                }
+            )
+        );
+    }
+
+    /**
+     * The bulk undo snapshots are deleted whether or not the data is kept.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_undo_snapshots_are_always_deleted() {
+        foreach ( array( false, true ) as $delete_data ) {
+            $this->seed_site( $delete_data );
+
+            Licensio_KB_Uninstaller::uninstall_site();
+
+            $issued = implode( ' ', $this->options_deletes() );
+
+            $this->assertStringContainsString( "'\\_transient\\_licensio\\_kb\\_undo\\_%'", $issued );
+            $this->assertStringContainsString( "'\\_transient\\_timeout\\_licensio\\_kb\\_undo\\_%'", $issued );
+        }
     }
 
     /**
