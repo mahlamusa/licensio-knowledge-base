@@ -8,6 +8,10 @@
  * from `wp i18n make-pot` (a mangled name, a wrapper around the function)
  * shows up here as a missing string instead of an untranslatable screen.
  *
+ * Only template entries referenced from `dist/` count, so a PHP string with
+ * the same text cannot hide a missing app string, and a string with a context
+ * (`_x`, `_nx`) must be in the template under that same context.
+ *
  * Usage: node tools/check-app-strings.mjs <file.pot> [apps-directory]
  *
  * @since 1.0.0
@@ -75,26 +79,76 @@ function unescapeString( text ) {
 }
 
 /**
- * The msgids of a translation template.
+ * Join a context and a string the way gettext keys them.
+ *
+ * @since 1.0.0
+ *
+ * @param {string} context The message context, or an empty string for none.
+ * @param {string} text    The message.
+ *
+ * @return {string} The lookup key.
+ */
+function key( context, text ) {
+	return `${ context }\u0004${ text }`;
+}
+
+/**
+ * The value of a quoted PO field, which may run over several lines.
+ *
+ * @since 1.0.0
+ *
+ * @param {string} entry The entry text.
+ * @param {string} field The field name, such as `msgid`.
+ *
+ * @return {string|undefined} The decoded value, or undefined when absent.
+ */
+function poField( entry, field ) {
+	const match = entry.match(
+		new RegExp( `^${ field } ((?:"(?:\\\\.|[^"\\\\])*"\\s*)+)`, 'm' )
+	);
+
+	if ( ! match ) {
+		return undefined;
+	}
+
+	return [ ...match[ 1 ].matchAll( /"((?:\\.|[^"\\])*)"/g ) ]
+		.map( ( [ , part ] ) => unescapeString( part ) )
+		.join( '' );
+}
+
+/**
+ * The app strings of a translation template, keyed by context.
+ *
+ * Only entries with a `#: dist/` reference are read: those are the strings
+ * extracted from the built apps.
  *
  * @since 1.0.0
  *
  * @param {string} file The template path.
  *
- * @return {Set<string>} Every msgid and msgid_plural.
+ * @return {Set<string>} A key() for every msgid and msgid_plural.
  */
 function potStrings( file ) {
 	const strings = new Set();
-	const pattern = /^msgid(?:_plural)? ((?:"(?:\\.|[^"\\])*"\s*)+)/gm;
 
-	for ( const [ , quoted ] of readFileSync( file, 'utf8' ).matchAll(
-		pattern
-	) ) {
-		strings.add(
-			[ ...quoted.matchAll( /"((?:\\.|[^"\\])*)"/g ) ]
-				.map( ( [ , part ] ) => unescapeString( part ) )
-				.join( '' )
+	for ( const entry of readFileSync( file, 'utf8' ).split( /\n\s*\n/ ) ) {
+		const references = [ ...entry.matchAll( /^#: (.*)$/gm ) ].flatMap(
+			( [ , line ] ) => line.trim().split( /\s+/ )
 		);
+
+		if ( ! references.some( ( ref ) => ref.startsWith( 'dist/' ) ) ) {
+			continue;
+		}
+
+		const context = poField( entry, 'msgctxt' ) ?? '';
+
+		for ( const field of [ 'msgid', 'msgid_plural' ] ) {
+			const text = poField( entry, field );
+
+			if ( undefined !== text ) {
+				strings.add( key( context, text ) );
+			}
+		}
 	}
 
 	return strings;
@@ -118,20 +172,34 @@ for ( const file of sourceFiles( appsDir ) ) {
 	for ( const match of source.matchAll( call ) ) {
 		const [ , name, , single, , second ] = match;
 		const wanted = [ unescapeString( single ) ];
+		let context = '';
 
-		// The second argument of _n and _nx is the plural form.
+		// The second argument of _n and _nx is the plural form, and the
+		// second of _x is the context.
 		if ( ( name === '_n' || name === '_nx' ) && undefined !== second ) {
 			wanted.push( unescapeString( second ) );
+		} else if ( name === '_x' && undefined !== second ) {
+			context = unescapeString( second );
+		}
+
+		// The context of _nx follows the count: _nx( single, plural, n, context ).
+		if ( name === '_nx' ) {
+			const rest = source
+				.slice( match.index + match[ 0 ].length )
+				.match( /^\s*,[^,]+?,\s*(['"`])((?:\\.|(?!\1)[^\\])*)\1/ );
+			context = rest ? unescapeString( rest[ 2 ] ) : '';
 		}
 
 		for ( const text of wanted ) {
 			checked++;
 
-			if ( ! known.has( text ) ) {
+			if ( ! known.has( key( context, text ) ) ) {
 				const line = source.slice( 0, match.index ).split( '\n' ).length;
 
 				missing.push(
-					`${ path.relative( root, file ) }:${ line }  ${ text }`
+					`${ path.relative( root, file ) }:${ line }  ${ text }${
+						context ? ` (context: ${ context })` : ''
+					}`
 				);
 			}
 		}
