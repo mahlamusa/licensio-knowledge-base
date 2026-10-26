@@ -352,7 +352,7 @@ class Licensio_KB_Settings_REST_Test extends Licensio_KB_Test_Case {
                 array(
                     'a_position' => 'left',
                     'an_image'   => 42,
-                    'a_style'    => 'gradient',
+                    'a_style'    => 'border',
                 )
             )
         );
@@ -362,7 +362,7 @@ class Licensio_KB_Settings_REST_Test extends Licensio_KB_Test_Case {
             array(
                 'a_position' => 'left',
                 'an_image'   => 42,
-                'a_style'    => 'gradient',
+                'a_style'    => 'border',
             ),
             $spy->updates[0]
         );
@@ -418,8 +418,8 @@ class Licensio_KB_Settings_REST_Test extends Licensio_KB_Test_Case {
             ),
             'a_style'    => array(
                 'type'     => 'string',
-                'default'  => 'solid',
-                'sanitize' => array( 'Licensio_KB_Settings', 'sanitize_header_style' ),
+                'default'  => 'shadow',
+                'sanitize' => array( 'Licensio_KB_Settings', 'sanitize_card_style' ),
             ),
         );
     }

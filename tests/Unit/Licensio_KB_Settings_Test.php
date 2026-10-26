@@ -668,7 +668,6 @@ class Licensio_KB_Settings_Test extends Licensio_KB_Test_Case {
     public function test_the_presentation_settings_default_to_the_live_values() {
         $defaults = ( new Licensio_KB_Settings() )->defaults();
 
-        $this->assertSame( 'solid', $defaults['header_style'] );
         $this->assertSame( 0, $defaults['header_image_id'] );
         $this->assertSame( 'Help Topics', $defaults['archive_header_text'] );
         $this->assertSame( 'Search the Knowledge Base...', $defaults['search_placeholder'] );
@@ -684,28 +683,27 @@ class Licensio_KB_Settings_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * The header style is restricted to the three treatments the theme renders.
+     * The archive header has no style setting any more.
+     *
+     * The header shows the header image or nothing, so a choice between solid,
+     * gradient and image would be a setting with one answer. A value an older
+     * install saved stays in the option untouched but is no longer read, and
+     * a save cannot write it back.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_the_header_style_is_allowlisted() {
+    public function test_a_legacy_header_style_is_ignored() {
+        $this->options[ Licensio_KB_Settings::OPTION_NAME ] = array( 'header_style' => 'gradient' );
+
         $settings = new Licensio_KB_Settings();
 
-        foreach ( array( 'solid', 'gradient', 'image' ) as $style ) {
-            $settings->set( 'header_style', $style );
-            $this->assertSame( $style, $settings->get( 'header_style' ) );
-        }
-
-        foreach ( array( 'parallax', 'SOLID', '"><script>', '' ) as $payload ) {
-            $settings->set( 'header_style', $payload );
-            $this->assertSame(
-                'solid',
-                $settings->get( 'header_style' ),
-                'An unknown header style must fall back to the default.'
-            );
-        }
+        $this->assertFalse( $settings->has( 'header_style' ) );
+        $this->assertArrayNotHasKey( 'header_style', $settings->all() );
+        $this->assertArrayNotHasKey( 'header_style', $settings->defaults() );
+        $this->assertSame( 0, $settings->get( 'header_image_id' ) );
+        $this->assertFalse( $settings->set( 'header_style', 'solid' ) );
     }
 
     /**
@@ -994,7 +992,6 @@ class Licensio_KB_Settings_Test extends Licensio_KB_Test_Case {
 
         $settings->update(
             array(
-                'header_style'             => 'gradient',
                 'header_image_id'          => 42,
                 'archive_header_text'      => 'Documentation',
                 'search_placeholder'       => 'Search',

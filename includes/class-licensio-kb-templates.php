@@ -495,6 +495,32 @@ class Licensio_KB_Templates {
     }
 
     /**
+     * The image shown behind the knowledge base archive heading.
+     *
+     * Reads the `header_image_id` setting. The settings store already drops an
+     * ID that is not an attachment, so only the attachment's own URL is asked
+     * for here; an attachment that is not an image has none. No image means a
+     * plain header in the theme's own colours, which is also what a site that
+     * once chose a solid or gradient header now gets.
+     *
+     * @since 1.0.0
+     *
+     * @return string The full size image URL, or an empty string for no image.
+     */
+    public static function archive_header_image_url() {
+        $settings = new Licensio_KB_Settings();
+        $image_id = (int) $settings->get( 'header_image_id' );
+
+        if ( $image_id < 1 ) {
+            return '';
+        }
+
+        $url = wp_get_attachment_image_url( $image_id, 'full' );
+
+        return is_string( $url ) ? $url : '';
+    }
+
+    /**
      * The top-level knowledge base categories.
      *
      * @since 1.0.0

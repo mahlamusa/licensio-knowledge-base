@@ -437,8 +437,8 @@ class Licensio_KB_Heroic_Import_Map {
                 $out['settings'][ $toggles[ $key ] ] = ! empty( $value ) && 'false' !== $value;
             } elseif ( isset( $sidebars[ $key ] ) && in_array( $value, array( 'left', 'right', 'off' ), true ) ) {
                 $out['settings'][ $sidebars[ $key ] ] = 'off' === $value ? 'none' : $value;
-            } elseif ( 'kb-headerstyle' === $key && in_array( $value, array( 'solid', 'gradient', 'image' ), true ) ) {
-                $out['settings']['header_style'] = $value;
+            } elseif ( 'kb-headerstyle' === $key ) {
+                $out['excluded'][ $key ] = 'Header style; the archive header shows the header image when one is set and is plain otherwise';
             } elseif ( in_array( $key, $slugs, true ) ) {
                 $out['excluded'][ $key ] = 'URL slug; kept as it is so the imported redirects stay valid';
             } else {

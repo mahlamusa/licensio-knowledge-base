@@ -82,7 +82,7 @@ Heroic Knowledge Base and BetterDocs are trademarks of their respective owners. 
 = Make it look like your site =
 
 * Takes its text colour, link colour and fonts from your theme, on light and dark themes alike. Set an optional brand colour to drive links, buttons and accents; a readable text colour is picked for you.
-* Choose the layout width, the card style (raised, outlined or flat), the archive header (solid colour, gradient or image), the archive heading, the search placeholder and the number of category columns.
+* Choose the layout width, the card style (raised, outlined or flat), an optional archive header image, the archive heading, the search placeholder and the number of category columns.
 * Put the sidebar on the left, the right or nowhere, separately for the home, categories and articles, and make it follow the reader down long articles.
 * Choose your own article, category and tag URL bases, with optional nested category URLs.
 

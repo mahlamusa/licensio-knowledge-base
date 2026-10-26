@@ -264,21 +264,10 @@ class Licensio_KB_Settings_Schema {
                     ),
                 ),
             ),
-            'header_style'               => array(
-                'group'       => 'appearance',
-                'label'       => __( 'Archive header style', 'licensio-knowledge-base' ),
-                'description' => __( 'How the band behind the archive heading and search box is filled.', 'licensio-knowledge-base' ),
-                'control'     => 'select',
-                'choices'     => array(
-                    'solid'    => __( 'Solid colour', 'licensio-knowledge-base' ),
-                    'gradient' => __( 'Gradient', 'licensio-knowledge-base' ),
-                    'image'    => __( 'Image', 'licensio-knowledge-base' ),
-                ),
-            ),
             'header_image_id'            => array(
                 'group'       => 'appearance',
                 'label'       => __( 'Archive header image', 'licensio-knowledge-base' ),
-                'description' => __( 'The media library ID of the image behind the archive header. Used only when the header style is Image; 0 for none.', 'licensio-knowledge-base' ),
+                'description' => __( 'The media library ID of the image shown behind the archive heading. 0 for none, which leaves the header plain.', 'licensio-knowledge-base' ),
                 'control'     => 'number',
             ),
             'archive_header_text'        => array(
