@@ -611,7 +611,7 @@ onBeforeUnmount( () => {
 	align-items: center;
 	justify-content: space-between;
 	gap: var( --lkb-gap );
-	max-width: 1280px;
+	max-width: 1600px;
 	margin: 0 auto;
 	padding: 12px var( --lkb-gap-lg );
 	background: var( --lkb-surface );

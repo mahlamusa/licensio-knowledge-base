@@ -205,7 +205,7 @@ const expandedKeys = computed( () =>
 			:columns="columns"
 			:data-source="store.items"
 			:loading="store.loading"
-			:scroll="{ x: 'max-content' }"
+			:scroll="{ x: true }"
 			:expanded-row-keys="expandedKeys"
 			:show-expand-column="false"
 			:row-selection="{

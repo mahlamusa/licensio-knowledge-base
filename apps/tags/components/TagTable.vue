@@ -312,7 +312,7 @@ watch(
 			:columns="columns"
 			:data-source="store.items"
 			:loading="store.loading"
-			:scroll="{ x: 760 }"
+			:scroll="{ x: true }"
 			:row-selection="{
 				selectedRowKeys: store.selected,
 				onChange: ( keys: unknown[] ) =>
