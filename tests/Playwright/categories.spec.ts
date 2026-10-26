@@ -607,6 +607,109 @@ test.describe( 'Categories app', () => {
 		).toBe( alpha?.id );
 	} );
 
+	test( 'Escape on an expanded control that is not a select closes the dialog', async ( { page } ) => {
+		await act( page, 'Gamma', 'Delete…' );
+
+		const dialog = page.locator( '.ant-modal-content' );
+
+		await expect( dialog ).toBeVisible();
+
+		// Stands in for an expanded tree node or collapse header in a dialog.
+		await dialog.evaluate( ( root ) => {
+			const toggle = document.createElement( 'button' );
+
+			toggle.type = 'button';
+			toggle.textContent = 'Expanded section';
+			toggle.setAttribute( 'aria-expanded', 'true' );
+			root.appendChild( toggle );
+			toggle.focus();
+		} );
+
+		await page.keyboard.press( 'Escape' );
+		await expect( dialog ).toBeHidden();
+	} );
+
+	test( 'an unsaved article order is kept until the user agrees to drop it', async ( { page } ) => {
+		const alpha = await categoryId( page, 'Alpha' );
+
+		await makeArticles( page, alpha, [ 'E2E order guard A', 'E2E order guard B' ] );
+		await page.reload();
+		await node( page, 'Alpha' ).locator( '.lkb-tree__name' ).click();
+
+		const pane = page.getByRole( 'region', { name: 'Article order' } );
+		const moved = [ 'E2E order guard B', 'E2E order guard A' ];
+
+		await expect.poll( () => paneTitles( page ) ).toEqual( [
+			'E2E order guard A',
+			'E2E order guard B',
+		] );
+		await pane.getByRole( 'button', { name: 'Move “E2E order guard B” up' } ).click();
+		expect( await paneTitles( page ) ).toEqual( moved );
+
+		const asked: string[] = [];
+
+		page.on( 'dialog', async ( dialog ) => {
+			asked.push( `${ dialog.type() }: ${ dialog.message() }` );
+			await dialog.dismiss();
+		} );
+
+		const question = 'confirm: The article order has unsaved changes. Discard them?';
+
+		// Another category, the selected one again, and a merge each ask first.
+		await node( page, 'Beta' ).locator( '.lkb-tree__name' ).click();
+		await expect.poll( () => asked ).toEqual( [ question ] );
+		await node( page, 'Alpha' ).locator( '.lkb-tree__name' ).click();
+		await expect.poll( () => asked ).toHaveLength( 2 );
+		await act( page, 'Beta', 'Merge…' );
+		await expect.poll( () => asked ).toEqual( [ question, question, question ] );
+		await expect( page.locator( '.ant-modal-content' ) ).toHaveCount( 0 );
+
+		await expect( pane ).toContainText( 'Articles in “Alpha”' );
+		expect( await paneTitles( page ) ).toEqual( moved );
+
+		// Leaving the page brings up the browser's leave warning.
+		await node( page, 'Beta' ).locator( '.lkb-tree__count' ).click();
+		await expect.poll( () => asked[ 3 ] ?? '' ).toMatch( /^beforeunload/ );
+		await expect( page ).toHaveURL( /page=licensio-kb-categories/ );
+		expect( await paneTitles( page ) ).toEqual( moved );
+
+		// Agreeing drops the order and selects the other category.
+		page.removeAllListeners( 'dialog' );
+		page.once( 'dialog', ( dialog ) => dialog.accept() );
+		await node( page, 'Beta' ).locator( '.lkb-tree__name' ).click();
+		await expect( pane ).toContainText( 'Articles in “Beta”' );
+	} );
+
+	test( 'a category count links to its articles and the pane names statuses', async ( { page } ) => {
+		const alpha = await categoryId( page, 'Alpha' );
+
+		await api(
+			page,
+			'POST',
+			'licensio_articles',
+			{ title: 'E2E order draft', status: 'draft', licensio_categories: [ alpha ] },
+			'wp/v2'
+		);
+		await page.reload();
+		await node( page, 'Alpha' ).locator( '.lkb-tree__name' ).click();
+
+		const pane = page.getByRole( 'region', { name: 'Article order' } );
+
+		await expect( pane.locator( '.lkb-order__status' ) ).toHaveText( 'Draft' );
+
+		const count = node( page, 'Alpha' ).locator( '.lkb-tree__count' );
+
+		await expect( count ).toHaveAttribute(
+			'href',
+			new RegExp( `page=licensio-kb-articles&category=${ alpha }$` )
+		);
+		await count.click();
+		await expect( page ).toHaveURL( new RegExp( `page=licensio-kb-articles.*category=${ alpha }` ) );
+		await expect(
+			page.locator( '#licensio-kb-articles .ant-table-row', { hasText: 'E2E order draft' } )
+		).toBeVisible();
+	} );
+
 	test( 'a dragged article order is saved, survives a reload and orders the archive', async ( { page } ) => {
 		const alpha = await categoryId( page, 'Alpha' );
 		const [ a, b, c, d ] = await makeArticles( page, alpha, [
@@ -735,6 +838,46 @@ test.describe( 'Categories app', () => {
 			null,
 			null,
 		] );
+	} );
+
+	test( 'tree rows are sized like a core list table row', async ( { page } ) => {
+		const alpha = await categoryId( page, 'Alpha' );
+
+		await makeArticles( page, alpha, [ 'E2E order size' ] );
+		await page.reload();
+		await node( page, 'Alpha' ).locator( '.lkb-tree__name' ).click();
+
+		const name = node( page, 'Alpha' ).locator( '.lkb-tree__name' );
+		const item = page.locator( '.lkb-order__item' ).first();
+
+		await expect( name ).toHaveCSS( 'font-size', '14px' );
+		await expect( name ).toHaveCSS( 'font-weight', '600' );
+		await expect( item.locator( '.lkb-order__name' ) ).toHaveCSS( 'font-size', '14px' );
+
+		for ( const width of [ 1280, 390 ] ) {
+			await page.setViewportSize( { width, height: 900 } );
+
+			const row = ( await node( page, 'Alpha' ).boundingBox() )?.height ?? 0;
+			const child = node( page, 'Gamma child' ).locator( '.lkb-tree__name' );
+			const parent = node( page, 'Gamma' ).locator( '.lkb-tree__name' );
+			const indent =
+				( ( await child.boundingBox() )?.x ?? 0 ) -
+				( ( await parent.boundingBox() )?.x ?? 0 );
+
+			expect( row, `row height at ${ width }px` ).toBeGreaterThanOrEqual( 37 );
+			expect( row, `row height at ${ width }px` ).toBeLessThanOrEqual( 56 );
+			expect( indent, `child indent at ${ width }px` ).toBeGreaterThanOrEqual( 20 );
+			expect(
+				( await item.boundingBox() )?.height ?? 0,
+				`order row height at ${ width }px`
+			).toBeGreaterThanOrEqual( 37 );
+		}
+
+		await node( page, 'Beta' ).hover();
+		await expect( node( page, 'Beta' ) ).not.toHaveCSS(
+			'background-color',
+			'rgba(0, 0, 0, 0)'
+		);
 	} );
 
 	test( 'the panes stack at phone width', async ( { page } ) => {

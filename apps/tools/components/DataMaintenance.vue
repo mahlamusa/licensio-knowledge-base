@@ -58,7 +58,7 @@ async function load(): Promise< void > {
 }
 
 /**
- * Recompute every article's usefulness score.
+ * Recompute every article's usefulness score, once the user confirmed.
  *
  * @since 1.0.0
  *
@@ -154,14 +154,20 @@ onMounted( load );
 					</div>
 				</dl>
 
-				<a-button
-					type="primary"
-					:loading="recounting"
-					:disabled="recounting || pruning"
-					@click="recount"
+				<a-popconfirm
+					:title="__( 'Recount the score of every article?', 'licensio-knowledge-base' )"
+					:ok-text="__( 'Recount scores', 'licensio-knowledge-base' )"
+					:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
+					@confirm="recount"
 				>
-					{{ __( 'Recount scores', 'licensio-knowledge-base' ) }}
-				</a-button>
+					<a-button
+						type="primary"
+						:loading="recounting"
+						:disabled="recounting || pruning"
+					>
+						{{ __( 'Recount scores', 'licensio-knowledge-base' ) }}
+					</a-button>
+				</a-popconfirm>
 
 				<p v-if="recounted" class="licensio-kb-data-maintenance__done">
 					{{

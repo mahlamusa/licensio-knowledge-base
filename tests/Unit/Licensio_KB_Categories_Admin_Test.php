@@ -366,6 +366,7 @@ class Licensio_KB_Categories_Admin_Test extends Licensio_KB_Test_Case {
                         'root'        => 'https://example.test/wp-json/licensio-kb/v1/',
                         'nonce'       => 'a-nonce',
                         'settingsUrl' => 'https://example.test/wp-admin/edit.php?post_type=licensio_article&page=licensio-kb-settings',
+                        'articlesUrl' => 'https://example.test/wp-admin/admin.php?page=licensio-kb-articles',
                     ),
                 ),
             ),

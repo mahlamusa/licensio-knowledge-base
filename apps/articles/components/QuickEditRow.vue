@@ -186,6 +186,9 @@ const passwordMissing = computed(
 /**
  * Send the changes. Runs only after the Popconfirm is confirmed.
  *
+ * Once saved, the list and its status counts are loaded again, and the form
+ * closes when the article has left the page.
+ *
  * @since 1.0.0
  *
  * @return {Promise<void>} Resolves once saved or refused.
@@ -211,6 +214,17 @@ async function save(): Promise< void > {
 		savedSlug.value = updated.slug;
 		Object.assign( start, initial( updated ) );
 		Object.assign( form, initial( updated ) );
+
+		// The change may move the article out of this view, as publishing a
+		// draft in the Drafts view does, and changes the status counts.
+		await store.load();
+
+		if (
+			store.quickEditId === props.item.id &&
+			! store.items.some( ( row ) => row.id === props.item.id )
+		) {
+			store.quickEditId = 0;
+		}
 	} catch ( caught ) {
 		if ( caught instanceof RestError ) {
 			const data = ( caught.data ?? {} ) as {

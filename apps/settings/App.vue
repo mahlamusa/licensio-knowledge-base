@@ -4,9 +4,9 @@ import { lkbTheme } from '../styles/theme';
  * The settings screen.
  *
  * A category sidebar on the left, one group per entry, and that group's fields
- * on the right as label-and-control rows. A save is refused whole rather than
- * applied in part, a reset restores the registry defaults, and a guard stops the
- * browser leaving with unsaved edits on the page.
+ * on the right as label-and-control rows. A save is confirmed first and refused
+ * whole rather than applied in part, a reset restores the registry defaults, and
+ * a guard stops the browser leaving with unsaved edits on the page.
  *
  * @since 1.0.0
  */
@@ -16,6 +16,7 @@ import { config } from './api';
 import { __ } from '../components/i18n';
 import { useSettingsStore } from './store';
 import AppHeader from '../components/AppHeader.vue';
+import ConfirmButton from '../components/ConfirmButton.vue';
 import AppearancePreview from './components/AppearancePreview.vue';
 import SettingField from './components/SettingField.vue';
 import type { SettingValue } from './types';
@@ -312,14 +313,16 @@ onBeforeUnmount( () => {
 					{{ __( 'Reset all', 'licensio-knowledge-base' ) }}
 				</a-button>
 
-				<a-button
+				<ConfirmButton
 					type="primary"
 					:disabled="! store.dirty || store.saving"
 					:loading="store.saving"
-					@click="store.save()"
+					:title="__( 'Save these settings?', 'licensio-knowledge-base' )"
+					:ok-text="__( 'Save changes', 'licensio-knowledge-base' )"
+					@confirm="store.save()"
 				>
 					{{ __( 'Save changes', 'licensio-knowledge-base' ) }}
-				</a-button>
+				</ConfirmButton>
 			</div>
 		</footer>
 

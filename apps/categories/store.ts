@@ -23,6 +23,7 @@ import {
 	saveCategoryOrder,
 	updateCategory,
 } from './api';
+import { __ } from '../components/i18n';
 import { errorMessage } from '../components/rest';
 import type {
 	ArticleReassignment,
@@ -167,6 +168,8 @@ interface State {
 	error: string;
 	selectedId: number | null;
 	search: string;
+	/** Whether the article order pane holds an unsaved order. */
+	orderDirty: boolean;
 }
 
 export const useCategoriesStore = defineStore( 'licensioKBCategories', {
@@ -177,6 +180,7 @@ export const useCategoriesStore = defineStore( 'licensioKBCategories', {
 		error: '',
 		selectedId: null,
 		search: '',
+		orderDirty: false,
 	} ),
 
 	getters: {
@@ -256,6 +260,27 @@ export const useCategoriesStore = defineStore( 'licensioKBCategories', {
 			} finally {
 				await this.load();
 			}
+		},
+
+		/**
+		 * Ask before an unsaved article order is thrown away.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @return {boolean} True when there is nothing to lose or the user agreed to lose it.
+		 */
+		confirmDiscardOrder(): boolean {
+			if ( ! this.orderDirty ) {
+				return true;
+			}
+
+			// eslint-disable-next-line no-alert
+			return window.confirm(
+				__(
+					'The article order has unsaved changes. Discard them?',
+					'licensio-knowledge-base'
+				)
+			);
 		},
 
 		/**

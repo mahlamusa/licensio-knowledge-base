@@ -4,18 +4,22 @@
  *
  * Articles can be dragged, or moved with the Move up and Move down buttons
  * from the keyboard. Nothing is sent until the user confirms "Save order";
- * Reset puts the loaded order back.
+ * Reset puts the loaded order back. While the order is unsaved, choosing
+ * another category asks first (see the store's `confirmDiscardOrder()`) and
+ * leaving the page brings up the browser's leave warning.
  *
  * @since 1.0.0
  */
 
-import { computed, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import ConfirmButton from '../../components/ConfirmButton.vue';
 import { __, sprintf } from '../../components/i18n';
 import type { CategoryOrderArticle } from '../../components/types/category-order';
 import { errorMessage } from '../../components/rest';
+import { statusLabel } from '../../components/status';
 import { fetchCategoryArticles, saveArticleOrder } from '../api';
+import { useCategoriesStore } from '../store';
 import type { CategoryItem } from '../types';
 
 const props = defineProps< {
@@ -33,10 +37,44 @@ const dragIndex = ref< number | null >( null );
 
 let latest = 0;
 
+const store = useCategoriesStore();
+
 const dirty = computed(
 	() => items.value.map( ( item ) => item.id ).join( ',' ) !==
 		loadedIds.value.join( ',' )
 );
+
+watch( dirty, ( value ) => {
+	store.orderDirty = value;
+} );
+
+/**
+ * Warn before the page is left while the order is unsaved.
+ *
+ * Browsers ignore the message and show their own wording, but the event has
+ * to be cancelled for the warning to appear at all.
+ *
+ * @since 1.0.0
+ *
+ * @param {BeforeUnloadEvent} event The unload event.
+ *
+ * @return {void}
+ */
+function guardUnload( event: BeforeUnloadEvent ): void {
+	if ( ! dirty.value ) {
+		return;
+	}
+
+	event.preventDefault();
+	event.returnValue = '';
+}
+
+onMounted( () => window.addEventListener( 'beforeunload', guardUnload ) );
+
+onBeforeUnmount( () => {
+	window.removeEventListener( 'beforeunload', guardUnload );
+	store.orderDirty = false;
+} );
 
 /**
  * Load the selected category's articles.
@@ -300,7 +338,7 @@ async function save(): Promise< void > {
 							}}
 						</span>
 						<a-tag v-if="'publish' !== article.status" class="lkb-order__status">
-							{{ article.status }}
+							{{ statusLabel( article.status ) }}
 						</a-tag>
 					</span>
 					<span class="lkb-order__buttons">
@@ -377,9 +415,10 @@ async function save(): Promise< void > {
 .lkb-order__item {
 	display: flex;
 	align-items: center;
-	gap: 8px;
+	gap: 12px;
 	margin: 0 0 6px;
-	padding: 6px 8px;
+	padding: 8px 10px;
+	line-height: 1.5;
 	border: 1px solid var(--lkb-border-wp);
 	border-radius: 6px;
 	background: var(--lkb-surface);
@@ -398,10 +437,13 @@ async function save(): Promise< void > {
 	flex: 1;
 	min-width: 0;
 	overflow-wrap: anywhere;
+	font-size: 14px;
+	font-weight: 600;
 }
 
 .lkb-order__status {
 	margin-left: 6px;
+	font-weight: 400;
 }
 
 .lkb-order__buttons {

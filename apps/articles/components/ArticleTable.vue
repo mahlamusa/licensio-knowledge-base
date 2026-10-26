@@ -4,7 +4,9 @@
  *
  * Server-side paging and sort, the optional columns the user picked, row
  * selection for the bulk bar, and the row actions: Edit · Quick edit · View ·
- * Trash, or Restore · Delete permanently in the Trash view. Quick edit opens
+ * Trash, or Restore · Delete permanently in the Trash view. Titles use the
+ * size and weight of core's list row titles, and the row actions show on
+ * hover or keyboard focus, as on core's list screens. Quick edit opens
  * in place under the row. A locked row shows who is editing it and cannot be
  * quick edited.
  *
@@ -15,6 +17,7 @@ import { computed, nextTick } from 'vue';
 import { LockOutlined } from '@ant-design/icons-vue';
 import ConfirmButton from '../../components/ConfirmButton.vue';
 import { __, sprintf } from '../../components/i18n';
+import { statusLabel } from '../../components/status';
 import { config } from '../api';
 import { confirmTitle, performAction } from '../actions';
 import { useArticlesStore } from '../store';
@@ -24,20 +27,10 @@ import type {
 	ArticleColumn,
 	ArticleItem,
 	ArticleOrderBy,
-	ArticleStatus,
 } from '../types';
 
 const store = useArticlesStore();
 const settings = config();
-
-const STATUS_LABELS: Record< ArticleStatus, string > = {
-	publish: __( 'Published', 'licensio-knowledge-base' ),
-	future: __( 'Scheduled', 'licensio-knowledge-base' ),
-	draft: __( 'Draft', 'licensio-knowledge-base' ),
-	pending: __( 'Pending', 'licensio-knowledge-base' ),
-	private: __( 'Private', 'licensio-knowledge-base' ),
-	trash: __( 'Trash', 'licensio-knowledge-base' ),
-};
 
 /**
  * The current sort of a column, in Ant's terms.
@@ -232,7 +225,7 @@ const expandedKeys = computed( () =>
 			@change="onChange"
 		>
 			<template #emptyText>
-				<div v-if="! store.loading" class="lkb-empty">
+				<div v-if="! store.loading && store.loaded && ! store.error" class="lkb-empty">
 					<template v-if="store.isFiltered">
 						<p>{{ __( 'No articles match these filters.', 'licensio-knowledge-base' ) }}</p>
 						<a-button @click="store.clearFilters()">
@@ -259,7 +252,7 @@ const expandedKeys = computed( () =>
 						</span>
 
 						<a-tag v-if="'publish' !== record.status" class="lkb-title__status">
-							{{ STATUS_LABELS[ record.status as ArticleStatus ] }}
+							{{ statusLabel( record.status ) }}
 						</a-tag>
 
 						<a-tag v-if="record.has_password" class="lkb-title__status">
@@ -389,14 +382,32 @@ const expandedKeys = computed( () =>
 	box-shadow: var(--lkb-shadow-sm);
 }
 
+.lkb-tablecard :deep( .ant-table-thead > tr > th ),
+.lkb-tablecard :deep( .ant-table-tbody > tr.ant-table-row > td ) {
+	padding: 8px 10px;
+}
+
+.lkb-tablecard :deep( .ant-table-tbody > tr.ant-table-row > td ) {
+	vertical-align: top;
+}
+
+/*
+ * Core's title cell is 13px with a 1.3em line height, so the 14px title link
+ * and the row actions under it sit on 16.9px lines, as on the Posts screen.
+ * The gap under the title is core's 0.2em of its 14px title.
+ */
 .lkb-title {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
 	gap: 6px;
+	margin-bottom: 2.8px;
+	font-size: 13px;
+	line-height: 1.3em;
 }
 
 .lkb-title__link {
+	font-size: 14px;
 	font-weight: 600;
 }
 
@@ -417,14 +428,40 @@ const expandedKeys = computed( () =>
 	flex-wrap: wrap;
 	align-items: center;
 	gap: 0 10px;
-	margin-top: 4px;
-	font-size: 12px;
+	padding-top: 2px;
+	font-size: 13px;
+	line-height: 1.3em;
 }
 
 .lkb-rowactions :deep( .ant-btn-link ) {
 	height: auto;
 	padding: 0;
-	font-size: 12px;
+	border: 0;
+	font-size: 13px;
+	line-height: inherit;
+}
+
+/*
+ * As on core's list screens, the row actions show when the row is hovered or
+ * when focus is inside them, and always on touch and narrow screens. They are
+ * only made transparent, so they stay in the layout and the accessibility
+ * tree, and Tab still reaches them. They also stay while one of their
+ * confirmations is open, so it never points at an empty space.
+ */
+.lkb-rowactions {
+	opacity: 0;
+}
+
+.ant-table-row:hover .lkb-rowactions,
+.lkb-rowactions:focus-within,
+.lkb-rowactions:has( .ant-popover-open ) {
+	opacity: 1;
+}
+
+@media ( hover: none ), ( max-width: 782px ) {
+	.lkb-rowactions {
+		opacity: 1;
+	}
 }
 
 .lkb-muted {

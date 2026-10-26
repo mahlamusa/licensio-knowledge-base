@@ -12,6 +12,8 @@
  * Focus follows the row: Edit moves it to the Name field, and Cancel,
  * Escape or a save puts it back on the row's Edit button.
  *
+ * A tag's article count links to the Articles app filtered by that tag.
+ *
  * Names and descriptions are rendered as text, never as HTML. The table
  * shows a description as plain text, without its markup and with entities
  * decoded, as the core tag list reads; the edit field keeps the stored value.
@@ -28,10 +30,12 @@ import { computed, nextTick, reactive, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import ConfirmButton from '../../components/ConfirmButton.vue';
 import { __, sprintf } from '../../components/i18n';
+import { settings } from '../api';
 import { useTagsStore } from '../store';
 import type { TagFields, TagItem, TagOrder, TagOrderBy } from '../types';
 
 const store = useTagsStore();
+const { articlesUrl } = settings();
 
 const editingId = ref< number | null >( null );
 const draft = reactive( { name: '', slug: '', description: '' } );
@@ -43,7 +47,8 @@ let openedFromUrl = false;
  * A stored description as the plain text a reader sees.
  *
  * The markup is parsed into a detached document, which runs no scripts and
- * loads nothing, and only its text is kept.
+ * loads nothing, and only its text is kept. Script and style elements are
+ * dropped first: their contents are code, not text a reader sees.
  *
  * @since 1.0.0
  *
@@ -52,9 +57,13 @@ let openedFromUrl = false;
  * @return {string} The text, with entities decoded and whitespace collapsed.
  */
 function plainText( html: string ): string {
-	const text =
-		new DOMParser().parseFromString( html, 'text/html' ).body.textContent ??
-		'';
+	const body = new DOMParser().parseFromString( html, 'text/html' ).body;
+
+	body.querySelectorAll( 'script, style' ).forEach( ( element ) =>
+		element.remove()
+	);
+
+	const text = body.textContent ?? '';
 
 	return text.replace( /\s+/g, ' ' ).trim();
 }
@@ -354,7 +363,18 @@ watch(
 				</template>
 
 				<template v-else-if="'count' === column.key">
-					{{ record.count }}
+					<a
+						:href="`${ articlesUrl }&tag=${ record.id }`"
+						:aria-label="
+							sprintf(
+								/* translators: %d: number of articles. */
+								__( 'Articles: %d', 'licensio-knowledge-base' ),
+								record.count
+							)
+						"
+					>
+						{{ record.count }}
+					</a>
 				</template>
 
 				<template v-else-if="'actions' === column.key">

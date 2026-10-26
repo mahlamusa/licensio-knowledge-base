@@ -3,9 +3,10 @@
  *
  * Holds the view (filters, sort, page, window), the loaded page, the
  * selection and the state of a running bulk action, and is the only place
- * that talks to the API. The view is mirrored into the URL: every filter,
- * status, window, page and sort change pushes a history entry, so back and
- * forward step through them; a typed search replaces the entry instead.
+ * that talks to the API. The view is mirrored into the URL, with the same
+ * history rule as the Tags app: a filter, search, status or window change
+ * replaces the current history entry, while a page or sort change pushes a
+ * new one, so back and forward step through pages and sorts.
  *
  * @since 1.0.0
  */
@@ -229,7 +230,8 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 		/**
 		 * Load the current page.
 		 *
-		 * Only the latest request's answer is kept.
+		 * Only the latest request's answer is kept. A page past the last one
+		 * is moved back to the last page, replacing the history entry.
 		 *
 		 * @since 1.0.0
 		 *
@@ -245,6 +247,23 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 				const page = await fetchArticles( this.query );
 
 				if ( ticket !== latestLoad ) {
+					return;
+				}
+
+				// A page past the end, from a pasted link or after the last
+				// rows of the last page left the view, steps back to the
+				// last page with rows.
+				if (
+					0 === page.items.length &&
+					this.query.page > 1 &&
+					page.pages < this.query.page
+				) {
+					this.query = {
+						...this.query,
+						page: Math.max( 1, page.pages ),
+					};
+					this.syncUrl( false );
+					await this.load();
 					return;
 				}
 
@@ -297,21 +316,21 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 		/**
 		 * Change filters, go back to the first page and reload.
 		 *
+		 * The history entry is replaced, not pushed, as in the Tags app.
+		 *
 		 * @since 1.0.0
 		 *
 		 * @param {Partial<ArticleFilters>} filters The filters to change.
-		 * @param {boolean}                 push    Push a history entry; false replaces it, for typed search.
 		 *
 		 * @return {Promise<void>} Resolves once loaded.
 		 */
 		async setFilters(
-			filters: Partial< ArticleFilters >,
-			push = true
+			filters: Partial< ArticleFilters >
 		): Promise< void > {
 			this.query = { ...this.query, ...filters, page: 1 };
 			this.clearSelection();
 			this.quickEditId = 0;
-			this.syncUrl( push );
+			this.syncUrl( false );
 
 			await this.load();
 		},
