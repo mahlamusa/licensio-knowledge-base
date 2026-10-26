@@ -219,7 +219,7 @@ onMounted( load );
 						)
 					"
 					:ok-text="__( 'Rebuild', 'licensio-knowledge-base' )"
-					@confirm="rebuild"
+					@confirm="void rebuild()"
 				>
 					{{ __( 'Rebuild index', 'licensio-knowledge-base' ) }}
 				</ConfirmButton>

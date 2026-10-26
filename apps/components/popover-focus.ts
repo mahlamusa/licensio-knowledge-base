@@ -20,10 +20,11 @@
  *         v-on:open-change="setOpen"
  *     >
  *
- * Consumed by ConfirmButton, the articles app's filters and columns
- * popovers and the category tree's move Popconfirm. `FOCUSABLE` is shared
- * with the category drawer's focus trap. `useEscapeClose()` applies the same
- * rule for open selects to a drawer or dialog.
+ * Consumed by the articles app's filters and columns popovers and the
+ * category tree's move Popconfirm. Confirmations no longer use it:
+ * ConfirmButton opens a modal dialog, which traps focus itself. `FOCUSABLE`
+ * is shared with the category drawer's focus trap. `useEscapeClose()` applies
+ * the same rule for open selects to a drawer or dialog.
  *
  * @since 1.0.0
  */
@@ -97,8 +98,9 @@ function ownsEscape( target: EventTarget | null ): boolean {
  *
  * Whether the control owns the key is noted in the capture phase, before it
  * handles it; the drawer or dialog closes in the bubble phase, so an open
- * popover or Popconfirm that stopped the key (see `usePopoverFocus`) closes
- * alone.
+ * popover that stopped the key (see `usePopoverFocus`) closes alone. A
+ * confirmation dialog opened from the drawer is rendered outside it and
+ * stops the key itself, so it also closes alone.
  *
  * Consumed by the category drawer and the Categories and Tags dialogs.
  *

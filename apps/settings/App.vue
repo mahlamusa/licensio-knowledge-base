@@ -24,7 +24,6 @@ import type { SettingValue } from './types';
 
 const store = useSettingsStore();
 const activeGroup = ref( '' );
-const confirmingReset = ref( false );
 
 const groups = computed( () => store.schema );
 
@@ -171,14 +170,16 @@ function update( key: string, value: SettingValue ): void {
 /**
  * Reset every setting, once confirmed.
  *
+ * The error is also returned, so the confirmation dialog stays open and
+ * shows it.
+ *
  * @since 1.0.0
  *
- * @return {Promise<void>} Resolves once the reset has settled.
+ * @return {Promise<string>} Resolves once the reset has settled, with the
+ *                           error message, or an empty string on success.
  */
-async function confirmReset(): Promise< void > {
-	confirmingReset.value = false;
-
-	await store.reset();
+async function confirmReset(): Promise< string > {
+	return ( await store.reset() ) ? '' : store.error;
 }
 
 onMounted( async () => {
@@ -363,13 +364,28 @@ onBeforeUnmount( () => {
 						{{ __( 'Discard', 'licensio-knowledge-base' ) }}
 					</ConfirmButton>
 
-					<a-button
+					<ConfirmButton
 						danger
 						:disabled="store.saving"
-						@click="confirmingReset = true"
+						:title="
+							__(
+								'Reset every setting?',
+								'licensio-knowledge-base'
+							)
+						"
+						:description="
+							__(
+								'Every setting goes back to its default. Stored articles, categories and feedback are untouched.',
+								'licensio-knowledge-base'
+							)
+						"
+						:ok-text="
+							__( 'Reset everything', 'licensio-knowledge-base' )
+						"
+						@confirm="confirmReset"
 					>
 						{{ __( 'Reset all', 'licensio-knowledge-base' ) }}
-					</a-button>
+					</ConfirmButton>
 
 					<a-button
 						type="primary"
@@ -381,24 +397,6 @@ onBeforeUnmount( () => {
 					</a-button>
 				</div>
 			</footer>
-
-			<a-modal
-				v-model:open="confirmingReset"
-				:title="__( 'Reset every setting?', 'licensio-knowledge-base' )"
-				:ok-text="__( 'Reset everything', 'licensio-knowledge-base' )"
-				:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
-				ok-type="danger"
-				@ok="confirmReset"
-			>
-				<p>
-					{{
-						__(
-							'Every setting goes back to its default. Stored articles, categories and feedback are untouched.',
-							'licensio-knowledge-base'
-						)
-					}}
-				</p>
-			</a-modal>
 		</div>
 	</a-config-provider>
 </template>
