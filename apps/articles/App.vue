@@ -18,7 +18,7 @@ import { PlusOutlined, SearchOutlined } from '@ant-design/icons-vue';
 import type { RadioChangeEvent } from 'ant-design-vue';
 import { lkbTheme } from '../styles/theme';
 import AppHeader from '../components/AppHeader.vue';
-import { __ } from '../components/i18n';
+import { __, sprintf } from '../components/i18n';
 import { config } from './api';
 import { useArticlesStore } from './store';
 import ArticleTable from './components/ArticleTable.vue';
@@ -148,7 +148,17 @@ onBeforeUnmount( () => clearTimeout( searchTimer ) );
 							:aria-pressed="store.query.status === pill.value"
 							@click="store.setFilters( { status: pill.value } )"
 						>
-							{{ pill.label }} ({{ pill.count }})
+							{{
+								sprintf(
+									/* translators: 1: status name, 2: number of articles with that status. */
+									__(
+										'%1$s (%2$d)',
+										'licensio-knowledge-base'
+									),
+									pill.label,
+									pill.count
+								)
+							}}
 						</button>
 					</div>
 

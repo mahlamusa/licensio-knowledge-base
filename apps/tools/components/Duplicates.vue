@@ -25,6 +25,7 @@ import type {
 	DuplicateGroup,
 	DuplicateTermGroup,
 } from '../types';
+import ConfirmButton from '../../components/ConfirmButton.vue';
 import { __, _n, sprintf } from '../../components/i18n';
 
 const loading = ref( false );
@@ -221,8 +222,12 @@ const resultLines = computed( () => {
 				{{ __( 'Scan for duplicates', 'licensio-knowledge-base' ) }}
 			</a-button>
 
-			<a-popconfirm
+			<ConfirmButton
 				v-if="scanned && fixableCount > 0"
+				type="primary"
+				danger
+				:loading="fixing"
+				:disabled="loading"
 				:title="
 					sprintf(
 						/* translators: %d: how many duplicate groups will be merged. */
@@ -236,27 +241,19 @@ const resultLines = computed( () => {
 					)
 				"
 				:ok-text="__( 'Merge', 'licensio-knowledge-base' )"
-				:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
 				@confirm="fix"
 			>
-				<a-button
-					type="primary"
-					danger
-					:loading="fixing"
-					:disabled="loading"
-				>
-					{{
-						sprintf(
-							/* translators: %d: how many duplicate groups can be merged. */
-							__(
-								'Merge duplicates (%d)',
-								'licensio-knowledge-base'
-							),
-							fixableCount
-						)
-					}}
-				</a-button>
-			</a-popconfirm>
+				{{
+					sprintf(
+						/* translators: %d: how many duplicate groups can be merged. */
+						__(
+							'Merge duplicates (%d)',
+							'licensio-knowledge-base'
+						),
+						fixableCount
+					)
+				}}
+			</ConfirmButton>
 		</div>
 
 		<a-alert
