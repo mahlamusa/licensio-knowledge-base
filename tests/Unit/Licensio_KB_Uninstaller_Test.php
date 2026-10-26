@@ -15,25 +15,31 @@
 use Brain\Monkey\Functions;
 
 /**
- * A $wpdb whose every statement fails, as a broken install behaves.
+ * A $wpdb whose table drops fail, as a broken install behaves.
+ *
+ * Only the drops throw: they go through the vendored query builder, which is
+ * what goes missing. Plain statements such as the transient delete do not.
  *
  * @since 1.0.0
  */
 class Licensio_KB_Throwing_WPDB extends Licensio_KB_Test_WPDB {
 
     /**
-     * Refuse every statement.
+     * Refuse every table drop.
      *
      * @since 1.0.0
      *
      * @param string $query The SQL statement.
      *
-     * @throws RuntimeException Always.
+     * @return int|false The parent result for anything but a table drop.
+     * @throws RuntimeException On a table drop.
      */
     public function query( $query ) {
-        unset( $query );
+        if ( false !== stripos( (string) $query, 'DROP TABLE' ) ) {
+            throw new RuntimeException( 'The Licensio Knowledge Base database library is unavailable.' );
+        }
 
-        throw new RuntimeException( 'The Licensio Knowledge Base database library is unavailable.' );
+        return parent::query( $query );
     }
 }
 
@@ -105,6 +111,17 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
     private $uploads = '';
 
     /**
+     * Per-blog role stores, keyed by blog ID then role name.
+     *
+     * Roles are stored per site, so each blog gets its own administrator and
+     * editor, both holding the management capability.
+     *
+     * @since 1.0.0
+     * @var array<int, array<string, WP_Role>>
+     */
+    private $roles = array();
+
+    /**
      * Stub the multisite and cron surface.
      *
      * @since 1.0.0
@@ -121,6 +138,7 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
         $this->meta_deleted       = array();
 
         $this->autoload_calls = array();
+        $this->roles          = array();
         $this->uploads        = sys_get_temp_dir() . '/licensio-kb-uninstall-' . uniqid( '', false );
 
         $GLOBALS['wpdb'] = new Licensio_KB_Test_WPDB(); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
@@ -131,7 +149,8 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
                 $this->current_blog                 = (int) $blog_id;
                 $this->options                      = isset( $this->blogs[ $blog_id ] ) ? $this->blogs[ $blog_id ] : array();
 
-                $GLOBALS['wpdb']->prefix = 1 === (int) $blog_id ? 'wptests_' : 'wptests_' . (int) $blog_id . '_';
+                $GLOBALS['wpdb']->prefix  = 1 === (int) $blog_id ? 'wptests_' : 'wptests_' . (int) $blog_id . '_';
+                $GLOBALS['wpdb']->options = $GLOBALS['wpdb']->prefix . 'options';
 
                 return true;
             }
@@ -173,6 +192,14 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
             }
         );
 
+        Functions\when( 'get_role' )->alias(
+            function ( $name ) {
+                $roles = $this->site_roles( $this->current_blog );
+
+                return isset( $roles[ $name ] ) ? $roles[ $name ] : null;
+            }
+        );
+
         Functions\when( 'wp_upload_dir' )->alias(
             function () {
                 return array( 'basedir' => $this->uploads );
@@ -211,6 +238,56 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
         }
 
         parent::tearDown();
+    }
+
+    /**
+     * The roles of one site, created on first use.
+     *
+     * @since 1.0.0
+     *
+     * @param int $blog_id The blog ID.
+     *
+     * @return array<string, WP_Role> Role name to role.
+     */
+    private function site_roles( $blog_id ) {
+        if ( ! isset( $this->roles[ $blog_id ] ) ) {
+            $this->roles[ $blog_id ] = array(
+                'administrator' => new WP_Role(
+                    'administrator',
+                    array(
+                        'manage_options'     => true,
+                        'manage_licensio_kb' => true,
+                    )
+                ),
+                'editor'        => new WP_Role(
+                    'editor',
+                    array(
+                        'edit_others_posts'  => true,
+                        'manage_licensio_kb' => true,
+                    )
+                ),
+            );
+        }
+
+        return $this->roles[ $blog_id ];
+    }
+
+    /**
+     * The DELETE statements issued against an options table.
+     *
+     * @since 1.0.0
+     *
+     * @return string[] The statements.
+     */
+    private function options_deletes() {
+        return array_values(
+            array_filter(
+                $GLOBALS['wpdb']->queries,
+                static function ( $query ) {
+                    return 0 === stripos( (string) $query, 'DELETE FROM' ) && false !== strpos( (string) $query, 'options`' );
+                }
+            )
+        );
     }
 
     /**
@@ -584,5 +661,146 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
         foreach ( $this->meta_deleted as $call ) {
             $this->assertSame( array( 'user', 0, 'licensio_kb_article_list_prefs', '', true ), $call );
         }
+    }
+    /**
+     * The knowledge base capabilities are removed whatever the data setting says.
+     *
+     * Capabilities are plugin state, not site content: a role left holding
+     * the management capability after the plugin is gone holds a permission
+     * nothing checks.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_capabilities_are_removed_in_both_modes() {
+        foreach ( array( false, true ) as $delete_data ) {
+            $this->roles = array();
+            $this->seed_site( $delete_data );
+
+            Licensio_KB_Uninstaller::uninstall_site();
+
+            $roles = $this->site_roles( 0 );
+
+            $this->assertFalse( $roles['administrator']->has_cap( 'manage_licensio_kb' ) );
+            $this->assertFalse( $roles['editor']->has_cap( 'manage_licensio_kb' ) );
+            $this->assertTrue( $roles['administrator']->has_cap( 'manage_options' ), 'Core capabilities must be left alone.' );
+            $this->assertTrue( $roles['editor']->has_cap( 'edit_others_posts' ), 'Core capabilities must be left alone.' );
+        }
+    }
+
+    /**
+     * On multisite every site's roles lose the capabilities.
+     *
+     * Roles are stored per site, so removing them only on the current site
+     * left every other site's administrators and editors holding them.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_capabilities_are_removed_on_every_site_of_a_network() {
+        Functions\when( 'is_multisite' )->justReturn( true );
+        Functions\when( 'get_sites' )->justReturn( array( 1, 2 ) );
+
+        $this->blogs[1] = array( 'licensio_settings' => array( 'delete_data_on_uninstall' => false ) );
+        $this->blogs[2] = array( 'licensio_settings' => array( 'delete_data_on_uninstall' => true ) );
+
+        Licensio_KB_Uninstaller::run();
+
+        foreach ( array( 1, 2 ) as $blog_id ) {
+            foreach ( $this->site_roles( $blog_id ) as $name => $role ) {
+                $this->assertFalse(
+                    $role->has_cap( 'manage_licensio_kb' ),
+                    sprintf( 'The %1$s role of site %2$d kept the capability.', $name, $blog_id )
+                );
+            }
+        }
+    }
+
+    /**
+     * The term hierarchy caches are deleted with the data, and stop autoloading otherwise.
+     *
+     * Core keeps an autoloaded children map per hierarchical taxonomy. Once the
+     * plugin is gone nothing reads it, but it is loaded on every request.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_term_hierarchy_caches_follow_the_data_setting() {
+        $children = array( 'licensio_category_children', 'licensio_tag_children' );
+
+        foreach ( $children as $option ) {
+            $this->assertContains( $option, Licensio_KB_Uninstaller::data_options() );
+        }
+
+        $this->seed_site( false );
+        $this->options['licensio_category_children'] = array( 4 => array( 7 ) );
+
+        Licensio_KB_Uninstaller::uninstall_site();
+
+        $this->assertArrayHasKey( 'licensio_category_children', $this->options, 'Kept with the data.' );
+        $this->assertFalse( $this->autoload_calls[0]['licensio_category_children'] );
+        $this->assertFalse( $this->autoload_calls[0]['licensio_tag_children'] );
+
+        $this->seed_site( true );
+        $this->options['licensio_category_children'] = array( 4 => array( 7 ) );
+        $this->options['licensio_tag_children']      = array();
+
+        Licensio_KB_Uninstaller::uninstall_site();
+
+        foreach ( $children as $option ) {
+            $this->assertArrayNotHasKey( $option, $this->options, $option . ' must not survive Delete everything.' );
+        }
+    }
+
+    /**
+     * The rate-limit transients are deleted only with the data.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_rate_limit_transients_are_deleted_only_with_the_data() {
+        $this->seed_site( false );
+
+        Licensio_KB_Uninstaller::uninstall_site();
+
+        $this->assertSame( array(), $this->options_deletes(), 'Keeping the data issues no transient delete.' );
+
+        $this->seed_site( true );
+
+        Licensio_KB_Uninstaller::uninstall_site();
+
+        $deletes = $this->options_deletes();
+
+        $this->assertCount( 1, $deletes );
+        $this->assertStringContainsString( '`wptests_options`', $deletes[0] );
+        $this->assertStringContainsString( "'\\_transient\\_licensio\\_rl\\_%'", $deletes[0], 'The underscores must be escaped so they match only themselves.' );
+        $this->assertStringContainsString( "'\\_transient\\_timeout\\_licensio\\_rl\\_%'", $deletes[0] );
+    }
+
+    /**
+     * On multisite each site's own options table is cleared of its counters.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_rate_limit_transients_are_deleted_from_each_sites_options_table() {
+        Functions\when( 'is_multisite' )->justReturn( true );
+        Functions\when( 'get_sites' )->justReturn( array( 1, 2 ) );
+
+        foreach ( array( 1, 2 ) as $blog_id ) {
+            $this->blogs[ $blog_id ] = array( 'licensio_settings' => array( 'delete_data_on_uninstall' => true ) );
+        }
+
+        Licensio_KB_Uninstaller::run();
+
+        $issued = implode( ' ', $this->options_deletes() );
+
+        $this->assertStringContainsString( '`wptests_options`', $issued );
+        $this->assertStringContainsString( '`wptests_2_options`', $issued );
     }
 }
