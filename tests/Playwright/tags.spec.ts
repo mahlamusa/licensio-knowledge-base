@@ -542,6 +542,8 @@ test( 'a description shows as plain text and is edited as stored', async ( {
 	await form.getByLabel( 'Name' ).fill( name );
 	await form.getByLabel( 'Description' ).fill( stored );
 	await form.getByRole( 'button', { name: 'Add New Tag' } ).click();
+	// The form clears once the tag is added; search only after that.
+	await expect( form.getByLabel( 'Name' ) ).toHaveValue( '' );
 	await search( page, name );
 
 	await expect(

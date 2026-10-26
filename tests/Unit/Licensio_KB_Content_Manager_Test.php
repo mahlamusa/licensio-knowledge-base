@@ -215,11 +215,14 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
      * Without a build of every app the core screens stay, unless the dev server serves them.
      *
      * @since 1.0.0
+     * @since 1.0.0 Checks the shared list of the content manager apps.
      *
      * @return void
      */
     public function test_a_missing_app_build_keeps_the_core_screens() {
         $apps = array( 'apps/articles/index.ts', 'apps/categories/index.ts', 'apps/tags/index.ts' );
+
+        $this->assertSame( $apps, Licensio_KB_Content_Manager::content_entries() );
 
         $this->assertTrue( ( new Licensio_KB_Content_Manager( $this->settings(), $this->assets( $apps ) ) )->enabled() );
         $this->assertFalse( ( new Licensio_KB_Content_Manager( $this->settings(), $this->assets( array() ) ) )->enabled() );
@@ -247,6 +250,7 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
      * when they run.
      *
      * @since 1.0.0
+     * @since 1.0.0 Checks the refused app page redirect is hooked.
      *
      * @return void
      */
@@ -261,6 +265,7 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
         $this->assertSame( 10, has_action( 'load-edit.php', array( $manager, 'maybe_redirect' ) ) );
         $this->assertSame( 10, has_action( 'load-edit-tags.php', array( $manager, 'maybe_redirect' ) ) );
         $this->assertSame( 10, has_action( 'load-term.php', array( $manager, 'maybe_redirect' ) ) );
+        $this->assertSame( 10, has_action( 'admin_page_access_denied', array( $manager, 'maybe_redirect_to_classic' ) ) );
     }
 
     /**
@@ -1122,6 +1127,103 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
             'https://example.test/wp-admin/admin.php?page=licensio-kb-articles',
             $this->redirect_for( $manager, 'edit.php', array( 'post_type' => 'licensio_article' ) )
         );
+    }
+
+    /**
+     * Run maybe_redirect_to_classic() for a refused page and report where it went.
+     *
+     * @since 1.0.0
+     *
+     * @param Licensio_KB_Content_Manager $manager     The content manager.
+     * @param string                      $screen      The admin file being loaded.
+     * @param string                      $plugin_page The requested page slug.
+     *
+     * @return string The redirect target, or an empty string when nothing redirected.
+     */
+    private function classic_redirect_for( Licensio_KB_Content_Manager $manager, $screen, $plugin_page ) {
+        global $pagenow;
+
+        $pagenow                = $screen; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- The screen under test.
+        $GLOBALS['plugin_page'] = $plugin_page; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- The page under test.
+
+        $target = '';
+
+        Functions\when( 'wp_safe_redirect' )->alias(
+            function ( $location ) use ( &$target ) {
+                $target = $location;
+
+                throw new UnexpectedValueException( 'Redirected.' );
+            }
+        );
+
+        try {
+            $manager->maybe_redirect_to_classic();
+        } catch ( UnexpectedValueException $redirect ) {
+            unset( $redirect );
+        } finally {
+            $GLOBALS['plugin_page'] = null; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Reset.
+        }
+
+        return $target;
+    }
+
+    /**
+     * Without a build, a bookmarked app page goes to its classic screen.
+     *
+     * Core refuses `edit.php?post_type=licensio_article&page={slug}` while
+     * the apps are hidden pages, so the request is sent to the classic
+     * screen, where the build notice explains what is missing.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_refused_app_bookmark_goes_to_its_classic_screen() {
+        $manager = new Licensio_KB_Content_Manager( $this->settings(), $this->assets( array() ) );
+
+        $this->assertSame(
+            'https://example.test/wp-admin/edit.php?post_type=licensio_article',
+            $this->classic_redirect_for( $manager, 'edit.php', Licensio_KB_Content_Manager::ARTICLES_SLUG )
+        );
+        $this->assertSame(
+            'https://example.test/wp-admin/edit-tags.php?taxonomy=licensio_category&post_type=licensio_article',
+            $this->classic_redirect_for( $manager, 'edit.php', Licensio_KB_Content_Manager::CATEGORIES_SLUG )
+        );
+        $this->assertSame(
+            'https://example.test/wp-admin/edit-tags.php?taxonomy=licensio_tag&post_type=licensio_article',
+            $this->classic_redirect_for( $manager, 'edit.php', Licensio_KB_Content_Manager::TAGS_SLUG )
+        );
+    }
+
+    /**
+     * The classic screens setting sends a refused app bookmark to its classic screen too.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_classic_screens_setting_sends_a_refused_bookmark_to_its_classic_screen() {
+        $this->assertSame(
+            'https://example.test/wp-admin/edit.php?post_type=licensio_article',
+            $this->classic_redirect_for( $this->active( true ), 'edit.php', Licensio_KB_Content_Manager::ARTICLES_SLUG )
+        );
+    }
+
+    /**
+     * Other refused pages, other screens and an enabled content manager are left alone.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_other_refused_pages_are_not_redirected() {
+        $missing = new Licensio_KB_Content_Manager( $this->settings(), $this->assets( array() ) );
+        $built   = new Licensio_KB_Content_Manager( $this->settings(), $this->assets( Licensio_KB_Content_Manager::content_entries() ) );
+
+        $this->assertSame( '', $this->classic_redirect_for( $missing, 'edit.php', 'licensio-kb-settings' ) );
+        $this->assertSame( '', $this->classic_redirect_for( $missing, 'edit.php', '' ) );
+        $this->assertSame( '', $this->classic_redirect_for( $missing, 'admin.php', Licensio_KB_Content_Manager::ARTICLES_SLUG ) );
+        $this->assertSame( '', $this->classic_redirect_for( $built, 'edit.php', Licensio_KB_Content_Manager::ARTICLES_SLUG ) );
     }
 
     /**
