@@ -908,6 +908,56 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * Merge and convert move nothing when an article of the tag is refused.
+     *
+     * The routes ask `check_articles()` first; a tag with an article the
+     * user may not edit, or that someone else has open in the editor, is
+     * left as it was.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_merge_and_convert_check_every_article_first() {
+        $operations = Mockery::mock( Licensio_KB_Term_Operations::class );
+        $operations->shouldReceive( 'check_articles' )
+            ->with( array( 11 ), 'licensio_tag' )
+            ->andReturn( new WP_Error( 'licensio_kb_articles_locked', 'Article 100 is being edited.', array( 'status' => 409 ) ) );
+        $operations->shouldReceive( 'check_articles' )
+            ->with( array( 10 ), 'licensio_tag' )
+            ->andReturn( new WP_Error( 'licensio_kb_articles_forbidden', 'You may not edit article 100.', array( 'status' => 403 ) ) );
+        $operations->shouldNotReceive( 'merge_terms', 'move_across_taxonomies' );
+
+        $this->routes = array();
+        ( new Licensio_KB_Tags_REST_Controller( $operations ) )->register_routes();
+
+        $merged = $this->call(
+            '/tags/merge',
+            'POST',
+            array(
+                'sources' => array( 11 ),
+                'target'  => 10,
+            )
+        );
+
+        $this->assertInstanceOf( WP_Error::class, $merged );
+        $this->assertSame( 'licensio_kb_articles_locked', $merged->get_error_code() );
+
+        $converted = $this->call(
+            '/tags/convert',
+            'POST',
+            array(
+                'ids'    => array( 10 ),
+                'parent' => 20,
+            )
+        );
+
+        $this->assertSame( array(), $converted['converted'] );
+        $this->assertSame( array( 10 ), array_column( $converted['failed'], 'id' ) );
+        $this->assertSame( array(), $this->calls, 'Nothing was created, moved or deleted.' );
+    }
+
+    /**
      * Bulk delete reports a tag that does not exist instead of failing the batch.
      *
      * @since 1.0.0
