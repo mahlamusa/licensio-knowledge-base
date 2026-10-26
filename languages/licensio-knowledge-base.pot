@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-26T07:27:59+00:00\n"
+"POT-Creation-Date: 2026-10-26T07:58:02+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.7.1\n"
 "X-Domain: licensio-knowledge-base\n"
@@ -44,22 +44,17 @@ msgid "Attachment(s)"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-admin-columns.php:205
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:39
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:61
-#: dist/apps/articles/index.CVotsgDG.js:39
-#: dist/apps/articles/index.CVotsgDG.js:61
+#: dist/apps/articles/index.YCE_u9oo.js:39
+#: dist/apps/articles/index.YCE_u9oo.js:61
 msgid "Rating"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-admin-columns.php:206
 #: includes/import/class-licensio-kb-betterdocs-import-driver.php:85
 #: includes/import/class-licensio-kb-heroic-import-driver.php:84
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:39
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:61
 #: dist/apps/analytics/index.D9liPAub.js:1
-#: dist/apps/articles/index.CVotsgDG.js:39
-#: dist/apps/articles/index.CVotsgDG.js:61
+#: dist/apps/articles/index.YCE_u9oo.js:39
+#: dist/apps/articles/index.YCE_u9oo.js:61
 msgid "Views"
 msgstr ""
 
@@ -68,14 +63,10 @@ msgid "Reading Time"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-admin-columns.php:236
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:38
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:39
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:61
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CVotsgDG.js:38
-#: dist/apps/articles/index.CVotsgDG.js:39
-#: dist/apps/articles/index.CVotsgDG.js:61
-#: dist/apps/articles/index.CVotsgDG.js:63
+#: dist/apps/articles/index.YCE_u9oo.js:38
+#: dist/apps/articles/index.YCE_u9oo.js:39
+#: dist/apps/articles/index.YCE_u9oo.js:61
+#: dist/apps/articles/index.YCE_u9oo.js:63
 msgid "Author"
 msgstr ""
 
@@ -100,7 +91,6 @@ msgstr ""
 
 #: includes/admin/class-licensio-kb-analytics-admin.php:104
 #: includes/admin/class-licensio-kb-analytics-admin.php:128
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
 #: dist/apps/analytics/index.D9liPAub.js:1
 msgid "Analytics"
 msgstr ""
@@ -125,14 +115,8 @@ msgstr ""
 #: templates/category-body.php:71
 #: blocks/article-list/index.js:51
 #: blocks/article-list/index.js:119
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:15
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:3
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:49
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/article-list/index.js:1
-#: dist/apps/articles/index.CVotsgDG.js:63
-#: dist/apps/tags/index.Bjwl0jqk.js:15
+#: dist/apps/articles/index.YCE_u9oo.js:63
+#: dist/apps/tags/index.B5MTSdg9.js:15
 #: dist/apps/tools/index.CVsyCPOp.js:3
 #: dist/apps/tools/index.CVsyCPOp.js:49
 #: dist/apps/tools/index.CVsyCPOp.js:53
@@ -161,15 +145,9 @@ msgstr ""
 #: templates/sidebar.php:90
 #: templates/sidebar.php:91
 #: blocks/category-grid/index.js:45
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:38
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:39
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:61
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:35
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:47
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/category-grid/index.js:1
-#: dist/apps/articles/index.CVotsgDG.js:38
-#: dist/apps/articles/index.CVotsgDG.js:39
-#: dist/apps/articles/index.CVotsgDG.js:61
+#: dist/apps/articles/index.YCE_u9oo.js:38
+#: dist/apps/articles/index.YCE_u9oo.js:39
+#: dist/apps/articles/index.YCE_u9oo.js:61
 #: dist/apps/categories/index.BQKk77Ty.js:35
 #: dist/apps/tools/index.CVsyCPOp.js:47
 #: dist/blocks/category-grid/index.js:1
@@ -183,8 +161,6 @@ msgstr ""
 #: includes/admin/class-licensio-kb-feedback-admin.php:91
 #: includes/admin/class-licensio-kb-feedback-admin.php:92
 #: includes/class-licensio-kb-settings-schema.php:128
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:5
 #: dist/apps/analytics/index.D9liPAub.js:1
 #: dist/apps/feedback/index.D_zG1Rx-.js:5
 msgid "Feedback"
@@ -246,7 +222,6 @@ msgstr ""
 
 #: includes/admin/class-licensio-kb-settings-admin.php:97
 #: includes/admin/class-licensio-kb-settings-admin.php:121
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/settings/index.BaIGZfvd.js:1
 #: dist/apps/settings/index.B7P3m90S.js:1
 msgid "Settings"
 msgstr ""
@@ -267,14 +242,10 @@ msgstr ""
 #: includes/import/class-licensio-kb-heroic-import-driver.php:82
 #: templates/sidebar.php:119
 #: templates/sidebar.php:120
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:38
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:39
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:61
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:29
-#: dist/apps/articles/index.CVotsgDG.js:38
-#: dist/apps/articles/index.CVotsgDG.js:39
-#: dist/apps/articles/index.CVotsgDG.js:61
-#: dist/apps/tags/index.Bjwl0jqk.js:29
+#: dist/apps/articles/index.YCE_u9oo.js:38
+#: dist/apps/articles/index.YCE_u9oo.js:39
+#: dist/apps/articles/index.YCE_u9oo.js:61
+#: dist/apps/tags/index.B5MTSdg9.js:31
 msgid "Tags"
 msgstr ""
 
@@ -283,38 +254,32 @@ msgid "Loading tags…"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:105
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:11
 #: dist/apps/categories/index.BQKk77Ty.js:11
 msgid "Select an image"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:106
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:9
 #: dist/apps/categories/index.BQKk77Ty.js:9
 msgid "Use this image"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:170
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:9
 #: dist/apps/categories/index.BQKk77Ty.js:9
 msgid "Inline SVG icon"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:171
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:9
 #: dist/apps/categories/index.BQKk77Ty.js:9
 msgid "Icon"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:172
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:9
 #: dist/apps/categories/index.BQKk77Ty.js:9
 msgid "Uploaded icon"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:173
 #: includes/class-licensio-kb-settings-schema.php:275
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:11
 #: dist/apps/categories/index.BQKk77Ty.js:11
 msgid "Image"
 msgstr ""
@@ -323,9 +288,6 @@ msgstr ""
 #: blocks/article-list/index.js:97
 #: blocks/category-grid/index.js:78
 #: blocks/faq/index.js:84
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/article-list/index.js:1
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/category-grid/index.js:1
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/faq/index.js:1
 #: dist/blocks/article-list/index.js:1
 #: dist/blocks/category-grid/index.js:1
 #: dist/blocks/faq/index.js:1
@@ -333,25 +295,21 @@ msgid "Order"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:224
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:9
 #: dist/apps/categories/index.BQKk77Ty.js:9
 msgid "Paste an SVG icon. Everything outside a small allowlist of shape elements and presentation attributes is removed on save, so the preview shows what was actually kept. Takes precedence over the uploaded icon and the Dashicons name. An icon drawn with currentColor follows the knowledge base colour."
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:236
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:9
 #: dist/apps/categories/index.BQKk77Ty.js:9
 msgid "A Dashicons name, for example dashicons-book-alt. Ignored when an SVG icon or an uploaded icon is set."
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:247
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:9
 #: dist/apps/categories/index.BQKk77Ty.js:9
 msgid "An uploaded icon, for example an SVG file. Takes precedence over the Dashicons name, and is itself ignored when an SVG icon is pasted above."
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:252
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:11
 #: dist/apps/categories/index.BQKk77Ty.js:11
 msgid "Shown on the category card and at the top of the category page."
 msgstr ""
@@ -361,19 +319,16 @@ msgid "Lower numbers appear first. Categories with the same order fall back to t
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:301
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:9
 #: dist/apps/categories/index.BQKk77Ty.js:9
 msgid "Paste SVG markup here"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:347
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:9
 #: dist/apps/categories/index.BQKk77Ty.js:9
 msgid "Select"
 msgstr ""
 
 #: includes/admin/class-licensio-kb-term-fields.php:348
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:9
 #: dist/apps/categories/index.BQKk77Ty.js:9
 msgid "Remove"
 msgstr ""
@@ -384,7 +339,6 @@ msgstr ""
 
 #: includes/admin/class-licensio-kb-tools-admin.php:91
 #: includes/admin/class-licensio-kb-tools-admin.php:112
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
 #: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Tools"
 msgstr ""
@@ -409,7 +363,6 @@ msgid "Knowledge Base searches"
 msgstr ""
 
 #: includes/class-licensio-kb-analytics-privacy.php:439
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
 #: dist/apps/analytics/index.D9liPAub.js:1
 msgid "Search term"
 msgstr ""
@@ -419,7 +372,6 @@ msgid "Results returned"
 msgstr ""
 
 #: includes/class-licensio-kb-analytics-privacy.php:447
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:47
 #: dist/apps/tools/index.CVsyCPOp.js:47
 msgid "Source"
 msgstr ""
@@ -433,11 +385,8 @@ msgstr ""
 #: includes/class-licensio-kb-analytics-privacy.php:455
 #: includes/class-licensio-kb-analytics-privacy.php:486
 #: includes/class-licensio-kb-analytics-privacy.php:531
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:39
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:61
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:1
-#: dist/apps/articles/index.CVotsgDG.js:39
-#: dist/apps/articles/index.CVotsgDG.js:61
+#: dist/apps/articles/index.YCE_u9oo.js:39
+#: dist/apps/articles/index.YCE_u9oo.js:61
 #: dist/apps/feedback/index.D_zG1Rx-.js:1
 msgid "Date"
 msgstr ""
@@ -448,8 +397,6 @@ msgstr ""
 
 #: includes/class-licensio-kb-analytics-privacy.php:478
 #: includes/class-licensio-kb-analytics-privacy.php:509
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:1
 #: dist/apps/analytics/index.D9liPAub.js:1
 #: dist/apps/feedback/index.D_zG1Rx-.js:1
 msgid "Article"
@@ -460,15 +407,11 @@ msgid "Knowledge Base feedback"
 msgstr ""
 
 #: includes/class-licensio-kb-analytics-privacy.php:513
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:1
 #: dist/apps/feedback/index.D_zG1Rx-.js:1
 msgid "Vote"
 msgstr ""
 
 #: includes/class-licensio-kb-analytics-privacy.php:515
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:1
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:11
 #: dist/apps/analytics/index.D9liPAub.js:1
 #: dist/apps/feedback/index.D_zG1Rx-.js:1
 #: dist/apps/feedback/index.D_zG1Rx-.js:11
@@ -476,9 +419,6 @@ msgid "Helpful"
 msgstr ""
 
 #: includes/class-licensio-kb-analytics-privacy.php:516
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:1
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:11
 #: dist/apps/analytics/index.D9liPAub.js:1
 #: dist/apps/feedback/index.D_zG1Rx-.js:1
 #: dist/apps/feedback/index.D_zG1Rx-.js:11
@@ -486,16 +426,12 @@ msgid "Not helpful"
 msgstr ""
 
 #: includes/class-licensio-kb-analytics-privacy.php:519
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:1
 #: dist/apps/feedback/index.D_zG1Rx-.js:1
 msgid "Comment"
 msgstr ""
 
 #: includes/class-licensio-kb-analytics-privacy.php:523
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:38
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:1
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/articles/index.CVotsgDG.js:38
+#: dist/apps/articles/index.YCE_u9oo.js:38
 #: dist/apps/feedback/index.D_zG1Rx-.js:1
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Status"
@@ -816,8 +752,7 @@ msgstr ""
 
 #. translators: %d: article ID.
 #: includes/class-licensio-kb-rest-analytics-controller.php:337
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:53
-#: dist/apps/articles/index.CVotsgDG.js:53
+#: dist/apps/articles/index.YCE_u9oo.js:53
 msgid "Article #%d"
 msgstr ""
 
@@ -844,11 +779,8 @@ msgstr ""
 #: includes/class-licensio-kb-settings-schema.php:122
 #: templates/search-field.php:39
 #: blocks/search/index.js:41
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:29
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/search/index.js:1
-#: dist/apps/articles/index.CVotsgDG.js:63
-#: dist/apps/tags/index.Bjwl0jqk.js:29
+#: dist/apps/articles/index.YCE_u9oo.js:63
+#: dist/apps/tags/index.B5MTSdg9.js:31
 #: dist/blocks/search/index.js:1
 msgid "Search"
 msgstr ""
@@ -966,7 +898,6 @@ msgstr ""
 
 #: includes/class-licensio-kb-settings-schema.php:169
 #: blocks/category-grid/index.js:119
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/category-grid/index.js:1
 #: dist/blocks/category-grid/index.js:1
 msgid "Show article counts"
 msgstr ""
@@ -1212,7 +1143,6 @@ msgid "How many days of search and view history the daily purge leaves in place.
 msgstr ""
 
 #: includes/class-licensio-kb-settings-schema.php:386
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
 #: dist/apps/analytics/index.D9liPAub.js:1
 msgid "days"
 msgstr ""
@@ -1308,8 +1238,6 @@ msgstr ""
 
 #: includes/import/class-licensio-kb-betterdocs-import-driver.php:86
 #: includes/import/class-licensio-kb-heroic-import-driver.php:85
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:7
 #: dist/apps/analytics/index.D9liPAub.js:1
 #: dist/apps/tools/index.CVsyCPOp.js:7
 msgid "Searches"
@@ -1335,8 +1263,6 @@ msgid "BetterDocs"
 msgstr ""
 
 #: includes/import/class-licensio-kb-heroic-import-driver.php:83
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:7
 #: dist/apps/analytics/index.D9liPAub.js:1
 #: dist/apps/tools/index.CVsyCPOp.js:7
 msgid "Votes"
@@ -1413,98 +1339,98 @@ msgstr ""
 msgid "Each tag must be a tag ID or a new tag name."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1057
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1060
 msgid "Restore this article before editing it."
 msgstr ""
 
 #. translators: %s: the name of the user editing the article.
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1133
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1136
 msgid "%s is editing this article."
 msgstr ""
 
 #. translators: %s: the name of the user editing the article.
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1133
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1136
 msgid "Someone else"
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1174
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1177
 msgid "You are not allowed to publish this article."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1186
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1189
 msgid "The date is not valid."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1204
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1207
 msgid "A private article cannot also have a password."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1211
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1214
 msgid "You are not allowed to change the author of this article."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1215
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1218
 msgid "That user cannot write articles."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1238
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1241
 msgid "You are not allowed to assign these terms."
 msgstr ""
 
 #. translators: %s: the names of the fields with errors.
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1255
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1258
 msgid "Invalid parameter(s): %s"
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1281
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1284
 msgid "Categories cannot be created here."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1285
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1288
 msgid "You are not allowed to create tags."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1293
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1296
 msgid "One of the tags does not exist."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1294
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1297
 msgid "One of the categories does not exist."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1375
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1378
 msgid "You are not allowed to edit this article."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1401
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1404
 msgid "Send between 1 and 100 article IDs."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1428
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1431
 msgid "Choose a status to set."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1439
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1442
 msgid "Choose a taxonomy, a mode and the terms."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1445
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1448
 msgid "Choose at least one term."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1450
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1453
 msgid "One of the terms does not exist."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1464
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1467
 msgid "Choose a user who can write articles."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1473
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1476
 msgid "Choose open or closed."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1658
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1661
 msgid "No article was found with that ID."
 msgstr ""
 
@@ -1873,8 +1799,7 @@ msgid "How many terms to return."
 msgstr ""
 
 #: templates/archive-body.php:79
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CVotsgDG.js:63
+#: dist/apps/articles/index.YCE_u9oo.js:63
 msgid "Uncategorised"
 msgstr ""
 
@@ -1943,13 +1868,11 @@ msgid "Was this article helpful?"
 msgstr ""
 
 #: templates/feedback-form.php:49
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
 #: dist/apps/analytics/index.D9liPAub.js:1
 msgid "Yes"
 msgstr ""
 
 #: templates/feedback-form.php:56
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
 #: dist/apps/analytics/index.D9liPAub.js:1
 msgid "No"
 msgstr ""
@@ -2025,8 +1948,6 @@ msgstr ""
 
 #: blocks/article-list/index.js:44
 #: blocks/faq/index.js:38
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/article-list/index.js:1
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/faq/index.js:1
 #: dist/blocks/article-list/index.js:1
 #: dist/blocks/faq/index.js:1
 msgid "All categories"
@@ -2034,11 +1955,7 @@ msgstr ""
 
 #: blocks/article-list/index.js:55
 #: blocks/faq/index.js:49
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/article-list/index.js:1
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/faq/index.js:1
-#: dist/apps/articles/index.CVotsgDG.js:63
+#: dist/apps/articles/index.YCE_u9oo.js:63
 #: dist/apps/tools/index.CVsyCPOp.js:41
 #: dist/blocks/article-list/index.js:1
 #: dist/blocks/faq/index.js:1
@@ -2048,9 +1965,6 @@ msgstr ""
 #: blocks/article-list/index.js:64
 #: blocks/category-grid/index.js:59
 #: blocks/faq/index.js:58
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/article-list/index.js:1
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/category-grid/index.js:1
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/faq/index.js:1
 #: dist/blocks/article-list/index.js:1
 #: dist/blocks/category-grid/index.js:1
 #: dist/blocks/faq/index.js:1
@@ -2059,28 +1973,20 @@ msgstr ""
 
 #: blocks/article-list/index.js:68
 #: blocks/faq/index.js:69
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/article-list/index.js:1
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/faq/index.js:1
 #: dist/blocks/article-list/index.js:1
 #: dist/blocks/faq/index.js:1
 msgid "Published date"
 msgstr ""
 
 #: blocks/article-list/index.js:75
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/article-list/index.js:1
 #: dist/blocks/article-list/index.js:1
 msgid "Last modified"
 msgstr ""
 
 #: blocks/article-list/index.js:82
 #: blocks/faq/index.js:76
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:38
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:39
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/article-list/index.js:1
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/faq/index.js:1
-#: dist/apps/articles/index.CVotsgDG.js:38
-#: dist/apps/articles/index.CVotsgDG.js:39
+#: dist/apps/articles/index.YCE_u9oo.js:38
+#: dist/apps/articles/index.YCE_u9oo.js:39
 #: dist/apps/tools/index.CVsyCPOp.js:41
 #: dist/blocks/article-list/index.js:1
 #: dist/blocks/faq/index.js:1
@@ -2089,8 +1995,6 @@ msgstr ""
 
 #: blocks/article-list/index.js:86
 #: blocks/faq/index.js:62
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/article-list/index.js:1
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/faq/index.js:1
 #: dist/blocks/article-list/index.js:1
 #: dist/blocks/faq/index.js:1
 msgid "Manual order"
@@ -2099,9 +2003,6 @@ msgstr ""
 #: blocks/article-list/index.js:101
 #: blocks/category-grid/index.js:89
 #: blocks/faq/index.js:95
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/article-list/index.js:1
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/category-grid/index.js:1
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/faq/index.js:1
 #: dist/blocks/article-list/index.js:1
 #: dist/blocks/category-grid/index.js:1
 #: dist/blocks/faq/index.js:1
@@ -2111,9 +2012,6 @@ msgstr ""
 #: blocks/article-list/index.js:108
 #: blocks/category-grid/index.js:82
 #: blocks/faq/index.js:88
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/article-list/index.js:1
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/category-grid/index.js:1
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/faq/index.js:1
 #: dist/blocks/article-list/index.js:1
 #: dist/blocks/category-grid/index.js:1
 #: dist/blocks/faq/index.js:1
@@ -2122,153 +2020,122 @@ msgstr ""
 
 #: blocks/article-list/index.js:127
 #: blocks/category-grid/index.js:111
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:61
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/article-list/index.js:1
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/category-grid/index.js:1
-#: dist/apps/articles/index.CVotsgDG.js:61
+#: dist/apps/articles/index.YCE_u9oo.js:61
 #: dist/blocks/article-list/index.js:1
 #: dist/blocks/category-grid/index.js:1
 msgid "Columns"
 msgstr ""
 
 #: blocks/article-list/index.js:135
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/article-list/index.js:1
 #: dist/blocks/article-list/index.js:1
 msgid "Show excerpts"
 msgstr ""
 
 #: blocks/breadcrumbs/index.js:38
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/breadcrumbs/index.js:1
 #: dist/blocks/breadcrumbs/index.js:1
 msgid "Breadcrumbs"
 msgstr ""
 
 #: blocks/breadcrumbs/index.js:42
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/breadcrumbs/index.js:1
 #: dist/blocks/breadcrumbs/index.js:1
 msgid "Show the home link"
 msgstr ""
 
 #: blocks/breadcrumbs/index.js:46
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/breadcrumbs/index.js:1
 #: dist/blocks/breadcrumbs/index.js:1
 msgid "Start the trail at the site home rather than at the knowledge base."
 msgstr ""
 
 #: blocks/category-grid/index.js:38
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:11
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:35
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:7
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/category-grid/index.js:1
 #: dist/apps/categories/index.BQKk77Ty.js:11
 #: dist/apps/categories/index.BQKk77Ty.js:35
-#: dist/apps/tags/index.Bjwl0jqk.js:7
+#: dist/apps/tags/index.B5MTSdg9.js:7
 #: dist/blocks/category-grid/index.js:1
 msgid "Top level"
 msgstr ""
 
 #: blocks/category-grid/index.js:49
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/category-grid/index.js:1
 #: dist/blocks/category-grid/index.js:1
 msgid "Show children of"
 msgstr ""
 
 #: blocks/category-grid/index.js:63
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:11
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:15
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:17
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:29
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/category-grid/index.js:1
 #: dist/apps/categories/index.BQKk77Ty.js:11
-#: dist/apps/tags/index.Bjwl0jqk.js:15
-#: dist/apps/tags/index.Bjwl0jqk.js:17
-#: dist/apps/tags/index.Bjwl0jqk.js:29
+#: dist/apps/tags/index.B5MTSdg9.js:15
+#: dist/apps/tags/index.B5MTSdg9.js:17
+#: dist/apps/tags/index.B5MTSdg9.js:31
 #: dist/blocks/category-grid/index.js:1
 msgid "Name"
 msgstr ""
 
 #: blocks/category-grid/index.js:67
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/category-grid/index.js:1
 #: dist/blocks/category-grid/index.js:1
 msgid "Article count"
 msgstr ""
 
 #: blocks/category-grid/index.js:100
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/category-grid/index.js:1
 #: dist/blocks/category-grid/index.js:1
 msgid "Categories (0 for all)"
 msgstr ""
 
 #: blocks/category-grid/index.js:130
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/category-grid/index.js:1
 #: dist/blocks/category-grid/index.js:1
 msgid "Show icons"
 msgstr ""
 
 #: blocks/category-grid/index.js:138
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/category-grid/index.js:1
 #: dist/blocks/category-grid/index.js:1
 msgid "Show sub-categories"
 msgstr ""
 
 #: blocks/faq/index.js:45
 #: blocks/faq/index.js:106
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/faq/index.js:1
 #: dist/blocks/faq/index.js:1
 msgid "Questions"
 msgstr ""
 
 #: blocks/faq/index.js:114
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/faq/index.js:1
 #: dist/blocks/faq/index.js:1
 msgid "Show answers"
 msgstr ""
 
 #: blocks/faq/index.js:118
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/faq/index.js:1
 #: dist/blocks/faq/index.js:1
 msgid "Use the article excerpt as the answer."
 msgstr ""
 
 #: blocks/faq/index.js:129
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/faq/index.js:1
 #: dist/blocks/faq/index.js:1
 msgid "Open the first question"
 msgstr ""
 
 #: blocks/search/index.js:44
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/search/index.js:1
 #: dist/blocks/search/index.js:1
 msgid "Placeholder"
 msgstr ""
 
 #: blocks/search/index.js:52
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/search/index.js:1
 #: dist/blocks/search/index.js:1
 msgid "Accessible label"
 msgstr ""
 
 #: blocks/search/index.js:56
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/search/index.js:1
 #: dist/blocks/search/index.js:1
 msgid "Announced to screen readers. Not shown on screen."
 msgstr ""
 
 #: blocks/search/index.js:65
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/search/index.js:1
 #: dist/blocks/search/index.js:1
 msgid "Button text"
 msgstr ""
 
 #: blocks/article-list/block.json
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/article-list/block.json
 #: dist/blocks/article-list/block.json
 msgctxt "block title"
 msgid "Knowledge Base Articles"
 msgstr ""
 
 #: blocks/article-list/block.json
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/article-list/block.json
 #: dist/blocks/article-list/block.json
 msgctxt "block description"
 msgid "A list of knowledge base articles, optionally filtered to one category."
@@ -2279,11 +2146,6 @@ msgstr ""
 #: blocks/category-grid/block.json
 #: blocks/faq/block.json
 #: blocks/search/block.json
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/article-list/block.json
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/breadcrumbs/block.json
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/category-grid/block.json
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/faq/block.json
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/search/block.json
 #: dist/blocks/article-list/block.json
 #: dist/blocks/breadcrumbs/block.json
 #: dist/blocks/category-grid/block.json
@@ -2294,7 +2156,6 @@ msgid "knowledge base"
 msgstr ""
 
 #: blocks/article-list/block.json
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/article-list/block.json
 #: dist/blocks/article-list/block.json
 msgctxt "block keyword"
 msgid "articles"
@@ -2303,9 +2164,6 @@ msgstr ""
 #: blocks/article-list/block.json
 #: blocks/category-grid/block.json
 #: blocks/search/block.json
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/article-list/block.json
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/category-grid/block.json
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/search/block.json
 #: dist/blocks/article-list/block.json
 #: dist/blocks/category-grid/block.json
 #: dist/blocks/search/block.json
@@ -2316,9 +2174,6 @@ msgstr ""
 #: blocks/article-list/block.json
 #: blocks/category-grid/block.json
 #: blocks/search/block.json
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/article-list/block.json
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/category-grid/block.json
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/search/block.json
 #: dist/blocks/article-list/block.json
 #: dist/blocks/category-grid/block.json
 #: dist/blocks/search/block.json
@@ -2327,581 +2182,456 @@ msgid "help"
 msgstr ""
 
 #: blocks/breadcrumbs/block.json
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/breadcrumbs/block.json
 #: dist/blocks/breadcrumbs/block.json
 msgctxt "block title"
 msgid "Knowledge Base Breadcrumbs"
 msgstr ""
 
 #: blocks/breadcrumbs/block.json
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/breadcrumbs/block.json
 #: dist/blocks/breadcrumbs/block.json
 msgctxt "block description"
 msgid "The trail from the site home down to the article or category being viewed."
 msgstr ""
 
 #: blocks/breadcrumbs/block.json
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/breadcrumbs/block.json
 #: dist/blocks/breadcrumbs/block.json
 msgctxt "block keyword"
 msgid "breadcrumbs"
 msgstr ""
 
 #: blocks/breadcrumbs/block.json
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/breadcrumbs/block.json
 #: dist/blocks/breadcrumbs/block.json
 msgctxt "block keyword"
 msgid "navigation"
 msgstr ""
 
 #: blocks/breadcrumbs/block.json
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/breadcrumbs/block.json
 #: dist/blocks/breadcrumbs/block.json
 msgctxt "block keyword"
 msgid "trail"
 msgstr ""
 
 #: blocks/category-grid/block.json
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/category-grid/block.json
 #: dist/blocks/category-grid/block.json
 msgctxt "block title"
 msgid "Knowledge Base Categories"
 msgstr ""
 
 #: blocks/category-grid/block.json
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/category-grid/block.json
 #: dist/blocks/category-grid/block.json
 msgctxt "block description"
 msgid "A grid of knowledge base categories with their article counts."
 msgstr ""
 
 #: blocks/category-grid/block.json
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/category-grid/block.json
 #: dist/blocks/category-grid/block.json
 msgctxt "block keyword"
 msgid "categories"
 msgstr ""
 
 #: blocks/faq/block.json
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/faq/block.json
 #: dist/blocks/faq/block.json
 msgctxt "block title"
 msgid "Knowledge Base FAQ"
 msgstr ""
 
 #: blocks/faq/block.json
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/faq/block.json
 #: dist/blocks/faq/block.json
 msgctxt "block description"
 msgid "Knowledge base articles as an expandable list of questions and answers."
 msgstr ""
 
 #: blocks/faq/block.json
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/faq/block.json
 #: dist/blocks/faq/block.json
 msgctxt "block keyword"
 msgid "faq"
 msgstr ""
 
 #: blocks/faq/block.json
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/faq/block.json
 #: dist/blocks/faq/block.json
 msgctxt "block keyword"
 msgid "questions"
 msgstr ""
 
 #: blocks/faq/block.json
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/faq/block.json
 #: dist/blocks/faq/block.json
 msgctxt "block keyword"
 msgid "accordion"
 msgstr ""
 
 #: blocks/search/block.json
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/search/block.json
 #: dist/blocks/search/block.json
 msgctxt "block title"
 msgid "Knowledge Base Search"
 msgstr ""
 
 #: blocks/search/block.json
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/search/block.json
 #: dist/blocks/search/block.json
 msgctxt "block description"
 msgid "An instant search box for the knowledge base, with keyboard-navigable suggestions."
 msgstr ""
 
 #: blocks/search/block.json
-#: .tmp/e2e/licensio-knowledge-base/dist/blocks/search/block.json
 #: dist/blocks/search/block.json
 msgctxt "block keyword"
 msgid "search"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
 #: dist/apps/analytics/index.D9liPAub.js:1
 msgid "The analytics request failed."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
 #: dist/apps/analytics/index.D9liPAub.js:1
 msgid "Unique visitors"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
 #: dist/apps/analytics/index.D9liPAub.js:1
 msgid "Useful"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
 #: dist/apps/analytics/index.D9liPAub.js:1
 msgid "There is nothing to report for this range yet."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
 #: dist/apps/analytics/index.D9liPAub.js:1
 msgid "Times searched"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
 #: dist/apps/analytics/index.D9liPAub.js:1
 msgid "Empty results"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
 #: dist/apps/analytics/index.D9liPAub.js:1
 msgid "Average results"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
 #: dist/apps/analytics/index.D9liPAub.js:1
 msgid "Nothing was searched for in this range."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
 #: dist/apps/analytics/index.D9liPAub.js:1
 msgid "Action"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
 #: dist/apps/analytics/index.D9liPAub.js:1
 msgid "No searches came back empty in this range."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
 #: dist/apps/analytics/index.D9liPAub.js:1
 msgid "Create an article for this"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:7
 #: dist/apps/analytics/index.D9liPAub.js:1
 #: dist/apps/tools/index.CVsyCPOp.js:7
 msgid "Article views"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
 #: dist/apps/analytics/index.D9liPAub.js:1
 msgid "Analytics collection is switched off, so nothing new is being recorded."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
 #: dist/apps/analytics/index.D9liPAub.js:1
 msgid "From"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
 #: dist/apps/analytics/index.D9liPAub.js:1
 msgid "To"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:51
 #: dist/apps/analytics/index.D9liPAub.js:1
-#: dist/apps/articles/index.CVotsgDG.js:51
+#: dist/apps/articles/index.YCE_u9oo.js:51
 msgid "Apply"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
 #: dist/apps/analytics/index.D9liPAub.js:1
 msgid "Rows are kept for"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
 #: dist/apps/analytics/index.D9liPAub.js:1
 msgid "days."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
 #: dist/apps/analytics/index.D9liPAub.js:1
 msgid "Search effectiveness"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
 #: dist/apps/analytics/index.D9liPAub.js:1
 msgid "Empty searches"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
 #: dist/apps/analytics/index.D9liPAub.js:1
 msgid "Activity"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
 #: dist/apps/analytics/index.D9liPAub.js:1
 msgid "Questions with no answer"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
 #: dist/apps/analytics/index.D9liPAub.js:1
 msgid "Top searches"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
 #: dist/apps/analytics/index.D9liPAub.js:1
 msgid "Most useful articles"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
 #: dist/apps/analytics/index.D9liPAub.js:1
 msgid "Least useful articles"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/analytics/index.BdtTBdHM.js:1
 #: dist/apps/analytics/index.D9liPAub.js:1
 msgid "Most read articles"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:1
-#: dist/apps/articles/index.CVotsgDG.js:1
+#: dist/apps/articles/index.YCE_u9oo.js:1
 msgid "You can undo this for a few seconds."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:1
-#: dist/apps/articles/index.CVotsgDG.js:1
+#: dist/apps/articles/index.YCE_u9oo.js:1
 msgid "Undo"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:1
-#: dist/apps/articles/index.CVotsgDG.js:1
+#: dist/apps/articles/index.YCE_u9oo.js:1
 msgid "Dismiss"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:1
-#: dist/apps/articles/index.CVotsgDG.js:1
+#: dist/apps/articles/index.YCE_u9oo.js:1
 msgid "Not found"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:1
-#: dist/apps/articles/index.CVotsgDG.js:1
+#: dist/apps/articles/index.YCE_u9oo.js:1
 msgid "No permission"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:1
-#: dist/apps/articles/index.CVotsgDG.js:1
+#: dist/apps/articles/index.YCE_u9oo.js:1
 msgid "Being edited by someone else"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:1
-#: dist/apps/articles/index.CVotsgDG.js:1
+#: dist/apps/articles/index.YCE_u9oo.js:1
 msgid "Not in the trash"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:1
-#: dist/apps/articles/index.CVotsgDG.js:1
+#: dist/apps/articles/index.YCE_u9oo.js:1
 msgid "In the trash"
 msgstr ""
 
 #. translators: %d: number of articles.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:3
-#: dist/apps/articles/index.CVotsgDG.js:3
+#: dist/apps/articles/index.YCE_u9oo.js:3
 msgid "Move %d article to the trash?"
 msgid_plural "Move %d articles to the trash?"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:5
-#: dist/apps/articles/index.CVotsgDG.js:5
+#: dist/apps/articles/index.YCE_u9oo.js:5
 msgid "Restore %d article from the trash?"
 msgid_plural "Restore %d articles from the trash?"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:7
-#: dist/apps/articles/index.CVotsgDG.js:7
+#: dist/apps/articles/index.YCE_u9oo.js:7
 msgid "Permanently delete %d article? This cannot be undone."
 msgid_plural "Permanently delete %d articles? This cannot be undone."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:9
-#: dist/apps/articles/index.CVotsgDG.js:9
+#: dist/apps/articles/index.YCE_u9oo.js:9
 msgid "Change the status of %d article?"
 msgid_plural "Change the status of %d articles?"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:11
-#: dist/apps/articles/index.CVotsgDG.js:11
+#: dist/apps/articles/index.YCE_u9oo.js:11
 msgid "Change the author of %d article?"
 msgid_plural "Change the author of %d articles?"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:13
-#: dist/apps/articles/index.CVotsgDG.js:13
+#: dist/apps/articles/index.YCE_u9oo.js:13
 msgid "Open comments on %d article?"
 msgid_plural "Open comments on %d articles?"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:15
-#: dist/apps/articles/index.CVotsgDG.js:15
+#: dist/apps/articles/index.YCE_u9oo.js:15
 msgid "Close comments on %d article?"
 msgid_plural "Close comments on %d articles?"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:17
-#: dist/apps/articles/index.CVotsgDG.js:17
+#: dist/apps/articles/index.YCE_u9oo.js:17
 msgid "Add the chosen terms to %d article?"
 msgid_plural "Add the chosen terms to %d articles?"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:19
-#: dist/apps/articles/index.CVotsgDG.js:19
+#: dist/apps/articles/index.YCE_u9oo.js:19
 msgid "Remove the chosen terms from %d article?"
 msgid_plural "Remove the chosen terms from %d articles?"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:21
-#: dist/apps/articles/index.CVotsgDG.js:21
+#: dist/apps/articles/index.YCE_u9oo.js:21
 msgid "Remove every tag from %d article? No tags are chosen to replace them."
 msgid_plural "Remove every tag from %d articles? No tags are chosen to replace them."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:23
-#: dist/apps/articles/index.CVotsgDG.js:23
+#: dist/apps/articles/index.YCE_u9oo.js:23
 msgid "Remove every category from %d article? No categories are chosen to replace them."
 msgid_plural "Remove every category from %d articles? No categories are chosen to replace them."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:25
-#: dist/apps/articles/index.CVotsgDG.js:25
+#: dist/apps/articles/index.YCE_u9oo.js:25
 msgid "Replace the terms of %d article with the chosen ones?"
 msgid_plural "Replace the terms of %d articles with the chosen ones?"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:27
-#: dist/apps/articles/index.CVotsgDG.js:27
+#: dist/apps/articles/index.YCE_u9oo.js:27
 msgid "%d article moved to the trash."
 msgid_plural "%d articles moved to the trash."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:29
-#: dist/apps/articles/index.CVotsgDG.js:29
+#: dist/apps/articles/index.YCE_u9oo.js:29
 msgid "%d article restored."
 msgid_plural "%d articles restored."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:31
-#: dist/apps/articles/index.CVotsgDG.js:31
+#: dist/apps/articles/index.YCE_u9oo.js:31
 msgid "%d article permanently deleted."
 msgid_plural "%d articles permanently deleted."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:33
-#: dist/apps/articles/index.CVotsgDG.js:33
+#: dist/apps/articles/index.YCE_u9oo.js:33
 msgid "%d article updated."
 msgid_plural "%d articles updated."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of articles.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:35
-#: dist/apps/articles/index.CVotsgDG.js:35
+#: dist/apps/articles/index.YCE_u9oo.js:35
 msgid "%d article put back."
 msgid_plural "%d articles put back."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: 1: number of articles, 2: the reasons.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:37
-#: dist/apps/articles/index.CVotsgDG.js:37
+#: dist/apps/articles/index.YCE_u9oo.js:37
 msgid "%1$d article could not be put back: %2$s"
 msgid_plural "%1$d articles could not be put back: %2$s"
 msgstr[0] ""
 msgstr[1] ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:37
-#: dist/apps/articles/index.CVotsgDG.js:37
+#: dist/apps/articles/index.YCE_u9oo.js:37
 msgid "Any author"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:37
-#: .tmp/e2e/licensio-knowledge-base/dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.Cohcn86k.js:3
-#: dist/apps/articles/index.CVotsgDG.js:37
+#: dist/apps/articles/index.YCE_u9oo.js:37
 #: dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.G_TJ16ZC.js:3
 msgid "No matches"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:37
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: .tmp/e2e/licensio-knowledge-base/dist/chunks/status.C86e98PE.js:1
-#: dist/apps/articles/index.CVotsgDG.js:37
-#: dist/apps/articles/index.CVotsgDG.js:47
-#: dist/apps/articles/index.CVotsgDG.js:63
+#: dist/apps/articles/index.YCE_u9oo.js:37
+#: dist/apps/articles/index.YCE_u9oo.js:47
+#: dist/apps/articles/index.YCE_u9oo.js:63
 #: dist/chunks/status.BpobMsUa.js:1
 msgid "Published"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:37
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
-#: .tmp/e2e/licensio-knowledge-base/dist/chunks/status.C86e98PE.js:1
-#: dist/apps/articles/index.CVotsgDG.js:37
-#: dist/apps/articles/index.CVotsgDG.js:47
+#: dist/apps/articles/index.YCE_u9oo.js:37
+#: dist/apps/articles/index.YCE_u9oo.js:47
 #: dist/chunks/status.BpobMsUa.js:1
 msgid "Draft"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:37
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
-#: dist/apps/articles/index.CVotsgDG.js:37
-#: dist/apps/articles/index.CVotsgDG.js:47
+#: dist/apps/articles/index.YCE_u9oo.js:37
+#: dist/apps/articles/index.YCE_u9oo.js:47
 msgid "Pending review"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:37
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: .tmp/e2e/licensio-knowledge-base/dist/chunks/status.C86e98PE.js:1
-#: dist/apps/articles/index.CVotsgDG.js:37
-#: dist/apps/articles/index.CVotsgDG.js:63
+#: dist/apps/articles/index.YCE_u9oo.js:37
+#: dist/apps/articles/index.YCE_u9oo.js:63
 #: dist/chunks/status.BpobMsUa.js:1
 msgid "Scheduled"
 msgstr ""
 
 #. translators: %s: the new slug.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:38
-#: dist/apps/articles/index.CVotsgDG.js:38
+#: dist/apps/articles/index.YCE_u9oo.js:38
 msgid "Saved. The slug is now “%s”."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:38
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:11
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:15
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:17
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:29
-#: dist/apps/articles/index.CVotsgDG.js:38
+#: dist/apps/articles/index.YCE_u9oo.js:38
 #: dist/apps/categories/index.BQKk77Ty.js:11
-#: dist/apps/tags/index.Bjwl0jqk.js:15
-#: dist/apps/tags/index.Bjwl0jqk.js:17
-#: dist/apps/tags/index.Bjwl0jqk.js:29
+#: dist/apps/tags/index.B5MTSdg9.js:15
+#: dist/apps/tags/index.B5MTSdg9.js:17
+#: dist/apps/tags/index.B5MTSdg9.js:31
 msgid "Slug"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:38
-#: dist/apps/articles/index.CVotsgDG.js:38
+#: dist/apps/articles/index.YCE_u9oo.js:38
 msgid "Publish date"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:38
-#: dist/apps/articles/index.CVotsgDG.js:38
+#: dist/apps/articles/index.YCE_u9oo.js:38
 msgid "Visibility"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:38
-#: dist/apps/articles/index.CVotsgDG.js:38
+#: dist/apps/articles/index.YCE_u9oo.js:38
 msgid "Public"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:38
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: .tmp/e2e/licensio-knowledge-base/dist/chunks/status.C86e98PE.js:1
-#: dist/apps/articles/index.CVotsgDG.js:38
-#: dist/apps/articles/index.CVotsgDG.js:47
-#: dist/apps/articles/index.CVotsgDG.js:63
+#: dist/apps/articles/index.YCE_u9oo.js:38
+#: dist/apps/articles/index.YCE_u9oo.js:47
+#: dist/apps/articles/index.YCE_u9oo.js:63
 #: dist/chunks/status.BpobMsUa.js:1
 msgid "Private"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:38
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:41
-#: dist/apps/articles/index.CVotsgDG.js:38
-#: dist/apps/articles/index.CVotsgDG.js:41
+#: dist/apps/articles/index.YCE_u9oo.js:38
+#: dist/apps/articles/index.YCE_u9oo.js:41
 msgid "Password protected"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:38
-#: dist/apps/articles/index.CVotsgDG.js:38
+#: dist/apps/articles/index.YCE_u9oo.js:38
 msgid "Leave empty to keep the current password"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:38
-#: dist/apps/articles/index.CVotsgDG.js:38
+#: dist/apps/articles/index.YCE_u9oo.js:38
 msgid "Password"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:38
-#: dist/apps/articles/index.CVotsgDG.js:38
+#: dist/apps/articles/index.YCE_u9oo.js:38
 msgid "Comments"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:38
-#: dist/apps/articles/index.CVotsgDG.js:38
+#: dist/apps/articles/index.YCE_u9oo.js:38
 msgid "Open"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:38
-#: dist/apps/articles/index.CVotsgDG.js:38
+#: dist/apps/articles/index.YCE_u9oo.js:38
 msgid "Closed"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:38
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:11
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:17
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:25
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:29
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:35
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:11
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/settings/index.BaIGZfvd.js:1
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:7
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:15
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:19
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:29
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:3
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:7
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:33
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:49
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:51
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
-#: .tmp/e2e/licensio-knowledge-base/dist/chunks/ConfirmButton.vue_vue_type_script_setup_true_lang.BI2r1Vjz.js:1
-#: dist/apps/articles/index.CVotsgDG.js:38
+#: dist/apps/articles/index.YCE_u9oo.js:38
 #: dist/apps/categories/index.BQKk77Ty.js:11
 #: dist/apps/categories/index.BQKk77Ty.js:17
 #: dist/apps/categories/index.BQKk77Ty.js:25
@@ -2909,10 +2639,10 @@ msgstr ""
 #: dist/apps/categories/index.BQKk77Ty.js:35
 #: dist/apps/feedback/index.D_zG1Rx-.js:11
 #: dist/apps/settings/index.B7P3m90S.js:1
-#: dist/apps/tags/index.Bjwl0jqk.js:7
-#: dist/apps/tags/index.Bjwl0jqk.js:15
-#: dist/apps/tags/index.Bjwl0jqk.js:19
-#: dist/apps/tags/index.Bjwl0jqk.js:29
+#: dist/apps/tags/index.B5MTSdg9.js:7
+#: dist/apps/tags/index.B5MTSdg9.js:15
+#: dist/apps/tags/index.B5MTSdg9.js:21
+#: dist/apps/tags/index.B5MTSdg9.js:31
 #: dist/apps/tools/index.CVsyCPOp.js:3
 #: dist/apps/tools/index.CVsyCPOp.js:7
 #: dist/apps/tools/index.CVsyCPOp.js:33
@@ -2925,789 +2655,612 @@ msgid "Cancel"
 msgstr ""
 
 #. translators: %s: article title.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:39
-#: dist/apps/articles/index.CVotsgDG.js:39
+#: dist/apps/articles/index.YCE_u9oo.js:39
 msgid "Save the changes to “%s”?"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:39
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:41
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:5
-#: dist/apps/articles/index.CVotsgDG.js:39
-#: dist/apps/articles/index.CVotsgDG.js:41
+#: dist/apps/articles/index.YCE_u9oo.js:39
+#: dist/apps/articles/index.YCE_u9oo.js:41
 #: dist/apps/categories/index.BQKk77Ty.js:5
 msgid "(no title)"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:39
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:11
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:17
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:19
-#: dist/apps/articles/index.CVotsgDG.js:39
+#: dist/apps/articles/index.YCE_u9oo.js:39
 #: dist/apps/categories/index.BQKk77Ty.js:11
-#: dist/apps/tags/index.Bjwl0jqk.js:17
-#: dist/apps/tags/index.Bjwl0jqk.js:19
+#: dist/apps/tags/index.B5MTSdg9.js:19
+#: dist/apps/tags/index.B5MTSdg9.js:21
 msgid "Save"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:39
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:61
-#: dist/apps/articles/index.CVotsgDG.js:39
-#: dist/apps/articles/index.CVotsgDG.js:61
+#: dist/apps/articles/index.YCE_u9oo.js:39
+#: dist/apps/articles/index.YCE_u9oo.js:61
 msgid "Attachments"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:39
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:61
-#: dist/apps/articles/index.CVotsgDG.js:39
-#: dist/apps/articles/index.CVotsgDG.js:61
+#: dist/apps/articles/index.YCE_u9oo.js:39
+#: dist/apps/articles/index.YCE_u9oo.js:61
 msgid "Reading time"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:39
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:61
-#: dist/apps/articles/index.CVotsgDG.js:39
-#: dist/apps/articles/index.CVotsgDG.js:61
+#: dist/apps/articles/index.YCE_u9oo.js:39
+#: dist/apps/articles/index.YCE_u9oo.js:61
 msgid "Modified"
 msgstr ""
 
 #. translators: %s: article title.
 #. translators: %s: the tag's name.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:41
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:17
-#: dist/apps/articles/index.CVotsgDG.js:41
-#: dist/apps/tags/index.Bjwl0jqk.js:17
+#: dist/apps/articles/index.YCE_u9oo.js:41
+#: dist/apps/tags/index.B5MTSdg9.js:17
 msgid "Select “%s”"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:41
-#: dist/apps/articles/index.CVotsgDG.js:41
+#: dist/apps/articles/index.YCE_u9oo.js:41
 msgid "No articles match these filters."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:41
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CVotsgDG.js:41
-#: dist/apps/articles/index.CVotsgDG.js:63
+#: dist/apps/articles/index.YCE_u9oo.js:41
+#: dist/apps/articles/index.YCE_u9oo.js:63
 msgid "Clear filters"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:41
-#: dist/apps/articles/index.CVotsgDG.js:41
+#: dist/apps/articles/index.YCE_u9oo.js:41
 msgid "No articles yet."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:41
-#: dist/apps/articles/index.CVotsgDG.js:41
+#: dist/apps/articles/index.YCE_u9oo.js:41
 msgid "Create your first article"
 msgstr ""
 
 #. translators: %s: name of the user editing the article.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:42
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:44
-#: dist/apps/articles/index.CVotsgDG.js:42
-#: dist/apps/articles/index.CVotsgDG.js:44
+#: dist/apps/articles/index.YCE_u9oo.js:42
+#: dist/apps/articles/index.YCE_u9oo.js:44
 msgid "%s is editing"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:44
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:19
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:21
-#: dist/apps/articles/index.CVotsgDG.js:44
+#: dist/apps/articles/index.YCE_u9oo.js:44
 #: dist/apps/categories/index.BQKk77Ty.js:19
-#: dist/apps/tags/index.Bjwl0jqk.js:21
+#: dist/apps/tags/index.B5MTSdg9.js:23
 msgid "Edit"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:44
-#: dist/apps/articles/index.CVotsgDG.js:44
+#: dist/apps/articles/index.YCE_u9oo.js:44
 msgid "Quick edit"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:44
-#: dist/apps/articles/index.CVotsgDG.js:44
+#: dist/apps/articles/index.YCE_u9oo.js:44
 msgid "View"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:44
-#: dist/apps/articles/index.CVotsgDG.js:44
+#: dist/apps/articles/index.YCE_u9oo.js:44
 msgid "Preview"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:44
-#: dist/apps/articles/index.CVotsgDG.js:44
+#: dist/apps/articles/index.YCE_u9oo.js:44
 msgid "View feedback"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:44
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
-#: dist/apps/articles/index.CVotsgDG.js:44
-#: dist/apps/articles/index.CVotsgDG.js:47
+#: dist/apps/articles/index.YCE_u9oo.js:44
+#: dist/apps/articles/index.YCE_u9oo.js:47
 msgid "Move to trash"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:44
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: .tmp/e2e/licensio-knowledge-base/dist/chunks/status.C86e98PE.js:1
-#: dist/apps/articles/index.CVotsgDG.js:44
-#: dist/apps/articles/index.CVotsgDG.js:63
+#: dist/apps/articles/index.YCE_u9oo.js:44
+#: dist/apps/articles/index.YCE_u9oo.js:63
 #: dist/chunks/status.BpobMsUa.js:1
 msgid "Trash"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:44
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
-#: dist/apps/articles/index.CVotsgDG.js:44
-#: dist/apps/articles/index.CVotsgDG.js:47
+#: dist/apps/articles/index.YCE_u9oo.js:44
+#: dist/apps/articles/index.YCE_u9oo.js:47
 msgid "Restore"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:44
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
-#: dist/apps/articles/index.CVotsgDG.js:44
-#: dist/apps/articles/index.CVotsgDG.js:47
+#: dist/apps/articles/index.YCE_u9oo.js:44
+#: dist/apps/articles/index.YCE_u9oo.js:47
 msgid "Delete permanently"
 msgstr ""
 
 #. translators: 1: helpful votes, 2: not helpful votes.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:45
-#: dist/apps/articles/index.CVotsgDG.js:45
+#: dist/apps/articles/index.YCE_u9oo.js:45
 msgid "%1$d helpful, %2$d not helpful"
 msgstr ""
 
 #. translators: %d: reading time in minutes.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
-#: dist/apps/articles/index.CVotsgDG.js:47
+#: dist/apps/articles/index.YCE_u9oo.js:47
 msgid "%d min"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:11
-#: dist/apps/articles/index.CVotsgDG.js:47
+#: dist/apps/articles/index.YCE_u9oo.js:47
 #: dist/apps/feedback/index.D_zG1Rx-.js:11
 msgid "Change status"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
-#: dist/apps/articles/index.CVotsgDG.js:47
+#: dist/apps/articles/index.YCE_u9oo.js:47
 msgid "Add categories"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
-#: dist/apps/articles/index.CVotsgDG.js:47
+#: dist/apps/articles/index.YCE_u9oo.js:47
 msgid "Remove categories"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
-#: dist/apps/articles/index.CVotsgDG.js:47
+#: dist/apps/articles/index.YCE_u9oo.js:47
 msgid "Replace categories"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
-#: dist/apps/articles/index.CVotsgDG.js:47
+#: dist/apps/articles/index.YCE_u9oo.js:47
 msgid "Add tags"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
-#: dist/apps/articles/index.CVotsgDG.js:47
+#: dist/apps/articles/index.YCE_u9oo.js:47
 msgid "Remove tags"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
-#: dist/apps/articles/index.CVotsgDG.js:47
+#: dist/apps/articles/index.YCE_u9oo.js:47
 msgid "Replace tags"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
-#: dist/apps/articles/index.CVotsgDG.js:47
+#: dist/apps/articles/index.YCE_u9oo.js:47
 msgid "Change author"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
-#: dist/apps/articles/index.CVotsgDG.js:47
+#: dist/apps/articles/index.YCE_u9oo.js:47
 msgid "Open comments"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:47
-#: dist/apps/articles/index.CVotsgDG.js:47
+#: dist/apps/articles/index.YCE_u9oo.js:47
 msgid "Close comments"
 msgstr ""
 
 #. translators: %d: number of selected articles.
 #. translators: %d: number of selected feedback entries.
 #. translators: %d: how many tags are selected.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:49
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:7
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:25
-#: dist/apps/articles/index.CVotsgDG.js:49
+#: dist/apps/articles/index.YCE_u9oo.js:49
 #: dist/apps/feedback/index.D_zG1Rx-.js:7
-#: dist/apps/tags/index.Bjwl0jqk.js:25
+#: dist/apps/tags/index.B5MTSdg9.js:27
 msgid "%d selected"
 msgid_plural "%d selected"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of matching articles.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:51
-#: dist/apps/articles/index.CVotsgDG.js:51
+#: dist/apps/articles/index.YCE_u9oo.js:51
 msgid "Select all %d matching"
 msgid_plural "Select all %d matching"
 msgstr[0] ""
 msgstr[1] ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:51
-#: dist/apps/articles/index.CVotsgDG.js:51
+#: dist/apps/articles/index.YCE_u9oo.js:51
 msgid "Clear selection"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:51
-#: dist/apps/articles/index.CVotsgDG.js:51
+#: dist/apps/articles/index.YCE_u9oo.js:51
 msgid "Only the first 10,000 matching articles were selected."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:51
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:53
-#: dist/apps/articles/index.CVotsgDG.js:51
-#: dist/apps/articles/index.CVotsgDG.js:53
+#: dist/apps/articles/index.YCE_u9oo.js:51
+#: dist/apps/articles/index.YCE_u9oo.js:53
 msgid "Bulk action"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:51
-#: dist/apps/articles/index.CVotsgDG.js:51
+#: dist/apps/articles/index.YCE_u9oo.js:51
 msgid "New status"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:51
-#: dist/apps/articles/index.CVotsgDG.js:51
+#: dist/apps/articles/index.YCE_u9oo.js:51
 msgid "Tags for the bulk action"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:51
-#: dist/apps/articles/index.CVotsgDG.js:51
+#: dist/apps/articles/index.YCE_u9oo.js:51
 msgid "Categories for the bulk action"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:51
-#: dist/apps/articles/index.CVotsgDG.js:51
+#: dist/apps/articles/index.YCE_u9oo.js:51
 msgid "New author"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:51
-#: dist/apps/articles/index.CVotsgDG.js:51
+#: dist/apps/articles/index.YCE_u9oo.js:51
 msgid "Select articles below to perform bulk actions"
 msgstr ""
 
 #. translators: 1: articles processed, 2: articles in the run.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:55
-#: dist/apps/articles/index.CVotsgDG.js:55
+#: dist/apps/articles/index.YCE_u9oo.js:55
 msgid "%1$d of %2$d processed"
 msgstr ""
 
 #. translators: %d: number of articles.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:57
-#: dist/apps/articles/index.CVotsgDG.js:57
+#: dist/apps/articles/index.YCE_u9oo.js:57
 msgid "Done: %d"
 msgstr ""
 
 #. translators: %d: number of articles.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:59
-#: dist/apps/articles/index.CVotsgDG.js:59
+#: dist/apps/articles/index.YCE_u9oo.js:59
 msgid "Skipped: %d"
 msgstr ""
 
 #. translators: %d: number of articles.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:61
-#: dist/apps/articles/index.CVotsgDG.js:61
+#: dist/apps/articles/index.YCE_u9oo.js:61
 msgid "Failed: %d"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:61
-#: dist/apps/articles/index.CVotsgDG.js:61
+#: dist/apps/articles/index.YCE_u9oo.js:61
 msgid "The run stopped at a batch the server refused."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:61
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/articles/index.CVotsgDG.js:61
+#: dist/apps/articles/index.YCE_u9oo.js:61
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Skipped"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:61
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/articles/index.CVotsgDG.js:61
+#: dist/apps/articles/index.YCE_u9oo.js:61
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Failed"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:61
-#: dist/apps/articles/index.CVotsgDG.js:61
+#: dist/apps/articles/index.YCE_u9oo.js:61
 msgid "Close"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:61
-#: dist/apps/articles/index.CVotsgDG.js:61
+#: dist/apps/articles/index.YCE_u9oo.js:61
 msgid "Rows per page"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:61
-#: dist/apps/articles/index.CVotsgDG.js:61
+#: dist/apps/articles/index.YCE_u9oo.js:61
 msgid "Columns and rows per page"
 msgstr ""
 
 #. translators: 1: helpful share threshold percentage, 2: minimum votes.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CVotsgDG.js:63
+#: dist/apps/articles/index.YCE_u9oo.js:63
 msgid "Helpful share below %1$d%% with at least %2$d votes in the selected window."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CVotsgDG.js:63
+#: dist/apps/articles/index.YCE_u9oo.js:63
 msgid "Filter by category"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CVotsgDG.js:63
+#: dist/apps/articles/index.YCE_u9oo.js:63
 msgid "Any category"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/articles/index.CVotsgDG.js:63
+#: dist/apps/articles/index.YCE_u9oo.js:63
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Tag"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CVotsgDG.js:63
+#: dist/apps/articles/index.YCE_u9oo.js:63
 msgid "Filter by tag"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CVotsgDG.js:63
+#: dist/apps/articles/index.YCE_u9oo.js:63
 msgid "Any tag"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CVotsgDG.js:63
+#: dist/apps/articles/index.YCE_u9oo.js:63
 msgid "Filter by author"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CVotsgDG.js:63
+#: dist/apps/articles/index.YCE_u9oo.js:63
 msgid "Published between"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CVotsgDG.js:63
+#: dist/apps/articles/index.YCE_u9oo.js:63
 msgid "No tags"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CVotsgDG.js:63
+#: dist/apps/articles/index.YCE_u9oo.js:63
 msgid "Needs attention"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CVotsgDG.js:63
+#: dist/apps/articles/index.YCE_u9oo.js:63
 msgid "Filters"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:1
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: dist/apps/articles/index.CVotsgDG.js:63
+#: dist/apps/articles/index.YCE_u9oo.js:63
 #: dist/apps/feedback/index.D_zG1Rx-.js:1
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "All"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CVotsgDG.js:63
+#: dist/apps/articles/index.YCE_u9oo.js:63
 msgid "Drafts"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: .tmp/e2e/licensio-knowledge-base/dist/chunks/status.C86e98PE.js:1
-#: dist/apps/articles/index.CVotsgDG.js:63
+#: dist/apps/articles/index.YCE_u9oo.js:63
 #: dist/chunks/status.BpobMsUa.js:1
 msgid "Pending"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CVotsgDG.js:63
+#: dist/apps/articles/index.YCE_u9oo.js:63
 msgid "7 days"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CVotsgDG.js:63
+#: dist/apps/articles/index.YCE_u9oo.js:63
 msgid "30 days"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CVotsgDG.js:63
+#: dist/apps/articles/index.YCE_u9oo.js:63
 msgid "90 days"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CVotsgDG.js:63
+#: dist/apps/articles/index.YCE_u9oo.js:63
 msgid "New article"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:3
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:35
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:29
-#: dist/apps/articles/index.CVotsgDG.js:63
+#: dist/apps/articles/index.YCE_u9oo.js:63
 #: dist/apps/categories/index.BQKk77Ty.js:3
 #: dist/apps/categories/index.BQKk77Ty.js:35
-#: dist/apps/tags/index.Bjwl0jqk.js:29
+#: dist/apps/tags/index.B5MTSdg9.js:31
 msgid "Retry"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:5
-#: dist/apps/articles/index.CVotsgDG.js:63
+#: dist/apps/articles/index.YCE_u9oo.js:63
 #: dist/apps/feedback/index.D_zG1Rx-.js:5
 msgid "Filter by status"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CVotsgDG.js:63
+#: dist/apps/articles/index.YCE_u9oo.js:63
 msgid "Search titles"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CVotsgDG.js:63
+#: dist/apps/articles/index.YCE_u9oo.js:63
 msgid "Search articles by title"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/articles/index.ChrKnj4y.js:63
-#: dist/apps/articles/index.CVotsgDG.js:63
+#: dist/apps/articles/index.YCE_u9oo.js:63
 msgid "Views and rating period"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:1
 #: dist/apps/categories/index.BQKk77Ty.js:1
 msgid "The article order has unsaved changes. Discard them?"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:1
 #: dist/apps/categories/index.BQKk77Ty.js:1
 msgid "Article order saved."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:1
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:3
 #: dist/apps/categories/index.BQKk77Ty.js:1
 #: dist/apps/categories/index.BQKk77Ty.js:3
 msgid "Article order"
 msgstr ""
 
 #. translators: %s: category name.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:3
 #: dist/apps/categories/index.BQKk77Ty.js:3
 msgid "Articles in “%s”"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:3
 #: dist/apps/categories/index.BQKk77Ty.js:3
 msgid "Select a category to order its articles."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:3
 #: dist/apps/categories/index.BQKk77Ty.js:3
 msgid "This category has no articles."
 msgstr ""
 
 #. translators: 1: number of articles listed, 2: number of articles in the category.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:5
 #: dist/apps/categories/index.BQKk77Ty.js:5
 msgid "Only the first %1$d of %2$d articles are listed."
 msgstr ""
 
 #. translators: %s: article title.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:7
 #: dist/apps/categories/index.BQKk77Ty.js:7
 msgid "Move “%s” up"
 msgstr ""
 
 #. translators: %s: article title.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:9
 #: dist/apps/categories/index.BQKk77Ty.js:9
 msgid "Move “%s” down"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:9
 #: dist/apps/categories/index.BQKk77Ty.js:9
 msgid "Reset"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:9
 #: dist/apps/categories/index.BQKk77Ty.js:9
 msgid "Save this article order?"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:9
 #: dist/apps/categories/index.BQKk77Ty.js:9
 msgid "Save order"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:9
 #: dist/apps/categories/index.BQKk77Ty.js:9
 msgid "Image selected"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:9
 #: dist/apps/categories/index.BQKk77Ty.js:9
 msgid "The media library is not available on this page, so images cannot be picked."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:9
 #: dist/apps/categories/index.BQKk77Ty.js:9
 msgid "SVG icon preview"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:9
 #: dist/apps/categories/index.BQKk77Ty.js:9
 msgid "Select an icon"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:9
 #: dist/apps/categories/index.BQKk77Ty.js:9
 msgid "Dashicons names start with dashicons- and use lowercase letters, digits and hyphens."
 msgstr ""
 
 #. translators: %s: category name.
 #. translators: %s: the tag's name.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:11
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:21
 #: dist/apps/categories/index.BQKk77Ty.js:11
-#: dist/apps/tags/index.Bjwl0jqk.js:21
+#: dist/apps/tags/index.B5MTSdg9.js:23
 msgid "Edit “%s”"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:11
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:35
 #: dist/apps/categories/index.BQKk77Ty.js:11
 #: dist/apps/categories/index.BQKk77Ty.js:35
 msgid "Add category"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:11
 #: dist/apps/categories/index.BQKk77Ty.js:11
 msgid "Category saved."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:11
 #: dist/apps/categories/index.BQKk77Ty.js:11
 msgid "Save category?"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:11
 #: dist/apps/categories/index.BQKk77Ty.js:11
 msgid "Enter a name to save."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:11
 #: dist/apps/categories/index.BQKk77Ty.js:11
 msgid "Leave empty to make one from the name."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:11
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:7
 #: dist/apps/categories/index.BQKk77Ty.js:11
-#: dist/apps/tags/index.Bjwl0jqk.js:7
+#: dist/apps/tags/index.B5MTSdg9.js:7
 msgid "Parent category"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:11
 #: dist/apps/categories/index.BQKk77Ty.js:11
 msgid "Leave empty for a top-level category."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:11
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:15
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:17
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:29
 #: dist/apps/categories/index.BQKk77Ty.js:11
-#: dist/apps/tags/index.Bjwl0jqk.js:15
-#: dist/apps/tags/index.Bjwl0jqk.js:17
-#: dist/apps/tags/index.Bjwl0jqk.js:29
+#: dist/apps/tags/index.B5MTSdg9.js:15
+#: dist/apps/tags/index.B5MTSdg9.js:17
+#: dist/apps/tags/index.B5MTSdg9.js:31
 msgid "Description"
 msgstr ""
 
 #. translators: %s: category name.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:13
 #: dist/apps/categories/index.BQKk77Ty.js:13
 msgid "Move “%s” here?"
 msgstr ""
 
 #. translators: %s: category name.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:15
 #: dist/apps/categories/index.BQKk77Ty.js:15
 msgid "Move “%s” up?"
 msgstr ""
 
 #. translators: %s: category name.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:17
 #: dist/apps/categories/index.BQKk77Ty.js:17
 msgid "Move “%s” down?"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:17
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:33
 #: dist/apps/categories/index.BQKk77Ty.js:17
 #: dist/apps/categories/index.BQKk77Ty.js:33
 msgid "Category moved."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:17
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:35
 #: dist/apps/categories/index.BQKk77Ty.js:17
 #: dist/apps/categories/index.BQKk77Ty.js:35
 msgid "Category tree"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:17
 #: dist/apps/categories/index.BQKk77Ty.js:17
 msgid "Filter categories"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:17
 #: dist/apps/categories/index.BQKk77Ty.js:17
 msgid "Clear the filter to drag categories."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:17
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:35
 #: dist/apps/categories/index.BQKk77Ty.js:17
 #: dist/apps/categories/index.BQKk77Ty.js:35
 msgid "Move"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:17
 #: dist/apps/categories/index.BQKk77Ty.js:17
 msgid "No categories match the filter."
 msgstr ""
 
 #. translators: %d: number of articles.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:19
 #: dist/apps/categories/index.BQKk77Ty.js:19
+#: dist/apps/tags/index.B5MTSdg9.js:19
 msgid "Articles: %d"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:19
 #: dist/apps/categories/index.BQKk77Ty.js:19
 msgid "Add child"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:19
 #: dist/apps/categories/index.BQKk77Ty.js:19
 msgid "Move up"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:19
 #: dist/apps/categories/index.BQKk77Ty.js:19
 msgid "Move down"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:19
 #: dist/apps/categories/index.BQKk77Ty.js:19
 msgid "Move to…"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:19
 #: dist/apps/categories/index.BQKk77Ty.js:19
 msgid "Merge…"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:19
 #: dist/apps/categories/index.BQKk77Ty.js:19
 msgid "Delete…"
 msgstr ""
 
 #. translators: %s: category name.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:21
 #: dist/apps/categories/index.BQKk77Ty.js:21
 msgid "Actions for %s"
 msgstr ""
 
 #. translators: %s: category name.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:23
 #: dist/apps/categories/index.BQKk77Ty.js:23
 msgid "Delete “%s”?"
 msgstr ""
 
 #. translators: 1: category name, 2: number of articles moved, 3: number of child categories moved.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:25
 #: dist/apps/categories/index.BQKk77Ty.js:25
 msgid "Deleted “%1$s”. Articles moved: %2$d. Child categories moved: %3$d."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:25
 #: dist/apps/categories/index.BQKk77Ty.js:25
 msgid "Delete category"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:25
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:29
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:7
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/categories/index.BQKk77Ty.js:25
-#: dist/apps/tags/index.Bjwl0jqk.js:29
+#: dist/apps/tags/index.B5MTSdg9.js:31
 #: dist/apps/tools/index.CVsyCPOp.js:7
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Delete"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:25
 #: dist/apps/categories/index.BQKk77Ty.js:25
 msgid "What should happen to its articles?"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:25
 #: dist/apps/categories/index.BQKk77Ty.js:25
 msgid "Move to parent category"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:25
 #: dist/apps/categories/index.BQKk77Ty.js:25
 msgid "Move to another category"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:25
 #: dist/apps/categories/index.BQKk77Ty.js:25
 msgid "Leave them without this category"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:25
 #: dist/apps/categories/index.BQKk77Ty.js:25
 msgid "Category to move the articles to"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:25
 #: dist/apps/categories/index.BQKk77Ty.js:25
 msgid "What should happen to its child categories?"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:25
 #: dist/apps/categories/index.BQKk77Ty.js:25
 msgid "Move to parent (or top level)"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:25
 #: dist/apps/categories/index.BQKk77Ty.js:25
 msgid "Move under another category"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:25
 #: dist/apps/categories/index.BQKk77Ty.js:25
 msgid "Category to move the child categories under"
 msgstr ""
 
 #. translators: 1: number of categories, 2: target category name.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:27
 #: dist/apps/categories/index.BQKk77Ty.js:27
 msgid "Merge %1$d category into “%2$s”?"
 msgid_plural "Merge %1$d categories into “%2$s”?"
@@ -3715,666 +3268,541 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: 1: number of articles moved, 2: number of categories deleted.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:29
 #: dist/apps/categories/index.BQKk77Ty.js:29
 msgid "Merged. Articles moved: %1$d. Categories deleted: %2$d."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:29
 #: dist/apps/categories/index.BQKk77Ty.js:29
 msgid "Merge categories"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:29
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:15
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:33
 #: dist/apps/categories/index.BQKk77Ty.js:29
-#: dist/apps/tags/index.Bjwl0jqk.js:15
+#: dist/apps/tags/index.B5MTSdg9.js:15
 #: dist/apps/tools/index.CVsyCPOp.js:33
 msgid "Merge"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:29
 #: dist/apps/categories/index.BQKk77Ty.js:29
 msgid "Categories to merge"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:29
 #: dist/apps/categories/index.BQKk77Ty.js:29
 msgid "At most 50 categories can be merged at once."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:29
 #: dist/apps/categories/index.BQKk77Ty.js:29
 msgid "Their articles move to the target, and they are deleted."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:29
 #: dist/apps/categories/index.BQKk77Ty.js:29
 msgid "Merge into"
 msgstr ""
 
 #. translators: %s: category name.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:31
 #: dist/apps/categories/index.BQKk77Ty.js:31
 msgid "Move “%s” to the top level?"
 msgstr ""
 
 #. translators: 1: category name, 2: new parent category name.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:33
 #: dist/apps/categories/index.BQKk77Ty.js:33
 msgid "Move “%1$s” under “%2$s”?"
 msgstr ""
 
 #. translators: %s: category name.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:35
 #: dist/apps/categories/index.BQKk77Ty.js:35
 msgid "Move “%s”"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:35
 #: dist/apps/categories/index.BQKk77Ty.js:35
 msgid "New place"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:35
 #: dist/apps/categories/index.BQKk77Ty.js:35
 msgid "Under a category"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:35
 #: dist/apps/categories/index.BQKk77Ty.js:35
 msgid "New parent category"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:35
 #: dist/apps/categories/index.BQKk77Ty.js:35
 msgid "No categories yet"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/categories/index.JQg-KzrP.js:35
 #: dist/apps/categories/index.BQKk77Ty.js:35
 msgid "Categories group your articles. Add the first one to get started."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:1
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:1
-#: .tmp/e2e/licensio-knowledge-base/dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.Cohcn86k.js:1
 #: dist/apps/feedback/index.D_zG1Rx-.js:1
 #: dist/apps/tools/index.CVsyCPOp.js:1
 #: dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.G_TJ16ZC.js:1
 msgid "The request failed."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:1
 #: dist/apps/feedback/index.D_zG1Rx-.js:1
 msgid "All votes"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:1
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:11
 #: dist/apps/feedback/index.D_zG1Rx-.js:1
 #: dist/apps/feedback/index.D_zG1Rx-.js:11
 msgid "New"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:1
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:11
 #: dist/apps/feedback/index.D_zG1Rx-.js:1
 #: dist/apps/feedback/index.D_zG1Rx-.js:11
 msgid "Reviewed"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:1
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:11
 #: dist/apps/feedback/index.D_zG1Rx-.js:1
 #: dist/apps/feedback/index.D_zG1Rx-.js:11
 msgid "Actioned"
 msgstr ""
 
 #. translators: %s: article title.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:3
 #: dist/apps/feedback/index.D_zG1Rx-.js:3
 msgid "Filtered to article: %s"
 msgstr ""
 
 #. translators: %d: article ID.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:5
 #: dist/apps/feedback/index.D_zG1Rx-.js:5
 msgid "Filtered to article #%d"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:5
 #: dist/apps/feedback/index.D_zG1Rx-.js:5
 msgid "Show all articles"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:5
 #: dist/apps/feedback/index.D_zG1Rx-.js:5
 msgid "Filter by vote"
 msgstr ""
 
 #. translators: %d: number of selected feedback items.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:9
 #: dist/apps/feedback/index.D_zG1Rx-.js:9
 msgid "Mark %d feedback item as reviewed?"
 msgid_plural "Mark %d feedback items as reviewed?"
 msgstr[0] ""
 msgstr[1] ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:9
 #: dist/apps/feedback/index.D_zG1Rx-.js:9
 msgid "Mark reviewed"
 msgstr ""
 
 #. translators: %d: number of selected feedback items.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:11
 #: dist/apps/feedback/index.D_zG1Rx-.js:11
 msgid "Mark %d feedback item as actioned?"
 msgid_plural "Mark %d feedback items as actioned?"
 msgstr[0] ""
 msgstr[1] ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:11
 #: dist/apps/feedback/index.D_zG1Rx-.js:11
 msgid "Mark actioned"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:11
 #: dist/apps/feedback/index.D_zG1Rx-.js:11
 msgid "Select feedback below to perform bulk actions"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:11
 #: dist/apps/feedback/index.D_zG1Rx-.js:11
 msgid "(untitled)"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/feedback/index.OXEmnXeU.js:11
 #: dist/apps/feedback/index.D_zG1Rx-.js:11
 msgid "Change the status of this feedback?"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/settings/index.BaIGZfvd.js:1
 #: dist/apps/settings/index.B7P3m90S.js:1
 msgid "The settings request failed."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/settings/index.BaIGZfvd.js:1
 #: dist/apps/settings/index.B7P3m90S.js:1
 msgid "Other"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/settings/index.BaIGZfvd.js:1
 #: dist/apps/settings/index.B7P3m90S.js:1
 msgid "Resetting your password"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/settings/index.BaIGZfvd.js:1
 #: dist/apps/settings/index.B7P3m90S.js:1
 msgid "A sample article card, drawn with the values above."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/settings/index.BaIGZfvd.js:1
 #: dist/apps/settings/index.B7P3m90S.js:1
 msgid "Read the article"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/settings/index.BaIGZfvd.js:1
 #: dist/apps/settings/index.B7P3m90S.js:1
 msgid "Was this helpful?"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/settings/index.BaIGZfvd.js:1
 #: dist/apps/settings/index.B7P3m90S.js:1
 msgid "Settings saved."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/settings/index.BaIGZfvd.js:1
 #: dist/apps/settings/index.B7P3m90S.js:1
 msgid "Every setting is back to its default."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/settings/index.BaIGZfvd.js:1
 #: dist/apps/settings/index.B7P3m90S.js:1
 msgid "You have unsaved knowledge base settings. Leave this page and lose them?"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/settings/index.BaIGZfvd.js:1
 #: dist/apps/settings/index.B7P3m90S.js:1
 msgid "View documentation"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/settings/index.BaIGZfvd.js:1
 #: dist/apps/settings/index.B7P3m90S.js:1
 msgid "Settings sections"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/settings/index.BaIGZfvd.js:1
 #: dist/apps/settings/index.B7P3m90S.js:1
 msgid "Unsaved changes"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/settings/index.BaIGZfvd.js:1
 #: dist/apps/settings/index.B7P3m90S.js:1
 msgid "All changes saved."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/settings/index.BaIGZfvd.js:1
 #: dist/apps/settings/index.B7P3m90S.js:1
 msgid "Discard"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/settings/index.BaIGZfvd.js:1
 #: dist/apps/settings/index.B7P3m90S.js:1
 msgid "Reset all"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/settings/index.BaIGZfvd.js:1
 #: dist/apps/settings/index.B7P3m90S.js:1
 msgid "Save these settings?"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/settings/index.BaIGZfvd.js:1
 #: dist/apps/settings/index.B7P3m90S.js:1
 msgid "Save changes"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/settings/index.BaIGZfvd.js:1
 #: dist/apps/settings/index.B7P3m90S.js:1
 msgid "Reset every setting?"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/settings/index.BaIGZfvd.js:1
 #: dist/apps/settings/index.B7P3m90S.js:1
 msgid "Reset everything"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/settings/index.BaIGZfvd.js:1
 #: dist/apps/settings/index.B7P3m90S.js:1
 msgid "Every setting goes back to its default. Stored articles, categories and feedback are untouched."
 msgstr ""
 
 #. translators: %d: how many tags will be converted.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:3
-#: dist/apps/tags/index.Bjwl0jqk.js:3
+#: dist/apps/tags/index.B5MTSdg9.js:3
 msgid "Convert %d tag to a category? The tag is deleted."
 msgid_plural "Convert %d tags to categories? The tags are deleted."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: how many tags were converted.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:5
-#: dist/apps/tags/index.Bjwl0jqk.js:5
+#: dist/apps/tags/index.B5MTSdg9.js:5
 msgid "%d tag converted to a category."
 msgid_plural "%d tags converted to categories."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: 1: the tag's name, 2: the existing category's name.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:7
-#: dist/apps/tags/index.Bjwl0jqk.js:7
+#: dist/apps/tags/index.B5MTSdg9.js:7
 msgid "“%1$s” was added to the existing category “%2$s”."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:7
-#: dist/apps/tags/index.Bjwl0jqk.js:7
+#: dist/apps/tags/index.B5MTSdg9.js:7
 msgid "Convert to categories"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:7
-#: dist/apps/tags/index.Bjwl0jqk.js:7
+#: dist/apps/tags/index.B5MTSdg9.js:7
 msgid "Convert"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:7
-#: dist/apps/tags/index.Bjwl0jqk.js:7
+#: dist/apps/tags/index.B5MTSdg9.js:7
 msgid "Each tag becomes a category with the same name and slug, or joins the category that already has its slug or the same name under the chosen parent. Its articles keep it as a category, and the tag is deleted."
 msgstr ""
 
 #. translators: %d: how many tags are selected.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:9
-#: dist/apps/tags/index.Bjwl0jqk.js:9
+#: dist/apps/tags/index.B5MTSdg9.js:9
 msgid "The articles of the %d selected tag get the tag you choose, then the selected tag is deleted."
 msgid_plural "The articles of the %d selected tags get the tag you choose, then the selected tags are deleted."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: how many tags will be merged.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:11
-#: dist/apps/tags/index.Bjwl0jqk.js:11
+#: dist/apps/tags/index.B5MTSdg9.js:11
 msgid "Merge %d tag? It is deleted after its articles move."
 msgid_plural "Merge %d tags? They are deleted after their articles move."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: 1: how many tags were merged, 2: the target tag's name.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:13
-#: dist/apps/tags/index.Bjwl0jqk.js:13
+#: dist/apps/tags/index.B5MTSdg9.js:13
 msgid "%1$d tag merged into “%2$s”."
 msgid_plural "%1$d tags merged into “%2$s”."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: how many merged tags could not be deleted.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:15
-#: dist/apps/tags/index.Bjwl0jqk.js:15
+#: dist/apps/tags/index.B5MTSdg9.js:15
 msgid "%d merged tag could not be deleted. Its articles have the chosen tag; delete it from the list."
 msgid_plural "%d merged tags could not be deleted. Their articles have the chosen tag; delete them from the list."
 msgstr[0] ""
 msgstr[1] ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:15
-#: dist/apps/tags/index.Bjwl0jqk.js:15
+#: dist/apps/tags/index.B5MTSdg9.js:15
 msgid "Merge tags"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:15
-#: dist/apps/tags/index.Bjwl0jqk.js:15
+#: dist/apps/tags/index.B5MTSdg9.js:15
 msgid "Search for the tag to keep…"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:15
-#: dist/apps/tags/index.Bjwl0jqk.js:15
+#: dist/apps/tags/index.B5MTSdg9.js:15
 msgid "Tag to merge into"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:15
-#: dist/apps/tags/index.Bjwl0jqk.js:15
+#: dist/apps/tags/index.B5MTSdg9.js:15
 msgid "Actions"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:17
-#: dist/apps/tags/index.Bjwl0jqk.js:17
+#: dist/apps/tags/index.B5MTSdg9.js:17
 msgid "No tags match these filters."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:17
-#: dist/apps/tags/index.Bjwl0jqk.js:17
+#: dist/apps/tags/index.B5MTSdg9.js:17
 msgid "No tags yet. Add your first tag above."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:17
-#: dist/apps/tags/index.Bjwl0jqk.js:17
+#: dist/apps/tags/index.B5MTSdg9.js:19
 msgid "Save the changes to this tag?"
 msgstr ""
 
 #. translators: %s: the tag's slug.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:19
-#: dist/apps/tags/index.Bjwl0jqk.js:19
+#: dist/apps/tags/index.B5MTSdg9.js:21
 msgid "Tag saved. Its slug is “%s”."
 msgstr ""
 
 #. translators: %d: how many tags will be deleted.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:23
-#: dist/apps/tags/index.Bjwl0jqk.js:23
+#: dist/apps/tags/index.B5MTSdg9.js:25
 msgid "Delete %d tag? Its articles lose it."
 msgid_plural "Delete %d tags? Their articles lose them."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %s: the new tag's name.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:27
-#: dist/apps/tags/index.Bjwl0jqk.js:27
+#: dist/apps/tags/index.B5MTSdg9.js:29
 msgid "Tag “%s” added."
 msgstr ""
 
 #. translators: %d: how many tags were deleted.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:29
-#: dist/apps/tags/index.Bjwl0jqk.js:29
+#: dist/apps/tags/index.B5MTSdg9.js:31
 msgid "%d tag deleted."
 msgid_plural "%d tags deleted."
 msgstr[0] ""
 msgstr[1] ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:29
-#: dist/apps/tags/index.Bjwl0jqk.js:29
+#: dist/apps/tags/index.B5MTSdg9.js:31
 msgid "Add tag"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:29
-#: dist/apps/tags/index.Bjwl0jqk.js:29
+#: dist/apps/tags/index.B5MTSdg9.js:31
 msgid "Slug (optional)"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:29
-#: dist/apps/tags/index.Bjwl0jqk.js:29
+#: dist/apps/tags/index.B5MTSdg9.js:31
 msgid "Description (optional)"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:29
-#: dist/apps/tags/index.Bjwl0jqk.js:29
+#: dist/apps/tags/index.B5MTSdg9.js:31
 msgid "Add this tag?"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:29
-#: dist/apps/tags/index.Bjwl0jqk.js:29
+#: dist/apps/tags/index.B5MTSdg9.js:31
 msgid "Showing one tag."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:29
-#: dist/apps/tags/index.Bjwl0jqk.js:29
+#: dist/apps/tags/index.B5MTSdg9.js:31
 msgid "Show all tags"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:29
-#: dist/apps/tags/index.Bjwl0jqk.js:29
+#: dist/apps/tags/index.B5MTSdg9.js:31
 msgid "Search tags"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:29
-#: dist/apps/tags/index.Bjwl0jqk.js:29
+#: dist/apps/tags/index.B5MTSdg9.js:31
 msgid "Unused only"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:29
-#: dist/apps/tags/index.Bjwl0jqk.js:29
+#: dist/apps/tags/index.B5MTSdg9.js:31
 msgid "Merge into…"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:29
-#: dist/apps/tags/index.Bjwl0jqk.js:29
+#: dist/apps/tags/index.B5MTSdg9.js:31
 msgid "Convert to category"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tags/index.D0CbnV7V.js:29
-#: dist/apps/tags/index.Bjwl0jqk.js:29
+#: dist/apps/tags/index.B5MTSdg9.js:31
 msgid "Select tags below to delete, merge or convert them"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:1
 #: dist/apps/tools/index.CVsyCPOp.js:1
 msgid "This tool is not available."
 msgstr ""
 
 #. translators: %s: the date before which rows are deleted.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:3
 #: dist/apps/tools/index.CVsyCPOp.js:3
 msgid "Rows older than %s"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:3
 #: dist/apps/tools/index.CVsyCPOp.js:3
 msgid "The recount failed."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:3
 #: dist/apps/tools/index.CVsyCPOp.js:3
 msgid "The backlog is too large for the browser; finish it with WP-CLI."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:3
 #: dist/apps/tools/index.CVsyCPOp.js:3
 msgid "The deletion failed."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:3
 #: dist/apps/tools/index.CVsyCPOp.js:3
 msgid "Failed to load the status."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:3
 #: dist/apps/tools/index.CVsyCPOp.js:3
 msgid "Feedback usefulness scores"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:3
 #: dist/apps/tools/index.CVsyCPOp.js:3
 msgid "Each article's helpfulness score is a cache over the vote table. Migrated, imported or hand-edited votes can leave it stale; this recounts every article from the raw rows."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:3
 #: dist/apps/tools/index.CVsyCPOp.js:3
 msgid "Votes recorded"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:3
 #: dist/apps/tools/index.CVsyCPOp.js:3
 msgid "Recount the score of every article?"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:3
 #: dist/apps/tools/index.CVsyCPOp.js:3
 msgid "Recount scores"
 msgstr ""
 
 #. translators: %d: how many articles had their score recounted.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:5
 #: dist/apps/tools/index.CVsyCPOp.js:5
 msgid "Recounted the score of %d article."
 msgid_plural "Recounted the score of %d articles."
 msgstr[0] ""
 msgstr[1] ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:5
 #: dist/apps/tools/index.CVsyCPOp.js:5
 msgid "Analytics retention"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:5
 #: dist/apps/tools/index.CVsyCPOp.js:5
 msgid "Analytics rows older than the retention window are deleted by a scheduled job. This runs the same deletion now."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:5
 #: dist/apps/tools/index.CVsyCPOp.js:5
 msgid "Retention window"
 msgstr ""
 
 #. translators: %d: how many days analytics rows are kept.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:7
 #: dist/apps/tools/index.CVsyCPOp.js:7
 msgid "%d day"
 msgid_plural "%d days"
 msgstr[0] ""
 msgstr[1] ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:7
 #: dist/apps/tools/index.CVsyCPOp.js:7
 msgid "Permanently delete the expired rows?"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:7
 #: dist/apps/tools/index.CVsyCPOp.js:7
 msgid "Delete expired rows"
 msgstr ""
 
 #. translators: %d: how many expired rows were deleted.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:9
 #: dist/apps/tools/index.CVsyCPOp.js:9
 msgid "Deleted %d row:"
 msgid_plural "Deleted %d rows:"
 msgstr[0] ""
 msgstr[1] ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:9
 #: dist/apps/tools/index.CVsyCPOp.js:9
 msgid "The scan failed."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:9
 #: dist/apps/tools/index.CVsyCPOp.js:9
 msgid "The fix failed."
 msgstr ""
 
 #. translators: %d: a count from the merge report.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:11
 #: dist/apps/tools/index.CVsyCPOp.js:11
 msgid "Article groups merged: %d"
 msgstr ""
 
 #. translators: %d: a count from the merge report.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:13
 #: dist/apps/tools/index.CVsyCPOp.js:13
 msgid "Duplicates moved to trash: %d"
 msgstr ""
 
 #. translators: %d: a count from the merge report.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:15
 #: dist/apps/tools/index.CVsyCPOp.js:15
 msgid "Meta keys copied: %d"
 msgstr ""
 
 #. translators: %d: a count from the merge report.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:17
 #: dist/apps/tools/index.CVsyCPOp.js:17
 msgid "Votes moved: %d"
 msgstr ""
 
 #. translators: %d: a count from the merge report.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:19
 #: dist/apps/tools/index.CVsyCPOp.js:19
 msgid "Views moved: %d"
 msgstr ""
 
 #. translators: %d: a count from the merge report.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:21
 #: dist/apps/tools/index.CVsyCPOp.js:21
 msgid "Migration sources cleaned: %d"
 msgstr ""
 
 #. translators: %d: a count from the merge report.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:23
 #: dist/apps/tools/index.CVsyCPOp.js:23
 msgid "Source posts moved to trash: %d"
 msgstr ""
 
 #. translators: %d: a count from the merge report.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:25
 #: dist/apps/tools/index.CVsyCPOp.js:25
 msgid "Term groups merged: %d"
 msgstr ""
 
 #. translators: %d: a count from the merge report.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:27
 #: dist/apps/tools/index.CVsyCPOp.js:27
 msgid "Terms deleted: %d"
 msgstr ""
 
 #. translators: %d: a count from the merge report.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:29
 #: dist/apps/tools/index.CVsyCPOp.js:29
 msgid "Term meta keys copied: %d"
 msgstr ""
 
 #. translators: %d: a count from the merge report.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:31
 #: dist/apps/tools/index.CVsyCPOp.js:31
 msgid "Article assignments moved: %d"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:31
 #: dist/apps/tools/index.CVsyCPOp.js:31
 msgid "Duplicate articles share a title, a slug once any -2 style suffix is stripped, a date and the opening lines of their content; duplicate categories and tags share a name, a slug and a description. Merging keeps the member without a suffix: for articles the duplicate with the most meta provides the content and the rest go to the trash, for terms the meta and article assignments move across and the empty duplicate is deleted. Anything the knowledge base does not own is listed for you to resolve by hand."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:31
 #: dist/apps/tools/index.CVsyCPOp.js:31
 msgid "Scan for duplicates"
 msgstr ""
 
 #. translators: %d: how many duplicate groups will be merged.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:33
 #: dist/apps/tools/index.CVsyCPOp.js:33
 msgid "Merge %d group? Duplicated articles and migration source posts are moved to the trash; duplicated terms are deleted."
 msgid_plural "Merge %d groups? Duplicated articles and migration source posts are moved to the trash; duplicated terms are deleted."
@@ -4382,46 +3810,36 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: how many duplicate groups can be merged.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:35
 #: dist/apps/tools/index.CVsyCPOp.js:35
 msgid "Merge duplicates (%d)"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:35
 #: dist/apps/tools/index.CVsyCPOp.js:35
 msgid "No duplicate articles, categories or tags detected."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:35
 #: dist/apps/tools/index.CVsyCPOp.js:35
 msgid "Merge report"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:35
 #: dist/apps/tools/index.CVsyCPOp.js:35
 msgid "What was done:"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:35
 #: dist/apps/tools/index.CVsyCPOp.js:35
 msgid "Mergeable article groups"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:35
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:37
 #: dist/apps/tools/index.CVsyCPOp.js:35
 #: dist/apps/tools/index.CVsyCPOp.js:37
 msgid "keeps the slug"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:35
 #: dist/apps/tools/index.CVsyCPOp.js:35
 msgid "provides the content"
 msgstr ""
 
 #. translators: %d: how many meta keys the duplicate has.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:37
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:39
 #: dist/apps/tools/index.CVsyCPOp.js:37
 #: dist/apps/tools/index.CVsyCPOp.js:39
 msgid "%d meta key"
@@ -4429,570 +3847,457 @@ msgid_plural "%d meta keys"
 msgstr[0] ""
 msgstr[1] ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:37
 #: dist/apps/tools/index.CVsyCPOp.js:37
 msgid "Migration sources to clean up"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:37
 #: dist/apps/tools/index.CVsyCPOp.js:37
 msgid "Each pair is an article and the migration source post it replaced. Merging moves the source post to the trash; the article is left exactly as the site serves it."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:37
 #: dist/apps/tools/index.CVsyCPOp.js:37
 msgid "stays"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:37
 #: dist/apps/tools/index.CVsyCPOp.js:37
 msgid "moves to trash"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:37
 #: dist/apps/tools/index.CVsyCPOp.js:37
 msgid "Mergeable term groups"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:37
 #: dist/apps/tools/index.CVsyCPOp.js:37
 msgid "provides the meta"
 msgstr ""
 
 #. translators: %d: how many articles have the duplicate term.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "%d article"
 msgid_plural "%d articles"
 msgstr[0] ""
 msgstr[1] ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Flagged for manual review"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "These groups involve a post type the knowledge base does not own, or have no un-suffixed member to merge into. Nothing was changed."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Warnings"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Orphaned"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Created"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Adopted"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Merged"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Updated"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Info"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Type"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Source ID"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "New ID"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Details"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Dry run"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:47
 #: dist/apps/tools/index.CVsyCPOp.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:47
 msgid "Import"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "failed"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "entries"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "would be created"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "would be adopted"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "would be merged"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "would be updated"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "The log could not be loaded."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "The log could not be cleared."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "No imports have been logged yet."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Run"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Download CSV"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Delete this run's log entries? The imported content is not affected."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Delete this run's log"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Clear the whole migration log? The imported content is not affected."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Clear log"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Clear all logs"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "No entries match this filter."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Categories and tags"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Meta"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Key"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Value"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Outcome"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Where"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:41
 #: dist/apps/tools/index.CVsyCPOp.js:41
 msgid "Create a new category"
 msgstr ""
 
 #. translators: %s: the target category's name.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:43
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:45
 #: dist/apps/tools/index.CVsyCPOp.js:43
 #: dist/apps/tools/index.CVsyCPOp.js:45
 msgid "Merge into: %s"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:45
 #: dist/apps/tools/index.CVsyCPOp.js:45
 msgid "Complete"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:45
 #: dist/apps/tools/index.CVsyCPOp.js:45
 msgid "Preparing…"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:45
 #: dist/apps/tools/index.CVsyCPOp.js:45
 msgid "Wrapping up…"
 msgstr ""
 
 #. translators: %s: the name of the import phase being processed.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:47
 #: dist/apps/tools/index.CVsyCPOp.js:47
 msgid "Processing phase: %s"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:47
 #: dist/apps/tools/index.CVsyCPOp.js:47
 msgid "Failed to detect sources."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:47
 #: dist/apps/tools/index.CVsyCPOp.js:47
 msgid "The categories could not be loaded."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:47
 #: dist/apps/tools/index.CVsyCPOp.js:47
 msgid "The import failed."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:47
 #: dist/apps/tools/index.CVsyCPOp.js:47
 msgid "Checking for import sources…"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:47
 #: dist/apps/tools/index.CVsyCPOp.js:47
 msgid "No import sources detected on this installation. Earlier imports are in the log below."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:47
 #: dist/apps/tools/index.CVsyCPOp.js:47
 msgid "These knowledge base plugins have data available for import:"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:47
 #: dist/apps/tools/index.CVsyCPOp.js:47
 msgid "Totals as stored by the source. Records for deleted articles, and analytics from today, are not imported; the dry run shows the exact numbers."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:47
 #: dist/apps/tools/index.CVsyCPOp.js:47
 msgid "An import from this source was interrupted. Resume it to carry on from where it stopped; nothing is imported twice."
 msgstr ""
 
 #. translators: %s: when the last import finished.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:49
 #: dist/apps/tools/index.CVsyCPOp.js:49
 msgid "Last imported %s. Importing again adds new content and the analytics recorded since; content already imported is left as it is."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:49
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
 #: dist/apps/tools/index.CVsyCPOp.js:49
 #: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Resume the import from where it stopped?"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:49
 #: dist/apps/tools/index.CVsyCPOp.js:49
 msgid "Resume import"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:49
 #: dist/apps/tools/index.CVsyCPOp.js:49
 msgid "Next: categories"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:49
 #: dist/apps/tools/index.CVsyCPOp.js:49
 msgid "Choose where each category goes. A new category is created by default; merging files its articles under an existing category and redirects its old address there."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:49
 #: dist/apps/tools/index.CVsyCPOp.js:49
 msgid "This source has no categories."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:49
 #: dist/apps/tools/index.CVsyCPOp.js:49
 msgid "Source category"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:49
 #: dist/apps/tools/index.CVsyCPOp.js:49
 msgid "Import as"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:49
 #: dist/apps/tools/index.CVsyCPOp.js:49
 msgid "Knowledge base"
 msgstr ""
 
 #. translators: %s: the source category's name.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:51
 #: dist/apps/tools/index.CVsyCPOp.js:51
 msgid "Import “%s” as"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:51
 #: dist/apps/tools/index.CVsyCPOp.js:51
 msgid "Also copy the matching settings (layout, columns, sidebars, search placeholder, feedback). URL slugs are never changed, and every change is in the log."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:51
 #: dist/apps/tools/index.CVsyCPOp.js:51
 msgid "Back"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:51
 #: dist/apps/tools/index.CVsyCPOp.js:51
 msgid "Start dry run"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:51
 #: dist/apps/tools/index.CVsyCPOp.js:51
 msgid "Run the import now, without a dry run first?"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:51
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
 #: dist/apps/tools/index.CVsyCPOp.js:51
 #: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Run import"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:51
 #: dist/apps/tools/index.CVsyCPOp.js:51
 msgid "Skip the dry run and import"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:51
 #: dist/apps/tools/index.CVsyCPOp.js:51
 msgid "Verifying import (dry run)"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:51
 #: dist/apps/tools/index.CVsyCPOp.js:51
 msgid "Importing data"
 msgstr ""
 
 #. translators: %d: how many items the latest batch processed.
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
 #: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Processed %d item in the latest batch."
 msgid_plural "Processed %d items in the latest batch."
 msgstr[0] ""
 msgstr[1] ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
 #: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Dry run complete. Nothing was imported; the counts below are what the import would do, and the log shows every item."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
 #: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Download URL map (CSV)"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
 #: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Run the import now?"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
 #: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Looks good, run the import"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
 #: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Resume"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
 #: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "View knowledge base"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
 #: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Back to sources"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
 #: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Migration log"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
 #: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "The rebuild did not finish."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
 #: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "The rebuild failed."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
 #: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Failed to load the index status."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
 #: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "The search index holds one row per article. It is kept in sync automatically; rebuild it after bulk edits outside the editor, or when search results look stale."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
 #: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Indexed articles"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
 #: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "A rebuild is part-way through"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
 #: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "The index was rebuilt."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
 #: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Empty the index and re-index every article?"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
 #: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Rebuild"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
 #: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Rebuild index"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
+#: dist/apps/tools/index.CVsyCPOp.js:53
+msgid "Resume the rebuild from where it stopped?"
+msgstr ""
+
 #: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Resume rebuild"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
 #: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Migration"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
 #: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Search Index"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
 #: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Data Maintenance"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/apps/tools/index.CPhqs9qt.js:53
 #: dist/apps/tools/index.CVsyCPOp.js:53
 msgid "Duplicates"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/chunks/admin.igPOuXRs.js:1
 #: dist/chunks/admin.D6eSioWM.js:1
 msgid "Skip to content"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/chunks/admin.igPOuXRs.js:1
 #: dist/chunks/admin.D6eSioWM.js:1
 msgid "Knowledge base settings"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/chunks/ConfirmButton.vue_vue_type_script_setup_true_lang.BI2r1Vjz.js:1
 #: dist/chunks/ConfirmButton.vue_vue_type_script_setup_true_lang.BnADIlzD.js:1
 msgid "Confirm"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.Cohcn86k.js:1
 #: dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.G_TJ16ZC.js:1
 msgid "The server could not be reached. Check your connection and try again."
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.Cohcn86k.js:1
 #: dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.G_TJ16ZC.js:1
 msgid "The server sent an answer that could not be read. Reload the page and try again."
 msgstr ""
 
 #. translators: %s: the name of the term that will be created.
-#: .tmp/e2e/licensio-knowledge-base/dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.Cohcn86k.js:3
 #: dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.G_TJ16ZC.js:3
 msgid "Create “%s”"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.Cohcn86k.js:3
 #: dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.G_TJ16ZC.js:3
 msgid "Search…"
 msgstr ""
 
-#: .tmp/e2e/licensio-knowledge-base/dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.Cohcn86k.js:3
 #: dist/chunks/TermSelect.vue_vue_type_script_setup_true_lang.G_TJ16ZC.js:3
 msgid "The terms could not be loaded."
-msgstr ""
-
-#: dist/apps/tools/index.CVsyCPOp.js:53
-msgid "Resume the rebuild from where it stopped?"
 msgstr ""
