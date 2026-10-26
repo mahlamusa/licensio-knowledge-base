@@ -301,6 +301,7 @@ test.describe( 'App width', () => {
 		// The choice is kept on reload, and the table still fits.
 		await page.reload();
 		await expect( header( 'Reading time' ) ).toBeVisible();
+		await expect( header( 'Rating' ) ).toHaveCount( 0 );
 		await expect
 			.poll( async () => {
 				const frame = await measureFrame( page );
@@ -309,11 +310,31 @@ test.describe( 'App width', () => {
 			} )
 			.toBe( 0 );
 
+		// A pick on a small laptop drops nothing from a wider screen.
+		await page.setViewportSize( { width: 1440, height: 900 } );
+
+		for ( const name of [
+			'Attachments',
+			'Rating',
+			'Views',
+			'Reading time',
+		] ) {
+			await expect( header( name ) ).toBeVisible();
+		}
+
+		// Columns saved before the medium-width defaults are the user's choice.
+		const admin = JSON.parse( seeded ).admin;
+
+		wpEval(
+			`update_user_meta( ${ admin }, 'licensio_kb_article_list_prefs', array( 'columns' => array( 'author', 'categories', 'tags', 'views', 'date' ), 'per_page' => 20 ) );`
+		);
+		await page.setViewportSize( { width: 1024, height: 900 } );
+		await page.reload();
+		await expect( header( 'Views' ) ).toBeVisible();
+
 		// Back to the defaults for the other tests.
 		wpEval(
-			`delete_user_meta( ${
-				JSON.parse( seeded ).admin
-			}, 'licensio_kb_article_list_prefs' );`
+			`delete_user_meta( ${ admin }, 'licensio_kb_article_list_prefs' );`
 		);
 	} );
 

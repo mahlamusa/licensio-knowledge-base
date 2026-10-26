@@ -535,6 +535,14 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
                 'type'    => 'boolean',
                 'default' => false,
             ),
+            'medium_columns' => array(
+                'type'    => 'array',
+                'default' => array(),
+                'items'   => array(
+                    'type' => 'string',
+                    'enum' => self::COLUMNS,
+                ),
+            ),
         );
     }
 
@@ -1695,6 +1703,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
                 'columns'        => $request->get_param( 'columns' ),
                 'per_page'       => $request->get_param( 'per_page' ),
                 'columns_chosen' => $request->get_param( 'columns_chosen' ),
+                'medium_columns' => $request->get_param( 'medium_columns' ),
             )
         );
 
@@ -1710,7 +1719,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      *
      * @param int $user_id The user ID.
      *
-     * @return array{columns: string[], per_page: int, columns_chosen: bool} The preferences.
+     * @return array{columns: string[], per_page: int, columns_chosen: bool, medium_columns: string[]} The preferences.
      */
     public static function preferences( $user_id ) {
         return self::sanitize_preferences( get_user_meta( (int) $user_id, self::PREFERENCES_META, true ) );
@@ -1722,13 +1731,17 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      * `columns_chosen` is true once the user picked their columns in the
      * Columns picker. Until then the app may hide the less used default
      * columns on medium screens, so the term columns stay readable; a choice
-     * the user made is shown exactly.
+     * the user made is shown exactly. Columns saved before the key existed
+     * were picked by the user, so stored columns without the key count as
+     * chosen. `medium_columns` lists the columns hidden on medium screens
+     * that the user turned on there, which shows them on medium screens
+     * without changing the columns shown on wider ones.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Counts columns stored without `columns_chosen` as chosen, and adds `medium_columns`.
      *
      * @param mixed $value The stored or submitted preferences.
      *
-     * @return array{columns: string[], per_page: int, columns_chosen: bool} The clean preferences.
+     * @return array{columns: string[], per_page: int, columns_chosen: bool, medium_columns: string[]} The clean preferences.
      */
     public static function sanitize_preferences( $value ) {
         $value    = is_array( $value ) ? $value : array();
@@ -1739,7 +1752,8 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
             // Kept in table order, whatever order they were sent in.
             'columns'        => array_values( array_intersect( self::COLUMNS, array_map( 'strval', $columns ) ) ),
             'per_page'       => in_array( $per_page, self::PER_PAGE_OPTIONS, true ) ? $per_page : self::PER_PAGE_OPTIONS[0],
-            'columns_chosen' => ! empty( $value['columns_chosen'] ),
+            'columns_chosen' => array_key_exists( 'columns_chosen', $value ) ? ! empty( $value['columns_chosen'] ) : isset( $value['columns'] ),
+            'medium_columns' => isset( $value['medium_columns'] ) && is_array( $value['medium_columns'] ) ? array_values( array_intersect( self::COLUMNS, array_map( 'strval', $value['medium_columns'] ) ) ) : array(),
         );
     }
 

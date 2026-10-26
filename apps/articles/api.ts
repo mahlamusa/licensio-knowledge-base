@@ -56,6 +56,7 @@ const FALLBACK_CONFIG: ArticlesConfig = {
 		],
 		per_page: PER_PAGE,
 		columns_chosen: false,
+		medium_columns: [],
 	},
 	lowRating: { threshold: 50, minVotes: 5 },
 };

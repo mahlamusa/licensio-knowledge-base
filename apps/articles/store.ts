@@ -89,12 +89,12 @@ const MEDIUM_HIDDEN: ArticleColumn[] = [
 	'reading_time',
 ];
 
-const mediumQuery = window.matchMedia(
+const mediumQuery = window.matchMedia?.(
 	'(min-width: 783px) and (max-width: 1279px)'
 );
-const medium = ref( mediumQuery.matches );
+const medium = ref( mediumQuery?.matches ?? false );
 
-mediumQuery.addEventListener( 'change', ( event ) => {
+mediumQuery?.addEventListener( 'change', ( event ) => {
 	medium.value = event.matches;
 } );
 
@@ -149,6 +149,7 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 				columns: [ ...preferences.columns ],
 				per_page: perPage,
 				columns_chosen: !! preferences.columns_chosen,
+				medium_columns: [ ...( preferences.medium_columns ?? [] ) ],
 			},
 			quickEditId: 0,
 			bulk: emptyRun(),
@@ -230,22 +231,29 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 		 * The columns shown at the current width, which the Columns picker
 		 * shows ticked.
 		 *
-		 * Until the user picks their columns, the less used defaults are left
-		 * out on medium screens.
+		 * Until the user picks their columns on a wider screen, the less used
+		 * defaults are left out on medium screens, except those the user
+		 * turned on there.
 		 *
 		 * @param {State} state The store state.
 		 *
 		 * @return {ArticleColumn[]} The columns.
 		 */
 		visibleColumns( state ): ArticleColumn[] {
-			const { columns, columns_chosen: chosen } = state.preferences;
+			const {
+				columns,
+				columns_chosen: chosen,
+				medium_columns: mediumColumns,
+			} = state.preferences;
 
 			if ( chosen || ! medium.value ) {
 				return columns;
 			}
 
 			return columns.filter(
-				( column ) => ! MEDIUM_HIDDEN.includes( column )
+				( column ) =>
+					! MEDIUM_HIDDEN.includes( column ) ||
+					mediumColumns.includes( column )
 			);
 		},
 
@@ -492,10 +500,6 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 			this.preferences = {
 				...this.preferences,
 				...preferences,
-				// A column change is the user's choice, shown exactly from now on.
-				columns_chosen:
-					undefined !== preferences.columns ||
-					this.preferences.columns_chosen,
 			};
 
 			clearTimeout( preferencesTimer );
@@ -512,6 +516,63 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 				this.syncUrl( false );
 				this.load();
 			}
+		},
+
+		/**
+		 * Apply a change made in the Columns picker.
+		 *
+		 * The picker ticks the columns shown at the current width. On a
+		 * medium screen, before the user picked columns on a wider one, only
+		 * the clicked column changes: a column hidden there is turned on or
+		 * off for medium screens alone, and any other column everywhere, so
+		 * a pick there never drops the columns wider screens show. Anywhere
+		 * else the ticked columns are the user's columns, shown exactly from
+		 * then on.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param {ArticleColumn[]} picked The columns ticked.
+		 *
+		 * @return {void}
+		 */
+		pickColumns( picked: ArticleColumn[] ): void {
+			if ( this.preferences.columns_chosen || ! medium.value ) {
+				this.setPreferences( {
+					columns: picked,
+					columns_chosen: true,
+				} );
+
+				return;
+			}
+
+			const shown = this.visibleColumns;
+			const added = picked.filter(
+				( column ) => ! shown.includes( column )
+			);
+			const removed = shown.filter(
+				( column ) => ! picked.includes( column )
+			);
+			const hidden = ( column: ArticleColumn ) =>
+				MEDIUM_HIDDEN.includes( column );
+			const { columns, medium_columns: mediumColumns } = this.preferences;
+
+			this.setPreferences( {
+				columns: [
+					...columns.filter(
+						( column ) =>
+							hidden( column ) || ! removed.includes( column )
+					),
+					...added.filter(
+						( column ) => ! columns.includes( column )
+					),
+				],
+				medium_columns: [
+					...mediumColumns.filter(
+						( column ) => ! removed.includes( column )
+					),
+					...added.filter( hidden ),
+				],
+			} );
 		},
 
 		/**

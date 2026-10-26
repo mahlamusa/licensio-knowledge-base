@@ -7,8 +7,9 @@
  * no content, so they do not ask for confirmation.
  *
  * The boxes ticked are the columns shown at the current width: on medium
- * screens some default columns are left out until the user picks their own,
- * and a pick made here is kept exactly as shown.
+ * screens some default columns are left out until the user turns them on.
+ * A pick on a medium screen changes only the column clicked, so wider
+ * screens keep their columns; see the store's `pickColumns()`.
  *
  * @since 1.0.0
  */
@@ -70,9 +71,7 @@ const perPageOptions: PerPage[] = [ 20, 50, 100 ];
 					:options="columns"
 					@change="
 						( value: unknown ) =>
-							store.setPreferences( {
-								columns: value as ArticleColumn[],
-							} )
+							store.pickColumns( value as ArticleColumn[] )
 					"
 				/>
 			</fieldset>

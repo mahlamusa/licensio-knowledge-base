@@ -607,12 +607,14 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
                 'columns'        => array( 'author', 'views', 'modified' ),
                 'per_page'       => 50,
                 'columns_chosen' => true,
+                'medium_columns' => array( 'rating', 'views' ),
             ),
             Licensio_KB_Articles_REST_Controller::sanitize_preferences(
                 array(
                     'columns'        => array( 'modified', 'views', 'post_content', 'author' ),
                     'per_page'       => 50,
                     'columns_chosen' => '1',
+                    'medium_columns' => array( 'views', 'post_content', 'rating' ),
                 )
             )
         );
@@ -622,7 +624,21 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
         $this->assertSame( Licensio_KB_Articles_REST_Controller::DEFAULT_COLUMNS, $defaults['columns'] );
         $this->assertSame( 20, $defaults['per_page'] );
         $this->assertFalse( $defaults['columns_chosen'] );
+        $this->assertSame( array(), $defaults['medium_columns'] );
         $this->assertSame( 20, Licensio_KB_Articles_REST_Controller::sanitize_preferences( array( 'per_page' => 25 ) )['per_page'] );
+
+        $this->assertTrue(
+            Licensio_KB_Articles_REST_Controller::sanitize_preferences( array( 'columns' => array( 'author', 'views' ) ) )['columns_chosen'],
+            'Columns saved before the key existed were the user’s choice.'
+        );
+        $this->assertFalse(
+            Licensio_KB_Articles_REST_Controller::sanitize_preferences(
+                array(
+                    'columns'        => array( 'author' ),
+                    'columns_chosen' => false,
+                )
+            )['columns_chosen']
+        );
     }
 
     /**

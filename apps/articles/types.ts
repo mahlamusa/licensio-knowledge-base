@@ -269,6 +269,8 @@ export interface ListPreferences {
 	per_page: PerPage;
 	/** True once the user picked their columns in the Columns picker. */
 	columns_chosen: boolean;
+	/** The columns hidden on medium screens that the user turned on there. */
+	medium_columns: ArticleColumn[];
 }
 
 /**
