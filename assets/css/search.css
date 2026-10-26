@@ -85,11 +85,12 @@
 
 	/*
 	 * The one opaque surface: the list floats over the page, so a transparent
-	 * one would print its results on top of whatever is underneath. The system
-	 * colour pair follows the page's colour scheme and always reads.
+	 * one would print its results on top of whatever is underneath. A block
+	 * theme's base and contrast presets are its own background and text pair;
+	 * any other theme gets the browser's system pair, which always reads.
 	 */
-	background: Canvas;
-	color: CanvasText;
+	background: var( --wp--preset--color--base, Canvas );
+	color: var( --wp--preset--color--contrast, CanvasText );
 	box-shadow: 0 8px 24px color-mix( in srgb, currentColor 12%, transparent );
 }
 
