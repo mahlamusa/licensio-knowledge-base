@@ -441,6 +441,96 @@ class Licensio_KB_Templates_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * A theme override that opens its own loop renders the article once.
+     *
+     * Core has already moved the main query onto its one article when the
+     * view block renders, so an override of `single-body.php` written with
+     * the usual `while ( have_posts() ) : the_post();` loop would find no
+     * posts left and render an empty article. The block puts the query back
+     * to the start of its loop for the body, and afterwards back to where
+     * core left it so core's own loop ends normally.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_theme_override_with_its_own_loop_renders_the_article_once() {
+        $article = new WP_Post(
+            array(
+                'ID'        => 42,
+                'post_type' => Licensio_KB_Post_Types::POST_TYPE,
+            )
+        );
+
+        // Where core's singular loop leaves the main query when the block renders.
+        $query               = new WP_Query();
+        $query->posts        = array( $article );
+        $query->post_count   = 1;
+        $query->current_post = 0;
+        $query->in_the_loop  = true;
+        $query->post         = $article;
+
+        // phpcs:disable WordPress.WP.GlobalVariablesOverride.Prohibited -- The test stands up core's loop.
+        $GLOBALS['wp_query'] = $query;
+        $GLOBALS['post']     = $article;
+        // phpcs:enable WordPress.WP.GlobalVariablesOverride.Prohibited
+
+        $this->stub_view_request( 'single' );
+        $this->stub_theme_lookup();
+
+        Functions\when( 'wp_is_block_theme' )->justReturn( true );
+        Functions\when( 'in_the_loop' )->alias(
+            function () {
+                return $GLOBALS['wp_query']->in_the_loop;
+            }
+        );
+        Functions\when( 'get_the_ID' )->justReturn( 42 );
+        Functions\when( 'get_queried_object_id' )->justReturn( 42 );
+
+        // The two loop functions, as WP_Query runs them on the global query.
+        Functions\when( 'have_posts' )->alias(
+            function () {
+                $loop = $GLOBALS['wp_query'];
+
+                if ( $loop->current_post + 1 < $loop->post_count ) {
+                    return true;
+                }
+
+                if ( $loop->current_post + 1 === $loop->post_count ) {
+                    $loop->current_post = -1;
+                    $loop->post         = $loop->posts[0];
+                }
+
+                $loop->in_the_loop = false;
+
+                return false;
+            }
+        );
+        Functions\when( 'the_post' )->alias(
+            function () {
+                $loop = $GLOBALS['wp_query'];
+
+                $loop->in_the_loop = true;
+                ++$loop->current_post;
+                $loop->post      = $loop->posts[ $loop->current_post ];
+                $GLOBALS['post'] = $loop->post; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- The stand-in sets up the post as the_post() does.
+            }
+        );
+
+        file_put_contents( $this->theme_dir . '/licensio-kb/single-body.php', '<?php while ( have_posts() ) : the_post(); echo "ARTICLE " . get_the_ID() . ";"; endwhile;' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+
+        $markup = ( new Licensio_KB_View_Block() )->render( array( 'view' => 'single' ) );
+
+        $this->assertSame( 'ARTICLE 42;', $markup );
+        $this->assertSame( 0, $query->current_post, 'The main query is back on its article.' );
+        $this->assertTrue( $query->in_the_loop, 'Core\'s loop is still running.' );
+        $this->assertSame( $article, $query->post );
+        $this->assertSame( $article, $GLOBALS['post'] );
+
+        unset( $GLOBALS['wp_query'], $GLOBALS['post'] );
+    }
+
+    /**
      * Inside a loop the view block renders nothing but the queried article.
      *
      * @since 1.0.0

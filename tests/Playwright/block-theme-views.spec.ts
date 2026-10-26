@@ -20,6 +20,7 @@
  *
  * @since 1.0.0
  * @since 1.0.0 Pins the sidebar settings and covers a view placed in post content.
+ * @since 1.0.0 Covers a theme override of the single body that runs its own loop.
  */
 
 import { expect, test, type Page } from '@playwright/test';
@@ -203,6 +204,46 @@ test.describe( 'Knowledge base views on a block theme', () => {
 		await expect(
 			page.locator( '.licensio-kb-article__body' )
 		).not.toContainText( 'licensio_kb_view' );
+	} );
+
+	test( 'a theme override with its own loop renders the article once', async ( {
+		page,
+	} ) => {
+		/*
+		 * The override most theme authors would write. Core has already
+		 * moved the main query onto the article when the view block renders,
+		 * so this loop used to find nothing and leave the page empty.
+		 */
+		const override = Buffer.from(
+			'<?php while ( have_posts() ) : the_post(); ?><h2 class="lkb-override-title"><?php the_title(); ?></h2><div class="lkb-override-body"><?php the_content(); ?></div><?php endwhile;'
+		).toString( 'base64' );
+
+		wpEval(
+			`$dir = get_stylesheet_directory() . '/licensio-kb';
+			wp_mkdir_p( $dir );
+			file_put_contents( $dir . '/single-body.php', base64_decode( '${ override }' ) );`
+		);
+
+		try {
+			await page.goto( seeded.single, { timeout: PAGE_TIMEOUT } );
+
+			const title = page.locator( 'main .lkb-override-title' );
+
+			await expect( title ).toHaveCount( 1 );
+			await expect( title ).toHaveText( `Block view article ${ RUN }` );
+			await expect(
+				page.locator( 'main .lkb-override-body' )
+			).toHaveCount( 1 );
+			await expect(
+				page.locator( 'main .lkb-override-body' )
+			).toContainText( 'First section body.' );
+		} finally {
+			wpEval(
+				`$dir = get_stylesheet_directory() . '/licensio-kb';
+				wp_delete_file( $dir . '/single-body.php' );
+				@rmdir( $dir );`
+			);
+		}
 	} );
 
 	test( 'a view placed in a post renders nothing and does not hang', async ( {

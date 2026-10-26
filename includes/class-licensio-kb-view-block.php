@@ -220,6 +220,7 @@ class Licensio_KB_View_Block extends Licensio_KB_Block {
      * placed somewhere it was not built for, and renders nothing.
      *
      * @since 1.0.0
+     * @since 1.0.0 Lets a theme override that runs its own loop render the article.
      *
      * @param array<string, bool|int|string> $attributes The normalised attributes.
      *
@@ -236,11 +237,59 @@ class Licensio_KB_View_Block extends Licensio_KB_Block {
             return $this->preview( $view );
         }
 
-        if ( in_the_loop() && ( 'single' !== $view || (int) get_the_ID() !== (int) get_queried_object_id() ) ) {
+        if ( ! in_the_loop() ) {
+            return Licensio_KB_Templates::render_view( $view );
+        }
+
+        if ( 'single' !== $view || (int) get_the_ID() !== (int) get_queried_object_id() ) {
             return '';
         }
 
-        return Licensio_KB_Templates::render_view( $view );
+        return $this->render_in_main_loop( $view );
+    }
+
+    /**
+     * Render the single article body inside core's loop over the main query.
+     *
+     * Core has already moved the main query onto its one article, so a theme
+     * override of `single-body.php` that opens the usual
+     * `while ( have_posts() ) : the_post();` loop would find no posts left,
+     * rewind the query and render an empty article. The query is put back to
+     * the start of its loop while the body renders, so such an override
+     * loops over the article once, and is then returned to where core left
+     * it so core's own loop ends normally. The shipped body checks
+     * `in_the_loop()`, which stays true, and renders the article without
+     * looping at all.
+     *
+     * @since 1.0.0
+     *
+     * @param string $view The view name.
+     *
+     * @return string The view body markup.
+     */
+    private function render_in_main_loop( $view ) {
+        $query = isset( $GLOBALS['wp_query'] ) ? $GLOBALS['wp_query'] : null;
+
+        if ( ! $query instanceof WP_Query ) {
+            return Licensio_KB_Templates::render_view( $view );
+        }
+
+        $current_post = $query->current_post;
+        $query_post   = $query->post;
+        $global_post  = isset( $GLOBALS['post'] ) ? $GLOBALS['post'] : null;
+
+        $query->current_post = -1;
+
+        try {
+            $markup = Licensio_KB_Templates::render_view( $view );
+        } finally {
+            $query->current_post = $current_post;
+            $query->in_the_loop  = true;
+            $query->post         = $query_post;
+            $GLOBALS['post']     = $global_post; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Put back the post core's loop set up.
+        }
+
+        return $markup;
     }
 
     /**

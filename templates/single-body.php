@@ -31,6 +31,7 @@
  * @package Licensio_KB
  * @since   1.0.0
  * @since   1.0.0 Renders the current article inside a loop that is already running.
+ * @since   1.0.0 Documented that an override with its own loop also works.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -62,7 +63,11 @@ $licensio_kb_hero_post = get_post();
  * here would fire the main query's loop hooks twice, and a second
  * `have_posts()` would rewind core's loop and start it again, so the current
  * article is rendered once instead. Everywhere else this body runs the loop
- * itself. A theme override of this file must keep both paths.
+ * itself. A theme override of this file can keep both paths, as this file
+ * does, or simply open the usual `while ( have_posts() )` loop: the view block
+ * rewinds the main query for the body, so that loop finds the article once.
+ * Core's `loop_start`, `the_post` and `loop_end` then run a second time for
+ * the override's own loop, which keeping both paths avoids.
  */
 $licensio_kb_in_loop = in_the_loop();
 

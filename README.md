@@ -326,7 +326,10 @@ template renders that same file through the dynamic `licensio-kb/view` block
 (`<!-- wp:licensio-kb/view {"view":"…"} /-->`), so both theme types serve one
 layout. The block renders inside the loop core runs around a singular block
 template, so on a single article `single-body.php` renders the article core
-has already set up rather than opening a second loop. In the Site Editor the
+has already set up rather than opening a second loop. A theme override that
+opens the usual `while ( have_posts() )` loop still works: the block rewinds
+the main query for the body, so that loop renders the article once, though
+core's loop hooks then run once more for it. In the Site Editor the
 block previews against the newest published article, or a category or tag
 that has articles. Only the Site Editor offers the block in its inserter: in a
 post or page it would render nothing. The `[licensio_kb_view view="…"]` shortcode renders the same
