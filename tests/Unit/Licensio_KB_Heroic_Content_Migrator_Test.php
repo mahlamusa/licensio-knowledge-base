@@ -163,7 +163,7 @@ class Licensio_KB_Heroic_Content_WPDB {
      * @param string $query  The statement.
      * @param mixed  $output Ignored.
      *
-     * @return array<int, array<string, mixed>> The queued rows.
+     * @return array<int, array<int|string, mixed>> The positions rows, or the queued rows.
      */
     public function get_results( $query = '', $output = null ) {
         unset( $output );
