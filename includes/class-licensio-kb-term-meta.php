@@ -324,7 +324,7 @@ class Licensio_KB_Term_Meta {
         // Text that is not Base64 decodes to an empty string, and the sanitiser applies the size cap.
         if ( 1 === preg_match( '#^data:image/svg\+xml;base64,#i', $value ) ) {
             // A loose cap on the encoded text first, as for raster icons, so a huge value is never decoded.
-            if ( strlen( $value ) > 2 * ( 64 + (int) ceil( Licensio_KB_SVG_Sanitizer::MAX_LENGTH / 3 ) * 4 ) ) {
+            if ( self::encoded_too_long( $value, Licensio_KB_SVG_Sanitizer::MAX_LENGTH ) ) {
                 return '';
             }
 
@@ -361,7 +361,7 @@ class Licensio_KB_Term_Meta {
         }
 
         // A loose cap on the encoded text first, twice what the largest icon needs to leave room for line breaks, so a huge value is never decoded.
-        if ( strlen( $value ) > 2 * ( 64 + (int) ceil( self::ICON_DATA_MAX_BYTES / 3 ) * 4 ) ) {
+        if ( self::encoded_too_long( $value, self::ICON_DATA_MAX_BYTES ) ) {
             return '';
         }
 
@@ -379,6 +379,24 @@ class Licensio_KB_Term_Meta {
         }
 
         return 'data:' . $mime . ';base64,' . base64_encode( $bytes ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Rebuilding a data: URL for an image.
+    }
+
+    /**
+     * Whether a Base64 `data:` URL is too long to hold an allowed size.
+     *
+     * A loose cap, twice what the largest value needs plus room for the
+     * `data:` prefix, so line-wrapped Base64 still fits and a huge value is
+     * refused without being decoded.
+     *
+     * @since 1.0.0
+     *
+     * @param string $value     The `data:` URL.
+     * @param int    $max_bytes The largest decoded size allowed.
+     *
+     * @return bool True when the value is longer than the cap.
+     */
+    private static function encoded_too_long( $value, $max_bytes ) {
+        return strlen( $value ) > 2 * ( 64 + (int) ceil( $max_bytes / 3 ) * 4 );
     }
 
     /**

@@ -28,10 +28,11 @@
  *
  * Every route needs `manage_licensio_kb` and the matching capability of the
  * taxonomy it changes, and the writes also need `edit_term` or `delete_term`
- * on each existing term they touch, as the Categories routes do. Term names are answered as plain text: core stores `&`
- * as `&amp;`, and the app renders them as text. Descriptions are answered as
- * stored: decoding one and sending it back on save would let kses turn
- * escaped text such as `&lt;b&gt;` into markup, or strip it.
+ * on each existing term they touch, as the Categories routes do. Term names
+ * are answered as plain text: core stores `&` as `&amp;`, and the app renders
+ * them as text. Descriptions are answered as stored: decoding one and sending
+ * it back on save would let kses turn escaped text such as `&lt;b&gt;` into
+ * markup, or strip it.
  *
  * @package Licensio_KB
  * @since   1.0.0
@@ -355,7 +356,7 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
             return $allowed;
         }
 
-        return self::term_permissions_check( 'edit_term', Licensio_KB_Post_Types::TAXONOMY_TAG, array( $request->get_param( 'id' ) ) );
+        return self::term_permissions_check( 'edit_term', Licensio_KB_Post_Types::TAXONOMY_TAG, $request->get_param( 'id' ) );
     }
 
     /**
@@ -376,7 +377,7 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
             return $allowed;
         }
 
-        return self::term_permissions_check( 'delete_term', Licensio_KB_Post_Types::TAXONOMY_TAG, (array) $request->get_param( 'ids' ) );
+        return self::term_permissions_check( 'delete_term', Licensio_KB_Post_Types::TAXONOMY_TAG, $request->get_param( 'ids' ) );
     }
 
     /**
@@ -406,13 +407,13 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
             return $allowed;
         }
 
-        $allowed = self::term_permissions_check( 'delete_term', Licensio_KB_Post_Types::TAXONOMY_TAG, (array) $request->get_param( 'sources' ) );
+        $allowed = self::term_permissions_check( 'delete_term', Licensio_KB_Post_Types::TAXONOMY_TAG, $request->get_param( 'sources' ) );
 
         if ( true !== $allowed ) {
             return $allowed;
         }
 
-        return self::term_permissions_check( 'edit_term', Licensio_KB_Post_Types::TAXONOMY_TAG, array( $request->get_param( 'target' ) ) );
+        return self::term_permissions_check( 'edit_term', Licensio_KB_Post_Types::TAXONOMY_TAG, $request->get_param( 'target' ) );
     }
 
     /**
@@ -442,13 +443,13 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
             return $allowed;
         }
 
-        $allowed = self::term_permissions_check( 'delete_term', Licensio_KB_Post_Types::TAXONOMY_TAG, (array) $request->get_param( 'ids' ) );
+        $allowed = self::term_permissions_check( 'delete_term', Licensio_KB_Post_Types::TAXONOMY_TAG, $request->get_param( 'ids' ) );
 
         if ( true !== $allowed ) {
             return $allowed;
         }
 
-        return self::term_permissions_check( 'edit_term', Licensio_KB_Post_Types::TAXONOMY_CATEGORY, array( $request->get_param( 'parent' ) ) );
+        return self::term_permissions_check( 'edit_term', Licensio_KB_Post_Types::TAXONOMY_CATEGORY, $request->get_param( 'parent' ) );
     }
 
     /**
@@ -491,11 +492,11 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
      *
      * @param string $meta_cap The per-term capability, `edit_term` or `delete_term`.
      * @param string $taxonomy The taxonomy the IDs belong to.
-     * @param array  $ids      The term IDs as sent.
+     * @param mixed  $ids      The term ID or IDs as sent.
      *
      * @return true|WP_Error True when the current user holds the capability on every term.
      */
-    private static function term_permissions_check( $meta_cap, $taxonomy, array $ids ) {
+    private static function term_permissions_check( $meta_cap, $taxonomy, $ids ) {
         foreach ( self::ids( $ids ) as $id ) {
             if ( get_term( $id, $taxonomy ) instanceof WP_Term && ! current_user_can( $meta_cap, $id ) ) {
                 return self::forbidden_error();
