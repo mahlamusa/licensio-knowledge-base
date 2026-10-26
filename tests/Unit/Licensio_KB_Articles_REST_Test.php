@@ -621,6 +621,50 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * Quick edit categories and tags, and bulk terms, are capped at 100.
+     *
+     * Without a cap one request could create any number of new tags.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_term_lists_are_capped() {
+        $args = $this->routes['/articles/(?P<id>[\d]+)'][0]['args'];
+
+        $this->assertSame( 100, $args['categories']['maxItems'] );
+        $this->assertSame( 100, $args['tags']['maxItems'] );
+
+        $names = array_fill( 0, 100, array( 'name' => 'New' ) );
+
+        $this->assertTrue( Licensio_KB_Articles_REST_Controller::validate_tag_values( $names ) );
+
+        $names[] = array( 'name' => 'One too many' );
+
+        $this->assertInstanceOf( 'WP_Error', Licensio_KB_Articles_REST_Controller::validate_tag_values( $names ) );
+
+        $this->terms['licensio_category'] = range( 1, 101 );
+
+        $bulk = function ( $count ) {
+            return $this->controller->bulk_action_args(
+                'terms',
+                array(
+                    'taxonomy' => 'licensio_category',
+                    'mode'     => 'add',
+                    'term_ids' => range( 1, $count ),
+                )
+            );
+        };
+
+        $this->assertSame( range( 1, 100 ), $bulk( 100 )['term_ids'] );
+
+        $result = $bulk( 101 );
+
+        $this->assertInstanceOf( 'WP_Error', $result );
+        $this->assertSame( 400, $result->get_error_data()['status'] );
+    }
+
+    /**
      * Each bulk action's arguments are checked before anything runs.
      *
      * @since 1.0.0
@@ -847,6 +891,70 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
                 'licensio_tag'      => array( 7, array( 'name' => 'Fresh' ) ),
             ),
             $result[1]
+        );
+    }
+
+    /**
+     * The slug sanitizer takes one argument, as the REST server calls it with three.
+     *
+     * Core's sanitize_title() reads a second argument as the value to return
+     * for an empty result and a third as the context, and strips accents only
+     * in the `save` context. The double below behaves the same way, so a
+     * sanitizer that forwards the server's request and key would answer the
+     * request for an empty slug and keep the accents percent-encoded. An empty
+     * slug reaches core as an empty post name, which core rebuilds from the
+     * title.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_slug_is_sanitized_with_one_argument() {
+        Functions\when( 'sanitize_title' )->alias(
+            function ( $title, $fallback_title = '', $context = 'save' ) {
+                $title = (string) $title;
+
+                if ( 'save' === $context ) {
+                    $title = strtr(
+                        $title,
+                        array(
+                            "\u{e9}" => 'e',
+                            "\u{dc}" => 'U',
+                        )
+                    );
+                } else {
+                    $title = (string) preg_replace_callback(
+                        '/[\x80-\xff]/',
+                        function ( $byte ) {
+                            return '%' . strtolower( bin2hex( $byte[0] ) );
+                        },
+                        $title
+                    );
+                }
+
+                $title = trim( (string) preg_replace( '/[^a-z0-9%]+/', '-', strtolower( $title ) ), '-' );
+
+                return '' === $title ? $fallback_title : $title;
+            }
+        );
+
+        $sanitize = $this->routes['/articles/(?P<id>[\d]+)'][0]['args']['slug']['sanitize_callback'];
+        $request  = $this->patch( array() );
+
+        foreach ( array( '', '   ', '!!!' ) as $empty ) {
+            $this->assertSame( '', call_user_func( $sanitize, $empty, $request, 'slug' ) );
+        }
+
+        $this->assertSame( 'cafe-uber', call_user_func( $sanitize, "Caf\u{e9} \u{dc}ber", $request, 'slug' ) );
+
+        $result = $this->controller->collect_changes( $this->patch( array( 'slug' => '' ) ), $this->post() );
+
+        $this->assertSame(
+            array(
+                'ID'        => 12,
+                'post_name' => '',
+            ),
+            $result[0]
         );
     }
 

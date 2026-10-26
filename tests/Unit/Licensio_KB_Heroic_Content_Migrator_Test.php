@@ -96,6 +96,14 @@ class Licensio_KB_Heroic_Content_WPDB {
     public $target_terms = array();
 
     /**
+     * Per-category order meta key to the rows its positions query answers.
+     *
+     * @since 1.0.0
+     * @var array<string, array<int, array<int, string>>>
+     */
+    public $positions = array();
+
+    /**
      * Every statement the migrator ran.
      *
      * @since 1.0.0
@@ -147,17 +155,24 @@ class Licensio_KB_Heroic_Content_WPDB {
     /**
      * Answer a multi-row lookup.
      *
+     * A per-category positions query is answered from `$positions`; any
+     * other lookup takes the next queued result.
+     *
      * @since 1.0.0
      *
      * @param string $query  The statement.
      * @param mixed  $output Ignored.
      *
-     * @return array<int, array<string, mixed>> The queued rows.
+     * @return array<int, array<int|string, mixed>> The positions rows, or the queued rows.
      */
     public function get_results( $query = '', $output = null ) {
         unset( $output );
 
         $this->queries[] = $query;
+
+        if ( preg_match( "/pm\\.meta_key = '(licensio_order_\\d+)'/", $query, $matches ) ) {
+            return isset( $this->positions[ $matches[1] ] ) ? $this->positions[ $matches[1] ] : array();
+        }
 
         return empty( $this->results ) ? array() : (array) array_shift( $this->results );
     }
@@ -195,7 +210,7 @@ class Licensio_KB_Heroic_Content_WPDB {
         $position = 0;
 
         return (string) preg_replace_callback(
-            '/%[sdf]/',
+            '/%[sdfi]/',
             function () use ( &$position, $args ) {
                 $value = array_key_exists( $position, $args ) ? $args[ $position ] : '';
                 ++$position;
@@ -704,17 +719,7 @@ class Licensio_KB_Heroic_Content_Migrator_Test extends Licensio_KB_Test_Case {
         $this->wpdb->target_terms[ Licensio_KB_Post_Types::TAXONOMY_CATEGORY . ':12' ] = 501;
         $this->wpdb->target_terms[ Licensio_KB_Post_Types::TAXONOMY_CATEGORY . ':31' ] = 502;
 
-        Brain\Monkey\Functions\when( 'get_posts' )->alias(
-            function ( $args ) {
-                return Licensio_KB_Article_Order::meta_key( 502 ) === $args['meta_key'] ? array( 70 ) : array();
-            }
-        );
-        Brain\Monkey\Functions\when( 'update_meta_cache' )->justReturn( true );
-        Brain\Monkey\Functions\when( 'get_post_meta' )->alias(
-            function ( $post_id, $key = '' ) {
-                return 70 === (int) $post_id && Licensio_KB_Article_Order::meta_key( 502 ) === $key ? '40' : 0;
-            }
-        );
+        $this->wpdb->positions[ Licensio_KB_Article_Order::meta_key( 502 ) ] = array( array( '70', '40' ) );
 
         $source = $this->source(
             array(
@@ -755,16 +760,6 @@ class Licensio_KB_Heroic_Content_Migrator_Test extends Licensio_KB_Test_Case {
     public function test_the_existing_order_is_read_once_per_run() {
         $this->wpdb->target_terms[ Licensio_KB_Post_Types::TAXONOMY_CATEGORY . ':12' ] = 501;
 
-        $reads = 0;
-
-        Brain\Monkey\Functions\when( 'get_posts' )->alias(
-            function () use ( &$reads ) {
-                ++$reads;
-
-                return array();
-            }
-        );
-
         $source = $this->source(
             array(
                 'articles'   => array(
@@ -790,7 +785,14 @@ class Licensio_KB_Heroic_Content_Migrator_Test extends Licensio_KB_Test_Case {
 
         $this->migrator( $source )->migrate_articles_batch( 10 );
 
-        $this->assertSame( 1, $reads );
+        $reads = array_filter(
+            $this->wpdb->queries,
+            function ( $query ) {
+                return false !== strpos( $query, "pm.meta_key = 'licensio_order_" );
+            }
+        );
+
+        $this->assertCount( 1, $reads );
         $this->assertSame( 3, $this->post_meta[901]['licensio_order_501'] );
         $this->assertSame( 0, $this->post_meta[902]['licensio_order_501'] );
     }
@@ -809,14 +811,6 @@ class Licensio_KB_Heroic_Content_Migrator_Test extends Licensio_KB_Test_Case {
      */
     public function test_a_resumed_run_keeps_the_heroic_order() {
         $this->wpdb->target_terms[ Licensio_KB_Post_Types::TAXONOMY_CATEGORY . ':12' ] = 501;
-
-        Brain\Monkey\Functions\when( 'get_posts' )->justReturn( array() );
-        Brain\Monkey\Functions\when( 'update_meta_cache' )->justReturn( true );
-        Brain\Monkey\Functions\when( 'get_post_meta' )->alias(
-            function ( $post_id, $key = '' ) {
-                return 901 === (int) $post_id && Licensio_KB_Article_Order::meta_key( 501 ) === $key ? '3' : 0;
-            }
-        );
 
         $data  = array(
             'articles'   => array(
@@ -839,7 +833,7 @@ class Licensio_KB_Heroic_Content_Migrator_Test extends Licensio_KB_Test_Case {
         $this->migrator( $this->source( $data ), false, $state )->migrate_articles_batch( 10 );
 
         // The second process sees the position the first one wrote.
-        Brain\Monkey\Functions\when( 'get_posts' )->justReturn( array( 901 ) );
+        $this->wpdb->positions[ Licensio_KB_Article_Order::meta_key( 501 ) ] = array( array( '901', '3' ) );
 
         $data['articles'] = array(
             array(

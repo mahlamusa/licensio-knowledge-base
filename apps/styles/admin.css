@@ -43,15 +43,28 @@
 }
 
 /*
+ * The application mounts into the shell's `.lkb-page` and draws its own
+ * `.lkb-page` inside it. Only the outer one cancels `#wpcontent`'s padding;
+ * a second negative margin slid the screen 20px under the admin menu.
+ */
+.lkb-page .lkb-page {
+	margin-left: 0;
+}
+
+/*
  * The measure.
  *
  * Shared by the header bar and the screen below it so the wordmark, the page
  * title and the content all start on one left edge. Capped rather than run to
  * the window: on a wide monitor an uncapped row puts a label at the far left
  * and its control at the far right, related only by a band of empty space.
+ * The cap is wide enough for the widest list (All Articles with its default
+ * columns) to show without a horizontal scroll bar, and narrow enough to
+ * leave visible space either side of the screen on a 1920px monitor. Below
+ * the cap the screen fills the content area, inside the gutters.
  */
 .lkb-measure {
-	max-width: 1280px;
+	max-width: 1600px;
 	margin: 0 auto;
 	padding-right: var(--lkb-gap-lg);
 	padding-left: var(--lkb-gap-lg);

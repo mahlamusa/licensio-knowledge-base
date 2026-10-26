@@ -18,8 +18,8 @@
  *   Order an editor can set on the article), then title, then ID.
  *   `posts_clauses` adds one LEFT JOIN on the post meta table, limited to the
  *   category's key in its ON clause, and writes the ORDER BY. Nothing is
- *   filtered out, and no GROUP BY is needed: every writer uses
- *   `update_post_meta()`, so an article holds at most one row per key. Core
+ *   filtered out, and no GROUP BY is needed: every writer replaces the
+ *   article's row, so an article holds at most one row per key. Core
  *   cannot express "missing last" through `orderby` alone, since a missing
  *   position sorts as NULL, which MySQL puts first.
  * - `order => DESC` reverses the order, the `menu_order`, title and ID
@@ -101,6 +101,14 @@ class Licensio_KB_Article_Order {
      * @var int
      */
     const STEP = 10;
+
+    /**
+     * How many positions one INSERT writes when a merge appends an order.
+     *
+     * @since 1.0.0
+     * @var int
+     */
+    const INSERT_BATCH = 500;
 
     /**
      * Register the WordPress hooks.
@@ -399,9 +407,11 @@ class Licensio_KB_Article_Order {
     /**
      * The positions stored for one category.
      *
-     * One query for the IDs and one for their meta, however many articles
-     * the category holds. Trashed articles are included, so a merge or a
-     * save keeps their place for when they are restored.
+     * One query, however many articles the category holds, and no post meta
+     * cache priming: priming would load every meta row of every positioned
+     * article, which runs out of memory on a category with thousands of
+     * articles. Trashed articles are included, so a merge or a save keeps
+     * their place for when they are restored; auto-drafts are not.
      *
      * @since 1.0.0
      *
@@ -410,35 +420,30 @@ class Licensio_KB_Article_Order {
      * @return array<int, int> Article ID to position, lowest first.
      */
     public static function positions( $term_id ) {
-        $key = self::meta_key( $term_id );
-        $ids = get_posts(
-            array(
-                'post_type'              => Licensio_KB_Post_Types::POST_TYPE,
-                'post_status'            => array( 'any', 'trash' ),
-                'posts_per_page'         => -1,
-                'fields'                 => 'ids',
-                'meta_key'               => $key, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-                'orderby'                => array(
-                    'meta_value_num' => 'ASC',
-                    'ID'             => 'ASC',
-                ),
-                'no_found_rows'          => true,
-                'update_post_term_cache' => false,
-            )
+        global $wpdb;
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                'SELECT pm.post_id, pm.meta_value FROM %i pm INNER JOIN %i p ON p.ID = pm.post_id WHERE pm.meta_key = %s AND p.post_type = %s AND p.post_status <> %s ORDER BY CAST(pm.meta_value AS SIGNED) ASC, pm.post_id ASC',
+                $wpdb->postmeta,
+                $wpdb->posts,
+                self::meta_key( $term_id ),
+                Licensio_KB_Post_Types::POST_TYPE,
+                'auto-draft'
+            ),
+            ARRAY_N
         );
-
-        $ids = array_map( 'intval', is_array( $ids ) ? $ids : array() );
-
-        if ( empty( $ids ) ) {
-            return array();
-        }
-
-        update_meta_cache( 'post', $ids );
 
         $positions = array();
 
-        foreach ( $ids as $id ) {
-            $positions[ $id ] = (int) get_post_meta( $id, $key, true );
+        foreach ( is_array( $rows ) ? $rows : array() as $row ) {
+            $id = (int) $row[0];
+
+            // Every writer keeps one row per key; should a second exist, the first wins.
+            if ( ! isset( $positions[ $id ] ) ) {
+                $positions[ $id ] = (int) $row[1];
+            }
         }
 
         return $positions;
@@ -453,12 +458,18 @@ class Licensio_KB_Article_Order {
      * order, so the positions stay dense and a partial list never interleaves
      * with the rest. Articles without a position stay without one.
      *
+     * Only the positions that change are written, in batches: their old rows
+     * are deleted and the new ones inserted in one transaction, rather than
+     * one `update_post_meta()` per article, which took seconds on a category
+     * with thousands of articles. If a statement fails, the transaction is
+     * rolled back, the previous order stays whole and an error is returned.
+     *
      * @since 1.0.0
      *
      * @param int   $term_id The category term ID.
      * @param int[] $ids     The article IDs, first first.
      *
-     * @return int[] The listed article IDs as saved.
+     * @return int[]|WP_Error The listed article IDs as saved, or a 500 error when the write was rolled back.
      */
     public static function save( $term_id, array $ids ) {
         $key      = self::meta_key( $term_id );
@@ -466,12 +477,13 @@ class Licensio_KB_Article_Order {
         $previous = self::positions( $term_id );
         $listed   = array_flip( $ids );
         $position = 0;
+        $changed  = array();
 
         foreach ( $ids as $id ) {
             $position += self::STEP;
 
             if ( ! isset( $previous[ $id ] ) || $previous[ $id ] !== $position ) {
-                update_post_meta( $id, $key, $position );
+                $changed[ $id ] = $position;
             }
         }
 
@@ -483,8 +495,16 @@ class Licensio_KB_Article_Order {
             $position += self::STEP;
 
             if ( $old !== $position ) {
-                update_post_meta( $id, $key, $position );
+                $changed[ $id ] = $position;
             }
+        }
+
+        if ( ! self::write_positions( $key, $changed, true ) ) {
+            return new WP_Error(
+                'licensio_kb_order_not_saved',
+                __( 'The order could not be saved. Try again.', 'licensio-knowledge-base' ),
+                array( 'status' => 500 )
+            );
         }
 
         return $ids;
@@ -501,6 +521,15 @@ class Licensio_KB_Article_Order {
      * are restored. An article that already has a position in the target
      * keeps it. The source keys are cleaned up by the delete that follows.
      *
+     * The new positions are written in batched INSERTs, since none of those
+     * articles holds the target key yet: one `update_post_meta()` per
+     * article took seconds on a category with thousands of articles.
+     *
+     * A failed write is not reported: the merge has already moved the
+     * assignments when this hook fires and does not undo or report anything
+     * that fails after it, and the articles it misses simply fall to the
+     * unordered end of the target, where they can be ordered again.
+     *
      * @since 1.0.0
      *
      * @param int[]  $sources  The merged category term IDs.
@@ -514,10 +543,11 @@ class Licensio_KB_Article_Order {
             return;
         }
 
-        $target  = absint( $target );
-        $current = self::positions( $target );
-        $next    = empty( $current ) ? 0 : max( $current );
-        $key     = self::meta_key( $target );
+        $target   = absint( $target );
+        $current  = self::positions( $target );
+        $next     = empty( $current ) ? 0 : max( $current );
+        $key      = self::meta_key( $target );
+        $appended = array();
 
         foreach ( (array) $sources as $source ) {
             $source = absint( $source );
@@ -531,12 +561,98 @@ class Licensio_KB_Article_Order {
                     continue;
                 }
 
-                $next                  += self::STEP;
-                $current[ $article_id ] = $next;
-
-                update_post_meta( $article_id, $key, $next );
+                $next                   += self::STEP;
+                $current[ $article_id ]  = $next;
+                $appended[ $article_id ] = $next;
             }
         }
+
+        self::write_positions( $key, $appended, false );
+    }
+
+    /**
+     * Write order keys in batches.
+     *
+     * Writes `INSERT_BATCH` rows per statement. With `$replace`, each batch's
+     * existing rows for the key are deleted first, and every statement runs
+     * in one transaction that is rolled back if one fails, so a failed save
+     * leaves the previous order whole. The transaction is safe on its own:
+     * the save is not called inside another transaction, and on a table
+     * without transactions (MyISAM) the statements are no-ops and the writes
+     * simply apply as they run. A merge only adds rows, so it needs none.
+     * Then drops the articles' post meta cache and bumps the posts cache
+     * version once, as `update_post_meta()` would for each.
+     *
+     * @since 1.0.0
+     *
+     * @param string          $key       The order meta key.
+     * @param array<int, int> $positions Article ID to position.
+     * @param bool            $replace   Whether the articles may already hold the key.
+     *
+     * @return bool True when every statement succeeded (or there was nothing to write), false when one failed; with `$replace` that means the transaction was rolled back.
+     */
+    private static function write_positions( $key, array $positions, $replace ) {
+        global $wpdb;
+
+        if ( empty( $positions ) ) {
+            return true;
+        }
+
+        $all_written = true;
+
+        if ( $replace ) {
+            $wpdb->query( 'START TRANSACTION' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        }
+
+        foreach ( array_chunk( $positions, self::INSERT_BATCH, true ) as $batch ) {
+            $written = true;
+
+            if ( $replace ) {
+                $ids = array_keys( $batch );
+
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                $written = false !== $wpdb->query(
+                    $wpdb->prepare(
+                        'DELETE FROM %i WHERE meta_key = %s AND post_id IN ( ' . implode( ', ', array_fill( 0, count( $ids ), '%d' ) ) . ' )', // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- One generated %d per article.
+                        array_merge( array( $wpdb->postmeta, $key ), $ids )
+                    )
+                );
+            }
+
+            $values = array( $wpdb->postmeta );
+
+            foreach ( $batch as $article_id => $position ) {
+                $values[] = $article_id;
+                $values[] = $key;
+                $values[] = (string) $position;
+            }
+
+            // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- The VALUES list holds only placeholders, one triple per article.
+            $written = $written && false !== $wpdb->query(
+                $wpdb->prepare(
+                    'INSERT INTO %i ( post_id, meta_key, meta_value ) VALUES ' . implode( ', ', array_fill( 0, count( $batch ), '( %d, %s, %s )' ) ),
+                    $values
+                )
+            );
+            // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
+
+            if ( $replace && ! $written ) {
+                $wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+                return false;
+            }
+
+            $all_written = $all_written && $written;
+        }
+
+        if ( $replace ) {
+            $wpdb->query( 'COMMIT' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        }
+
+        wp_cache_delete_multiple( array_keys( $positions ), 'post_meta' );
+        wp_cache_set_posts_last_changed();
+
+        return $all_written;
     }
 
     /**

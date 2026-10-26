@@ -43,6 +43,7 @@ const columns = [
 		:data-source="rows"
 		:row-key="( row: SearchRow ) => row.normalized_term"
 		:pagination="false"
+		:scroll="{ x: true }"
 		size="small"
 	>
 		<template #emptyText>

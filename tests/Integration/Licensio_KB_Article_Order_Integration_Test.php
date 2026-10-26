@@ -55,21 +55,14 @@ class Licensio_KB_Article_Order_Integration_Test extends Licensio_KB_Analytics_D
         $this->stub_category_term_api();
         Brain\Monkey\Functions\when( 'rest_authorization_required_code' )->justReturn( 403 );
         Brain\Monkey\Functions\when( 'current_user_can' )->justReturn( true );
-        Brain\Monkey\Functions\when( 'update_meta_cache' )->justReturn( array() );
+        Brain\Monkey\Functions\when( 'wp_cache_delete_multiple' )->justReturn( array() );
+        Brain\Monkey\Functions\when( 'wp_cache_set_posts_last_changed' )->justReturn( null );
 
         Brain\Monkey\Functions\when( 'get_post_meta' )->alias(
             function ( $post_id, $key ) {
                 $row = $this->row( 'SELECT meta_value FROM ' . $this->table( 'postmeta' ) . ' WHERE post_id = ' . (int) $post_id . ' AND meta_key = ' . $this->live_quote( $key ) . ' LIMIT 1' );
 
                 return null === $row ? '' : (string) $row[0];
-            }
-        );
-
-        Brain\Monkey\Functions\when( 'update_post_meta' )->alias(
-            function ( $post_id, $key, $value ) {
-                $this->set_order_row( (int) $post_id, (string) $key, (string) $value );
-
-                return true;
             }
         );
 
@@ -85,12 +78,11 @@ class Licensio_KB_Article_Order_Integration_Test extends Licensio_KB_Analytics_D
     }
 
     /**
-     * The `get_posts()` calls the order code makes, answered with SQL.
+     * The `get_posts()` call the order code makes, answered with SQL.
      *
-     * Two shapes are used: the positions of one category (`meta_key`, sorted
-     * numerically) and the save's membership check (`post__in` within one
-     * category, children excluded). Trash is left out unless the status list
-     * names it beside `any`, as core does.
+     * The save's membership check: `post__in` within one category, children
+     * excluded. Trash is left out unless the status list names it beside
+     * `any`, as core does. The positions are read by the class's own query.
      *
      * @since 1.0.0
      *
@@ -102,16 +94,11 @@ class Licensio_KB_Article_Order_Integration_Test extends Licensio_KB_Analytics_D
         $posts  = $this->table( 'posts' );
         $status = in_array( 'trash', (array) $args['post_status'], true ) ? '1=1' : "p.post_status <> 'trash'";
 
-        if ( isset( $args['meta_key'] ) ) {
-            $sql = "SELECT p.ID FROM {$posts} p INNER JOIN " . $this->table( 'postmeta' ) . ' m ON (p.ID = m.post_id AND m.meta_key = ' . $this->live_quote( $args['meta_key'] ) . ")
-                WHERE {$status} ORDER BY CAST(m.meta_value AS SIGNED) ASC, p.ID ASC";
-        } else {
-            $term = (int) $args['tax_query'][0]['terms'];
-            $sql  = "SELECT p.ID FROM {$posts} p
-                INNER JOIN " . $this->table( 'term_relationships' ) . ' r ON (p.ID = r.object_id)
-                INNER JOIN ' . $this->table( 'term_taxonomy' ) . " t ON (r.term_taxonomy_id = t.term_taxonomy_id AND t.term_id = {$term})
-                WHERE {$status} AND p.ID IN (" . implode( ',', array_map( 'intval', $args['post__in'] ) ) . ')';
-        }
+        $term = (int) $args['tax_query'][0]['terms'];
+        $sql  = "SELECT p.ID FROM {$posts} p
+            INNER JOIN " . $this->table( 'term_relationships' ) . ' r ON (p.ID = r.object_id)
+            INNER JOIN ' . $this->table( 'term_taxonomy' ) . " t ON (r.term_taxonomy_id = t.term_taxonomy_id AND t.term_id = {$term})
+            WHERE {$status} AND p.ID IN (" . implode( ',', array_map( 'intval', $args['post__in'] ) ) . ')';
 
         return array_map( 'intval', array_column( $this->rows( $sql ), 0 ) );
     }
@@ -424,6 +411,64 @@ class Licensio_KB_Article_Order_Integration_Test extends Licensio_KB_Analytics_D
         $this->assertInstanceOf( 'WP_Error', $result );
         $this->assertSame( array( $outside, $binned ), $result->get_error_data()['ids'] );
         $this->assertSame( 0, $this->count_rows( 'postmeta', "meta_key LIKE 'licensio\\_order\\_%'" ) );
+    }
+
+    /**
+     * The positions come from one query on real rows, sorted as numbers.
+     *
+     * Trashed articles keep their place; auto-drafts and other post types
+     * holding the same key are left out. The post meta cache is not primed.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_positions_are_read_in_one_query() {
+        Brain\Monkey\Functions\expect( 'update_meta_cache' )->never();
+
+        $term = $this->make_term( 'Billing', Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
+        $key  = Licensio_KB_Article_Order::meta_key( $term );
+
+        $published = $this->make_article( array( 'title' => 'Published' ) );
+        $trashed   = $this->make_article(
+            array(
+                'title'  => 'Trashed',
+                'status' => 'trash',
+            )
+        );
+        $draft     = $this->make_article(
+            array(
+                'title'  => 'Draft',
+                'status' => 'draft',
+            )
+        );
+        $auto      = $this->make_article(
+            array(
+                'title'  => 'Auto',
+                'status' => 'auto-draft',
+            )
+        );
+        $page      = $this->make_article( array( 'title' => 'A page' ) );
+
+        $this->db->query( 'UPDATE ' . $this->table( 'posts' ) . " SET post_type = 'page' WHERE ID = " . (int) $page );
+
+        $this->set_order_row( $published, $key, '30' );
+        $this->set_order_row( $trashed, $key, '100' );
+        $this->set_order_row( $draft, $key, '5' );
+        $this->set_order_row( $auto, $key, '1' );
+        $this->set_order_row( $page, $key, '2' );
+
+        $before = count( $this->adapter->queries );
+
+        $this->assertSame(
+            array(
+                $draft     => 5,
+                $published => 30,
+                $trashed   => 100,
+            ),
+            Licensio_KB_Article_Order::positions( $term )
+        );
+        $this->assertCount( $before + 1, $this->adapter->queries );
     }
 
     /**

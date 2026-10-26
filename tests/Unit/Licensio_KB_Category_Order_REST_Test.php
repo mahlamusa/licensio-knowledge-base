@@ -67,6 +67,19 @@ class Licensio_KB_Category_Order_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * Drop the $wpdb double a save test installs.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    protected function tearDown(): void {
+        unset( $GLOBALS['wpdb'] );
+
+        parent::tearDown();
+    }
+
+    /**
      * The list route is a GET with paging capped at 200.
      *
      * @since 1.0.0
@@ -335,25 +348,25 @@ class Licensio_KB_Category_Order_REST_Test extends Licensio_KB_Test_Case {
         $checked = array();
         $written = array();
 
+        $GLOBALS['wpdb'] = new Licensio_KB_Order_WPDB( // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+            function () {
+                return array();
+            },
+            function ( $id, $key, $value ) use ( &$written ) {
+                $written[] = array( $id, $key, (int) $value );
+            }
+        );
+
         Functions\when( 'get_posts' )->alias(
             function ( $args ) use ( &$checked ) {
-                if ( isset( $args['meta_key'] ) ) {
-                    return array();
-                }
-
                 $checked = $args;
 
                 return array( 13, 11, 12 );
             }
         );
         Functions\when( 'current_user_can' )->justReturn( true );
-        Functions\when( 'update_post_meta' )->alias(
-            function ( $id, $key, $value ) use ( &$written ) {
-                $written[] = array( $id, $key, $value );
-
-                return true;
-            }
-        );
+        Functions\when( 'wp_cache_delete_multiple' )->justReturn( array() );
+        Functions\when( 'wp_cache_set_posts_last_changed' )->justReturn( null );
 
         $result = ( new Licensio_KB_Category_Order_REST_Controller() )->update_order( $this->request( 5, array( 12, 11, 13 ) ) );
 
@@ -372,6 +385,43 @@ class Licensio_KB_Category_Order_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * A save whose write is rolled back answers the error, not the order.
+     *
+     * 501 articles take two batches; the second INSERT fails.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_rolled_back_save_answers_an_error() {
+        $this->stub_category( 5 );
+
+        $ids = range( 1, 501 );
+
+        $GLOBALS['wpdb'] = new Licensio_KB_Order_WPDB( // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+            function () {
+                return array();
+            },
+            function () {}
+        );
+
+        $GLOBALS['wpdb']->failing_insert = 2;
+
+        Functions\when( 'get_posts' )->justReturn( $ids );
+        Functions\when( 'current_user_can' )->justReturn( true );
+        Functions\expect( 'wp_cache_delete_multiple' )->never();
+        Functions\expect( 'wp_cache_set_posts_last_changed' )->never();
+
+        $result = ( new Licensio_KB_Category_Order_REST_Controller() )->update_order( $this->request( 5, $ids ) );
+
+        $this->assertInstanceOf( 'WP_Error', $result );
+        $this->assertSame( 'licensio_kb_order_not_saved', $result->get_error_code() );
+        $this->assertSame( 500, $result->get_error_data()['status'] );
+        $this->assertSame( 'ROLLBACK', end( $GLOBALS['wpdb']->queries ) );
+        $this->assertNotContains( 'COMMIT', $GLOBALS['wpdb']->queries );
+    }
+
+    /**
      * An empty list skips the article checks and closes the gaps in the existing positions.
      *
      * Nothing is listed first, so the positioned articles are renumbered
@@ -387,33 +437,23 @@ class Licensio_KB_Category_Order_REST_Test extends Licensio_KB_Test_Case {
 
         $written = array();
 
-        Functions\when( 'get_posts' )->alias(
-            function ( $args ) {
-                $this->assertArrayHasKey( 'meta_key', $args, 'Only the positions are read; there is nothing to check.' );
-
-                return array( 21, 22, 23 );
-            }
-        );
-        Functions\when( 'update_meta_cache' )->justReturn( array() );
-        Functions\when( 'get_post_meta' )->alias(
-            function ( $id ) {
-                $positions = array(
-                    21 => 10,
-                    22 => 40,
-                    23 => 70,
+        $GLOBALS['wpdb'] = new Licensio_KB_Order_WPDB( // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+            function () {
+                return array(
+                    21 => array( 'licensio_order_5' => '10' ),
+                    22 => array( 'licensio_order_5' => '40' ),
+                    23 => array( 'licensio_order_5' => '70' ),
                 );
-
-                return $positions[ $id ];
-            }
-        );
-        Functions\expect( 'current_user_can' )->never();
-        Functions\when( 'update_post_meta' )->alias(
+            },
             function ( $id, $key, $value ) use ( &$written ) {
-                $written[] = array( $id, $key, $value );
-
-                return true;
+                $written[] = array( $id, $key, (int) $value );
             }
         );
+
+        Functions\expect( 'get_posts' )->never();
+        Functions\expect( 'current_user_can' )->never();
+        Functions\when( 'wp_cache_delete_multiple' )->justReturn( array() );
+        Functions\when( 'wp_cache_set_posts_last_changed' )->justReturn( null );
 
         $result = ( new Licensio_KB_Category_Order_REST_Controller() )->update_order( $this->request( 5, array() ) );
 

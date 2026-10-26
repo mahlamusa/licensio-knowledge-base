@@ -1074,6 +1074,49 @@ test.describe( 'Categories app', () => {
 		expect( archive ).toEqual( expected );
 	} );
 
+	test( 'an article order the server could not save shows the error', async ( {
+		page,
+	} ) => {
+		const alpha = await categoryId( page, 'Alpha' );
+
+		await makeArticles( page, alpha, [ 'E2E order X', 'E2E order Y' ] );
+
+		await page.reload();
+		await node( page, 'Alpha' ).locator( '.lkb-tree__name' ).click();
+
+		const pane = page.getByRole( 'region', { name: 'Article order' } );
+
+		await expect
+			.poll( () => paneTitles( page ) )
+			.toEqual( [ 'E2E order X', 'E2E order Y' ] );
+
+		// The server rolled the write back, as on a deadlock between two saves.
+		await page.route( /articles(%2F|\/)order/, ( route ) =>
+			route.fulfill( {
+				status: 500,
+				contentType: 'application/json',
+				body: JSON.stringify( {
+					code: 'licensio_kb_order_not_saved',
+					message: 'The order could not be saved. Try again.',
+					data: { status: 500 },
+				} ),
+			} )
+		);
+
+		await pane
+			.getByRole( 'button', { name: 'Move “E2E order Y” up' } )
+			.click();
+		await pane.getByRole( 'button', { name: 'Save order' } ).click();
+		await confirmPopconfirm( page );
+
+		await expect( pane.locator( '.lkb-order__error' ) ).toContainText(
+			'The order could not be saved. Try again.'
+		);
+		await expect( page.getByText( 'Article order saved.' ) ).toHaveCount(
+			0
+		);
+	} );
+
 	test( 'saving the first page of a long list renumbers the rest after it', async ( {
 		page,
 	} ) => {

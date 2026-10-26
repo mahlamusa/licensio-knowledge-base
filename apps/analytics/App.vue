@@ -298,7 +298,11 @@ onMounted( () => {
 						:title="__( 'Feedback', 'licensio-knowledge-base' )"
 						class="licensio-kb-analytics__block"
 					>
-						<a-descriptions bordered size="small" :column="4">
+						<a-descriptions
+							bordered
+							size="small"
+							:column="{ xs: 1, sm: 2, md: 4 }"
+						>
 							<a-descriptions-item
 								:label="
 									__( 'Votes', 'licensio-knowledge-base' )

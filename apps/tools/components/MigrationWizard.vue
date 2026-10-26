@@ -910,6 +910,13 @@ onMounted( detect );
 	min-width: 220px;
 }
 
+/* On a phone the floor would push the mapping table past the screen edge. */
+@media ( max-width: 782px ) {
+	.licensio-kb-migration__target {
+		min-width: 0;
+	}
+}
+
 .licensio-kb-migration__run-title {
 	margin: 0 0 16px;
 	font-size: 16px;
