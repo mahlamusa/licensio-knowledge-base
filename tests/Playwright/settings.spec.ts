@@ -295,6 +295,11 @@ test.describe( 'Knowledge base settings', () => {
 		await expect( dialog.getByRole( 'alert' ) ).toContainText(
 			'The reset failed on purpose.'
 		);
+		// The page alert behind the dialog stays empty, so the error is
+		// announced once.
+		await expect(
+			page.getByText( 'The reset failed on purpose.' )
+		).toHaveCount( 1 );
 		await expect( ok ).not.toHaveClass( /ant-btn-loading/ );
 		await expect( dialog ).toBeVisible();
 

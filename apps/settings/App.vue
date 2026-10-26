@@ -170,8 +170,9 @@ function update( key: string, value: SettingValue ): void {
 /**
  * Reset every setting, once confirmed.
  *
- * The error is also returned, so the confirmation dialog stays open and
- * shows it.
+ * A failed reset hands its error to the confirmation dialog, which stays
+ * open and shows it, and clears the page alert behind the dialog, so
+ * screen readers announce the error once.
  *
  * @since 1.0.0
  *
@@ -179,7 +180,15 @@ function update( key: string, value: SettingValue ): void {
  *                           error message, or an empty string on success.
  */
 async function confirmReset(): Promise< string > {
-	return ( await store.reset() ) ? '' : store.error;
+	if ( await store.reset() ) {
+		return '';
+	}
+
+	const message = store.error;
+
+	store.error = '';
+
+	return message;
 }
 
 onMounted( async () => {
