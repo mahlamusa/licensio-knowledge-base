@@ -277,6 +277,37 @@ class Licensio_KB_Assets {
     }
 
     /**
+     * The admin app entries that cannot load.
+     *
+     * An entry cannot load when the build manifest has no file for it and the
+     * Vite dev server is not serving the apps. The dev server is only probed
+     * once an entry is found missing, so a built install never opens a socket.
+     *
+     * @since 1.0.0
+     *
+     * @param string[] $entries Source paths relative to the plugin root.
+     *
+     * @return string[] The entries that cannot load; empty when all of them can.
+     */
+    public function missing_apps( array $entries ) {
+        $missing = array();
+
+        foreach ( $entries as $entry ) {
+            $chunk = $this->manifest_entry( $entry );
+
+            if ( empty( $chunk['file'] ) ) {
+                $missing[] = (string) $entry;
+            }
+        }
+
+        if ( $missing && $this->is_hmr_enabled() ) {
+            return array();
+        }
+
+        return $missing;
+    }
+
+    /**
      * Every stylesheet an entry needs, including its shared chunks'.
      *
      * Vite attaches the CSS of a *shared* chunk to that chunk's own manifest
