@@ -524,6 +524,94 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * A trash in the block editor arrives in the app with a single-use Undo.
+     *
+     * Only articles still in the trash that the user may restore are kept,
+     * each with the status core recorded when it was trashed.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_block_editor_trash_carries_an_undo_to_the_app() {
+        $stored = array();
+        $posts  = array(
+            5 => 'trash',
+            6 => 'trash',
+            7 => 'publish',
+            8 => 'trash',
+        );
+
+        Functions\when( 'get_post' )->alias(
+            function ( $id ) use ( $posts ) {
+                return isset( $posts[ (int) $id ] ) ? new WP_Post(
+                    array(
+                        'ID'          => (int) $id,
+                        'post_type'   => 'licensio_article',
+                        'post_status' => $posts[ (int) $id ],
+                    )
+                ) : null;
+            }
+        );
+        Functions\when( 'current_user_can' )->alias(
+            function ( $capability, $id = 0 ) {
+                return 'delete_post' === $capability && 8 !== $id;
+            }
+        );
+        Functions\when( 'get_post_meta' )->alias(
+            function ( $id ) {
+                return 5 === $id ? 'publish' : 'pending';
+            }
+        );
+        Functions\when( 'get_current_user_id' )->justReturn( 3 );
+        Functions\when( 'wp_generate_password' )->justReturn( str_repeat( 'a', 32 ) );
+        Functions\when( 'set_transient' )->alias(
+            function ( $name, $value ) use ( &$stored ) {
+                $stored[ $name ] = $value;
+
+                return true;
+            }
+        );
+
+        $manager = new Licensio_KB_Content_Manager( $this->settings() );
+
+        $this->assertSame(
+            'https://example.test/wp-admin/admin.php?page=licensio-kb-articles&undo_count=2&undo=' . str_repeat( 'a', 32 ),
+            $manager->redirect_url(
+                'edit.php',
+                array(
+                    'post_type' => 'licensio_article',
+                    'trashed'   => '1',
+                    'ids'       => '5,6,7,8,99',
+                )
+            )
+        );
+        $this->assertSame(
+            array(
+                'user'     => 3,
+                'previous' => array(
+                    5 => array( 'status' => 'publish' ),
+                    6 => array( 'status' => 'pending' ),
+                ),
+            ),
+            $stored[ 'licensio_kb_undo_' . str_repeat( 'a', 32 ) ]
+        );
+
+        // Nothing left to restore: no Undo.
+        $this->assertSame(
+            'https://example.test/wp-admin/admin.php?page=licensio-kb-articles',
+            $manager->redirect_url(
+                'edit.php',
+                array(
+                    'post_type' => 'licensio_article',
+                    'trashed'   => '1',
+                    'ids'       => '7',
+                )
+            )
+        );
+    }
+
+    /**
      * The article list's author, sort and page go to the Articles app.
      *
      * @since 1.0.0

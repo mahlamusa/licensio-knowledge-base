@@ -14,7 +14,7 @@ import { __, _n, sprintf } from '../components/i18n';
 import { errorMessage } from '../components/rest';
 import { showUndoToast } from './components/UndoToast';
 import { BATCH_SIZE, useArticlesStore as articlesStore } from './store';
-import type { BulkAction, BulkArgs, SkipReason } from './types';
+import type { BulkAction, BulkArgs, BulkResult, SkipReason } from './types';
 
 /** The actions that can be undone. Author and comments are left out on purpose. */
 const UNDOABLE: BulkAction[] = [ 'trash', 'restore', 'status', 'terms' ];
@@ -342,58 +342,115 @@ export async function performAction(
 	const results = run.results;
 
 	afterProgressCloses( () =>
-		showUndoToast( text, async () => {
-			try {
-				const reverted = await store.undo( results );
-				const count = reverted.done.length;
+		showUndoToast( text, () => void undoAndReport( results ) )
+	);
+}
 
-				if ( count > 0 ) {
-					message.success(
-						sprintf(
-							/* translators: %d: number of articles. */
-							_n(
-								'%d article put back.',
-								'%d articles put back.',
-								count,
-								'licensio-knowledge-base'
-							),
-							count
-						)
-					);
-				}
+/**
+ * Undo the batches of a run and report what was put back and what was not.
+ *
+ * @since 1.0.0
+ *
+ * @param {BulkResult[]} results The batches, each with its undo token.
+ *
+ * @return {Promise<void>} Resolves once reported.
+ */
+async function undoAndReport( results: BulkResult[] ): Promise< void > {
+	const store = articlesStore();
 
-				const missed = reverted.skipped.length + reverted.failed.length;
+	try {
+		const reverted = await store.undo( results );
+		const count = reverted.done.length;
 
-				if ( missed > 0 ) {
-					const reasons = [
-						...new Set( [
-							...reverted.skipped.map( ( { reason } ) =>
-								reasonLabel( reason )
-							),
-							...reverted.failed.map(
-								( { message: why } ) => why
-							),
-						] ),
-					].join( '; ' );
+		if ( count > 0 ) {
+			message.success(
+				sprintf(
+					/* translators: %d: number of articles. */
+					_n(
+						'%d article put back.',
+						'%d articles put back.',
+						count,
+						'licensio-knowledge-base'
+					),
+					count
+				)
+			);
+		}
 
-					message.warning(
-						sprintf(
-							/* translators: 1: number of articles, 2: the reasons. */
-							_n(
-								'%1$d article could not be put back: %2$s',
-								'%1$d articles could not be put back: %2$s',
-								missed,
-								'licensio-knowledge-base'
-							),
-							missed,
-							reasons
-						),
-						8
-					);
-				}
-			} catch ( error ) {
-				message.error( errorMessage( error ) );
-			}
-		} )
+		const missed = reverted.skipped.length + reverted.failed.length;
+
+		if ( missed > 0 ) {
+			const reasons = [
+				...new Set( [
+					...reverted.skipped.map( ( { reason } ) =>
+						reasonLabel( reason )
+					),
+					...reverted.failed.map( ( { message: why } ) => why ),
+				] ),
+			].join( '; ' );
+
+			message.warning(
+				sprintf(
+					/* translators: 1: number of articles, 2: the reasons. */
+					_n(
+						'%1$d article could not be put back: %2$s',
+						'%1$d articles could not be put back: %2$s',
+						missed,
+						'licensio-knowledge-base'
+					),
+					missed,
+					reasons
+				),
+				8
+			);
+		}
+	} catch ( error ) {
+		message.error( errorMessage( error ) );
+	}
+}
+
+/**
+ * Offer Undo for articles just trashed in the block editor.
+ *
+ * Core sends the user from the editor to the article list after a trash;
+ * the redirect to this app carries `undo_count` (how many) and `undo` (a
+ * single-use token for their earlier statuses). Both are taken out of the
+ * address at once, so a reload or a shared link never offers it again, and
+ * the same Undo toast as an in-app trash is shown.
+ *
+ * @since 1.0.0
+ *
+ * @return {void}
+ */
+export function offerEditorTrashUndo(): void {
+	const url = new URL( window.location.href );
+
+	if (
+		! url.searchParams.has( 'undo' ) &&
+		! url.searchParams.has( 'undo_count' )
+	) {
+		return;
+	}
+
+	const token = url.searchParams.get( 'undo' ) ?? '';
+	const count = Number.parseInt(
+		url.searchParams.get( 'undo_count' ) ?? '',
+		10
+	);
+
+	url.searchParams.delete( 'undo' );
+	url.searchParams.delete( 'undo_count' );
+	window.history.replaceState( window.history.state, '', url.toString() );
+
+	if ( '' === token || ! ( count > 0 ) ) {
+		return;
+	}
+
+	showUndoToast(
+		doneText( 'trash', count ),
+		() =>
+			void undoAndReport( [
+				{ token, done: [], skipped: [], failed: [] },
+			] )
 	);
 }

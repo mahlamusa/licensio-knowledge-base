@@ -20,6 +20,7 @@ import { lkbTheme } from '../styles/theme';
 import AppHeader from '../components/AppHeader.vue';
 import { __, sprintf } from '../components/i18n';
 import { config } from './api';
+import { offerEditorTrashUndo } from './actions';
 import { useArticlesStore } from './store';
 import ArticleTable from './components/ArticleTable.vue';
 import BulkBar from './components/BulkBar.vue';
@@ -96,6 +97,7 @@ watch(
 onMounted( async () => {
 	await store.init();
 	search.value = store.query.search;
+	offerEditorTrashUndo();
 } );
 
 onBeforeUnmount( () => clearTimeout( searchTimer ) );

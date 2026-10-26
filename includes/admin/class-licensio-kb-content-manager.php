@@ -557,7 +557,15 @@ class Licensio_KB_Content_Manager {
      * a positive ID, the sort only when the app can sort by it, and the page
      * only past the first. A negative number is dropped, not made positive.
      *
-     * @since 1.0.0
+     * After an article is trashed in the block editor, core sends the user to
+     * the article list with `trashed=1&ids=…` so its list can offer Undo. The
+     * app offers the same Undo: the articles still in the trash that the user
+     * may restore get a single-use undo snapshot of the status each had, and
+     * the app URL carries its token as `undo` and the count as `undo_count`.
+     * Not `trashed`: core lists that among the removable query arguments and
+     * takes it out of the address before the app can read it.
+     *
+     * @since 1.0.0 Carries the block editor's trash over as an Undo.
      *
      * @param array<string, mixed> $query The request's query arguments, unslashed.
      *
@@ -620,7 +628,49 @@ class Licensio_KB_Content_Manager {
             $args['paged'] = $paged;
         }
 
+        if ( '' !== self::arg( $query, 'trashed' ) ) {
+            $previous = self::trashed_snapshot( self::arg( $query, 'ids' ) );
+            $token    = Licensio_KB_Article_Bulk::store_snapshot( $previous );
+
+            if ( '' !== $token ) {
+                $args['undo_count'] = count( $previous );
+                $args['undo']       = $token;
+            }
+        }
+
         return self::page_url( self::ARTICLES_SLUG, $args );
+    }
+
+    /**
+     * What the trashed articles of a block editor redirect were before the trash.
+     *
+     * Only articles still in the trash that the current user may restore are
+     * kept, each with the status core recorded when it was trashed. At most
+     * as many as one bulk request carries.
+     *
+     * @since 1.0.0
+     *
+     * @param string $ids The comma separated article IDs core passed.
+     *
+     * @return array<int, array{status: string}> Article ID to its earlier status.
+     */
+    private static function trashed_snapshot( $ids ) {
+        $ids      = array_slice( Licensio_KB_Article_Bulk::clean_ids( explode( ',', (string) $ids ) ), 0, Licensio_KB_Article_Bulk::MAX_IDS );
+        $previous = array();
+
+        foreach ( $ids as $id ) {
+            $post = get_post( $id );
+
+            if ( ! $post instanceof WP_Post || Licensio_KB_Post_Types::POST_TYPE !== $post->post_type || 'trash' !== $post->post_status || ! current_user_can( 'delete_post', $id ) ) {
+                continue;
+            }
+
+            $status = (string) get_post_meta( $id, '_wp_trash_meta_status', true );
+
+            $previous[ $id ] = array( 'status' => in_array( $status, Licensio_KB_Articles_REST_Controller::LIST_STATUSES, true ) ? $status : 'draft' );
+        }
+
+        return $previous;
     }
 
     /**
