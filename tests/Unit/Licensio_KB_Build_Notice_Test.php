@@ -37,8 +37,8 @@ class Licensio_KB_Build_Notice_Test extends Licensio_KB_Test_Case {
      *
      * @since 1.0.0
      *
-     * @param string[] $built The app entries the manifest has a file for.
-     * @param bool     $hmr   Whether the dev server serves the apps.
+     * @param string[]  $built The app entries the manifest has a file for.
+     * @param bool|null $hmr   Whether the dev server serves the apps; null when it must not be probed.
      *
      * @return Licensio_KB_Assets The asset loader.
      */
@@ -54,28 +54,20 @@ class Licensio_KB_Build_Notice_Test extends Licensio_KB_Test_Case {
             private $built;
 
             /**
-             * Whether the dev server serves the apps.
+             * Whether the dev server serves the apps; null when it must not be probed.
              *
              * @since 1.0.0
-             * @var bool
+             * @var bool|null
              */
             private $hmr;
-
-            /**
-             * How many times the dev server was asked about.
-             *
-             * @since 1.0.0
-             * @var int
-             */
-            public $hmr_probes = 0;
 
             /**
              * Build the double.
              *
              * @since 1.0.0
              *
-             * @param string[] $built The app entries the manifest has a file for.
-             * @param bool     $hmr   Whether the dev server serves the apps.
+             * @param string[]  $built The app entries the manifest has a file for.
+             * @param bool|null $hmr   Whether the dev server serves the apps; null when it must not be probed.
              */
             public function __construct( array $built, $hmr ) {
                 $this->built = $built;
@@ -101,9 +93,13 @@ class Licensio_KB_Build_Notice_Test extends Licensio_KB_Test_Case {
              * @since 1.0.0
              *
              * @return bool The configured answer.
+             *
+             * @throws LogicException When the test said the dev server must not be probed.
              */
             public function is_hmr_enabled() {
-                ++$this->hmr_probes;
+                if ( null === $this->hmr ) {
+                    throw new LogicException( 'The dev server was probed.' );
+                }
 
                 return $this->hmr;
             }
@@ -211,10 +207,8 @@ class Licensio_KB_Build_Notice_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     public function test_a_complete_build_shows_nothing() {
-        $assets = $this->assets( Licensio_KB_Build_Notice::app_entries() );
-
-        $this->assertSame( '', $this->render( $assets, $this->settings_page() ) );
-        $this->assertSame( 0, $assets->hmr_probes );
+        // A null dev server answer throws if the dev server is probed.
+        $this->assertSame( '', $this->render( $this->assets( Licensio_KB_Build_Notice::app_entries(), null ), $this->settings_page() ) );
     }
 
     /**
