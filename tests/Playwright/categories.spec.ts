@@ -22,7 +22,11 @@
  */
 
 import { expect, test, type Page, type Request } from '@playwright/test';
-import { answerConfirm, openContentManager } from './helpers/content-manager';
+import {
+	answerConfirm,
+	expectNoConfirmDialog,
+	openContentManager,
+} from './helpers/content-manager';
 import { failOnUnresolvedComponents } from './helpers/ant-components';
 import { logIn, password, user } from './helpers/session';
 import { wpCli, wpEval } from './helpers/wp-cli';
@@ -401,7 +405,7 @@ test.describe( 'Categories app', () => {
 			'Category moved.'
 		);
 		expect( writes ).toHaveLength( 1 );
-		await expect( page.locator( '.ant-popover:visible' ) ).toHaveCount( 0 );
+		await expectNoConfirmDialog( page );
 
 		const after = await topLevel( page );
 

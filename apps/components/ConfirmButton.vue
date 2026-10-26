@@ -119,8 +119,6 @@ const error = ref( '' );
 const reducedMotion =
 	window.matchMedia?.( '(prefers-reduced-motion: reduce)' ).matches ?? false;
 
-/** The button that opened the dialog, kept in case it leaves the page. */
-let opener: HTMLElement | null = null;
 let unmounted = false;
 
 /**
@@ -170,12 +168,6 @@ function returnFocus( el: HTMLElement ): void {
 		return;
 	}
 
-	// Inside a drawer or dialog that is still open, the button is hidden or
-	// disabled but the drawer keeps its own focus, so leave it there.
-	if ( el.isConnected && el.closest( '.ant-modal, .ant-drawer' ) ) {
-		return;
-	}
-
 	focusTitle( el );
 }
 
@@ -191,7 +183,6 @@ function show(): void {
 		return;
 	}
 
-	opener = trigger.value?.$el ?? null;
 	error.value = '';
 	open.value = true;
 
@@ -210,10 +201,9 @@ function show(): void {
  * @return {void}
  */
 function close(): void {
-	const el = opener;
+	const el = trigger.value?.$el;
 
 	open.value = false;
-	opener = null;
 
 	if ( el ) {
 		// Wait for the change to reach the button: it may now be disabled or gone.
@@ -310,7 +300,7 @@ function onCancel(): void {
 function keepFocusOnPage(): void {
 	unmounted = true;
 
-	const el = opener ?? trigger.value?.$el;
+	const el = trigger.value?.$el;
 
 	// The button is still in the page; there is no other node to ask for its document.
 	// eslint-disable-next-line @wordpress/no-global-active-element
