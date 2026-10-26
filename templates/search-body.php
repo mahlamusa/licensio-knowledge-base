@@ -4,10 +4,9 @@
  *
  * The content half of a knowledge base search: the hero with its breadcrumb
  * trail and search field, then the matching articles. The classic template
- * wraps it in the theme's header and footer; the
- * `[licensio_kb_view view="search"]` shortcode renders it inside a block
- * template, so both template paradigms serve the same markup and the same
- * stylesheet. Override from a theme by copying this file to
+ * wraps it in the theme's header and footer; the `licensio-kb/view` block
+ * renders it inside a block template, so both template paradigms serve the same
+ * markup and the same stylesheet. Override from a theme by copying this file to
  * `licensio-kb/search-body.php`.
  *
  * The heading, breadcrumb trail and search field come from the shared hero.

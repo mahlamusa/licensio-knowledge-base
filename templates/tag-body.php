@@ -3,12 +3,11 @@
  * Tag archive body.
  *
  * The content half of a tag archive: the hero with its breadcrumb trail,
- * standfirst and search field, then every article carrying the tag. The
- * classic template wraps it in the theme's header and footer; the
- * `[licensio_kb_view view="tag"]` shortcode renders it inside a block
- * template, so both template paradigms serve the same markup and the same
- * stylesheet. Override from a theme by copying this file to
- * `licensio-kb/tag-body.php`.
+ * standfirst and search field, then every article carrying the tag. The classic
+ * template wraps it in the theme's header and footer; the `licensio-kb/view`
+ * block renders it inside a block template, so both template paradigms serve
+ * the same markup and the same stylesheet. Override from a theme by copying
+ * this file to `licensio-kb/tag-body.php`.
  *
  * The heading and breadcrumb trail come from the shared hero, which carries
  * the term description as its standfirst when the term has one.

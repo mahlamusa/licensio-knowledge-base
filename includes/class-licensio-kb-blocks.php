@@ -108,6 +108,7 @@ class Licensio_KB_Blocks {
      * Register every block and its shortcode.
      *
      * @since 1.0.0
+     * @since 1.0.0 Registers the knowledge base view block the block templates render.
      *
      * @return void
      */
@@ -117,6 +118,7 @@ class Licensio_KB_Blocks {
             new Licensio_KB_Category_Grid_Block(),
             new Licensio_KB_Breadcrumbs_Block(),
             new Licensio_KB_FAQ_Block(),
+            new Licensio_KB_View_Block(),
         );
 
         foreach ( $blocks as $block ) {

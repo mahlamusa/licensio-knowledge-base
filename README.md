@@ -322,8 +322,16 @@ The loader stands aside entirely under a block theme, where the block template
 layer answers the same requests. Each page template keeps its markup in a
 `*-body.php` file (`archive-body`, `category-body`, `single-body`, `tag-body`,
 `search-body`) between `get_header()` and `get_footer()`, and each block
-template renders that same file through `[licensio_kb_view view="…"]` in a
-Custom HTML block, so both theme types serve one layout.
+template renders that same file through the dynamic `licensio-kb/view` block
+(`<!-- wp:licensio-kb/view {"view":"…"} /-->`), so both theme types serve one
+layout. The block renders inside the loop core runs around a singular block
+template, so on a single article `single-body.php` renders the article core
+has already set up rather than opening a second loop. In the Site Editor the
+block previews against the newest published article, or a category or tag
+that has articles. The `[licensio_kb_view view="…"]` shortcode renders the same
+bodies from template level for a template you build yourself; it renders
+nothing inside post content, inside a loop, or on a request that is not its
+view.
 
 Local variables inside a template carry the `licensio_kb_` prefix, which the
 project's PHPCS ruleset requires of anything assigned at a file's top level.

@@ -5,10 +5,9 @@
  * The content half of a single article: the hero with its breadcrumb trail and
  * search field, the article itself and the sidebar with the table of contents.
  * The classic template wraps it in the theme's header and footer; the
- * `[licensio_kb_view view="single"]` shortcode renders it inside a block
- * template, so both template paradigms serve the same markup and the same
- * stylesheet. Override from a theme by copying this file to
- * `licensio-kb/single-body.php`.
+ * `licensio-kb/view` block renders it inside a block template, so both template
+ * paradigms serve the same markup and the same stylesheet. Override from a
+ * theme by copying this file to `licensio-kb/single-body.php`.
  *
  * Fires the three frontend hooks so feedback, analytics and gating attach
  * without touching this file.
@@ -25,12 +24,13 @@
  * is what lets both questions be answered before the first tag is printed,
  * rather than opening a column and discovering afterwards that nothing goes in
  * it. It is also why a block template renders this whole body through one
- * shortcode rather than placing a sidebar beside a post content block: the
- * shortcode would run before the block, so the table of contents would be
+ * block rather than placing a sidebar beside a post content block: a sidebar
+ * rendered before the post content block would find the table of contents
  * empty.
  *
  * @package Licensio_KB
  * @since   1.0.0
+ * @since   1.0.0 Renders the current article inside a loop that is already running.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -56,10 +56,22 @@ $licensio_kb_hero_post = get_post();
 </div>
 
 <?php
+/*
+ * In a block template the view block renders inside core's own loop over the
+ * main query, which has already set up this article. Opening a second loop
+ * here would fire the main query's loop hooks twice, and a second
+ * `have_posts()` would rewind core's loop and start it again, so the current
+ * article is rendered once instead. Everywhere else this body runs the loop
+ * itself. A theme override of this file must keep both paths.
+ */
+$licensio_kb_in_loop = in_the_loop();
+
 ob_start();
 
-while ( have_posts() ) :
-    the_post();
+while ( $licensio_kb_in_loop || have_posts() ) :
+    if ( ! $licensio_kb_in_loop ) {
+        the_post();
+    }
 
     $licensio_kb_article = get_post();
 
@@ -104,6 +116,9 @@ while ( have_posts() ) :
         </footer>
     </article>
     <?php
+    if ( $licensio_kb_in_loop ) {
+        break;
+    }
 endwhile;
 
 $licensio_kb_body = (string) ob_get_clean();

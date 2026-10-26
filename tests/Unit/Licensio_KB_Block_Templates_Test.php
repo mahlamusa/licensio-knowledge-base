@@ -245,7 +245,7 @@ class Licensio_KB_Block_Templates_Test extends Licensio_KB_Test_Case {
         $this->assertTrue( $single->has_theme_file );
         $this->assertFalse( $single->is_custom );
         $this->assertSame( 'Single Article', $single->title );
-        $this->assertStringContainsString( '[licensio_kb_view view="single"]', $single->content );
+        $this->assertStringContainsString( '<!-- wp:licensio-kb/view {"view":"single"} /-->', $single->content );
     }
 
     /**
@@ -419,7 +419,7 @@ class Licensio_KB_Block_Templates_Test extends Licensio_KB_Test_Case {
 
         $this->assertInstanceOf( 'WP_Block_Template', $template );
         $this->assertSame( 'taxonomy-licensio_category', $template->slug );
-        $this->assertStringContainsString( '[licensio_kb_view view="category"]', $template->content );
+        $this->assertStringContainsString( '<!-- wp:licensio-kb/view {"view":"category"} /-->', $template->content );
     }
 
     /**
@@ -605,7 +605,7 @@ class Licensio_KB_Block_Templates_Test extends Licensio_KB_Test_Case {
         $template = $this->block_templates->build_template( 'single-licensio_article', 'wp_template' );
 
         $this->assertInstanceOf( 'WP_Block_Template', $template );
-        $this->assertStringContainsString( '[licensio_kb_view view="single"]', $template->content );
+        $this->assertStringContainsString( '<!-- wp:licensio-kb/view {"view":"single"} /-->', $template->content );
         $this->assertNotSame( 'RESERIALIZED', $template->content );
     }
 
@@ -877,20 +877,20 @@ class Licensio_KB_Block_Templates_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * The redesigned views render the shared body through the view shortcode.
+     * The redesigned views render the shared body through the view block.
      *
-     * Every knowledge base template renders `[licensio_kb_view]` rather than
-     * building its own markup from blocks. The shortcode includes the same body
-     * template the classic layer includes, so a block theme and a classic
-     * theme serve the same markup. For the single article that is what brings
-     * the breadcrumbs, the search field, the table of contents and the sidebar
-     * to a block theme; for the tag and search views, the hero.
+     * Every knowledge base template renders the `licensio-kb/view` block
+     * rather than building its own markup from blocks. The block includes the
+     * same body template the classic layer includes, so a block theme and a
+     * classic theme serve the same markup. For the single article that is
+     * what brings the breadcrumbs, the search field, the table of contents and
+     * the sidebar to a block theme; for the tag and search views, the hero.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_the_redesigned_views_render_the_shared_body_shortcode() {
+    public function test_the_redesigned_views_render_the_shared_body_block() {
         $views = array(
             'archive-licensio_article'   => 'archive',
             'taxonomy-licensio_category' => 'category',
@@ -906,31 +906,33 @@ class Licensio_KB_Block_Templates_Test extends Licensio_KB_Test_Case {
             $template = $this->block_templates->build_template( $slug, 'wp_template' );
 
             $this->assertInstanceOf( 'WP_Block_Template', $template, $slug );
-            $this->assertStringContainsString( '[licensio_kb_view view="' . $view . '"]', $template->content, $slug );
+            $this->assertStringContainsString( '<!-- wp:licensio-kb/view {"view":"' . $view . '"} /-->', $template->content, $slug );
+            $this->assertSame( 1, substr_count( $template->content, '<!-- wp:licensio-kb/view ' ), $slug );
             $this->assertStringNotContainsString( '<!-- wp:query ', $template->content, $slug );
         }
     }
 
     /**
-     * The view shortcode sits in an HTML block, never a shortcode block.
+     * No template renders its view through a shortcode.
      *
      * WordPress expands the shortcodes in a block template before it renders
-     * the blocks, so a shortcode block receives the finished view markup and
-     * runs wpautop over it. That put line breaks inside every card link and
-     * pushed the article counts under the category headings. An HTML block
-     * passes the markup through untouched.
+     * the blocks. A shortcode block then runs wpautop over the finished view
+     * markup, and on a single article the shortcode runs before core's own
+     * loop over the main query, so the body loops the article a second time.
+     * The view block renders inside that loop and gets no wpautop.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_no_template_wraps_markup_in_a_shortcode_block() {
+    public function test_no_template_renders_its_view_through_a_shortcode() {
         foreach ( array_keys( $this->block_templates->templates() ) as $slug ) {
             $template = $this->block_templates->build_template( $slug, 'wp_template' );
 
             $this->assertInstanceOf( 'WP_Block_Template', $template, $slug );
             $this->assertStringNotContainsString( 'wp:shortcode', $template->content, $slug );
-            $this->assertMatchesRegularExpression( '/<!-- wp:html -->\s*\[licensio_kb_view view="[a-z]+"\]\s*<!-- \/wp:html -->/', $template->content, $slug );
+            $this->assertStringNotContainsString( 'wp:html', $template->content, $slug );
+            $this->assertStringNotContainsString( '[licensio_kb_view', $template->content, $slug );
         }
     }
 }

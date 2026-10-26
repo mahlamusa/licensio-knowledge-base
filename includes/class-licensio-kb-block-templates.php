@@ -27,16 +27,15 @@
  *    `search-licensio_article` template is not part of core's search hierarchy,
  *    and a `core/search` block has no way to scope itself to a post type.
  *
- * Every template renders its view through the `[licensio_kb_view]` shortcode
- * in an HTML block, so a block theme serves the same body templates the
- * classic layer does. The `licensio-kb-header` part is no longer placed in any
+ * Every template renders its view through the `licensio-kb/view` block, so a
+ * block theme serves the same body templates the classic layer does. The `licensio-kb-header` part is no longer placed in any
  * of them, because each view's hero carries its own search field; it stays
  * registered as a scoped search bar a site can add to a template of its own.
  * The richer type-ahead search is the `licensio-kb/search` block.
  *
  * @package Licensio_KB
  * @since   1.0.0
- * @since   1.0.0 Every template renders its view through the view shortcode.
+ * @since   1.0.0 Every template renders its view through the view block.
  */
 
 defined( 'ABSPATH' ) || exit;

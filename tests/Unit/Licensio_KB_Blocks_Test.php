@@ -451,7 +451,7 @@ class Licensio_KB_Blocks_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     public function test_every_block_registers_its_block_and_its_shortcode() {
-        $this->assertCount( 4, $this->registered, 'Four blocks are expected.' );
+        $this->assertCount( 5, $this->registered, 'Five blocks are expected.' );
 
         foreach ( $this->pairs() as $block_name => $pair ) {
             $this->assertArrayHasKey(
@@ -465,6 +465,121 @@ class Licensio_KB_Blocks_Test extends Licensio_KB_Test_Case {
                 $this->render_callback( $block_name ),
                 $block_name . ' and its shortcode must share one callable.'
             );
+        }
+    }
+
+    /**
+     * The view block is registered without a shortcode of its own.
+     *
+     * The `[licensio_kb_view]` shortcode belongs to the template layer and
+     * renders from template level only; the block renders inside core's loop.
+     * They must not share a callback.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_view_block_registers_no_shortcode() {
+        $callback = $this->render_callback( 'licensio-kb/view' );
+
+        $this->assertIsCallable( $callback );
+        $this->assertArrayNotHasKey( Licensio_KB_Templates::VIEW_SHORTCODE_TAG, $this->shortcodes );
+    }
+
+    /**
+     * The editor preview points each view at real, public content.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_view_block_previews_each_view_against_published_content() {
+        $block = new Licensio_KB_View_Block();
+        $term  = new WP_Term(
+            array(
+                'term_id' => 3,
+                'slug'    => 'billing',
+                'name'    => 'Billing',
+            )
+        );
+
+        $this->articles = array(
+            new WP_Post(
+                array(
+                    'ID'         => 42,
+                    'post_title' => 'Resetting your password',
+                    'post_type'  => Licensio_KB_Post_Types::POST_TYPE,
+                )
+            ),
+        );
+
+        $term_args = array();
+
+        Functions\when( 'get_terms' )->alias(
+            function ( $args ) use ( $term, &$term_args ) {
+                $term_args = $args;
+
+                return array( $term );
+            }
+        );
+
+        $this->assertSame( array( 'post_type' => Licensio_KB_Post_Types::POST_TYPE ), $block->preview_query_args( 'archive' ) );
+
+        $this->assertSame(
+            array(
+                'p'         => 42,
+                'post_type' => Licensio_KB_Post_Types::POST_TYPE,
+            ),
+            $block->preview_query_args( 'single' )
+        );
+        $this->assertSame( 'publish', $this->query_args['post_status'] );
+        $this->assertFalse( $this->query_args['has_password'], 'A protected article is never previewed.' );
+
+        $this->assertSame(
+            array(
+                's'         => 'Resetting your password',
+                'post_type' => Licensio_KB_Post_Types::POST_TYPE,
+            ),
+            $block->preview_query_args( 'search' )
+        );
+
+        $this->assertSame(
+            array(
+                'taxonomy' => Licensio_KB_Post_Types::TAXONOMY_TAG,
+                'term'     => 'billing',
+            ),
+            $block->preview_query_args( 'tag' )
+        );
+        $this->assertTrue( $term_args['hide_empty'] );
+
+        $this->assertSame(
+            array(
+                'taxonomy' => Licensio_KB_Post_Types::TAXONOMY_CATEGORY,
+                'term'     => 'billing',
+            ),
+            $block->preview_query_args( 'category' )
+        );
+    }
+
+    /**
+     * With nothing published there is nothing to preview.
+     *
+     * The editor then shows its labelled placeholder.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_view_block_has_nothing_to_preview_on_an_empty_site() {
+        $block = new Licensio_KB_View_Block();
+
+        $this->articles = array();
+
+        Functions\when( 'get_terms' )->justReturn( array() );
+
+        foreach ( array( 'single', 'search', 'tag', 'category' ) as $view ) {
+            $this->assertSame( array(), $block->preview_query_args( $view ), $view );
+            $this->assertSame( '', $block->preview( $view ), $view );
         }
     }
 
@@ -486,6 +601,7 @@ class Licensio_KB_Blocks_Test extends Licensio_KB_Test_Case {
             'category-grid' => 'Licensio_KB_Category_Grid_Block',
             'breadcrumbs'   => 'Licensio_KB_Breadcrumbs_Block',
             'faq'           => 'Licensio_KB_FAQ_Block',
+            'view'          => 'Licensio_KB_View_Block',
         );
 
         foreach ( $expected as $directory => $class_name ) {

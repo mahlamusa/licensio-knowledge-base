@@ -413,6 +413,76 @@ class Licensio_KB_Templates_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * The view block renders the article core's loop already set up.
+     *
+     * On a single article core loops the main query around the block
+     * template. The block must render the current article once, with the
+     * hooks once each, and never open a loop of its own: a second loop would
+     * fire the main query's loop hooks twice.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_view_block_renders_the_current_article_inside_the_loop() {
+        Actions\expectDone( 'licensio_before_article' )->once();
+        Actions\expectDone( 'licensio_after_article' )->once();
+        Actions\expectDone( 'licensio_article_footer' )->once();
+        Actions\expectDone( 'loop_start' )->never();
+        Actions\expectDone( 'loop_end' )->never();
+
+        $markup = $this->render_single_article( 'Resetting your password', false, true );
+
+        $this->assertSame( 1, substr_count( $markup, 'ARTICLE BODY' ) );
+        $this->assertSame( 1, substr_count( $markup, 'class="licensio-kb__hero"' ) );
+        $this->assertSame( 1, substr_count( $markup, '<article ' ) );
+        $this->assertStringContainsString( 'licensio-kb licensio-kb--single', $markup );
+        $this->assertStringNotContainsString( 'licensio-kb-block--view', $markup, 'The body carries its own wrappers.' );
+    }
+
+    /**
+     * Inside a loop the view block renders nothing but the queried article.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_view_block_renders_nothing_for_another_post_or_view_inside_a_loop() {
+        $block = new Licensio_KB_View_Block();
+
+        Functions\when( 'in_the_loop' )->justReturn( true );
+        Functions\when( 'get_queried_object_id' )->justReturn( 42 );
+        $this->forbid_the_loop();
+
+        $this->stub_view_request( 'single' );
+        Functions\when( 'get_the_ID' )->justReturn( 7 );
+
+        $this->assertSame( '', $block->render( array( 'view' => 'single' ) ), 'A post other than the queried article.' );
+
+        $this->stub_view_request( 'tag' );
+
+        $this->assertSame( '', $block->render( array( 'view' => 'tag' ) ), 'A listing view inside a loop.' );
+    }
+
+    /**
+     * The view block renders nothing for an unknown view or another request.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_view_block_renders_nothing_for_an_unknown_view_or_another_request() {
+        $block = new Licensio_KB_View_Block();
+
+        $this->stub_view_request( 'tag' );
+        $this->forbid_the_loop();
+
+        $this->assertSame( '', $block->render( array( 'view' => 'nope' ) ) );
+        $this->assertSame( '', $block->render( array( 'view' => 'single' ) ) );
+        $this->assertSame( '', $block->render( array( 'view' => 'search' ) ) );
+    }
+
+    /**
      * Data for the guard tests: every view the shortcode knows.
      *
      * @since 1.0.0
@@ -880,39 +950,49 @@ class Licensio_KB_Templates_Test extends Licensio_KB_Test_Case {
     /**
      * Render a single article against a one-post loop.
      *
-     * Through templates/single.php by default, or through the view shortcode a
-     * block template renders, which includes the same single-body.php.
+     * Through templates/single.php by default, through the view shortcode, or
+     * through the view block inside core's loop, all of which include the
+     * same single-body.php.
      *
      * @since 1.0.0
      * @since 1.0.0 Added the view shortcode path.
+     * @since 1.0.0 Added the view block path.
      *
      * @param string $title         The article title.
      * @param bool   $via_shortcode Whether to render through the view shortcode instead of the classic template.
+     * @param bool   $via_block     Whether to render through the view block, inside a loop that already set up the article.
      *
      * @return string The rendered markup.
      */
-    private function render_single_article( $title = 'Resetting your password', $via_shortcode = false ) {
+    private function render_single_article( $title = 'Resetting your password', $via_shortcode = false, $via_block = false ) {
         $this->stub_conditionals( 'single' );
         $this->stub_article( 42, $title );
 
         // The hero now carries the search field, which reads the current query.
         Functions\when( 'get_search_query' )->justReturn( '' );
 
-        $remaining = 1;
+        if ( $via_block ) {
+            Functions\when( 'in_the_loop' )->justReturn( true );
+            Functions\when( 'get_the_ID' )->justReturn( 42 );
+            Functions\when( 'get_queried_object_id' )->justReturn( 42 );
+            $this->forbid_the_loop();
+        } else {
+            $remaining = 1;
 
-        Functions\when( 'have_posts' )->alias(
-            function () use ( &$remaining ) {
-                if ( $remaining > 0 ) {
-                    --$remaining;
+            Functions\when( 'have_posts' )->alias(
+                function () use ( &$remaining ) {
+                    if ( $remaining > 0 ) {
+                        --$remaining;
 
-                    return true;
+                        return true;
+                    }
+
+                    return false;
                 }
+            );
 
-                return false;
-            }
-        );
-
-        Functions\when( 'the_post' )->justReturn( null );
+            Functions\when( 'the_post' )->justReturn( null );
+        }
         Functions\when( 'get_header' )->justReturn( null );
         Functions\when( 'get_footer' )->justReturn( null );
         Functions\when( 'get_the_term_list' )->justReturn( '' );
@@ -926,6 +1006,10 @@ class Licensio_KB_Templates_Test extends Licensio_KB_Test_Case {
                 echo 'ARTICLE BODY';
             }
         );
+
+        if ( $via_block ) {
+            return ( new Licensio_KB_View_Block() )->render( array( 'view' => 'single' ) );
+        }
 
         if ( $via_shortcode ) {
             Functions\when( 'shortcode_atts' )->alias(
