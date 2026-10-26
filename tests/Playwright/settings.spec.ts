@@ -141,9 +141,9 @@ test.describe( 'Knowledge base settings', () => {
 		// A save is an update, so it runs on click without a confirmation.
 		await page.getByRole( 'button', { name: 'Save changes' } ).click();
 		await expect( page.getByText( 'Settings saved.' ) ).toBeVisible();
-		await expect(
-			page.locator( '.ant-popconfirm:not(.ant-popover-hidden)' )
-		).toHaveCount( 0 );
+		await expect( page.locator( '.ant-popconfirm:visible' ) ).toHaveCount(
+			0
+		);
 
 		// No permalink save, no cache flush: straight to the archive.
 		await page.goto( '/?post_type=licensio_article' );

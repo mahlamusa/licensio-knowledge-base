@@ -72,9 +72,7 @@ test( 'the recount report reads as one sentence for a single article', async ( {
 	// The recount runs on click, without a confirmation.
 	await page.getByRole( 'button', { name: 'Recount scores' } ).click();
 	await expect.poll( () => recounts.length ).toBe( 1 );
-	await expect(
-		page.locator( '.ant-popconfirm:not(.ant-popover-hidden)' )
-	).toHaveCount( 0 );
+	await expect( page.locator( '.ant-popconfirm:visible' ) ).toHaveCount( 0 );
 
 	await expect(
 		page.locator( '.licensio-kb-data-maintenance__done' )
@@ -162,9 +160,7 @@ test( 'resuming an index rebuild runs on click and a rebuild asks first', async 
 	// Resuming runs on click, without a confirmation.
 	await page.getByRole( 'button', { name: 'Resume rebuild' } ).click();
 	await expect.poll( () => chunks.length ).toBe( 1 );
-	await expect(
-		page.locator( '.ant-popconfirm:not(.ant-popover-hidden)' )
-	).toHaveCount( 0 );
+	await expect( page.locator( '.ant-popconfirm:visible' ) ).toHaveCount( 0 );
 	await expect( page.getByText( 'The index was rebuilt.' ) ).toBeVisible();
 	expect( starts ).toHaveLength( 0 );
 } );

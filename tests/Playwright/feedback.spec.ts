@@ -127,9 +127,9 @@ test.describe( 'Feedback inbox', () => {
 		await pickStatus( page, 'First E2E comment', 'Reviewed' );
 		await expect.poll( () => writes.length ).toBe( 1 );
 		await expect( status ).toHaveText( 'Reviewed' );
-		await expect(
-			page.locator( '.ant-popconfirm:not(.ant-popover-hidden)' )
-		).toHaveCount( 0 );
+		await expect( page.locator( '.ant-popconfirm:visible' ) ).toHaveCount(
+			0
+		);
 
 		// A bulk mark asks first, and Cancel sends nothing.
 
