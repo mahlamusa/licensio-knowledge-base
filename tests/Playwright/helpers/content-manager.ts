@@ -31,6 +31,21 @@ export const CONTENT_MANAGER_SLUGS: Record< ContentManagerApp, string > = {
 };
 
 /**
+ * The path and query of the page's URL.
+ *
+ * @since 1.0.0
+ *
+ * @param {Page} page The browser page.
+ *
+ * @return {string} The path and query.
+ */
+export function pathOf( page: Page ): string {
+	const url = new URL( page.url() );
+
+	return url.pathname + url.search;
+}
+
+/**
  * The admin URL of an app, relative to the site root.
  *
  * @since 1.0.0

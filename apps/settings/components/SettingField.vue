@@ -12,6 +12,7 @@
 
 import { computed } from 'vue';
 import type { Field, SettingValue } from '../types';
+import { __ } from '../../components/i18n';
 
 const props = defineProps< {
 	field: Field;
@@ -119,8 +120,12 @@ function update( value: SettingValue ): void {
 					<a-input
 						:id="controlId"
 						:value="String( value ?? '' )"
-						style="max-width: 9rem"
-						@update:value="update( String( $event ) )"
+						:placeholder="
+							__( 'Theme colour', 'licensio-knowledge-base' )
+						"
+						allow-clear
+						style="max-width: 11rem"
+						@update:value="update( String( $event ?? '' ) )"
 					/>
 				</span>
 

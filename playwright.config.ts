@@ -10,6 +10,9 @@
 
 import { defineConfig, devices } from '@playwright/test';
 
+/** Specs that switch a site-wide setting; see the `site-wide` project. */
+const SITE_WIDE = '**/classic-screens.spec.ts';
+
 const baseURL =
 	process.env.LICENSIO_KB_BASE_URL ?? 'http://lisenseserver.local';
 
@@ -36,6 +39,16 @@ export default defineConfig( {
 	projects: [
 		{
 			name: 'chromium',
+			testIgnore: SITE_WIDE,
+			use: { ...devices[ 'Desktop Chrome' ] },
+		},
+		// Specs that switch a site-wide setting the others rely on. They run
+		// after every other spec, so no worker meets the setting half-way.
+		// To run one on its own, add --no-deps.
+		{
+			name: 'site-wide',
+			testMatch: SITE_WIDE,
+			dependencies: [ 'chromium' ],
 			use: { ...devices[ 'Desktop Chrome' ] },
 		},
 	],

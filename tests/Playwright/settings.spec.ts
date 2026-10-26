@@ -148,6 +148,42 @@ test.describe( 'Knowledge base settings', () => {
 		await expect( root ).toHaveCSS( '--licensio-kb-brand', BRAND );
 	} );
 
+	test( 'clearing the brand colour hands the colours back to the theme', async ( {
+		page,
+	} ) => {
+		await openSettings( page );
+		await setBrandColour( page, BRAND );
+		await page.getByRole( 'button', { name: 'Save changes' } ).click();
+		await expect( page.getByText( 'Settings saved.' ) ).toBeVisible();
+
+		// An empty colour is a valid value, not a rejected one.
+		await setBrandColour( page, '' );
+
+		const [ saved ] = await Promise.all( [
+			page.waitForResponse(
+				( response ) =>
+					response.url().includes( 'settings' ) &&
+					response.request().method() === 'POST'
+			),
+			page.getByRole( 'button', { name: 'Save changes' } ).click(),
+		] );
+
+		expect( saved.ok() ).toBe( true );
+
+		await page.goto( '/?post_type=licensio_article' );
+
+		const brand = await page
+			.locator( '.licensio-kb' )
+			.first()
+			.evaluate( ( element ) =>
+				getComputedStyle( element )
+					.getPropertyValue( '--licensio-kb-brand' )
+					.trim()
+			);
+
+		expect( brand ).toBe( '' );
+	} );
+
 	test( 'discarding unsaved changes asks first', async ( { page } ) => {
 		await openSettings( page );
 		await setBrandColour( page, '#0f766e' );

@@ -1,30 +1,32 @@
 /**
  * Knowledge base search form styles.
  *
- * Every value is derived from the design tokens the template layer already
- * publishes on `.licensio-kb` — `--licensio-kb-brand`, `--licensio-kb-line`,
- * `--licensio-kb-surface` and the rest — so the search form takes the site brand
- * colour, radius and surface without this file knowing that a settings screen
- * exists. Each one carries the same fallback the base stylesheet declares, so the
- * form still renders correctly on a page that has the search block but not the
- * knowledge base stylesheet.
+ * Every value is derived from the design tokens the base stylesheet declares on
+ * `.licensio-kb` — `--licensio-kb-line`, `--licensio-kb-muted`, the optional
+ * `--licensio-kb-brand` and the rest — so the form follows the theme's text
+ * colour, and the brand colour only when one is set, without this file knowing
+ * that a settings screen exists. Each one carries a theme-neutral fallback mixed
+ * from `currentColor`, so the form still renders correctly on a page that has the
+ * search block but not the knowledge base stylesheet.
  *
  * @since 1.0.0
  */
 
 .licensio-kb-search {
 	--licensio-kb-search-radius: var( --licensio-kb-radius, 18px );
-	--licensio-kb-search-border: var( --licensio-kb-line, #dcefe4 );
-	--licensio-kb-search-surface: var( --licensio-kb-surface, #fff );
-	--licensio-kb-search-text: var( --licensio-kb-text, #10231b );
-	--licensio-kb-search-muted: var( --licensio-kb-muted, #8b86a0 );
-	--licensio-kb-search-accent: var( --licensio-kb-brand, #2ba377 );
-	--licensio-kb-search-on-accent: var( --licensio-kb-brand-contrast, #fff );
+	--licensio-kb-search-border: var(
+		--licensio-kb-line,
+		color-mix( in srgb, currentColor 18%, transparent )
+	);
+	--licensio-kb-search-muted: var(
+		--licensio-kb-muted,
+		color-mix( in srgb, currentColor 80%, transparent )
+	);
+	--licensio-kb-search-accent: var( --licensio-kb-brand, currentColor );
 	--licensio-kb-search-tint: var(
 		--licensio-kb-tint,
-		rgba( var( --licensio-kb-brand-rgb, 43, 163, 119 ), 0.08 )
+		color-mix( in srgb, currentColor 8%, transparent )
 	);
-	--licensio-kb-search-highlight: #fff3cd;
 
 	position: relative;
 }
@@ -41,8 +43,8 @@
 	padding: 0.6rem 0.85rem;
 	border: 1px solid var( --licensio-kb-search-border );
 	border-radius: var( --licensio-kb-search-radius );
-	background: var( --licensio-kb-search-surface );
-	color: var( --licensio-kb-search-text );
+	background: transparent;
+	color: inherit;
 	font: inherit;
 }
 
@@ -52,13 +54,17 @@
 	outline-offset: 1px;
 }
 
+/*
+ * Filled with the brand colour when there is one; otherwise outlined in the
+ * text colour with a text-coloured label, which reads on any background.
+ */
 .licensio-kb-search__submit {
 	flex: 0 0 auto;
 	padding: 0.6rem 1.1rem;
-	border: 0;
+	border: 1px solid var( --licensio-kb-search-accent );
 	border-radius: var( --licensio-kb-search-radius );
-	background: var( --licensio-kb-search-accent );
-	color: var( --licensio-kb-search-on-accent );
+	background: var( --licensio-kb-brand, transparent );
+	color: var( --licensio-kb-brand-contrast, currentColor );
 	font: inherit;
 	cursor: pointer;
 }
@@ -76,8 +82,16 @@
 	list-style: none;
 	border: 1px solid var( --licensio-kb-search-border );
 	border-radius: var( --licensio-kb-search-radius );
-	background: var( --licensio-kb-search-surface );
-	box-shadow: 0 8px 24px rgba( 0, 0, 0, 0.12 );
+
+	/*
+	 * The one opaque surface: the list floats over the page, so a transparent
+	 * one would print its results on top of whatever is underneath. A block
+	 * theme's base and contrast presets are its own background and text pair;
+	 * any other theme gets the browser's system pair, which always reads.
+	 */
+	background: var( --wp--preset--color--base, Canvas );
+	color: var( --wp--preset--color--contrast, CanvasText );
+	box-shadow: 0 8px 24px color-mix( in srgb, currentColor 12%, transparent );
 }
 
 .licensio-kb-search__results[ hidden ] {
@@ -88,7 +102,7 @@
 	display: block;
 	padding: 0.65rem 0.85rem;
 	border-bottom: 1px solid var( --licensio-kb-search-border );
-	color: var( --licensio-kb-search-text );
+	color: inherit;
 	cursor: pointer;
 }
 
@@ -113,10 +127,9 @@
 	font-size: 0.875em;
 }
 
+/* The browser's own highlight colours, which are legible on any theme. */
 .licensio-kb-search__option-snippet mark {
 	padding: 0 0.1em;
-	background: var( --licensio-kb-search-highlight );
-	color: inherit;
 }
 
 .licensio-kb-search__empty {

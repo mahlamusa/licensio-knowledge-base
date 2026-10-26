@@ -66,8 +66,8 @@ const declarations = computed( () =>
  * the section card's header strip and the two read as one collided block.
  */
 .licensio-kb-settings__preview {
-	--licensio-kb-surface: #ffffff;
-	--licensio-kb-line: #e2e8f0;
+	--licensio-kb-surface: color-mix( in srgb, currentColor 4%, transparent );
+	--licensio-kb-line: color-mix( in srgb, currentColor 18%, transparent );
 
 	display: grid;
 	gap: var( --lkb-gap );
@@ -89,16 +89,17 @@ const declarations = computed( () =>
 }
 
 .licensio-kb-settings__preview-link {
-	color: var( --licensio-kb-brand, #2ba377 );
+	color: var( --licensio-kb-brand, currentColor );
 	font-weight: 600;
 	margin-inline-end: 16px;
 	text-decoration: none;
 }
 
 .licensio-kb-settings__preview-button {
-	background: var( --licensio-kb-brand, #2ba377 );
+	background: var( --licensio-kb-brand, transparent );
+	border: 1px solid var( --licensio-kb-brand, currentColor );
 	border-radius: 6px;
-	color: var( --licensio-kb-brand-contrast, #ffffff );
+	color: var( --licensio-kb-brand-contrast, currentColor );
 	display: inline-block;
 	padding: 6px 14px;
 }
@@ -113,7 +114,11 @@ const declarations = computed( () =>
  * begins.
  */
 .licensio-kb-settings__preview-code {
-	background: rgba( var( --licensio-kb-brand-rgb, 37, 99, 235 ), 0.06 );
+	background: color-mix(
+		in srgb,
+		var( --licensio-kb-brand, currentColor ) 6%,
+		transparent
+	);
 	border-radius: 8px;
 	font-size: 12px;
 	line-height: 1.6;

@@ -33,6 +33,17 @@ class Licensio_KB_Templates {
     const STYLE_HANDLE = 'licensio-kb-frontend';
 
     /**
+     * The raised card shadow.
+     *
+     * Mixed from `currentColor` rather than a fixed dark tint, so it stays
+     * visible on a dark theme as well as a light one.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    const CARD_SHADOW = '0 4px 14px color-mix(in srgb,currentColor 10%,transparent)';
+
+    /**
      * The shortcode that renders a knowledge base view body inside a block
      * template.
      *
@@ -293,18 +304,25 @@ class Licensio_KB_Templates {
      * The settings-driven custom property block.
      *
      * Everything the settings control is expressed as a custom property on
-     * `.licensio-kb`, never as a rule-level override, so changing the brand
-     * colour restyles every component that derives from it without the
-     * stylesheet needing to know a setting exists.
+     * `.licensio-kb`, so changing the brand colour restyles every component
+     * that derives from it without the stylesheet needing to know a setting
+     * exists.
+     *
+     * The one rule-level addition is the link colour. Links keep the theme's
+     * own colour unless a brand colour is set, and no CSS value means "the
+     * theme's link colour", so the stylesheet cannot carry a brand link rule
+     * with a fallback. It is printed here, and only when the brand colour is
+     * declared.
      *
      * @since 1.0.0
      *
-     * @return string A CSS rule, or an empty string when there is nothing to declare.
+     * @return string The CSS rules, or an empty string when there is nothing to declare.
      */
     public function inline_css() {
+        $properties   = $this->custom_properties();
         $declarations = array();
 
-        foreach ( $this->custom_properties() as $property => $value ) {
+        foreach ( $properties as $property => $value ) {
             $declarations[] = $property . ':' . $value;
         }
 
@@ -312,7 +330,13 @@ class Licensio_KB_Templates {
             return '';
         }
 
-        return '.licensio-kb{' . implode( ';', $declarations ) . '}';
+        $css = '.licensio-kb{' . implode( ';', $declarations ) . '}';
+
+        if ( isset( $properties['--licensio-kb-brand'] ) ) {
+            $css .= '.licensio-kb a,.licensio-kb a:hover,.licensio-kb a:focus{color:var(--licensio-kb-brand)}';
+        }
+
+        return $css;
     }
 
     /**
@@ -324,6 +348,11 @@ class Licensio_KB_Templates {
      * character would end the declaration and start an attacker's own rule.
      * Anything that fails validation falls back to the registered default.
      *
+     * The brand colour properties are left out entirely when no valid brand
+     * colour is set. An empty brand colour means "use the theme", and the
+     * stylesheet's `var()` fallbacks only take effect while the property is
+     * undeclared.
+     *
      * @since 1.0.0
      *
      * @return array<string, string> Custom property name to value.
@@ -332,10 +361,6 @@ class Licensio_KB_Templates {
         $defaults = $this->settings->defaults();
 
         $brand = sanitize_hex_color( (string) $this->settings->get( 'brand_color' ) );
-
-        if ( ! is_string( $brand ) || '' === $brand ) {
-            $brand = (string) ( isset( $defaults['brand_color'] ) ? $defaults['brand_color'] : '#3c569f' );
-        }
 
         $layout         = (string) $this->settings->get( 'layout_width' );
         $default_layout = (string) ( isset( $defaults['layout_width'] ) ? $defaults['layout_width'] : 'contained' );
@@ -350,17 +375,20 @@ class Licensio_KB_Templates {
             $card = (string) ( isset( $defaults['card_style'] ) ? $defaults['card_style'] : 'shadow' );
         }
 
-        $rgb = self::hex_to_rgb( $brand );
+        $properties = array();
 
-        $properties = array(
-            '--licensio-kb-brand'          => $brand,
-            '--licensio-kb-brand-rgb'      => implode( ',', $rgb ),
-            '--licensio-kb-brand-contrast' => self::contrast_color( $rgb ),
-            '--licensio-kb-max-width'      => self::LAYOUT_WIDTHS[ $layout ],
-            '--licensio-kb-card-shadow'    => 'shadow' === $card ? '0 4px 14px rgba(16,24,40,0.06)' : 'none',
-            '--licensio-kb-card-border'    => 'border' === $card ? '1px solid var(--licensio-kb-line)' : '1px solid transparent',
-            '--licensio-kb-card-bg'        => 'flat' === $card ? 'transparent' : 'var(--licensio-kb-surface)',
-        );
+        if ( is_string( $brand ) && '' !== $brand ) {
+            $rgb = self::hex_to_rgb( $brand );
+
+            $properties['--licensio-kb-brand']          = $brand;
+            $properties['--licensio-kb-brand-rgb']      = implode( ',', $rgb );
+            $properties['--licensio-kb-brand-contrast'] = self::contrast_color( $rgb );
+        }
+
+        $properties['--licensio-kb-max-width']   = self::LAYOUT_WIDTHS[ $layout ];
+        $properties['--licensio-kb-card-shadow'] = 'shadow' === $card ? self::CARD_SHADOW : 'none';
+        $properties['--licensio-kb-card-border'] = 'border' === $card ? '1px solid var(--licensio-kb-line)' : '1px solid transparent';
+        $properties['--licensio-kb-card-bg']     = 'flat' === $card ? 'transparent' : 'var(--licensio-kb-surface)';
 
         /**
          * Filter the knowledge base CSS custom properties.

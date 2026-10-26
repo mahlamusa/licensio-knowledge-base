@@ -141,7 +141,7 @@ class Licensio_KB_Settings {
             ),
             'brand_color'               => array(
                 'type'     => 'string',
-                'default'  => '#3c569f',
+                'default'  => '',
                 'sanitize' => array( 'Licensio_KB_Settings', 'sanitize_brand_color' ),
             ),
             'layout_width'              => array(
@@ -300,21 +300,28 @@ class Licensio_KB_Settings {
     }
 
     /**
-     * Reduce a value to a valid hex colour.
+     * Reduce a value to a valid hex colour, or to empty.
      *
-     * The brand colour is emitted into a CSS custom property by #5 and #6, so a
-     * value such as `red;}body{background:url(//evil/x)` or `</style><script>`
-     * would become stored XSS in every consumer that forgot to escape. Core's
-     * `sanitize_hex_color()` already returns null for anything that is not
-     * `#rgb` or `#rrggbb`.
+     * The brand colour is emitted into a CSS custom property by the template
+     * layer, so a value such as `red;}body{background:url(//evil/x)` or
+     * `</style><script>` would become stored XSS in every consumer that forgot
+     * to escape. Core's `sanitize_hex_color()` already returns null for
+     * anything that is not `#rgb` or `#rrggbb`.
+     *
+     * An empty value is accepted as itself: it means "use the theme's colours",
+     * and it has to survive the settings request so the colour can be cleared.
      *
      * @since 1.0.0
      *
      * @param mixed $value The raw value.
      *
-     * @return string|null The hex colour, or null when the value is not one.
+     * @return string|null The hex colour, an empty string, or null when the value is neither.
      */
     public static function sanitize_brand_color( $value ) {
+        if ( '' === trim( (string) $value ) ) {
+            return '';
+        }
+
         $color = sanitize_hex_color( (string) $value );
 
         return ( is_string( $color ) && '' !== $color ) ? $color : null;
