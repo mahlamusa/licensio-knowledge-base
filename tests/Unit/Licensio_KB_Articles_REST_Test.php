@@ -988,10 +988,35 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
         $stored  = 'Guide &lt;img src=x onerror=alert(1)&gt; &amp; tips';
         $post    = $this->post( array( 'post_title' => $stored ) );
         $written = array();
-        $metrics = Mockery::mock( Licensio_KB_Article_Metrics::class )->makePartial();
+        $metrics = new class( 50, 5 ) extends Licensio_KB_Article_Metrics {
 
-        $metrics->shouldReceive( 'for_articles' )->andReturn( array() );
-        $metrics->shouldReceive( 'attachment_counts' )->andReturn( array() );
+            /**
+             * No figures for any article.
+             *
+             * @since 1.0.0
+             *
+             * @param int[] $ids    The article IDs.
+             * @param int   $window The window, in days.
+             *
+             * @return array<int, array{views: int, up: int, down: int, share: int|null}> None.
+             */
+            public function for_articles( array $ids, $window ) {
+                return array();
+            }
+
+            /**
+             * No attachments for any article.
+             *
+             * @since 1.0.0
+             *
+             * @param int[] $ids The article IDs.
+             *
+             * @return array<int, int> None.
+             */
+            public function attachment_counts( array $ids ) {
+                return array();
+            }
+        };
 
         Functions\when( 'get_post' )->justReturn( $post );
         Functions\when( 'wp_slash' )->returnArg();
