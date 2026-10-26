@@ -153,7 +153,9 @@ onBeforeUnmount( () => clearTimeout( timer ) );
 	<a-select
 		:value="props.modelValue > 0 ? props.modelValue : undefined"
 		:options="options"
-		:placeholder="props.placeholder || __( 'Any author', 'licensio-knowledge-base' )"
+		:placeholder="
+			props.placeholder || __( 'Any author', 'licensio-knowledge-base' )
+		"
 		:disabled="props.disabled"
 		:loading="loading"
 		:filter-option="false"

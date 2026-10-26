@@ -20,7 +20,11 @@
 
 import { computed, ref } from 'vue';
 import { fixDuplicates, scanDuplicates } from '../api';
-import type { DuplicateFixReport, DuplicateGroup, DuplicateTermGroup } from '../types';
+import type {
+	DuplicateFixReport,
+	DuplicateGroup,
+	DuplicateTermGroup,
+} from '../types';
 import { __, _n, sprintf } from '../../components/i18n';
 
 const loading = ref( false );
@@ -81,7 +85,10 @@ async function scan(): Promise< void > {
 		termGroups.value = found.terms;
 		scanned.value = true;
 	} catch ( err ) {
-		error.value = err instanceof Error ? err.message : __( 'The scan failed.', 'licensio-knowledge-base' );
+		error.value =
+			err instanceof Error
+				? err.message
+				: __( 'The scan failed.', 'licensio-knowledge-base' );
 	} finally {
 		loading.value = false;
 	}
@@ -103,7 +110,10 @@ async function fix(): Promise< void > {
 		postGroups.value = [];
 		termGroups.value = [];
 	} catch ( err ) {
-		error.value = err instanceof Error ? err.message : __( 'The fix failed.', 'licensio-knowledge-base' );
+		error.value =
+			err instanceof Error
+				? err.message
+				: __( 'The fix failed.', 'licensio-knowledge-base' );
 	} finally {
 		fixing.value = false;
 	}
@@ -118,30 +128,75 @@ const resultLines = computed( () => {
 
 	return (
 		[
-			/* translators: %d: a count from the merge report. */
-			[ __( 'Article groups merged: %d', 'licensio-knowledge-base' ), report.groups_merged ],
-			/* translators: %d: a count from the merge report. */
-			[ __( 'Duplicates moved to trash: %d', 'licensio-knowledge-base' ), report.posts_trashed ],
-			/* translators: %d: a count from the merge report. */
-			[ __( 'Meta keys copied: %d', 'licensio-knowledge-base' ), report.meta_copied ],
-			/* translators: %d: a count from the merge report. */
-			[ __( 'Votes moved: %d', 'licensio-knowledge-base' ), report.votes_moved ],
-			/* translators: %d: a count from the merge report. */
-			[ __( 'Views moved: %d', 'licensio-knowledge-base' ), report.views_moved ],
-			/* translators: %d: a count from the merge report. */
-			[ __( 'Migration sources cleaned: %d', 'licensio-knowledge-base' ), report.source_groups_cleaned ],
-			/* translators: %d: a count from the merge report. */
-			[ __( 'Source posts moved to trash: %d', 'licensio-knowledge-base' ), report.sources_trashed ],
-			/* translators: %d: a count from the merge report. */
-			[ __( 'Term groups merged: %d', 'licensio-knowledge-base' ), report.term_groups_merged ],
-			/* translators: %d: a count from the merge report. */
-			[ __( 'Terms deleted: %d', 'licensio-knowledge-base' ), report.terms_deleted ],
-			/* translators: %d: a count from the merge report. */
-			[ __( 'Term meta keys copied: %d', 'licensio-knowledge-base' ), report.term_meta_copied ],
-			/* translators: %d: a count from the merge report. */
-			[ __( 'Article assignments moved: %d', 'licensio-knowledge-base' ), report.articles_reassigned ],
+			[
+				/* translators: %d: a count from the merge report. */
+				__( 'Article groups merged: %d', 'licensio-knowledge-base' ),
+				report.groups_merged,
+			],
+			[
+				/* translators: %d: a count from the merge report. */
+				__(
+					'Duplicates moved to trash: %d',
+					'licensio-knowledge-base'
+				),
+				report.posts_trashed,
+			],
+			[
+				/* translators: %d: a count from the merge report. */
+				__( 'Meta keys copied: %d', 'licensio-knowledge-base' ),
+				report.meta_copied,
+			],
+			[
+				/* translators: %d: a count from the merge report. */
+				__( 'Votes moved: %d', 'licensio-knowledge-base' ),
+				report.votes_moved,
+			],
+			[
+				/* translators: %d: a count from the merge report. */
+				__( 'Views moved: %d', 'licensio-knowledge-base' ),
+				report.views_moved,
+			],
+			[
+				/* translators: %d: a count from the merge report. */
+				__(
+					'Migration sources cleaned: %d',
+					'licensio-knowledge-base'
+				),
+				report.source_groups_cleaned,
+			],
+			[
+				/* translators: %d: a count from the merge report. */
+				__(
+					'Source posts moved to trash: %d',
+					'licensio-knowledge-base'
+				),
+				report.sources_trashed,
+			],
+			[
+				/* translators: %d: a count from the merge report. */
+				__( 'Term groups merged: %d', 'licensio-knowledge-base' ),
+				report.term_groups_merged,
+			],
+			[
+				/* translators: %d: a count from the merge report. */
+				__( 'Terms deleted: %d', 'licensio-knowledge-base' ),
+				report.terms_deleted,
+			],
+			[
+				/* translators: %d: a count from the merge report. */
+				__( 'Term meta keys copied: %d', 'licensio-knowledge-base' ),
+				report.term_meta_copied,
+			],
+			[
+				/* translators: %d: a count from the merge report. */
+				__(
+					'Article assignments moved: %d',
+					'licensio-knowledge-base'
+				),
+				report.articles_reassigned,
+			],
 		] as const
-	).map( ( [ format, count ] ) => sprintf( format, count ) );
+	 ).map( ( [ format, count ] ) => sprintf( format, count ) );
 } );
 </script>
 
@@ -157,7 +212,12 @@ const resultLines = computed( () => {
 		</p>
 
 		<div class="licensio-kb-duplicates__actions">
-			<a-button type="primary" :loading="loading" :disabled="fixing" @click="scan">
+			<a-button
+				type="primary"
+				:loading="loading"
+				:disabled="fixing"
+				@click="scan"
+			>
 				{{ __( 'Scan for duplicates', 'licensio-knowledge-base' ) }}
 			</a-button>
 
@@ -179,11 +239,19 @@ const resultLines = computed( () => {
 				:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
 				@confirm="fix"
 			>
-				<a-button type="primary" danger :loading="fixing" :disabled="loading">
+				<a-button
+					type="primary"
+					danger
+					:loading="fixing"
+					:disabled="loading"
+				>
 					{{
 						sprintf(
 							/* translators: %d: how many duplicate groups can be merged. */
-							__( 'Merge duplicates (%d)', 'licensio-knowledge-base' ),
+							__(
+								'Merge duplicates (%d)',
+								'licensio-knowledge-base'
+							),
 							fixableCount
 						)
 					}}
@@ -191,23 +259,40 @@ const resultLines = computed( () => {
 			</a-popconfirm>
 		</div>
 
-		<a-alert v-if="error" type="error" show-icon :message="error" class="licensio-kb-duplicates__error" />
+		<a-alert
+			v-if="error"
+			type="error"
+			show-icon
+			:message="error"
+			class="licensio-kb-duplicates__error"
+		/>
 
 		<a-alert
 			v-if="nothingFound"
 			type="success"
 			show-icon
-			:message="__( 'No duplicate articles, categories or tags detected.', 'licensio-knowledge-base' )"
+			:message="
+				__(
+					'No duplicate articles, categories or tags detected.',
+					'licensio-knowledge-base'
+				)
+			"
 			class="licensio-kb-duplicates__error"
 		/>
 
 		<template v-if="result">
-			<a-card :title="__( 'Merge report', 'licensio-knowledge-base' )" class="licensio-kb-duplicates__card">
+			<a-card
+				:title="__( 'Merge report', 'licensio-knowledge-base' )"
+				class="licensio-kb-duplicates__card"
+			>
 				<ul class="licensio-kb-duplicates__report">
 					<li v-for="line in resultLines" :key="line">{{ line }}</li>
 				</ul>
 
-				<p v-if="result.notes.length" class="licensio-kb-duplicates__notes">
+				<p
+					v-if="result.notes.length"
+					class="licensio-kb-duplicates__notes"
+				>
 					{{ __( 'What was done:', 'licensio-knowledge-base' ) }}
 				</p>
 				<ul class="licensio-kb-duplicates__report">
@@ -235,17 +320,35 @@ const resultLines = computed( () => {
 					<li v-for="member in group.members" :key="member.id">
 						#{{ member.id }}
 						{{ member.slug }}
-						<a-tag v-if="member.id === group.canonical" color="green">
-							{{ __( 'keeps the slug', 'licensio-knowledge-base' ) }}
+						<a-tag
+							v-if="member.id === group.canonical"
+							color="green"
+						>
+							{{
+								__(
+									'keeps the slug',
+									'licensio-knowledge-base'
+								)
+							}}
 						</a-tag>
 						<a-tag v-if="member.id === group.winner" color="blue">
-							{{ __( 'provides the content', 'licensio-knowledge-base' ) }}
+							{{
+								__(
+									'provides the content',
+									'licensio-knowledge-base'
+								)
+							}}
 						</a-tag>
 						<span class="licensio-kb-duplicates__meta-count">
 							{{
 								sprintf(
 									/* translators: %d: how many meta keys the duplicate has. */
-									_n( '%d meta key', '%d meta keys', member.metaCount, 'licensio-knowledge-base' ),
+									_n(
+										'%d meta key',
+										'%d meta keys',
+										member.metaCount,
+										'licensio-knowledge-base'
+									),
 									member.metaCount
 								)
 							}}
@@ -257,7 +360,9 @@ const resultLines = computed( () => {
 
 		<a-card
 			v-if="sourcePosts.length > 0"
-			:title="__( 'Migration sources to clean up', 'licensio-knowledge-base' )"
+			:title="
+				__( 'Migration sources to clean up', 'licensio-knowledge-base' )
+			"
 			class="licensio-kb-duplicates__card"
 		>
 			<p class="licensio-kb-duplicates__flagged-note">
@@ -282,15 +387,29 @@ const resultLines = computed( () => {
 				<ul class="licensio-kb-duplicates__members">
 					<li v-for="member in group.members" :key="member.id">
 						#{{ member.id }}
-						<a-tag :color="member.type === 'licensio_article' ? 'green' : 'blue'">
+						<a-tag
+							:color="
+								member.type === 'licensio_article'
+									? 'green'
+									: 'blue'
+							"
+						>
 							{{ member.type }}
 						</a-tag>
 						{{ member.slug }}
-						<a-tag v-if="member.id === group.canonical" color="green">
+						<a-tag
+							v-if="member.id === group.canonical"
+							color="green"
+						>
 							{{ __( 'stays', 'licensio-knowledge-base' ) }}
 						</a-tag>
 						<a-tag v-else color="orange">
-							{{ __( 'moves to trash', 'licensio-knowledge-base' ) }}
+							{{
+								__(
+									'moves to trash',
+									'licensio-knowledge-base'
+								)
+							}}
 						</a-tag>
 					</li>
 				</ul>
@@ -316,17 +435,35 @@ const resultLines = computed( () => {
 					<li v-for="member in group.members" :key="member.id">
 						#{{ member.id }}
 						{{ member.slug }}
-						<a-tag v-if="member.id === group.canonical" color="green">
-							{{ __( 'keeps the slug', 'licensio-knowledge-base' ) }}
+						<a-tag
+							v-if="member.id === group.canonical"
+							color="green"
+						>
+							{{
+								__(
+									'keeps the slug',
+									'licensio-knowledge-base'
+								)
+							}}
 						</a-tag>
 						<a-tag v-if="member.id === group.winner" color="blue">
-							{{ __( 'provides the meta', 'licensio-knowledge-base' ) }}
+							{{
+								__(
+									'provides the meta',
+									'licensio-knowledge-base'
+								)
+							}}
 						</a-tag>
 						<span class="licensio-kb-duplicates__meta-count">
 							{{
 								sprintf(
 									/* translators: %d: how many meta keys the duplicate has. */
-									_n( '%d meta key', '%d meta keys', member.metaCount, 'licensio-knowledge-base' ),
+									_n(
+										'%d meta key',
+										'%d meta keys',
+										member.metaCount,
+										'licensio-knowledge-base'
+									),
 									member.metaCount
 								)
 							}}
@@ -334,7 +471,12 @@ const resultLines = computed( () => {
 							{{
 								sprintf(
 									/* translators: %d: how many articles have the duplicate term. */
-									_n( '%d article', '%d articles', member.count, 'licensio-knowledge-base' ),
+									_n(
+										'%d article',
+										'%d articles',
+										member.count,
+										'licensio-knowledge-base'
+									),
 									member.count
 								)
 							}}
@@ -346,7 +488,9 @@ const resultLines = computed( () => {
 
 		<a-card
 			v-if="flaggedPosts.length > 0 || flaggedTerms.length > 0"
-			:title="__( 'Flagged for manual review', 'licensio-knowledge-base' )"
+			:title="
+				__( 'Flagged for manual review', 'licensio-knowledge-base' )
+			"
 			class="licensio-kb-duplicates__card"
 		>
 			<p class="licensio-kb-duplicates__flagged-note">
@@ -371,7 +515,13 @@ const resultLines = computed( () => {
 				<ul class="licensio-kb-duplicates__members">
 					<li v-for="member in group.members" :key="member.id">
 						#{{ member.id }}
-						<a-tag :color="member.type === 'licensio_article' ? 'green' : 'orange'">
+						<a-tag
+							:color="
+								member.type === 'licensio_article'
+									? 'green'
+									: 'orange'
+							"
+						>
 							{{ member.type }}
 						</a-tag>
 						{{ member.slug }} ({{ member.status }})

@@ -14,8 +14,8 @@
 #
 #   * `gh` is installed and authenticated.
 #   * The working tree is clean, and still clean after the build. The build
-#     only rewrites languages/*.pot when the strings changed, which means the
-#     committed template is stale and has to be committed first.
+#     writes no tracked file (the translation template goes into the zips
+#     only), so a dirty tree afterwards means something unexpected changed.
 #   * HEAD is the commit tagged `v<X.Y.Z>`, and the tag exists on origin.
 #   * readme.txt has a `= <X.Y.Z> =` changelog entry.
 #   * No GitHub release exists for the tag yet.
@@ -75,7 +75,7 @@ NOTES="$(
 
 bash "${SCRIPT_DIR}/build-release.sh"
 
-[ -z "$( git status --porcelain )" ] || abort 'the build changed tracked files (listed by git status). Commit the refreshed translation template and tag again.'
+[ -z "$( git status --porcelain )" ] || abort 'the build changed tracked files (listed by git status). Find out why before tagging again.'
 
 NOTES_FILE="$( mktemp )"
 trap 'rm -f "$NOTES_FILE"' EXIT

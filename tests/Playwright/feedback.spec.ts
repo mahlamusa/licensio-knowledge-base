@@ -155,9 +155,8 @@ test.describe( 'Feedback inbox', () => {
 		await page.getByRole( 'button', { name: 'Mark actioned' } ).click();
 		await confirmPopconfirm( page );
 		await expect.poll( () => writes.length ).toBe( 3 );
-		await expect( rows.locator( '.ant-select-selection-item' ) ).toHaveText( [
-			'Actioned',
-			'Actioned',
-		] );
+		await expect( rows.locator( '.ant-select-selection-item' ) ).toHaveText(
+			[ 'Actioned', 'Actioned' ]
+		);
 	} );
 } );

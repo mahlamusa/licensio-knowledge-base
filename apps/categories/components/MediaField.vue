@@ -78,7 +78,11 @@ function remove(): void {
 			<a-button
 				size="small"
 				:disabled="! available"
-				:aria-label="props.label + ': ' + __( 'Select', 'licensio-knowledge-base' )"
+				:aria-label="
+					props.label +
+					': ' +
+					__( 'Select', 'licensio-knowledge-base' )
+				"
 				@click="select"
 			>
 				{{ __( 'Select', 'licensio-knowledge-base' ) }}
@@ -86,7 +90,11 @@ function remove(): void {
 			<a-button
 				v-if="props.id"
 				size="small"
-				:aria-label="props.label + ': ' + __( 'Remove', 'licensio-knowledge-base' )"
+				:aria-label="
+					props.label +
+					': ' +
+					__( 'Remove', 'licensio-knowledge-base' )
+				"
 				@click="remove"
 			>
 				{{ __( 'Remove', 'licensio-knowledge-base' ) }}
@@ -116,14 +124,14 @@ function remove(): void {
 	width: 48px;
 	height: 48px;
 	object-fit: contain;
-	border: 1px solid var(--lkb-border-wp);
+	border: 1px solid var( --lkb-border-wp );
 	border-radius: 6px;
-	background: var(--lkb-sunken);
+	background: var( --lkb-sunken );
 }
 
 .lkb-media__none,
 .lkb-media__note {
-	color: var(--lkb-ink-muted);
+	color: var( --lkb-ink-muted );
 	font-size: 12px;
 }
 

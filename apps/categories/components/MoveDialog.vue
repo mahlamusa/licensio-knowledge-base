@@ -32,7 +32,11 @@ const emit = defineEmits< {
 } >();
 
 // Escape on an open select closes only the select, not the dialog.
-useEscapeClose( () => props.open, '.lkb-move-dialog', () => emit( 'close' ) );
+useEscapeClose(
+	() => props.open,
+	'.lkb-move-dialog',
+	() => emit( 'close' )
+);
 
 const store = useCategoriesStore();
 
@@ -170,7 +174,9 @@ async function moveCategory(): Promise< void > {
 				:model-value="parent"
 				taxonomy="licensio_category"
 				:exclude="exclude"
-				:aria-label="__( 'New parent category', 'licensio-knowledge-base' )"
+				:aria-label="
+					__( 'New parent category', 'licensio-knowledge-base' )
+				"
 				class="lkb-dialog__picker"
 				@update:model-value="onParent"
 			/>
@@ -198,7 +204,7 @@ async function moveCategory(): Promise< void > {
 
 <style scoped>
 .lkb-dialog__error {
-	margin-bottom: var(--lkb-gap);
+	margin-bottom: var( --lkb-gap );
 }
 
 .lkb-dialog__group {

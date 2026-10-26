@@ -13,17 +13,25 @@
 import type { SearchRow } from '../types';
 import { __ } from '../../components/i18n';
 
-defineProps<{ rows: SearchRow[] }>();
+defineProps< { rows: SearchRow[] } >();
 
 const columns = [
-	{ title: __( 'Search term', 'licensio-knowledge-base' ), dataIndex: 'term', key: 'term' },
+	{
+		title: __( 'Search term', 'licensio-knowledge-base' ),
+		dataIndex: 'term',
+		key: 'term',
+	},
 	{
 		title: __( 'Times searched', 'licensio-knowledge-base' ),
 		dataIndex: 'searches',
 		key: 'searches',
 		width: 160,
 	},
-	{ title: __( 'Action', 'licensio-knowledge-base' ), key: 'action', width: 220 },
+	{
+		title: __( 'Action', 'licensio-knowledge-base' ),
+		key: 'action',
+		width: 220,
+	},
 ];
 </script>
 
@@ -36,7 +44,12 @@ const columns = [
 		size="small"
 	>
 		<template #emptyText>
-			{{ __( 'No searches came back empty in this range.', 'licensio-knowledge-base' ) }}
+			{{
+				__(
+					'No searches came back empty in this range.',
+					'licensio-knowledge-base'
+				)
+			}}
 		</template>
 		<template #bodyCell="{ column, record }">
 			<template v-if="column.key === 'action'">
@@ -46,7 +59,12 @@ const columns = [
 					size="small"
 					:href="record.create_article_url"
 				>
-					{{ __( 'Create an article for this', 'licensio-knowledge-base' ) }}
+					{{
+						__(
+							'Create an article for this',
+							'licensio-knowledge-base'
+						)
+					}}
 				</a-button>
 			</template>
 		</template>

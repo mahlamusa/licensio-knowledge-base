@@ -33,7 +33,9 @@ const declarations = computed( () =>
 <template>
 	<div class="licensio-kb licensio-kb-settings__preview" :style="style">
 		<div class="licensio-kb-settings__preview-card">
-			<h3>{{ __( 'Resetting your password', 'licensio-knowledge-base' ) }}</h3>
+			<h3>
+				{{ __( 'Resetting your password', 'licensio-knowledge-base' ) }}
+			</h3>
 			<p>
 				{{
 					__(
@@ -68,9 +70,9 @@ const declarations = computed( () =>
 	--licensio-kb-line: #e2e8f0;
 
 	display: grid;
-	gap: var(--lkb-gap);
-	grid-template-columns: minmax(0, 1fr) minmax(0, 20rem);
-	margin-bottom: var(--lkb-gap-lg);
+	gap: var( --lkb-gap );
+	grid-template-columns: minmax( 0, 1fr ) minmax( 0, 20rem );
+	margin-bottom: var( --lkb-gap-lg );
 }
 
 .licensio-kb-settings__preview-card {

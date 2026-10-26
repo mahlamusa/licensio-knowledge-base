@@ -42,35 +42,37 @@ const voteOptions = [
  * colour is the same one the status wears in the table, so the filter and the
  * rows it produces read as the same vocabulary.
  */
-const statusFilters = computed( () => [
-	{
-		value: '' as const,
-		label: __( 'All', 'licensio-knowledge-base' ),
-		key: 'all',
-		tone: 'all',
-	},
-	{
-		value: 'new' as const,
-		label: __( 'New', 'licensio-knowledge-base' ),
-		key: 'new',
-		tone: 'new',
-	},
-	{
-		value: 'reviewed' as const,
-		label: __( 'Reviewed', 'licensio-knowledge-base' ),
-		key: 'reviewed',
-		tone: 'reviewed',
-	},
-	{
-		value: 'actioned' as const,
-		label: __( 'Actioned', 'licensio-knowledge-base' ),
-		key: 'actioned',
-		tone: 'actioned',
-	},
-].map( ( filter ) => ( {
-	...filter,
-	count: store.counts[ filter.key ] ?? 0,
-} ) ) );
+const statusFilters = computed( () =>
+	[
+		{
+			value: '' as const,
+			label: __( 'All', 'licensio-knowledge-base' ),
+			key: 'all',
+			tone: 'all',
+		},
+		{
+			value: 'new' as const,
+			label: __( 'New', 'licensio-knowledge-base' ),
+			key: 'new',
+			tone: 'new',
+		},
+		{
+			value: 'reviewed' as const,
+			label: __( 'Reviewed', 'licensio-knowledge-base' ),
+			key: 'reviewed',
+			tone: 'reviewed',
+		},
+		{
+			value: 'actioned' as const,
+			label: __( 'Actioned', 'licensio-knowledge-base' ),
+			key: 'actioned',
+			tone: 'actioned',
+		},
+	].map( ( filter ) => ( {
+		...filter,
+		count: store.counts[ filter.key ] ?? 0,
+	} ) )
+);
 
 const columns = [
 	{
@@ -268,7 +270,12 @@ onMounted( () => {
 				>
 					<template #action>
 						<a-button size="small" @click="clearArticle">
-							{{ __( 'Show all articles', 'licensio-knowledge-base' ) }}
+							{{
+								__(
+									'Show all articles',
+									'licensio-knowledge-base'
+								)
+							}}
 						</a-button>
 					</template>
 				</a-alert>
@@ -293,7 +300,11 @@ onMounted( () => {
 							:aria-pressed="store.status === filter.value"
 							@click="store.filter( { status: filter.value } )"
 						>
-							<span v-if="'all' !== filter.tone" class="lkb-pill__dot" aria-hidden="true" />
+							<span
+								v-if="'all' !== filter.tone"
+								class="lkb-pill__dot"
+								aria-hidden="true"
+							/>
 							{{ filter.label }} ({{ filter.count }})
 						</button>
 					</div>
@@ -301,9 +312,14 @@ onMounted( () => {
 					<a-select
 						:value="store.vote"
 						style="width: 170px"
-						:aria-label="__( 'Filter by vote', 'licensio-knowledge-base' )"
+						:aria-label="
+							__( 'Filter by vote', 'licensio-knowledge-base' )
+						"
 						:options="voteOptions"
-						@change="( value ) => store.filter( { vote: Number( value ) } )"
+						@change="
+							( value: unknown ) =>
+								store.filter( { vote: Number( value ) } )
+						"
 					/>
 				</div>
 
@@ -313,13 +329,21 @@ onMounted( () => {
 					A disabled control that is disabled almost all the time reads as
 					broken rather than as conditional.
 				-->
-				<div class="lkb-bulk" :class="{ 'is-armed': store.selected.length > 0 }">
+				<div
+					class="lkb-bulk"
+					:class="{ 'is-armed': store.selected.length > 0 }"
+				>
 					<template v-if="store.selected.length">
 						<span class="lkb-bulk__count">
 							{{
 								sprintf(
 									/* translators: %d: number of selected feedback entries. */
-									_n( '%d selected', '%d selected', store.selected.length, 'licensio-knowledge-base' ),
+									_n(
+										'%d selected',
+										'%d selected',
+										store.selected.length,
+										'licensio-knowledge-base'
+									),
 									store.selected.length
 								)
 							}}
@@ -332,14 +356,29 @@ onMounted( () => {
 								:title="
 									sprintf(
 										/* translators: %d: number of selected feedback items. */
-										_n( 'Mark %d feedback item as reviewed?', 'Mark %d feedback items as reviewed?', store.selected.length, 'licensio-knowledge-base' ),
+										_n(
+											'Mark %d feedback item as reviewed?',
+											'Mark %d feedback items as reviewed?',
+											store.selected.length,
+											'licensio-knowledge-base'
+										),
 										store.selected.length
 									)
 								"
-								:ok-text="__( 'Mark reviewed', 'licensio-knowledge-base' )"
+								:ok-text="
+									__(
+										'Mark reviewed',
+										'licensio-knowledge-base'
+									)
+								"
 								@confirm="store.bulkSetStatus( 'reviewed' )"
 							>
-								{{ __( 'Mark reviewed', 'licensio-knowledge-base' ) }}
+								{{
+									__(
+										'Mark reviewed',
+										'licensio-knowledge-base'
+									)
+								}}
 							</ConfirmButton>
 							<ConfirmButton
 								size="small"
@@ -347,14 +386,29 @@ onMounted( () => {
 								:title="
 									sprintf(
 										/* translators: %d: number of selected feedback items. */
-										_n( 'Mark %d feedback item as actioned?', 'Mark %d feedback items as actioned?', store.selected.length, 'licensio-knowledge-base' ),
+										_n(
+											'Mark %d feedback item as actioned?',
+											'Mark %d feedback items as actioned?',
+											store.selected.length,
+											'licensio-knowledge-base'
+										),
 										store.selected.length
 									)
 								"
-								:ok-text="__( 'Mark actioned', 'licensio-knowledge-base' )"
+								:ok-text="
+									__(
+										'Mark actioned',
+										'licensio-knowledge-base'
+									)
+								"
 								@confirm="store.bulkSetStatus( 'actioned' )"
 							>
-								{{ __( 'Mark actioned', 'licensio-knowledge-base' ) }}
+								{{
+									__(
+										'Mark actioned',
+										'licensio-knowledge-base'
+									)
+								}}
 							</ConfirmButton>
 						</div>
 					</template>
@@ -370,73 +424,143 @@ onMounted( () => {
 				</div>
 
 				<div class="lkb-tablecard">
-			<a-table
-				row-key="id"
-				:columns="columns"
-				:data-source="store.items"
-				:loading="store.loading"
-				:row-selection="{
-					selectedRowKeys: store.selected,
-					onChange: ( keys ) => store.select( keys as number[] ),
-				}"
-				:pagination="{
-					current: store.page,
-					pageSize: store.perPage,
-					total: store.total,
-					showSizeChanger: false,
-					onChange: ( page: number ) => store.goToPage( page ),
-				}"
-			>
-				<template #bodyCell="{ column, record }">
-					<template v-if="'article' === column.key">
-						<a v-if="record.editUrl" :href="record.editUrl">
-							{{ record.articleName || __( '(untitled)', 'licensio-knowledge-base' ) }}
-						</a>
-						<span v-else>{{ record.articleName || __( '(untitled)', 'licensio-knowledge-base' ) }}</span>
-					</template>
+					<a-table
+						row-key="id"
+						:columns="columns"
+						:data-source="store.items"
+						:loading="store.loading"
+						:row-selection="{
+							selectedRowKeys: store.selected,
+							onChange: ( keys: unknown[] ) =>
+								store.select( keys as number[] ),
+						}"
+						:pagination="{
+							current: store.page,
+							pageSize: store.perPage,
+							total: store.total,
+							showSizeChanger: false,
+							onChange: ( page: number ) =>
+								store.goToPage( page ),
+						}"
+					>
+						<template #bodyCell="{ column, record }">
+							<template v-if="'article' === column.key">
+								<a v-if="record.editUrl" :href="record.editUrl">
+									{{
+										record.articleName ||
+										__(
+											'(untitled)',
+											'licensio-knowledge-base'
+										)
+									}}
+								</a>
+								<span v-else>{{
+									record.articleName ||
+									__(
+										'(untitled)',
+										'licensio-knowledge-base'
+									)
+								}}</span>
+							</template>
 
-					<template v-else-if="'vote' === column.key">
-						<a-tag :color="isHelpful( record ) ? 'green' : 'red'">
-							{{ isHelpful( record )
-								? __( 'Helpful', 'licensio-knowledge-base' )
-								: __( 'Not helpful', 'licensio-knowledge-base' ) }}
-						</a-tag>
-					</template>
+							<template v-else-if="'vote' === column.key">
+								<a-tag
+									:color="
+										isHelpful( record ) ? 'green' : 'red'
+									"
+								>
+									{{
+										isHelpful( record )
+											? __(
+													'Helpful',
+													'licensio-knowledge-base'
+											  )
+											: __(
+													'Not helpful',
+													'licensio-knowledge-base'
+											  )
+									}}
+								</a-tag>
+							</template>
 
-					<template v-else-if="'comment' === column.key">
-						<span class="licensio-kb-inbox__comment">{{
-							record.comment || '—'
-						}}</span>
-					</template>
+							<template v-else-if="'comment' === column.key">
+								<span class="licensio-kb-inbox__comment">{{
+									record.comment || '—'
+								}}</span>
+							</template>
 
-					<template v-else-if="'status' === column.key">
-						<a-popconfirm
-							:open="statusConfirmOpen && pendingStatus?.id === record.id"
-							:title="__( 'Change the status of this feedback?', 'licensio-knowledge-base' )"
-							:ok-text="__( 'Change status', 'licensio-knowledge-base' )"
-							:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
-							:overlay-class-name="statusConfirmClass"
-							@open-change="onStatusConfirmOpen"
-							@confirm="confirmStatus"
-						>
-							<a-select
-								:value="pendingStatus?.id === record.id ? pendingStatus.status : record.status"
-								style="width: 160px"
-								:disabled="store.saving"
-								:options="[
-									{ value: 'new', label: __( 'New', 'licensio-knowledge-base' ) },
-									{ value: 'reviewed', label: __( 'Reviewed', 'licensio-knowledge-base' ) },
-									{ value: 'actioned', label: __( 'Actioned', 'licensio-knowledge-base' ) },
-								]"
-								@change="
-									( value ) =>
-										pickStatus( record.id, value as FeedbackStatus )
-								"
-							/>
-						</a-popconfirm>
-					</template>
-				</template>
-			</a-table>
+							<template v-else-if="'status' === column.key">
+								<a-popconfirm
+									:open="
+										statusConfirmOpen &&
+										pendingStatus?.id === record.id
+									"
+									:title="
+										__(
+											'Change the status of this feedback?',
+											'licensio-knowledge-base'
+										)
+									"
+									:ok-text="
+										__(
+											'Change status',
+											'licensio-knowledge-base'
+										)
+									"
+									:cancel-text="
+										__(
+											'Cancel',
+											'licensio-knowledge-base'
+										)
+									"
+									:overlay-class-name="statusConfirmClass"
+									@open-change="onStatusConfirmOpen"
+									@confirm="confirmStatus"
+								>
+									<a-select
+										:value="
+											pendingStatus &&
+											pendingStatus.id === record.id
+												? pendingStatus.status
+												: record.status
+										"
+										style="width: 160px"
+										:disabled="store.saving"
+										:options="[
+											{
+												value: 'new',
+												label: __(
+													'New',
+													'licensio-knowledge-base'
+												),
+											},
+											{
+												value: 'reviewed',
+												label: __(
+													'Reviewed',
+													'licensio-knowledge-base'
+												),
+											},
+											{
+												value: 'actioned',
+												label: __(
+													'Actioned',
+													'licensio-knowledge-base'
+												),
+											},
+										]"
+										@change="
+											( value: unknown ) =>
+												pickStatus(
+													record.id,
+													value as FeedbackStatus
+												)
+										"
+									/>
+								</a-popconfirm>
+							</template>
+						</template>
+					</a-table>
 				</div>
 			</div>
 		</div>
@@ -446,7 +570,7 @@ onMounted( () => {
 <style scoped>
 .licensio-kb-inbox__error,
 .licensio-kb-inbox__article {
-	margin-bottom: var(--lkb-gap);
+	margin-bottom: var( --lkb-gap );
 }
 
 /* ── Filter row ──────────────────────────────────────────── */
@@ -458,10 +582,10 @@ onMounted( () => {
 .lkb-pills {
 	display: inline-flex;
 	padding: 3px;
-	border: 1px solid var(--lkb-border-wp);
-	border-radius: var(--lkb-radius);
-	background: var(--lkb-surface);
-	box-shadow: var(--lkb-shadow-sm);
+	border: 1px solid var( --lkb-border-wp );
+	border-radius: var( --lkb-radius );
+	background: var( --lkb-surface );
+	box-shadow: var( --lkb-shadow-sm );
 }
 
 .lkb-pill {
@@ -472,27 +596,29 @@ onMounted( () => {
 	border: 0;
 	border-radius: 6px;
 	background: transparent;
-	color: var(--lkb-ink-wp-secondary);
+	color: var( --lkb-ink-wp-secondary );
 	font-size: 13px;
 	line-height: 1;
 	white-space: nowrap;
 	cursor: pointer;
-	transition: background 0.12s ease, color 0.12s ease;
+	transition:
+		background 0.12s ease,
+		color 0.12s ease;
 }
 
 .lkb-pill:hover {
-	background: var(--lkb-hover);
-	color: var(--lkb-ink-wp);
+	background: var( --lkb-hover );
+	color: var( --lkb-ink-wp );
 }
 
 .lkb-pill.is-active {
-	background: var(--lkb-brand-tint);
-	color: var(--lkb-accent);
+	background: var( --lkb-brand-tint );
+	color: var( --lkb-accent );
 	font-weight: 600;
 }
 
 .lkb-pill:focus-visible {
-	outline: 2px solid var(--lkb-accent);
+	outline: 2px solid var( --lkb-accent );
 	outline-offset: -2px;
 }
 
@@ -508,29 +634,29 @@ onMounted( () => {
 }
 
 .lkb-pill--new .lkb-pill__dot {
-	background: var(--lkb-info);
+	background: var( --lkb-info );
 }
 
 .lkb-pill--reviewed .lkb-pill__dot {
-	background: var(--lkb-warning);
+	background: var( --lkb-warning );
 }
 
 .lkb-pill--actioned .lkb-pill__dot {
-	background: var(--lkb-brand);
+	background: var( --lkb-brand );
 }
 
 /* ── Table ───────────────────────────────────────────────── */
 
 .lkb-tablecard {
 	overflow: hidden;
-	border: 1px solid var(--lkb-border-wp);
-	border-radius: var(--lkb-radius);
-	background: var(--lkb-surface);
-	box-shadow: var(--lkb-shadow-sm);
+	border: 1px solid var( --lkb-border-wp );
+	border-radius: var( --lkb-radius );
+	background: var( --lkb-surface );
+	box-shadow: var( --lkb-shadow-sm );
 }
 
 .licensio-kb-inbox__comment {
-	color: var(--lkb-ink-muted);
+	color: var( --lkb-ink-muted );
 }
 
 /*
@@ -542,7 +668,7 @@ onMounted( () => {
  * so selection looks like the rest of the screen's selected state.
  */
 :deep( .ant-table-tbody > tr.ant-table-row-selected > td ) {
-	background: var(--lkb-brand-tint);
+	background: var( --lkb-brand-tint );
 }
 
 :deep( .ant-table-tbody > tr.ant-table-row-selected:hover > td ) {

@@ -436,9 +436,9 @@ test( 'a tag count links to the Articles app filtered by the tag', async ( {
 	await link.click();
 	await expect( page ).toHaveURL( href );
 	await expect(
-		page.locator( '#licensio-kb-articles' ).getByText(
-			'No articles match these filters.'
-		)
+		page
+			.locator( '#licensio-kb-articles' )
+			.getByText( 'No articles match these filters.' )
 	).toBeVisible();
 
 	await page.goBack();

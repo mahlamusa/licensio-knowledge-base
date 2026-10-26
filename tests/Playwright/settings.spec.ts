@@ -107,7 +107,9 @@ test.describe( 'Knowledge base settings', () => {
 
 	test.afterEach( async ( { page } ) => {
 		// A test may leave unsaved edits behind; let the guard wave this through.
-		page.on( 'dialog', ( dialog ) => dialog.accept().catch( () => undefined ) );
+		page.on( 'dialog', ( dialog ) =>
+			dialog.accept().catch( () => undefined )
+		);
 
 		await openSettings( page );
 		await page.getByRole( 'button', { name: 'Reset all' } ).click();
@@ -127,10 +129,9 @@ test.describe( 'Knowledge base settings', () => {
 		await setBrandColour( page, BRAND );
 
 		// The preview reflects the draft before anything is saved.
-		await expect( page.locator( '.licensio-kb-settings__preview' ) ).toHaveCSS(
-			'--licensio-kb-brand',
-			BRAND
-		);
+		await expect(
+			page.locator( '.licensio-kb-settings__preview' )
+		).toHaveCSS( '--licensio-kb-brand', BRAND );
 
 		await page.getByRole( 'button', { name: 'Save changes' } ).click();
 		await confirmPopconfirm( page );
@@ -194,7 +195,9 @@ test.describe( 'Knowledge base settings', () => {
 
 		// The good field in the same payload was not written either; the
 		// previous test's Reset all left it on its default of 20.
-		page.on( 'dialog', ( dialog ) => dialog.accept().catch( () => undefined ) );
+		page.on( 'dialog', ( dialog ) =>
+			dialog.accept().catch( () => undefined )
+		);
 		await page.reload();
 		await expect( sectionButton( page, 'General' ) ).toBeVisible();
 
