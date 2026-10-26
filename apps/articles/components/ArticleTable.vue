@@ -630,11 +630,6 @@ const expandedKeys = computed( () =>
 }
 
 /*
- * A long term name (a tag such as internationalisation) may break inside
- * the word when the column is at its narrowest, rather than push the table
- * past the screen on a small laptop.
- */
-/*
  * Term lists wrap between words; a single word only breaks when it is wider
  * than the column. The minimum width stops the table squeezing the column to
  * one fragment per line: on a phone, where the table scrolls sideways, and on
@@ -643,13 +638,12 @@ const expandedKeys = computed( () =>
  */
 .lkb-termlist {
 	display: block;
-	min-width: 120px;
 	overflow-wrap: anywhere;
 }
 
-@media ( min-width: 783px ) and ( max-width: 1279px ) {
+@media ( max-width: 782px ), ( min-width: 1280px ) {
 	.lkb-termlist {
-		min-width: 0;
+		min-width: 120px;
 	}
 }
 
@@ -661,20 +655,22 @@ const expandedKeys = computed( () =>
 
 /*
  * The Quick edit form sits in an expanded row of a table that may scroll
- * sideways, so on its own it would be as wide as the whole table. The card
- * is a size container, and the form is held to the card's visible width
- * (less the cell's 16px padding each side) and kept in view while the table
- * scrolls, so every field and Save fit the screen on a phone. On wider
- * screens the table does not scroll and the form keeps the cell's width.
+ * sideways, so on its own it would be as wide as the whole table. This card
+ * is a size container, and the form (the root of QuickEditRow) is held to the
+ * card's visible width, less the expanded cell's padding each side, and kept
+ * in view at the start edge while the table scrolls, so every field and Save
+ * fit the screen on a phone. On wider screens the table does not scroll and
+ * the form keeps the cell's width.
  */
 .lkb-tablecard {
+	--lkb-expanded-pad: 16px;
 	container-type: inline-size;
 }
 
 .lkb-quickedit {
 	position: sticky;
-	left: 16px;
-	max-width: calc( 100cqi - 32px );
+	inset-inline-start: var( --lkb-expanded-pad );
+	max-width: calc( 100cqi - 2 * var( --lkb-expanded-pad ) );
 }
 
 .lkb-rating--low {

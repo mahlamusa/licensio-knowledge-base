@@ -26,6 +26,7 @@ import {
 	openContentManager,
 } from './helpers/content-manager';
 import { failOnUnresolvedComponents } from './helpers/ant-components';
+import { measureFrame } from './helpers/layout';
 import { logIn, password, user } from './helpers/session';
 import { wpCli, wpEval } from './helpers/wp-cli';
 
@@ -211,7 +212,6 @@ test.describe( 'Articles app', () => {
 		const form = app.locator( '.lkb-quickedit' );
 		const save = form.getByRole( 'button', { name: 'Save' } );
 
-		await expect( form ).toBeVisible();
 		await save.scrollIntoViewIfNeeded();
 		await expect( save ).toBeInViewport( { ratio: 1 } );
 
@@ -225,14 +225,9 @@ test.describe( 'Articles app', () => {
 		);
 
 		expect( right ).toBeLessThanOrEqual( 390 );
-		expect(
-			await page.evaluate(
-				() =>
-					document.documentElement.scrollWidth -
-					document.documentElement.clientWidth
-			),
-			'page overflow at 390px'
-		).toBe( 0 );
+		expect( ( await measureFrame( page ) ).page, 'page overflow' ).toBe(
+			0
+		);
 	} );
 
 	test( 'the view is restored from the URL', async ( { page } ) => {
