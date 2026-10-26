@@ -584,7 +584,7 @@ test( 'a failed merge or convert shows its error inside the dialog', async ( {
 		await addTag( page, name );
 	}
 
-	await search( page, `Fail ${ suffix }` );
+	await search( page, suffix );
 	await page.route( failing, ( route ) =>
 		route.fulfill( {
 			status: 500,
