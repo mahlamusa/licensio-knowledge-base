@@ -331,8 +331,10 @@ block previews against the newest published article, or a category or tag
 that has articles. Only the Site Editor offers the block in its inserter: in a
 post or page it would render nothing. The `[licensio_kb_view view="…"]` shortcode renders the same
 bodies from template level for a template you build yourself; it renders
-nothing inside post content, inside a loop, or on a request that is not its
-view.
+nothing inside post content, inside a loop, on a request that is not its view,
+under a classic theme (whose page templates include the bodies themselves), or
+a second time in one request, so a copy in a widget area cannot repeat the
+page's view.
 
 Local variables inside a template carry the `licensio_kb_` prefix, which the
 project's PHPCS ruleset requires of anything assigned at a file's top level.

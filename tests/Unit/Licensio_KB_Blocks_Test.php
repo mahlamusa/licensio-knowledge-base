@@ -598,6 +598,7 @@ class Licensio_KB_Blocks_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     private function stub_preview_body( $fails ) {
+        Functions\when( 'wp_is_block_theme' )->justReturn( true );
         Functions\when( 'is_post_type_archive' )->alias(
             function () use ( $fails ) {
                 // phpcs:disable WordPress.WP.GlobalVariablesOverride.Prohibited -- The stand-in moves the globals a real view body moves.
@@ -661,11 +662,15 @@ class Licensio_KB_Blocks_Test extends Licensio_KB_Test_Case {
 
         $this->stub_preview_body( $fails );
 
+        $thrown = false;
+
         try {
             $this->assertSame( '', ( new Licensio_KB_View_Block() )->preview( 'archive' ) );
         } catch ( RuntimeException $exception ) {
-            $this->assertTrue( $fails, 'Only the throwing body throws.' );
+            $thrown = true;
         }
+
+        $this->assertSame( $fails, $thrown, 'The stand-in body ran.' );
 
         $this->assertSame( $query, $GLOBALS['wp_query'] );
         $this->assertSame( $query, $GLOBALS['wp_the_query'] );

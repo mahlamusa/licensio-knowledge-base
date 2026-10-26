@@ -628,10 +628,95 @@ class Licensio_KB_Templates_Test extends Licensio_KB_Test_Case {
         $this->stub_view_request( 'tag' );
         $this->stub_theme_lookup();
 
+        Functions\when( 'wp_is_block_theme' )->justReturn( true );
+
         file_put_contents( $this->theme_dir . '/licensio-kb/tag-body.php', '<?php echo "OUTER[" . Licensio_KB_Templates::render_view( "tag" ) . "]";' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 
         $this->assertSame( 'OUTER[]', Licensio_KB_Templates::render_view( 'tag' ) );
+
+        Licensio_KB_Templates::forget_rendered_views();
+
         $this->assertSame( 'OUTER[]', Licensio_KB_Templates::render_view( 'tag' ), 'The guard is released after each render.' );
+    }
+
+    /**
+     * Each view renders at most once per request.
+     *
+     * A block theme renders the template's own view first. A copy of the
+     * same view in a widget area, or expanded by a plugin that runs shortcodes
+     * over the post in `wp_head`, would otherwise print a second article with
+     * the same IDs and fire the article hooks again.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_each_view_renders_at_most_once_per_request() {
+        $this->stub_view_request( 'tag' );
+        $this->stub_theme_lookup();
+        $this->stub_shortcode_atts();
+
+        Functions\when( 'wp_is_block_theme' )->justReturn( true );
+        Functions\when( 'in_the_loop' )->justReturn( false );
+
+        file_put_contents( $this->theme_dir . '/licensio-kb/tag-body.php', '<?php echo "TAG BODY";' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+
+        $this->assertSame( 'TAG BODY', Licensio_KB_Templates::render_view( 'tag' ), 'The template renders the view.' );
+        $this->assertSame( '', $this->templates->render_view_shortcode( array( 'view' => 'tag' ) ), 'A second copy renders nothing.' );
+        $this->assertSame( '', ( new Licensio_KB_View_Block() )->render( array( 'view' => 'tag' ) ), 'Nor does a block.' );
+    }
+
+    /**
+     * A view that cannot render here does not use up its one render.
+     *
+     * A copy placed in post content runs before the template's own view
+     * only on a request that renders post content first, and must not stop
+     * the template's view from rendering afterwards.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_refused_view_does_not_count_as_rendered() {
+        $this->stub_view_request( 'tag' );
+        $this->stub_theme_lookup();
+
+        Functions\when( 'wp_is_block_theme' )->justReturn( true );
+
+        file_put_contents( $this->theme_dir . '/licensio-kb/tag-body.php', '<?php echo "TAG BODY";' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+
+        Filters\expectApplied( 'the_content' )->once()->andReturnUsing(
+            function () {
+                return Licensio_KB_Templates::render_view( 'tag' );
+            }
+        );
+
+        $this->assertSame( '', apply_filters( 'the_content', 'CONTENT' ) );
+        $this->assertSame( 'TAG BODY', Licensio_KB_Templates::render_view( 'tag' ) );
+    }
+
+    /**
+     * Under a classic theme a view renders nothing.
+     *
+     * The classic page templates include the view bodies directly, so a view
+     * rendered from a widget or a shortcode would always be a second copy of
+     * the page's own body.
+     *
+     * @since 1.0.0
+     *
+     * @dataProvider view_names
+     *
+     * @param string $view The view name.
+     *
+     * @return void
+     */
+    public function test_a_view_renders_nothing_under_a_classic_theme( $view ) {
+        $this->stub_view_request( $view );
+        $this->forbid_the_loop();
+
+        Functions\when( 'wp_is_block_theme' )->justReturn( false );
+
+        $this->assertSame( '', Licensio_KB_Templates::render_view( $view ) );
     }
 
     /**
@@ -970,6 +1055,9 @@ class Licensio_KB_Templates_Test extends Licensio_KB_Test_Case {
 
         // The hero now carries the search field, which reads the current query.
         Functions\when( 'get_search_query' )->justReturn( '' );
+
+        // The view block and shortcode render for block templates only.
+        Functions\when( 'wp_is_block_theme' )->justReturn( $via_shortcode || $via_block );
 
         if ( $via_block ) {
             Functions\when( 'in_the_loop' )->justReturn( true );

@@ -75,6 +75,14 @@ class Licensio_KB_Templates {
     );
 
     /**
+     * The views rendered so far in this request, keyed by view name.
+     *
+     * @since 1.0.0
+     * @var array<string, true>
+     */
+    private static $rendered_views = array();
+
+    /**
      * Layout width setting values mapped to a CSS length.
      *
      * @since 1.0.0
@@ -191,7 +199,18 @@ class Licensio_KB_Templates {
      * main query that is not the one it expects, or render itself inside
      * itself.
      *
+     * Each view also renders at most once per request. A block theme builds
+     * the template before `wp_head` and before any template part or widget
+     * area that follows it, so the template's own view is always the one that
+     * renders; a copy placed in a widget, or expanded by a plugin that runs
+     * shortcodes over the post outside `the_content`, renders nothing rather
+     * than a second article with the same IDs and the article hooks again.
+     * Under a classic theme the page templates include the bodies directly,
+     * so a view rendered through here would always be that second copy, and
+     * renders nothing.
+     *
      * @since 1.0.0
+     * @since 1.0.0 Renders each view at most once per request, and only for block templates.
      *
      * @param string $view The view name: a key of `VIEW_BODIES`.
      *
@@ -202,11 +221,16 @@ class Licensio_KB_Templates {
 
         $view = (string) $view;
 
-        if ( ! isset( self::VIEW_BODIES[ $view ] ) || $rendering || doing_filter( 'the_content' ) || ! self::view_matches_request( $view ) ) {
+        if ( ! isset( self::VIEW_BODIES[ $view ] ) || $rendering || isset( self::$rendered_views[ $view ] ) || doing_filter( 'the_content' ) ) {
             return '';
         }
 
-        $rendering = true;
+        if ( ! licensio_kb_use_block_templates() || ! self::view_matches_request( $view ) ) {
+            return '';
+        }
+
+        self::$rendered_views[ $view ] = true;
+        $rendering                     = true;
 
         try {
             $markup = licensio_kb_get_template( self::VIEW_BODIES[ $view ], array(), false );
@@ -215,6 +239,20 @@ class Licensio_KB_Templates {
         }
 
         return (string) $markup;
+    }
+
+    /**
+     * Forget which views this request has rendered.
+     *
+     * A request renders each view once, so this is for code that renders
+     * more than one request in one process, such as the test suite.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public static function forget_rendered_views() {
+        self::$rendered_views = array();
     }
 
     /**

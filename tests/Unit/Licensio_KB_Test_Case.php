@@ -50,6 +50,8 @@ abstract class Licensio_KB_Test_Case extends TestCase {
         parent::setUp();
         Monkey\setUp();
 
+        Licensio_KB_Templates::forget_rendered_views();
+
         $this->options = array();
         $this->writes  = array();
 

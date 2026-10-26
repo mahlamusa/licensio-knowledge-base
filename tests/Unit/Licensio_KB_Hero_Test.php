@@ -553,6 +553,9 @@ class Licensio_KB_Hero_Test extends Licensio_KB_Test_Case {
             }
         );
 
+        // The view shortcode renders for block templates only.
+        Functions\when( 'wp_is_block_theme' )->justReturn( true );
+
         $templates = new Licensio_KB_Templates( new Licensio_KB_Settings() );
 
         return $templates->render_view_shortcode( array( 'view' => $view ) );
