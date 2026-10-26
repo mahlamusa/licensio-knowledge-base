@@ -101,5 +101,21 @@ if ( ! class_exists( 'WP_REST_Controller' ) ) {
         public function get_item_schema() {
             return array();
         }
+
+        /**
+         * Sanitize a slug, as core does.
+         *
+         * One argument, so the REST server's extra request and key arguments
+         * never reach sanitize_title() as its fallback and context.
+         *
+         * @since 1.0.0
+         *
+         * @param string $slug The slug.
+         *
+         * @return string The sanitized slug.
+         */
+        public function sanitize_slug( $slug ) {
+            return sanitize_title( $slug );
+        }
     }
 }

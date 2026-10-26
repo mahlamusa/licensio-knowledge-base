@@ -358,9 +358,11 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
             'title'          => array(
                 'type' => 'string',
             ),
+            // One argument: the REST server passes the request and key too,
+            // which sanitize_title() would take as its fallback and context.
             'slug'           => array(
                 'type'              => 'string',
-                'sanitize_callback' => 'sanitize_title',
+                'sanitize_callback' => array( $this, 'sanitize_slug' ),
             ),
             'status'         => array(
                 'type' => 'string',

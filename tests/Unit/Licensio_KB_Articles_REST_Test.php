@@ -851,6 +851,70 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * The slug sanitizer takes one argument, as the REST server calls it with three.
+     *
+     * Core's sanitize_title() reads a second argument as the value to return
+     * for an empty result and a third as the context, and strips accents only
+     * in the `save` context. The double below behaves the same way, so a
+     * sanitizer that forwards the server's request and key would answer the
+     * request for an empty slug and keep the accents percent-encoded. An empty
+     * slug reaches core as an empty post name, which core rebuilds from the
+     * title.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_slug_is_sanitized_with_one_argument() {
+        Functions\when( 'sanitize_title' )->alias(
+            function ( $title, $fallback_title = '', $context = 'save' ) {
+                $title = (string) $title;
+
+                if ( 'save' === $context ) {
+                    $title = strtr(
+                        $title,
+                        array(
+                            "\u{e9}" => 'e',
+                            "\u{dc}" => 'U',
+                        )
+                    );
+                } else {
+                    $title = (string) preg_replace_callback(
+                        '/[\x80-\xff]/',
+                        function ( $byte ) {
+                            return '%' . strtolower( bin2hex( $byte[0] ) );
+                        },
+                        $title
+                    );
+                }
+
+                $title = trim( (string) preg_replace( '/[^a-z0-9%]+/', '-', strtolower( $title ) ), '-' );
+
+                return '' === $title ? $fallback_title : $title;
+            }
+        );
+
+        $sanitize = $this->routes['/articles/(?P<id>[\d]+)'][0]['args']['slug']['sanitize_callback'];
+        $request  = $this->patch( array() );
+
+        foreach ( array( '', '   ', '!!!' ) as $empty ) {
+            $this->assertSame( '', call_user_func( $sanitize, $empty, $request, 'slug' ) );
+        }
+
+        $this->assertSame( 'cafe-uber', call_user_func( $sanitize, "Caf\u{e9} \u{dc}ber", $request, 'slug' ) );
+
+        $result = $this->controller->collect_changes( $this->patch( array( 'slug' => '' ) ), $this->post() );
+
+        $this->assertSame(
+            array(
+                'ID'        => 12,
+                'post_name' => '',
+            ),
+            $result[0]
+        );
+    }
+
+    /**
      * The title reaches core as typed, so core's own title filters decide.
      *
      * @since 1.0.0
