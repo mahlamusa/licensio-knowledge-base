@@ -8,8 +8,6 @@
 		"noEmit": true,
 		"isolatedModules": true,
 		"skipLibCheck": true,
-		"resolveJsonModule": true,
-		"jsx": "preserve",
 		"types": [ "node" ]
 	},
 	"include": [

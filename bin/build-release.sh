@@ -94,6 +94,7 @@ FORBIDDEN_ROOT_PATHS=(
     'phpstan-bootstrap.php'
     'phpunit.xml'
     'playwright.config.ts'
+    'tsconfig.json'
     'vite.config.mjs'
     '.eslintrc.json'
     '.editorconfig'
