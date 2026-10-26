@@ -521,6 +521,7 @@ class Licensio_KB_Term_Operations {
      * `licensio_kb_term_assignments_changed` once per taxonomy.
      *
      * @since 1.0.0
+     * @since 1.0.0 Leaves out the zero a removal records in place of a target term.
      *
      * @param array<int, array<string, mixed>> $record The record of the writes.
      *
