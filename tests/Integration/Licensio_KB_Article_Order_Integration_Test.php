@@ -474,6 +474,28 @@ class Licensio_KB_Article_Order_Integration_Test extends Licensio_KB_Analytics_D
     }
 
     /**
+     * A category has positions once one article is ordered in it, and not before.
+     *
+     * The FAQ block keeps its plain `menu_order` for a category nobody ordered.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_category_has_positions_once_ordered() {
+        $billing  = $this->make_term( 'Billing', Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
+        $accounts = $this->make_term( 'Accounts', Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
+        $article  = $this->make_article( array( 'title' => 'Refunds' ) );
+
+        $this->assertFalse( Licensio_KB_Article_Order::has_positions( $billing ) );
+
+        $this->set_order_row( $article, Licensio_KB_Article_Order::meta_key( $billing ), '10' );
+
+        $this->assertTrue( Licensio_KB_Article_Order::has_positions( $billing ) );
+        $this->assertFalse( Licensio_KB_Article_Order::has_positions( $accounts ) );
+    }
+
+    /**
      * Each category keeps its own order for the same article.
      *
      * @since 1.0.0

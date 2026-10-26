@@ -450,6 +450,32 @@ class Licensio_KB_Article_Order {
     }
 
     /**
+     * Whether any article has a position stored for one category.
+     *
+     * One indexed lookup on the meta key, stopping at the first row.
+     *
+     * @since 1.0.0
+     *
+     * @param int $term_id The category term ID.
+     *
+     * @return bool True when the category has been ordered.
+     */
+    public static function has_positions( $term_id ) {
+        global $wpdb;
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $found = $wpdb->get_var(
+            $wpdb->prepare(
+                'SELECT 1 FROM %i WHERE meta_key = %s LIMIT 1',
+                $wpdb->postmeta,
+                self::meta_key( $term_id )
+            )
+        );
+
+        return null !== $found;
+    }
+
+    /**
      * Save a category's order.
      *
      * The listed articles get 10, 20, 30… in the order given. Every other

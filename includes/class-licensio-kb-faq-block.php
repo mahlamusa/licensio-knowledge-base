@@ -117,9 +117,10 @@ class Licensio_KB_FAQ_Block extends Licensio_KB_Block {
      *
      * Limited to one category with the default order, the questions follow
      * that category's article order, as the Categories app saves it; articles
-     * without a position follow, in their `menu_order`.
+     * without a position follow, in their `menu_order`. A category nobody has
+     * ordered keeps the plain `menu_order` the block always used.
      *
-     * @since 1.0.0 Follows the per-category article order when limited to one category.
+     * @since 1.0.0 Follows the per-category article order when limited to one ordered category.
      *
      * @param array<string, bool|int|string> $attributes The normalised attributes.
      *
@@ -129,7 +130,11 @@ class Licensio_KB_FAQ_Block extends Licensio_KB_Block {
         $orderby = (string) $attributes['orderBy'];
 
         if ( '' !== (string) $attributes['category'] && 'menu_order' === $orderby ) {
-            $orderby = Licensio_KB_Article_Order::ORDERBY;
+            $term = get_term_by( 'slug', (string) $attributes['category'], Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
+
+            if ( $term instanceof WP_Term && Licensio_KB_Article_Order::has_positions( (int) $term->term_id ) ) {
+                $orderby = Licensio_KB_Article_Order::ORDERBY;
+            }
         }
 
         $posts = $this->query_articles(
