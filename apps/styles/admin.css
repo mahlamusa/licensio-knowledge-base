@@ -3,8 +3,8 @@
  *
  * Imported by every admin app so the three screens frame identically. Holds
  * only what is common: the page ground, the content measure, the page title,
- * the boot placeholder, the filter row and bulk bar of the list screens, and
- * the two-column layout of the term screens.
+ * the boot placeholder, the filter row, bulk bar, cells and row actions of
+ * the list screens, and the two-column layout of the term screens.
  * Anything specific to one screen stays in that screen.
  *
  * The frame the applications mount into is printed by
@@ -171,6 +171,56 @@
 	display: flex;
 	flex-wrap: wrap;
 	gap: 8px;
+}
+
+/*
+ * Core's list table cells on the list screens (Articles, Tags): 8px 10px
+ * padding, top aligned. Prefixed with the page so they outrank Ant's cells.
+ */
+.lkb-page .lkb-tablecard .ant-table-thead > tr > th,
+.lkb-page .lkb-tablecard .ant-table-tbody > tr.ant-table-row > td {
+	padding: 8px 10px;
+}
+
+.lkb-page .lkb-tablecard .ant-table-tbody > tr.ant-table-row > td {
+	vertical-align: top;
+}
+
+/*
+ * The row actions under a row's title, as on core's list screens: shown when
+ * the row is hovered or focus is inside them, and always on touch and narrow
+ * screens. They are only made transparent, so they stay in the layout and
+ * the accessibility tree, and Tab still reaches them. Core's title cell is
+ * 13px with a 1.3em line height.
+ */
+.lkb-rowactions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0 10px;
+	padding-top: 2px;
+	font-size: 13px;
+	line-height: 1.3em;
+	opacity: 0;
+}
+
+.lkb-page .lkb-rowactions .ant-btn-link {
+	height: auto;
+	padding: 0;
+	border: 0;
+	font-size: 13px;
+	line-height: inherit;
+}
+
+.ant-table-row:hover .lkb-rowactions,
+.lkb-rowactions:focus-within {
+	opacity: 1;
+}
+
+@media ( hover: none ), ( max-width: 782px ) {
+	.lkb-rowactions {
+		opacity: 1;
+	}
 }
 
 /*

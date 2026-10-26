@@ -177,8 +177,6 @@ async function submit(): Promise< void > {
 		// The store shows the error; the form keeps the input.
 	}
 }
-
-defineExpose( { focusName } );
 </script>
 
 <template>

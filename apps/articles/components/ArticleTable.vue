@@ -538,15 +538,6 @@ const expandedKeys = computed( () =>
 	box-shadow: var( --lkb-shadow-sm );
 }
 
-.lkb-tablecard :deep( .ant-table-thead > tr > th ),
-.lkb-tablecard :deep( .ant-table-tbody > tr.ant-table-row > td ) {
-	padding: 8px 10px;
-}
-
-.lkb-tablecard :deep( .ant-table-tbody > tr.ant-table-row > td ) {
-	vertical-align: top;
-}
-
 /*
  * Core's title cell is 13px with a 1.3em line height, so the 14px title link
  * and the row actions under it sit on 16.9px lines, as on the Posts screen.
@@ -598,45 +589,13 @@ const expandedKeys = computed( () =>
 	font-size: 12px;
 }
 
-.lkb-rowactions {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 0 10px;
-	padding-top: 2px;
-	font-size: 13px;
-	line-height: 1.3em;
-}
-
-.lkb-rowactions :deep( .ant-btn-link ) {
-	height: auto;
-	padding: 0;
-	border: 0;
-	font-size: 13px;
-	line-height: inherit;
-}
-
 /*
- * As on core's list screens, the row actions show when the row is hovered or
- * when focus is inside them, and always on touch and narrow screens. They are
- * only made transparent, so they stay in the layout and the accessibility
- * tree, and Tab still reaches them. They also stay while one of their
- * confirmations is open, so it never points at an empty space.
+ * The row actions also stay while one of their confirmations is open, so it
+ * never points at an empty space. The rest of their styles are shared, in
+ * `../../styles/admin.css`.
  */
-.lkb-rowactions {
-	opacity: 0;
-}
-
-.ant-table-row:hover .lkb-rowactions,
-.lkb-rowactions:focus-within,
 .lkb-rowactions:has( .ant-popover-open ) {
 	opacity: 1;
-}
-
-@media ( hover: none ), ( max-width: 782px ) {
-	.lkb-rowactions {
-		opacity: 1;
-	}
 }
 
 .lkb-muted {

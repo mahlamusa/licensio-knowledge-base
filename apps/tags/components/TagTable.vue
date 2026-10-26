@@ -502,59 +502,11 @@ watch(
 	color: var( --lkb-ink-muted );
 }
 
-/*
- * Core's list table cells, as on the Articles screen: 8px 10px padding, top
- * aligned, so the table fits the list column beside the form.
- */
-.lkb-tablecard :deep( .ant-table-thead > tr > th ),
-.lkb-tablecard :deep( .ant-table-tbody > tr.ant-table-row > td ) {
-	padding: 8px 10px;
-}
-
-.lkb-tablecard :deep( .ant-table-tbody > tr.ant-table-row > td ) {
-	vertical-align: top;
-}
-
-/*
- * The row actions under the name, as on core's list screens and the Articles
- * screen: shown when the row is hovered or focus is inside them, and always
- * on touch and narrow screens. They are only made transparent, so they stay
- * in the layout and the accessibility tree, and Tab still reaches them.
- */
-.lkb-rowactions {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 0 10px;
-	padding-top: 2px;
-	font-size: 13px;
-	line-height: 1.3em;
-	opacity: 0;
-}
-
-.lkb-rowactions :deep( .ant-btn-link ) {
-	height: auto;
-	padding: 0;
-	border: 0;
-	font-size: 13px;
-	line-height: inherit;
-}
-
+/* An open Quick edit row: its Save and Cancel, always shown. */
 .lkb-rowactions.is-open {
 	gap: 8px;
 	padding-top: 8px;
-}
-
-.ant-table-row:hover .lkb-rowactions,
-.lkb-rowactions:focus-within,
-.lkb-rowactions.is-open {
 	opacity: 1;
-}
-
-@media ( hover: none ), ( max-width: 782px ) {
-	.lkb-rowactions {
-		opacity: 1;
-	}
 }
 
 :deep( .ant-table-tbody > tr.ant-table-row-selected > td ) {
