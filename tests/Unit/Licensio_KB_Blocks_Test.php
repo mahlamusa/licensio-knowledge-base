@@ -776,6 +776,33 @@ class Licensio_KB_Blocks_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * The view block's editor preview can load the feedback form styles.
+     *
+     * The Single Article preview renders the feedback form, and the widget
+     * registers its stylesheet only on the front end, so the block registrar
+     * registers the same handle, source and version on `init`.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_feedback_stylesheet_is_registered_for_the_editor() {
+        $styles = array();
+
+        Functions\when( 'wp_register_style' )->alias(
+            function ( $handle, $src ) use ( &$styles ) {
+                $styles[ $handle ] = $src;
+
+                return true;
+            }
+        );
+
+        $this->blocks->register_assets();
+
+        $this->assertSame( LICENSIO_KB_ASSETS_URL . 'css/feedback.css', $styles[ Licensio_KB_Feedback_Widget::STYLE_HANDLE ] ?? null );
+    }
+
+    /**
      * Every block's metadata agrees with the PHP that renders it.
      *
      * A block.json attribute the render callback does not know about is silently
@@ -808,7 +835,11 @@ class Licensio_KB_Blocks_Test extends Licensio_KB_Test_Case {
             $this->assertSame( Licensio_KB_Blocks::CATEGORY, $metadata['category'] );
             $this->assertSame( 'file:./index.js', $metadata['editorScript'] );
             $this->assertSame( Licensio_KB_Blocks::STYLE_HANDLE, $metadata['style'] );
-            $this->assertSame( Licensio_KB_Blocks::EDITOR_STYLE_HANDLE, $metadata['editorStyle'] );
+            $this->assertSame(
+                'view' === $directory ? array( Licensio_KB_Blocks::EDITOR_STYLE_HANDLE, Licensio_KB_Feedback_Widget::STYLE_HANDLE ) : Licensio_KB_Blocks::EDITOR_STYLE_HANDLE,
+                $metadata['editorStyle'],
+                $directory . ' declares a different editor style.'
+            );
 
             $this->assertSame(
                 array_keys( $class_name::defaults() ),

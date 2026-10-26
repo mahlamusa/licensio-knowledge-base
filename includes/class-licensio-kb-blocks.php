@@ -77,7 +77,13 @@ class Licensio_KB_Blocks {
      * be missing every custom property the design is built on. Registering an
      * already-registered handle is a no-op, so the two calls cannot disagree.
      *
+     * The feedback widget stylesheet is registered here for the same reason:
+     * the view block's Single Article preview in the Site Editor renders the
+     * feedback form, and the widget only registers its stylesheet on
+     * `wp_enqueue_scripts`.
+     *
      * @since 1.0.0
+     * @since 1.0.0 Registers the feedback widget stylesheet for the view block's editor preview.
      *
      * @return void
      */
@@ -93,6 +99,13 @@ class Licensio_KB_Blocks {
             self::STYLE_HANDLE,
             LICENSIO_KB_ASSETS_URL . 'css/blocks.css',
             array( Licensio_KB_Templates::STYLE_HANDLE ),
+            LICENSIO_KB_VERSION
+        );
+
+        wp_register_style(
+            Licensio_KB_Feedback_Widget::STYLE_HANDLE,
+            LICENSIO_KB_ASSETS_URL . 'css/feedback.css',
+            array(),
             LICENSIO_KB_VERSION
         );
 

@@ -22,5 +22,5 @@
 	},
 	"editorScript": "file:./index.js",
 	"style": "licensio-kb-blocks",
-	"editorStyle": "licensio-kb-blocks-editor"
+	"editorStyle": [ "licensio-kb-blocks-editor", "licensio-kb-feedback" ]
 }
