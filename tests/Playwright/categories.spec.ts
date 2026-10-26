@@ -1,14 +1,18 @@
 /**
  * The Categories app, end to end.
  *
- * Drag and drop and keyboard moves saved at once, the add drawer opening on
- * its Name field unless the user already tabbed on, the icon source switch
+ * Drag and drop and keyboard moves saved at once, the Add New Category form
+ * in the left column and Edit loading a category into it as Edit Category
+ * (focused on Name, with Update and Cancel), the icon source switch
  * and its clearing of the other sources, Base64 and inline SVG icons on the
  * front end, the slug following the name, the merge dialog opening on its
  * first field, delete with reassignment, merge, the article order pane
  * against the live order routes (a drag saved and shown on the category
- * archive, and a saved first page of a long list), and the phone-width
- * layout. Creating, saving and moving are not confirmed; deleting, merging
+ * archive, and a saved first page of a long list), and the layout: form left
+ * of the tree and article order on a desktop, above them on a phone. Update
+ * keeps a move made while the form was open, unsaved form changes are only
+ * dropped once confirmed, a deleted category leaves the form, and `?term=`
+ * loads a category into it. Creating, saving and moving are not confirmed; deleting, merging
  * and discarding an unsaved order are, and a cancelled one sends nothing.
  *
  * The slug the app makes from a name is also compared with core's
@@ -24,6 +28,7 @@
 import { expect, test, type Page, type Request } from '@playwright/test';
 import {
 	answerConfirm,
+	contentManagerUrl,
 	expectNoConfirmDialog,
 	openContentManager,
 } from './helpers/content-manager';
@@ -346,6 +351,19 @@ async function topLevel( page: Page ): Promise< string[] > {
 }
 
 /**
+ * The left form, Add New Category or Edit Category.
+ *
+ * @since 1.0.0
+ *
+ * @param {Page} page The browser page.
+ *
+ * @return {import('@playwright/test').Locator} The form card.
+ */
+function categoryForm( page: Page ) {
+	return page.locator( '.lkb-category-form' );
+}
+
+/**
  * Open a category's actions menu and pick an item.
  *
  * @since 1.0.0
@@ -361,12 +379,14 @@ async function act(
 	name: string,
 	action: string
 ): Promise< void > {
+	// A menu opened before has finished closing, so only this one is matched.
+	await expect( page.locator( '.ant-dropdown:visible' ) ).toHaveCount( 0 );
 	await page
 		.getByRole( 'button', { name: `Actions for ${ name }`, exact: true } )
 		.click();
 	await page
 		.locator(
-			'.ant-dropdown:not(.ant-dropdown-hidden) .ant-dropdown-menu-item'
+			'.ant-dropdown:not(.ant-dropdown-hidden):visible .ant-dropdown-menu-item'
 		)
 		.filter( { hasText: action } )
 		.click();
@@ -497,35 +517,35 @@ test.describe( 'Categories app', () => {
 		await page.reload();
 		await act( page, 'Alpha', 'Edit' );
 
-		const drawer = page.locator( '.ant-drawer-content' );
-		const inline = drawer.getByLabel( 'SVG or Base64 image' );
-		const dashicon = drawer.getByLabel( 'Dashicon name' );
-		const upload = drawer.getByRole( 'button', {
+		const form = categoryForm( page );
+		const inline = form.getByLabel( 'SVG or Base64 image' );
+		const dashicon = form.getByLabel( 'Dashicon name' );
+		const upload = form.getByRole( 'button', {
 			name: 'Icon file: Select',
 		} );
 
 		// It opens on the source the category shows.
 		await expect(
-			drawer.getByRole( 'radio', { name: 'Inline' } )
+			form.getByRole( 'radio', { name: 'Inline' } )
 		).toBeChecked();
 		await expect( inline ).toHaveValue( /<path/ );
 		await expect( dashicon ).toHaveCount( 0 );
 		await expect( upload ).toHaveCount( 0 );
 
-		await drawer.getByText( 'Dashicon', { exact: true } ).click();
+		await form.getByText( 'Dashicon', { exact: true } ).click();
 		await expect( dashicon ).toBeVisible();
 		await expect( dashicon ).toHaveValue( 'dashicons-book-alt' );
 		await expect( inline ).toHaveCount( 0 );
 		await expect( upload ).toHaveCount( 0 );
 
-		await drawer.getByText( 'Upload', { exact: true } ).click();
+		await form.getByText( 'Upload', { exact: true } ).click();
 		await expect( upload ).toBeVisible();
 		await expect( inline ).toHaveCount( 0 );
 		await expect( dashicon ).toHaveCount( 0 );
 
-		await drawer.getByText( 'Dashicon', { exact: true } ).click();
+		await form.getByText( 'Dashicon', { exact: true } ).click();
 		await dashicon.fill( 'dashicons-lock' );
-		await drawer.getByRole( 'button', { name: 'Save' } ).click();
+		await form.getByRole( 'button', { name: 'Update' } ).click();
 		await expect( page.locator( '.ant-message' ) ).toContainText(
 			'Category saved.'
 		);
@@ -563,15 +583,17 @@ test.describe( 'Categories app', () => {
 			await page.reload();
 			await act( page, name, 'Edit' );
 
-			const drawer = page.locator( '.ant-drawer-content' );
+			const form = categoryForm( page );
 
-			await drawer.getByText( 'Inline', { exact: true } ).click();
-			await drawer.getByLabel( 'SVG or Base64 image' ).fill( value );
+			await form.getByText( 'Inline', { exact: true } ).click();
+			await form.getByLabel( 'SVG or Base64 image' ).fill( value );
 			await expect(
-				drawer.locator( '.lkb-icon-field__preview' )
+				form.locator( '.lkb-icon-field__preview' )
 			).toBeVisible();
-			await drawer.getByRole( 'button', { name: 'Save' } ).click();
-			await expect( drawer ).toBeHidden();
+			await form.getByRole( 'button', { name: 'Update' } ).click();
+			await expect(
+				form.getByRole( 'heading', { name: 'Add New Category' } )
+			).toBeVisible();
 		}
 
 		const items = ( await api( page, 'GET', 'categories' ) ) as Array<
@@ -643,17 +665,11 @@ test.describe( 'Categories app', () => {
 	test( 'a new slug follows the name on type and paste until it is edited', async ( {
 		page,
 	} ) => {
-		await page
-			.getByRole( 'button', { name: 'Add category' } )
-			.first()
-			.click();
+		const form = categoryForm( page );
+		const name = form.getByLabel( 'Name' );
+		const slug = form.getByLabel( 'Slug' );
 
-		const drawer = page.locator( '.ant-drawer-content' );
-		const name = drawer.getByLabel( 'Name' );
-		const slug = drawer.getByLabel( 'Slug' );
-
-		// The drawer opens with focus on its Name field.
-		await expect( name ).toBeFocused();
+		await name.click();
 		await page.keyboard.type( 'Café & Crème' );
 		await expect( slug ).toHaveValue( 'cafe-creme' );
 
@@ -662,7 +678,7 @@ test.describe( 'Categories app', () => {
 		await page.keyboard.insertText( 'Getting Started: “Quick” Guide' );
 		await expect( slug ).toHaveValue( 'getting-started-quick-guide' );
 
-		await drawer.getByRole( 'button', { name: 'Save' } ).click();
+		await form.getByRole( 'button', { name: 'Add New Category' } ).click();
 		await expect(
 			node( page, 'Getting Started: “Quick” Guide' )
 		).toBeVisible();
@@ -678,11 +694,11 @@ test.describe( 'Categories app', () => {
 			)?.slug
 		).toBe( 'getting-started-quick-guide' );
 
+		// The form is cleared for the next category, with focus on Name.
+		await expect( name ).toHaveValue( '' );
+		await expect( name ).toBeFocused();
+
 		// Once the slug is edited by hand, it no longer follows the name.
-		await page
-			.getByRole( 'button', { name: 'Add category' } )
-			.first()
-			.click();
 		await name.fill( 'Billing' );
 		await expect( slug ).toHaveValue( 'billing' );
 		await slug.fill( 'payments' );
@@ -697,20 +713,20 @@ test.describe( 'Categories app', () => {
 
 		await act( page, 'Beta', 'Edit' );
 
-		const drawer = page.locator( '.ant-drawer-content' );
-		const slug = drawer.getByLabel( 'Slug' );
+		const form = categoryForm( page );
+		const slug = form.getByLabel( 'Slug' );
 
 		await expect( slug ).toHaveValue( 'beta' );
-		await drawer.getByLabel( 'Name' ).fill( 'Beta renamed' );
+		await form.getByLabel( 'Name' ).fill( 'Beta renamed' );
 		await expect( slug ).toHaveValue( 'beta' );
 
-		await drawer
+		await form
 			.getByRole( 'button', { name: 'Generate from name' } )
 			.click();
 		await expect( slug ).toHaveValue( 'beta-renamed' );
 		expect( writes ).toHaveLength( 0 );
 
-		await drawer.getByRole( 'button', { name: 'Save' } ).click();
+		await form.getByRole( 'button', { name: 'Update' } ).click();
 		await expect( node( page, 'Beta renamed' ) ).toBeVisible();
 
 		const items = ( await api( page, 'GET', 'categories' ) ) as Array<
@@ -722,50 +738,281 @@ test.describe( 'Categories app', () => {
 		).toBe( 'beta-renamed' );
 	} );
 
-	test( 'the drawer keeps focus where the user tabbed while it opened', async ( {
+	test( 'Edit loads a category into the left form and Cancel returns it to Add', async ( {
 		page,
 	} ) => {
-		await page
-			.getByRole( 'button', { name: 'Add category' } )
-			.first()
-			.click();
-		await page.keyboard.press( 'Tab' );
+		const writes = recordWrites( page );
+		const form = categoryForm( page );
+		const trigger = page.getByRole( 'button', {
+			name: 'Actions for Gamma child',
+			exact: true,
+		} );
 
-		const drawer = page.locator( '.ant-drawer-content' );
-		const close = page.locator( '.lkb-category-drawer .ant-drawer-close' );
+		await expect(
+			form.getByRole( 'heading', { name: 'Add New Category' } )
+		).toBeVisible();
+		await expect(
+			form.getByRole( 'button', { name: 'Cancel' } )
+		).toHaveCount( 0 );
 
-		await expect( close ).toBeFocused();
+		await act( page, 'Gamma child', 'Edit' );
 
-		// Longer than the drawer takes to slide in.
-		await page.waitForTimeout( 1000 );
-		await expect( close ).toBeFocused();
-		await expect( drawer.getByLabel( 'Name' ) ).not.toBeFocused();
+		await expect(
+			form.getByRole( 'heading', { name: 'Edit Category' } )
+		).toBeVisible();
+		await expect( form.getByLabel( 'Name' ) ).toHaveValue( 'Gamma child' );
+		await expect( form.getByLabel( 'Name' ) ).toBeFocused();
+		await expect( form.getByLabel( 'Parent category' ) ).toBeVisible();
+		await expect( form.locator( '.ant-select-selection-item' ) ).toHaveText(
+			'Gamma'
+		);
+		await expect(
+			form.getByRole( 'button', { name: 'Update' } )
+		).toBeVisible();
+
+		await form.getByRole( 'button', { name: 'Cancel' } ).click();
+		await expect(
+			form.getByRole( 'heading', { name: 'Add New Category' } )
+		).toBeVisible();
+		await expect( form.getByLabel( 'Name' ) ).toHaveValue( '' );
+		await expect( trigger ).toBeFocused();
+		expect( writes ).toHaveLength( 0 );
+
+		// Add child starts a new category under the chosen parent.
+		// A fresh page, so only this category's menu is in the DOM.
+		await page.reload();
+		await act( page, 'Beta', 'Add child' );
+		await expect(
+			form.getByRole( 'heading', { name: 'Add New Category' } )
+		).toBeVisible();
+		await expect( form.getByLabel( 'Name' ) ).toBeFocused();
+		await expect( form.locator( '.ant-select-selection-item' ) ).toHaveText(
+			'Beta'
+		);
+		await page.keyboard.type( 'Beta child' );
+		await page.keyboard.press( 'Enter' );
+		await expect( node( page, 'Beta child' ) ).toBeVisible();
+
+		const items = ( await api( page, 'GET', 'categories' ) ) as Category[];
+
+		expect(
+			items.find( ( item ) => 'Beta child' === item.name )?.parent
+		).toBe( items.find( ( item ) => 'Beta' === item.name )?.id );
 	} );
 
-	test( 'Escape on an open select closes only the select, not the drawer', async ( {
+	test( 'Update keeps a move made in the tree while the form was open', async ( {
 		page,
 	} ) => {
-		await page
-			.getByRole( 'button', { name: 'Add category' } )
-			.first()
-			.click();
+		const writes = recordWrites( page );
+		const form = categoryForm( page );
+		const parent = form.locator( '.ant-select-selection-item' );
 
-		const drawer = page.locator( '.ant-drawer-content' );
+		await act( page, 'Gamma child', 'Edit' );
+		await expect( parent ).toHaveText( 'Gamma' );
+
+		// Moved to the top level from the tree while the form is open.
+		await act( page, 'Gamma child', 'Move to…' );
+
+		const dialog = page.locator( '.ant-modal-content' );
+
+		await dialog.getByText( 'Top level' ).click();
+		await dialog
+			.getByRole( 'button', { name: 'Move', exact: true } )
+			.click();
+		await expect( page.locator( '.ant-message' ) ).toContainText(
+			'Category moved.'
+		);
+
+		// The form follows the move, and Update does not undo it.
+		await expect( parent ).toHaveCount( 0 );
+		await form.getByLabel( 'Description' ).fill( 'Edited after the move' );
+		await form.getByRole( 'button', { name: 'Update' } ).click();
+		await expect(
+			form.getByRole( 'heading', { name: 'Add New Category' } )
+		).toBeVisible();
+
+		const update = writes.find(
+			( request ) => 'PATCH' === request.method()
+		);
+
+		expect( update?.postDataJSON() ).not.toHaveProperty( 'parent' );
+
+		const items = ( await api( page, 'GET', 'categories' ) ) as Category[];
+
+		expect(
+			items.find( ( item ) => 'Gamma child' === item.name )?.parent
+		).toBe( 0 );
+	} );
+
+	test( 'the form returns to Add when the category in it is deleted', async ( {
+		page,
+	} ) => {
+		const form = categoryForm( page );
+
+		await act( page, 'Alpha', 'Edit' );
+		await expect(
+			form.getByRole( 'heading', { name: 'Edit Category' } )
+		).toBeVisible();
+
+		await act( page, 'Alpha', 'Delete…' );
+		await page
+			.locator( '.ant-modal-content' )
+			.getByRole( 'button', { name: 'Delete' } )
+			.click();
+		await answerConfirm( page, 'confirm' );
+
+		await expect( node( page, 'Alpha' ) ).toHaveCount( 0 );
+		await expect(
+			form.getByRole( 'heading', { name: 'Add New Category' } )
+		).toBeVisible();
+		await expect( form.getByLabel( 'Name' ) ).toHaveValue( '' );
+	} );
+
+	test( 'loading another category or cancelling asks before it drops unsaved changes', async ( {
+		page,
+	} ) => {
+		const writes = recordWrites( page );
+		const form = categoryForm( page );
+		const heading = ( name: string ) =>
+			form.getByRole( 'heading', { name } );
+
+		// Nothing changed: Edit on another category loads it without asking.
+		await act( page, 'Alpha', 'Edit' );
+		await act( page, 'Beta', 'Edit' );
+		await expectNoConfirmDialog( page );
+		await expect( form.getByLabel( 'Name' ) ).toHaveValue( 'Beta' );
+
+		// The category in the form is marked in the tree.
+		await expect(
+			node( page, 'Beta' ).locator( '[aria-current="true"]' )
+		).toHaveCount( 1 );
+		await expect(
+			node( page, 'Alpha' ).locator( '[aria-current="true"]' )
+		).toHaveCount( 0 );
+
+		// A change: Edit on another category asks, and Cancel keeps the input.
+		await form.getByLabel( 'Name' ).fill( 'Beta changed' );
+		await act( page, 'Gamma', 'Edit' );
+		await answerConfirm( page, 'cancel' );
+		await expect( heading( 'Edit Category' ) ).toBeVisible();
+		await expect( form.getByLabel( 'Name' ) ).toHaveValue( 'Beta changed' );
+
+		// The form's own Cancel asks too.
+		await form.getByRole( 'button', { name: 'Cancel' } ).click();
+		await answerConfirm( page, 'cancel' );
+		await expect( form.getByLabel( 'Name' ) ).toHaveValue( 'Beta changed' );
+
+		// Discarding loads the other category.
+		await act( page, 'Gamma', 'Add child' );
+		await answerConfirm( page, 'confirm' );
+		await expect( heading( 'Add New Category' ) ).toBeVisible();
+		await expect( form.locator( '.ant-select-selection-item' ) ).toHaveText(
+			'Gamma'
+		);
+
+		// A typed new category is kept the same way.
+		await form.getByLabel( 'Name' ).fill( 'Draft' );
+		await act( page, 'Alpha', 'Edit' );
+		await answerConfirm( page, 'cancel' );
+		await expect( form.getByLabel( 'Name' ) ).toHaveValue( 'Draft' );
+		await act( page, 'Alpha', 'Edit' );
+		await answerConfirm( page, 'confirm' );
+		await expect( heading( 'Edit Category' ) ).toBeVisible();
+		await expect( form.getByLabel( 'Name' ) ).toHaveValue( 'Alpha' );
+
+		expect( writes ).toHaveLength( 0 );
+	} );
+
+	test( 'Update returns focus to the category that was edited', async ( {
+		page,
+	} ) => {
+		const form = categoryForm( page );
+
+		await act( page, 'Alpha', 'Edit' );
+
+		// A dialog opened and cancelled on another category in between.
+		await act( page, 'Beta', 'Delete…' );
+
+		const dialog = page.locator( '.ant-modal-content' );
+
+		await dialog.getByRole( 'button', { name: 'Cancel' } ).click();
+		await expect( dialog ).toBeHidden();
+
+		await form.getByRole( 'button', { name: 'Update' } ).click();
+		await expect(
+			form.getByRole( 'heading', { name: 'Add New Category' } )
+		).toBeVisible();
+		await expect(
+			page.getByRole( 'button', {
+				name: 'Actions for Alpha',
+				exact: true,
+			} )
+		).toBeFocused();
+	} );
+
+	test( 'a page opened for one category loads it into the form', async ( {
+		page,
+	} ) => {
+		const id = await categoryId( page, 'Beta' );
+		const form = categoryForm( page );
+
+		await page.goto(
+			`${ contentManagerUrl( 'categories' ) }&term=${ id }`
+		);
+
+		await expect(
+			form.getByRole( 'heading', { name: 'Edit Category' } )
+		).toBeVisible();
+		await expect( form.getByLabel( 'Name' ) ).toHaveValue( 'Beta' );
+
+		// The tree has a heading for screen readers.
+		await expect(
+			page.getByRole( 'heading', { name: 'Category tree' } )
+		).toBeAttached();
+	} );
+
+	test( 'the name hint shows only once the Name field was left empty', async ( {
+		page,
+	} ) => {
+		const form = categoryForm( page );
+		const hint = form.getByText( 'Enter a name to save.' );
+
+		await expect( hint ).toHaveCount( 0 );
+		await form.getByLabel( 'Name' ).focus();
+		await page.keyboard.press( 'Tab' );
+		await expect( hint ).toBeVisible();
+		await form.getByLabel( 'Name' ).fill( 'Named' );
+		await expect( hint ).toHaveCount( 0 );
+	} );
+
+	test( 'Escape on an open select closes only the select, not the edit', async ( {
+		page,
+	} ) => {
+		await act( page, 'Beta', 'Edit' );
+
+		const form = categoryForm( page );
 		const list = page.locator(
 			'.ant-select-dropdown:not(.ant-select-dropdown-hidden)'
 		);
 
-		await drawer.getByLabel( 'Name' ).fill( 'Kept name' );
-		await drawer.getByLabel( 'Parent category' ).click();
+		await form.getByLabel( 'Name' ).fill( 'Kept name' );
+		await form.getByLabel( 'Parent category' ).click();
 		await expect( list ).toBeVisible();
 		await page.keyboard.press( 'Escape' );
 		await expect( list ).toBeHidden();
-		await expect( drawer ).toBeVisible();
-		await expect( drawer.getByLabel( 'Name' ) ).toHaveValue( 'Kept name' );
+		await expect(
+			form.getByRole( 'heading', { name: 'Edit Category' } )
+		).toBeVisible();
+		await expect( form.getByLabel( 'Name' ) ).toHaveValue( 'Kept name' );
 
-		// A second Escape closes the drawer.
+		// A second Escape leaves the edit once the change is discarded,
+		// sending nothing.
 		await page.keyboard.press( 'Escape' );
-		await expect( drawer ).toBeHidden();
+		await answerConfirm( page, 'confirm' );
+		await expect(
+			form.getByRole( 'heading', { name: 'Add New Category' } )
+		).toBeVisible();
+		await expect( node( page, 'Beta' ) ).toBeVisible();
 	} );
 
 	test( 'a slug another category uses is shown once, on the Slug field', async ( {
@@ -773,18 +1020,20 @@ test.describe( 'Categories app', () => {
 	} ) => {
 		await act( page, 'Beta', 'Edit' );
 
-		const drawer = page.locator( '.ant-drawer-content' );
+		const form = categoryForm( page );
 		const message =
 			'Another category already uses the slug “alpha”. Choose a different slug.';
 
-		await drawer.getByLabel( 'Slug' ).fill( 'alpha' );
-		await drawer.getByRole( 'button', { name: 'Save' } ).click();
+		await form.getByLabel( 'Slug' ).fill( 'alpha' );
+		await form.getByRole( 'button', { name: 'Update' } ).click();
 
 		await expect(
-			drawer.locator( '.ant-form-item-explain-error' )
+			form.locator( '.ant-form-item-explain-error' )
 		).toHaveText( message );
-		await expect( drawer.getByText( message ) ).toHaveCount( 1 );
-		await expect( drawer.locator( '.lkb-drawer__error' ) ).toHaveCount( 0 );
+		await expect( form.getByText( message ) ).toHaveCount( 1 );
+		await expect( form.locator( '.lkb-category-form__error' ) ).toHaveCount(
+			0
+		);
 	} );
 
 	test( 'Escape on an open select closes only the select, not the merge dialog', async ( {
@@ -1255,15 +1504,49 @@ test.describe( 'Categories app', () => {
 		);
 	} );
 
-	test( 'the panes stack at phone width', async ( { page } ) => {
+	test( 'the form sits left of the tree on a desktop and above it on a phone', async ( {
+		page,
+	} ) => {
+		const form = categoryForm( page );
+		const list = page.locator( '.lkb-categories' );
+
+		await page.setViewportSize( { width: 1440, height: 900 } );
+
+		const left = await form.boundingBox();
+		const right = await list.boundingBox();
+
+		expect( left && right ).toBeTruthy();
+
+		if ( ! left || ! right ) {
+			return;
+		}
+
+		// Side by side, top aligned, about a third and two thirds as in core.
+		expect( Math.abs( left.y - right.y ) ).toBeLessThanOrEqual( 1 );
+		expect( left.x + left.width ).toBeLessThanOrEqual( right.x );
+		expect( left.width / ( left.width + right.width ) ).toBeGreaterThan(
+			0.3
+		);
+		expect( left.width / ( left.width + right.width ) ).toBeLessThan( 0.4 );
+
+		// The article order pane is under the tree, in the right column.
+		const tree = page.getByRole( 'region', { name: 'Category tree' } );
+		const order = page.getByRole( 'region', { name: 'Article order' } );
+		const treeBox = await tree.boundingBox();
+		const orderBox = await order.boundingBox();
+
+		expect( orderBox?.y ?? 0 ).toBeGreaterThan(
+			( treeBox?.y ?? 0 ) + ( treeBox?.height ?? 0 ) - 1
+		);
+		expect( orderBox?.x ?? 0 ).toBeGreaterThanOrEqual( right.x );
+
 		await page.setViewportSize( { width: 390, height: 844 } );
 
-		const cards = page.locator( '.lkb-categories > *' );
-		const first = await cards.nth( 0 ).boundingBox();
-		const second = await cards.nth( 1 ).boundingBox();
+		const top = await form.boundingBox();
+		const below = await list.boundingBox();
 
-		expect( second?.y ?? 0 ).toBeGreaterThan(
-			( first?.y ?? 0 ) + ( first?.height ?? 0 ) - 1
+		expect( below?.y ?? 0 ).toBeGreaterThan(
+			( top?.y ?? 0 ) + ( top?.height ?? 0 ) - 1
 		);
 
 		const overflow = await page.evaluate(

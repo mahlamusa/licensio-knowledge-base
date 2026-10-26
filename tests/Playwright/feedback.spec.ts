@@ -123,6 +123,13 @@ test.describe( 'Feedback inbox', () => {
 
 		await expect( rows ).toHaveCount( 2 );
 
+		// The inbox keeps Ant Design's own cells; core's list cells are only
+		// for the Articles and Tags tables.
+		await expect( first.locator( 'td' ).last() ).not.toHaveCSS(
+			'vertical-align',
+			'top'
+		);
+
 		// A single row's status is an update, so it is saved on pick.
 		await pickStatus( page, 'First E2E comment', 'Reviewed' );
 		await expect.poll( () => writes.length ).toBe( 1 );

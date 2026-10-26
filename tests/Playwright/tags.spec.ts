@@ -1,15 +1,20 @@
 /**
  * The Tags app, end to end.
  *
- * Adds tags through the app, then checks that add and save send at once,
+ * Adds tags through the Add New Tag form in the left column, as on core's
+ * tag screen, then checks that add and save send at once,
  * that merge, convert and delete wait for their confirmation and Cancel sends
  * nothing, that an edit to a slug another tag uses is refused with a message
  * and keeps the input, and that merge and convert to
  * category work on the selected tags, that a failed merge or convert shows
  * its error inside the dialog and clears it on a retry, and that focus lands on the page title
- * once a bulk delete takes the Delete button away. Escape closes the Add tag
- * form and an inline edit, sending nothing. The category the convert
- * creates is deleted again through the core REST API.
+ * once a bulk delete takes the Delete button away. Edit loads a tag into the
+ * left form as Edit Tag; Update, Cancel and Escape return it to Add New Tag,
+ * and Escape closes a Quick edit, sending nothing. Unsaved changes in the
+ * form are only dropped once confirmed, a deleted tag leaves the form, and
+ * `?term=` loads a tag into it. The form and the list sit
+ * side by side on a desktop and stack, form first, on a phone. The category
+ * the convert creates is deleted again through the core REST API.
  *
  * The suite needs a running WordPress with this plugin active and an
  * administrator account, so it is skipped unless `LICENSIO_KB_E2E=1` and the
@@ -22,6 +27,8 @@ import { expect, test, type Page } from '@playwright/test';
 import {
 	answerConfirm,
 	confirmDialog,
+	contentManagerUrl,
+	expectNoConfirmDialog,
 	openContentManager,
 } from './helpers/content-manager';
 import { failOnUnresolvedComponents } from './helpers/ant-components';
@@ -121,23 +128,62 @@ async function deleteCategory( page: Page, id: number ): Promise< number > {
 }
 
 /**
- * Add a tag through the Add tag form.
+ * The left form, Add New Tag or Edit Tag.
+ *
+ * @since 1.0.0
+ *
+ * @param {Page} page The browser page.
+ *
+ * @return {import('@playwright/test').Locator} The form card.
+ */
+function tagForm( page: Page ) {
+	return page.locator( '.lkb-tag-form' );
+}
+
+/**
+ * Add a tag through the Add New Tag form.
  *
  * @since 1.0.0
  *
  * @param {Page}   page The browser page.
  * @param {string} name The tag name.
  *
- * @return {Promise<void>} Resolves once the tag is listed.
+ * @return {Promise<void>} Resolves once the form has cleared for the next tag.
  */
 async function addTag( page: Page, name: string ): Promise< void > {
-	await page.getByRole( 'button', { name: 'Add tag' } ).click();
-
-	const form = page.locator( '.lkb-tags__add' );
+	const form = tagForm( page );
 
 	await form.getByLabel( 'Name' ).fill( name );
-	await form.getByRole( 'button', { name: 'Add tag' } ).click();
-	await expect( page.locator( '.lkb-tags__add' ) ).toBeHidden();
+	await form.getByRole( 'button', { name: 'Add New Tag' } ).click();
+	await expect( form.getByLabel( 'Name' ) ).toHaveValue( '' );
+}
+
+/**
+ * The Edit button of a row, which loads the tag into the left form.
+ *
+ * @since 1.0.0
+ *
+ * @param {Page}   page The browser page.
+ * @param {string} name The tag name.
+ *
+ * @return {import('@playwright/test').Locator} The button.
+ */
+function editButton( page: Page, name: string ) {
+	return row( page, name ).getByRole( 'button', { name: /^Edit “/ } );
+}
+
+/**
+ * The Quick edit button of a row, which opens the row's fields in place.
+ *
+ * @since 1.0.0
+ *
+ * @param {Page}   page The browser page.
+ * @param {string} name The tag name.
+ *
+ * @return {import('@playwright/test').Locator} The button.
+ */
+function quickEditButton( page: Page, name: string ) {
+	return row( page, name ).getByRole( 'button', { name: /^Quick edit “/ } );
 }
 
 /**
@@ -180,13 +226,13 @@ test( 'tags are added and edited at once, merged and converted only after confir
 	await logIn( page );
 	await openContentManager( page, 'tags' );
 
-	// Cancel on the Add tag form sends nothing.
-	await page.getByRole( 'button', { name: 'Add tag' } ).click();
-
-	const form = page.locator( '.lkb-tags__add' );
-
-	await form.getByLabel( 'Name' ).fill( alpha );
-	await form.getByRole( 'button', { name: 'Cancel' } ).click();
+	// The Add New Tag form has nothing to cancel, and sends nothing until submitted.
+	await expect(
+		tagForm( page ).getByRole( 'heading', { name: 'Add New Tag' } )
+	).toBeVisible();
+	await expect(
+		tagForm( page ).getByRole( 'button', { name: 'Cancel' } )
+	).toHaveCount( 0 );
 	expect( writes ).toHaveLength( 0 );
 
 	for ( const name of [ alpha, beta, gamma ] ) {
@@ -196,12 +242,12 @@ test( 'tags are added and edited at once, merged and converted only after confir
 	await search( page, suffix );
 	await expect( page.locator( '.ant-table-row' ) ).toHaveCount( 3 );
 
-	// Save sends at once; a slug another tag uses is refused with a message.
-	const editing = row( page, gamma );
+	// Quick edit Save sends at once; a slug another tag uses is refused with a message.
+	await quickEditButton( page, gamma ).click();
 
-	await editing.getByRole( 'button', { name: 'Edit' } ).click();
-
-	const slug = page.getByLabel( 'Slug', { exact: true } ).last();
+	const slug = page
+		.locator( '.ant-table-row' )
+		.getByLabel( 'Slug', { exact: true } );
 
 	await slug.fill( `alpha-${ suffix }` );
 	await page.getByRole( 'button', { name: 'Save' } ).first().click();
@@ -278,7 +324,7 @@ test( 'tags are added and edited at once, merged and converted only after confir
 	expect( await deleteCategory( page, categoryId ) ).toBe( 200 );
 } );
 
-test( 'Escape closes the Add tag form and an inline edit', async ( {
+test( 'Escape leaves the Edit Tag form and closes a Quick edit', async ( {
 	page,
 } ) => {
 	const writes = recordWrites( page );
@@ -286,29 +332,33 @@ test( 'Escape closes the Add tag form and an inline edit', async ( {
 
 	await logIn( page );
 	await openContentManager( page, 'tags' );
-
-	// Escape in the Add tag form closes it and puts focus back on Add tag.
-	await page.getByRole( 'button', { name: 'Add tag' } ).click();
-	await page.locator( '.lkb-tags__add' ).getByLabel( 'Name' ).fill( name );
-	await page.keyboard.press( 'Escape' );
-	await expect( page.locator( '.lkb-tags__add' ) ).toBeHidden();
-	await expect(
-		page.getByRole( 'button', { name: 'Add tag' } )
-	).toBeFocused();
-	expect( writes ).toHaveLength( 0 );
-
 	await addTag( page, name );
 	await search( page, name );
 
-	// Escape in an open row closes it and puts focus back on its Edit button.
+	// Escape in the Edit Tag form returns it to Add and focus to the row's Edit button.
 	const before = writes.length;
+	const form = tagForm( page );
 
-	await row( page, name ).getByRole( 'button', { name: 'Edit' } ).click();
-	await page.getByLabel( 'Name', { exact: true } ).last().fill( 'Changed' );
+	await editButton( page, name ).click();
+	await expect( form.getByLabel( 'Name' ) ).toBeFocused();
+	await form.getByLabel( 'Name' ).fill( 'Changed' );
 	await page.keyboard.press( 'Escape' );
+	await answerConfirm( page, 'confirm' );
 	await expect(
-		row( page, name ).getByRole( 'button', { name: 'Edit' } )
-	).toBeFocused();
+		form.getByRole( 'heading', { name: 'Add New Tag' } )
+	).toBeVisible();
+	await expect( form.getByLabel( 'Name' ) ).toHaveValue( '' );
+	await expect( editButton( page, name ) ).toBeFocused();
+	expect( writes.length ).toBe( before );
+
+	// Escape in an open row closes it and puts focus back on its Quick edit button.
+	await quickEditButton( page, name ).click();
+	await page
+		.locator( '.ant-table-row' )
+		.getByLabel( 'Name', { exact: true } )
+		.fill( 'Changed' );
+	await page.keyboard.press( 'Escape' );
+	await expect( quickEditButton( page, name ) ).toBeFocused();
 	await expect( row( page, name ) ).toContainText( name );
 	expect( writes.length ).toBe( before );
 
@@ -350,20 +400,23 @@ test( 'a description shows as plain text and is edited as stored', async ( {
 	await logIn( page );
 	await openContentManager( page, 'tags' );
 
-	await page.getByRole( 'button', { name: 'Add tag' } ).click();
-
-	const form = page.locator( '.lkb-tags__add' );
+	const form = tagForm( page );
 
 	await form.getByLabel( 'Name' ).fill( name );
 	await form.getByLabel( 'Description' ).fill( stored );
-	await form.getByRole( 'button', { name: 'Add tag' } ).click();
+	await form.getByRole( 'button', { name: 'Add New Tag' } ).click();
 	await search( page, name );
 
 	await expect(
 		row( page, name ).locator( '.lkb-tags__description' )
 	).toHaveText( 'Tom & Jerry' );
 
-	await row( page, name ).getByRole( 'button', { name: 'Edit' } ).click();
+	// The Edit Tag form and a Quick edit both edit the stored value.
+	await editButton( page, name ).click();
+	await expect( form.getByLabel( 'Description' ) ).toHaveValue( stored );
+	await form.getByRole( 'button', { name: 'Cancel' } ).click();
+
+	await quickEditButton( page, name ).click();
 
 	// The open row shows inputs, not its name, so it is found by its field.
 	await expect(
@@ -476,7 +529,7 @@ test( 'a slow save leaves the row the user opened next alone', async ( {
 		.locator( '.ant-table-row' )
 		.getByLabel( 'Name', { exact: true } );
 
-	await row( page, first ).getByRole( 'button', { name: 'Edit' } ).click();
+	await quickEditButton( page, first ).click();
 	await openName.fill( `${ first } renamed` );
 	await page.getByRole( 'button', { name: 'Save' } ).first().click();
 
@@ -485,7 +538,7 @@ test( 'a slow save leaves the row the user opened next alone', async ( {
 		.locator( '.ant-table-row' )
 		.getByRole( 'button', { name: 'Cancel' } )
 		.click();
-	await row( page, second ).getByRole( 'button', { name: 'Edit' } ).click();
+	await quickEditButton( page, second ).click();
 	await expect( openName ).toHaveValue( second );
 
 	release();
@@ -705,4 +758,229 @@ test( 'Escape on the open target list closes only the list, not the merge dialog
 	await expect( merge ).toBeHidden();
 
 	await deleteListed( page );
+} );
+
+test( 'Edit loads a tag into the left form, and Update saves it at once', async ( {
+	page,
+} ) => {
+	const writes = recordWrites( page );
+	const name = `Form edit ${ suffix }`;
+
+	await logIn( page );
+	await openContentManager( page, 'tags' );
+	await addTag( page, name );
+	await search( page, name );
+
+	const form = tagForm( page );
+
+	await editButton( page, name ).click();
+	await expect(
+		form.getByRole( 'heading', { name: 'Edit Tag' } )
+	).toBeVisible();
+	await expect( form.getByLabel( 'Name' ) ).toHaveValue( name );
+	await expect( form.getByLabel( 'Name' ) ).toBeFocused();
+	await expect( form.getByLabel( 'Slug' ) ).toHaveValue(
+		`form-edit-${ suffix }`
+	);
+	await expect(
+		form.getByRole( 'button', { name: 'Add New Tag' } )
+	).toHaveCount( 0 );
+
+	// Cancel sends nothing and returns the form to Add.
+	const before = writes.length;
+
+	await form.getByRole( 'button', { name: 'Cancel' } ).click();
+	await expect(
+		form.getByRole( 'heading', { name: 'Add New Tag' } )
+	).toBeVisible();
+	await expect( editButton( page, name ) ).toBeFocused();
+	expect( writes.length ).toBe( before );
+
+	// Update sends at once, with no confirmation, and returns the form to Add.
+	await editButton( page, name ).click();
+	await form.getByLabel( 'Description' ).fill( 'Edited in the form' );
+	await form.getByRole( 'button', { name: 'Update' } ).click();
+	await expectNoConfirmDialog( page );
+	await expect(
+		page.locator( '.ant-message-notice', { hasText: 'Tag saved.' } )
+	).toBeVisible();
+	await expect(
+		form.getByRole( 'heading', { name: 'Add New Tag' } )
+	).toBeVisible();
+	await expect(
+		row( page, name ).locator( '.lkb-tags__description' )
+	).toHaveText( 'Edited in the form' );
+	expect( writes.length ).toBe( before + 1 );
+
+	await deleteListed( page );
+} );
+
+test( 'the form returns to Add when the tag in it is deleted, not when it is filtered away', async ( {
+	page,
+} ) => {
+	const name = `Gone ${ suffix }`;
+	const form = tagForm( page );
+
+	await logIn( page );
+	await openContentManager( page, 'tags' );
+	await addTag( page, name );
+	await search( page, name );
+	await editButton( page, name ).click();
+
+	// A search that hides the tag leaves the form alone.
+	await search( page, `nothing ${ suffix }` );
+	await expect( page.locator( '.ant-table-row' ) ).toHaveCount( 0 );
+	await expect(
+		form.getByRole( 'heading', { name: 'Edit Tag' } )
+	).toBeVisible();
+	await expect( form.getByLabel( 'Name' ) ).toHaveValue( name );
+
+	// Deleting it returns the form to Add.
+	await search( page, name );
+	await deleteListed( page );
+	await expect(
+		form.getByRole( 'heading', { name: 'Add New Tag' } )
+	).toBeVisible();
+	await expect( form.getByLabel( 'Name' ) ).toHaveValue( '' );
+} );
+
+test( 'loading another tag or cancelling asks before it drops unsaved changes', async ( {
+	page,
+} ) => {
+	const writes = recordWrites( page );
+	const first = `Dirty ${ suffix } one`;
+	const second = `Dirty ${ suffix } two`;
+	const form = tagForm( page );
+	const heading = ( text: string ) =>
+		form.getByRole( 'heading', { name: text } );
+
+	await logIn( page );
+	await openContentManager( page, 'tags' );
+	await addTag( page, first );
+	await addTag( page, second );
+	await search( page, `Dirty ${ suffix }` );
+	await expect( page.locator( '.ant-table-row' ) ).toHaveCount( 2 );
+
+	const before = writes.length;
+
+	// Nothing changed: Edit on another tag loads it without asking.
+	await editButton( page, first ).click();
+	await editButton( page, second ).click();
+	await expectNoConfirmDialog( page );
+	await expect( form.getByLabel( 'Name' ) ).toHaveValue( second );
+
+	// A change: Edit on another tag asks, and Cancel keeps the input.
+	await form.getByLabel( 'Description' ).fill( 'Unsaved' );
+	await editButton( page, first ).click();
+	await answerConfirm( page, 'cancel' );
+	await expect( form.getByLabel( 'Name' ) ).toHaveValue( second );
+	await expect( form.getByLabel( 'Description' ) ).toHaveValue( 'Unsaved' );
+
+	// Quick edit of the tag in the form asks; of another tag it does not.
+	await quickEditButton( page, second ).click();
+	await answerConfirm( page, 'cancel' );
+	await expect( form.getByLabel( 'Description' ) ).toHaveValue( 'Unsaved' );
+	await quickEditButton( page, first ).click();
+	await expectNoConfirmDialog( page );
+	await page
+		.locator( '.ant-table-row' )
+		.getByRole( 'button', { name: 'Cancel' } )
+		.click();
+	await expect( form.getByLabel( 'Description' ) ).toHaveValue( 'Unsaved' );
+
+	// The form's Cancel asks, and discarding returns it to Add.
+	await form.getByRole( 'button', { name: 'Cancel' } ).click();
+	await answerConfirm( page, 'confirm' );
+	await expect( heading( 'Add New Tag' ) ).toBeVisible();
+
+	// A typed new tag is kept the same way.
+	await form.getByLabel( 'Name' ).fill( 'Draft' );
+	await editButton( page, first ).click();
+	await answerConfirm( page, 'cancel' );
+	await expect( form.getByLabel( 'Name' ) ).toHaveValue( 'Draft' );
+	await editButton( page, first ).click();
+	await answerConfirm( page, 'confirm' );
+	await expect( heading( 'Edit Tag' ) ).toBeVisible();
+	await expect( form.getByLabel( 'Name' ) ).toHaveValue( first );
+
+	expect( writes.length ).toBe( before );
+
+	await form.getByRole( 'button', { name: 'Cancel' } ).click();
+	await deleteListed( page );
+} );
+
+test( 'a page opened for one tag loads it into the form', async ( {
+	page,
+} ) => {
+	const name = `Linked ${ suffix }`;
+	const form = tagForm( page );
+
+	await logIn( page );
+	await openContentManager( page, 'tags' );
+
+	// The list has a heading for screen readers.
+	await expect(
+		page.getByRole( 'heading', { name: 'Tags list' } )
+	).toBeAttached();
+
+	await addTag( page, name );
+	await search( page, name );
+
+	const id = await row( page, name ).getAttribute( 'data-row-key' );
+
+	await page.goto( `${ contentManagerUrl( 'tags' ) }&term=${ id }` );
+	await expect(
+		form.getByRole( 'heading', { name: 'Edit Tag' } )
+	).toBeVisible();
+	await expect( form.getByLabel( 'Name' ) ).toHaveValue( name );
+
+	await form.getByRole( 'button', { name: 'Cancel' } ).click();
+	await page.getByRole( 'button', { name: 'Show all tags' } ).click();
+	await search( page, name );
+	await deleteListed( page );
+} );
+
+test( 'the form sits left of the list on a desktop and above it on a phone', async ( {
+	page,
+} ) => {
+	await logIn( page );
+	await page.setViewportSize( { width: 1440, height: 900 } );
+	await openContentManager( page, 'tags' );
+
+	const form = tagForm( page );
+	const list = page.locator( '.lkb-tags__list' );
+
+	await expect( page.locator( '.ant-table' ) ).toBeVisible();
+
+	const left = await form.boundingBox();
+	const right = await list.boundingBox();
+
+	expect( left && right ).toBeTruthy();
+
+	if ( ! left || ! right ) {
+		return;
+	}
+
+	// Side by side, top aligned, about a third and two thirds as in core.
+	expect( Math.abs( left.y - right.y ) ).toBeLessThanOrEqual( 1 );
+	expect( left.x + left.width ).toBeLessThanOrEqual( right.x );
+	expect( left.width / ( left.width + right.width ) ).toBeGreaterThan( 0.3 );
+	expect( left.width / ( left.width + right.width ) ).toBeLessThan( 0.4 );
+
+	await page.setViewportSize( { width: 390, height: 844 } );
+
+	const top = await form.boundingBox();
+	const below = await list.boundingBox();
+
+	expect( ( below?.y ?? 0 ) + 1 ).toBeGreaterThanOrEqual(
+		( top?.y ?? 0 ) + ( top?.height ?? 0 )
+	);
+	expect(
+		Math.abs( ( top?.width ?? 0 ) - ( below?.width ?? 0 ) )
+	).toBeLessThanOrEqual( 1 );
+	expect(
+		await page.evaluate(
+			() => document.documentElement.scrollWidth - window.innerWidth
+		)
+	).toBeLessThanOrEqual( 0 );
 } );

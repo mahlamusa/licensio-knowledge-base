@@ -3,9 +3,9 @@
  * A button that asks before it acts.
  *
  * Destructive, hard-to-reverse and bulk actions go through this: clicking the
- * button only opens a confirmation dialog in the centre of the screen, over a
- * translucent mask that blocks the page, and `confirm` runs only when the
- * user confirms. Nothing should be sent to the server from a click handler;
+ * button only opens a confirmation dialog (`ConfirmDialog`) in the centre of
+ * the screen, over a translucent mask that blocks the page, and `confirm`
+ * runs only when the user confirms. Nothing should be sent to the server from a click handler;
  * send it from `@confirm`. Cancelling, or pressing Escape, emits `cancel` and
  * sends nothing.
  *
@@ -49,14 +49,10 @@
  * @since 1.0.0
  */
 
-import { nextTick, onBeforeUnmount, ref, useId } from 'vue';
-import {
-	Alert as AAlert,
-	Button as AButton,
-	Modal as AModal,
-} from 'ant-design-vue';
-import { ExclamationCircleFilled } from '@ant-design/icons-vue';
+import { nextTick, onBeforeUnmount, ref } from 'vue';
+import { Button as AButton } from 'ant-design-vue';
 import { __ } from './i18n';
+import ConfirmDialog from './ConfirmDialog.vue';
 
 const props = withDefaults(
 	defineProps< {
@@ -101,23 +97,10 @@ const emit = defineEmits< {
 	( event: 'cancel' ): void;
 } >();
 
-/**
- * Above the WordPress admin bar (99999) and menu (9990), so the mask covers
- * the whole screen, as the media modal does.
- */
-const Z_INDEX = 160000;
-
-const id = useId();
-const titleId = `lkb-confirm-title-${ id }`;
-const descriptionId = `lkb-confirm-description-${ id }`;
-
 const trigger = ref< { $el?: HTMLElement } | null >( null );
-const cancelButton = ref< { $el?: HTMLElement } | null >( null );
 const open = ref( false );
 const busy = ref( false );
 const error = ref( '' );
-const reducedMotion =
-	window.matchMedia?.( '(prefers-reduced-motion: reduce)' ).matches ?? false;
 
 let unmounted = false;
 
@@ -185,12 +168,6 @@ function show(): void {
 
 	error.value = '';
 	open.value = true;
-
-	// The dialog is shown after this tick; Ant Design then leaves focus alone
-	// because it is already inside.
-	nextTick( () => {
-		window.setTimeout( () => cancelButton.value?.$el?.focus(), 0 );
-	} );
 }
 
 /**
@@ -332,104 +309,15 @@ onBeforeUnmount( keepFocusOnPage );
 		<slot />
 	</a-button>
 
-	<a-modal
+	<ConfirmDialog
 		:open="open"
-		centered
-		:closable="false"
-		:mask-closable="false"
-		:keyboard="! busy"
-		:focus-trigger-after-close="false"
-		destroy-on-close
-		:z-index="Z_INDEX"
-		:width="420"
-		:transition-name="reducedMotion ? '' : undefined"
-		:mask-transition-name="reducedMotion ? '' : undefined"
-		wrap-class-name="lkb-confirm"
-		:wrap-props="{
-			role: 'alertdialog',
-			'aria-modal': 'true',
-			'aria-labelledby': titleId,
-			'aria-describedby': props.description ? descriptionId : undefined,
-		}"
+		:title="props.title"
+		:description="props.description"
+		:ok-text="props.okText"
+		:danger="props.danger"
+		:busy="busy"
+		:error="error"
+		@ok="onOk"
 		@cancel="onCancel"
-	>
-		<div class="lkb-confirm__body">
-			<ExclamationCircleFilled
-				class="lkb-confirm__icon"
-				:class="{ 'is-danger': props.danger }"
-				aria-hidden="true"
-			/>
-			<div class="lkb-confirm__text">
-				<h2 :id="titleId" class="lkb-confirm__title">
-					{{ props.title }}
-				</h2>
-				<p
-					v-if="props.description"
-					:id="descriptionId"
-					class="lkb-confirm__description"
-				>
-					{{ props.description }}
-				</p>
-			</div>
-		</div>
-
-		<a-alert
-			v-if="error"
-			class="lkb-confirm__error"
-			type="error"
-			show-icon
-			role="alert"
-			:message="error"
-		/>
-
-		<template #footer>
-			<a-button ref="cancelButton" :disabled="busy" @click="onCancel">
-				{{ __( 'Cancel', 'licensio-knowledge-base' ) }}
-			</a-button>
-			<a-button
-				type="primary"
-				:danger="props.danger"
-				:loading="busy"
-				@click="onOk"
-			>
-				{{ props.okText || __( 'Confirm', 'licensio-knowledge-base' ) }}
-			</a-button>
-		</template>
-	</a-modal>
+	/>
 </template>
-
-<style>
-.lkb-confirm .lkb-confirm__body {
-	display: flex;
-	gap: 12px;
-	align-items: flex-start;
-}
-
-.lkb-confirm .lkb-confirm__icon {
-	flex: none;
-	margin-top: 3px;
-	font-size: 20px;
-	color: var( --lkb-warning );
-}
-
-.lkb-confirm .lkb-confirm__icon.is-danger {
-	color: var( --lkb-error );
-}
-
-.lkb-confirm .lkb-confirm__title {
-	margin: 0;
-	padding: 0;
-	font-size: 16px;
-	font-weight: 600;
-	line-height: 1.5;
-	color: var( --lkb-ink );
-}
-
-.lkb-confirm .lkb-confirm__description {
-	margin: 8px 0 0;
-}
-
-.lkb-confirm .lkb-confirm__error {
-	margin-top: 16px;
-}
-</style>

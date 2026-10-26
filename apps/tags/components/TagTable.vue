@@ -3,14 +3,24 @@
  * The tag table.
  *
  * Lists the page of tags with server-side sort and paging, row selection for
- * the bulk bar, and inline edit of name, slug and description. Edit opens the
- * row's fields in place; Save sends without asking, and the row keeps
+ * the bulk bar. As on core's tag list, the row actions sit under the name and
+ * show on hover or focus (always on touch and narrow screens): Edit hands the
+ * tag to the page, which loads it into the left form; Quick edit opens the
+ * row's name, slug and description in place. Save
+ * sends without asking, and the row keeps
  * the user's input when the server refuses it, as it does a slug another tag
  * already uses. The slug the server settled on (made from the name if the
  * slug was cleared) is shown back once saved.
  *
- * Focus follows the row: Edit moves it to the Name field, and Cancel,
- * Escape or a save puts it back on the row's Edit button.
+ * Before Edit or Quick edit opens a tag, the page may ask the user first
+ * (`beforeOpen`), for unsaved changes in its form; nothing opens when the
+ * user keeps them.
+ *
+ * Focus follows the row: Quick edit moves it to the Name field, and Cancel,
+ * Escape or a save puts it back on the row's Quick edit button.
+ *
+ * A page opened for one tag (`?term=`) loads that tag into the left form,
+ * as core's link to a tag's edit screen does.
  *
  * A tag's article count links to the Articles app filtered by that tag.
  *
@@ -32,6 +42,19 @@ import { __, sprintf } from '../../components/i18n';
 import { settings } from '../api';
 import { useTagsStore } from '../store';
 import type { TagFields, TagItem, TagOrder, TagOrderBy } from '../types';
+
+const props = defineProps< {
+	/**
+	 * Asked before Edit (`quick` false) or Quick edit (`quick` true) opens a
+	 * tag; nothing opens when it answers false.
+	 */
+	beforeOpen?: ( tag: TagItem, quick: boolean ) => Promise< boolean >;
+} >();
+
+const emit = defineEmits< {
+	( event: 'edit', tag: TagItem ): void;
+	( event: 'quick-edit', id: number ): void;
+} >();
 
 const store = useTagsStore();
 const { articlesUrl } = settings();
@@ -116,11 +139,6 @@ const columns = computed( () => [
 		sortOrder: sortOrder( 'count' ),
 		sortDirections: [ 'descend', 'ascend', 'descend' ],
 	},
-	{
-		title: __( 'Actions', 'licensio-knowledge-base' ),
-		key: 'actions',
-		width: 170,
-	},
 ] );
 
 /**
@@ -151,7 +169,8 @@ function onChange(
 }
 
 /**
- * Focus a row: its Name field while it is open, otherwise its Edit button.
+ * Focus a row: its Name field while it is open, otherwise its Quick edit
+ * button.
  *
  * @since 1.0.0
  *
@@ -162,7 +181,9 @@ function onChange(
 function focusRow( id: number ): void {
 	nextTick( () => {
 		const target =
-			editingId.value === id ? 'input:not([type="checkbox"])' : 'button';
+			editingId.value === id
+				? 'input:not([type="checkbox"])'
+				: '[data-lkb-quick]';
 
 		document
 			.querySelector< HTMLElement >(
@@ -173,16 +194,21 @@ function focusRow( id: number ): void {
 }
 
 /**
- * Open a row's fields for editing.
+ * Open a row's fields for editing (Quick edit), once the page agreed.
  *
  * @since 1.0.0
  *
  * @param {TagItem} tag The row.
  *
- * @return {void}
+ * @return {Promise<void>} Resolves once the row is open or was left closed.
  */
-function startEdit( tag: TagItem ): void {
+async function startEdit( tag: TagItem ): Promise< void > {
+	if ( props.beforeOpen && ! ( await props.beforeOpen( tag, true ) ) ) {
+		return;
+	}
+
 	editingId.value = tag.id;
+	emit( 'quick-edit', tag.id );
 	draft.name = tag.name;
 	draft.slug = tag.slug;
 	draft.description = tag.description;
@@ -277,9 +303,28 @@ function canSave( tag: TagItem ): boolean {
 	return '' !== draft.name.trim() && Object.keys( changes( tag ) ).length > 0;
 }
 
+/**
+ * Hand a tag to the page's left form, once the page agreed, closing any
+ * Quick edit first so a tag is open in one place only.
+ *
+ * @since 1.0.0
+ *
+ * @param {TagItem} tag The tag.
+ *
+ * @return {Promise<void>} Resolves once handed over or kept back.
+ */
+async function edit( tag: TagItem ): Promise< void > {
+	if ( props.beforeOpen && ! ( await props.beforeOpen( tag, false ) ) ) {
+		return;
+	}
+
+	editingId.value = null;
+	emit( 'edit', tag );
+}
+
 // When the open row leaves the list (paged, filtered, deleted, merged or
 // converted away), close it so the other rows can be edited again. Then a
-// page opened for one tag (`?term=`) opens that tag for editing, once.
+// page opened for one tag (`?term=`) loads that tag into the form, once.
 watch(
 	() => store.items,
 	( items ) => {
@@ -298,14 +343,14 @@ watch(
 			null === editingId.value
 		) {
 			openedFromUrl = true;
-			startEdit( items[ 0 ] );
+			edit( items[ 0 ] );
 		}
 	}
 );
 </script>
 
 <template>
-	<div class="lkb-tablecard" @keydown.esc="cancelEdit">
+	<div class="lkb-tablecard lkb-tablecard--core" @keydown.esc="cancelEdit">
 		<a-table
 			row-key="id"
 			:columns="columns"
@@ -352,6 +397,64 @@ watch(
 						:aria-label="__( 'Name', 'licensio-knowledge-base' )"
 					/>
 					<strong v-else>{{ record.name }}</strong>
+
+					<div
+						v-if="editingId === record.id"
+						class="lkb-rowactions is-open"
+					>
+						<a-button
+							type="primary"
+							size="small"
+							:disabled="! canSave( record as TagItem )"
+							:loading="store.saving"
+							@click="save( record as TagItem )"
+						>
+							{{ __( 'Save', 'licensio-knowledge-base' ) }}
+						</a-button>
+						<a-button size="small" @click="cancelEdit">
+							{{ __( 'Cancel', 'licensio-knowledge-base' ) }}
+						</a-button>
+					</div>
+					<div v-else class="lkb-rowactions">
+						<a-button
+							type="link"
+							size="small"
+							data-lkb-edit
+							:disabled="null !== editingId"
+							:aria-label="
+								sprintf(
+									/* translators: %s: the tag's name. */
+									__(
+										'Edit “%s”',
+										'licensio-knowledge-base'
+									),
+									record.name
+								)
+							"
+							@click="edit( record as TagItem )"
+						>
+							{{ __( 'Edit', 'licensio-knowledge-base' ) }}
+						</a-button>
+						<a-button
+							type="link"
+							size="small"
+							data-lkb-quick
+							:disabled="null !== editingId"
+							:aria-label="
+								sprintf(
+									/* translators: %s: the tag's name. */
+									__(
+										'Quick edit “%s”',
+										'licensio-knowledge-base'
+									),
+									record.name
+								)
+							"
+							@click="startEdit( record as TagItem )"
+						>
+							{{ __( 'Quick edit', 'licensio-knowledge-base' ) }}
+						</a-button>
+					</div>
 				</template>
 
 				<template v-else-if="'slug' === column.key">
@@ -391,41 +494,6 @@ watch(
 						{{ record.count }}
 					</a>
 				</template>
-
-				<template v-else-if="'actions' === column.key">
-					<div
-						v-if="editingId === record.id"
-						class="lkb-tags__actions"
-					>
-						<a-button
-							type="primary"
-							size="small"
-							:disabled="! canSave( record as TagItem )"
-							:loading="store.saving"
-							@click="save( record as TagItem )"
-						>
-							{{ __( 'Save', 'licensio-knowledge-base' ) }}
-						</a-button>
-						<a-button size="small" @click="cancelEdit">
-							{{ __( 'Cancel', 'licensio-knowledge-base' ) }}
-						</a-button>
-					</div>
-					<a-button
-						v-else
-						size="small"
-						:disabled="null !== editingId"
-						:aria-label="
-							sprintf(
-								/* translators: %s: the tag's name. */
-								__( 'Edit “%s”', 'licensio-knowledge-base' ),
-								record.name
-							)
-						"
-						@click="startEdit( record as TagItem )"
-					>
-						{{ __( 'Edit', 'licensio-knowledge-base' ) }}
-					</a-button>
-				</template>
 			</template>
 		</a-table>
 	</div>
@@ -454,9 +522,11 @@ watch(
 	color: var( --lkb-ink-muted );
 }
 
-.lkb-tags__actions {
-	display: flex;
+/* An open Quick edit row: its Save and Cancel, always shown. */
+.lkb-rowactions.is-open {
 	gap: 8px;
+	padding-top: 8px;
+	opacity: 1;
 }
 
 :deep( .ant-table-tbody > tr.ant-table-row-selected > td ) {

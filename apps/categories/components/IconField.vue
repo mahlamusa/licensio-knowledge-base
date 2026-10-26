@@ -6,7 +6,7 @@
  * - Inline: pasted SVG markup, or a Base64 image (`data:image/…;base64,…`).
  * - Dashicon: a Dashicons name, previewed as the glyph.
  *
- * The drawer keeps only the picked source and clears the others on save, so
+ * The form keeps only the picked source and clears the others on save, so
  * no hidden icon is left to win. The inline value is edited and shown as
  * text; its preview is an `<img>` with a data URL, which a browser never runs
  * scripts in, and there is no `v-html` here.

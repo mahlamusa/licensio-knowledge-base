@@ -57,6 +57,8 @@ interface State {
 	loading: boolean;
 	saving: boolean;
 	error: string;
+	/** The tags the last delete, merge or convert removed. */
+	removed: number[];
 }
 
 /**
@@ -144,6 +146,7 @@ export const useTagsStore = defineStore( 'licensioKBTags', {
 		loading: false,
 		saving: false,
 		error: '',
+		removed: [],
 	} ),
 
 	actions: {
@@ -329,18 +332,25 @@ export const useTagsStore = defineStore( 'licensioKBTags', {
 		/**
 		 * Delete the selected tags.
 		 *
+		 * The tags it removed are kept in `removed`.
+		 *
 		 * @since 1.0.0
 		 *
 		 * @return {Promise<BulkDeleteResult>} Which were deleted and which failed.
 		 */
-		removeSelected(): Promise< BulkDeleteResult > {
+		async removeSelected(): Promise< BulkDeleteResult > {
 			const ids = [ ...this.selected ];
+			const result = await this.write( () => deleteTags( ids ) );
 
-			return this.write( () => deleteTags( ids ) );
+			this.removed = result.deleted;
+
+			return result;
 		},
 
 		/**
 		 * Merge the selected tags into a target.
+		 *
+		 * The tags it removed are kept in `removed`.
 		 *
 		 * @since 1.0.0
 		 *
@@ -348,14 +358,21 @@ export const useTagsStore = defineStore( 'licensioKBTags', {
 		 *
 		 * @return {Promise<MergeResult>} The merge result.
 		 */
-		mergeSelected( target: number ): Promise< MergeResult > {
+		async mergeSelected( target: number ): Promise< MergeResult > {
 			const sources = this.selected.filter( ( id ) => id !== target );
+			const result = await this.write( () =>
+				mergeTags( sources, target )
+			);
 
-			return this.write( () => mergeTags( sources, target ) );
+			this.removed = result.deleted;
+
+			return result;
 		},
 
 		/**
 		 * Turn the selected tags into categories.
+		 *
+		 * The tags it removed are kept in `removed`.
 		 *
 		 * @since 1.0.0
 		 *
@@ -363,10 +380,13 @@ export const useTagsStore = defineStore( 'licensioKBTags', {
 		 *
 		 * @return {Promise<ConvertResult>} Which were converted and which failed.
 		 */
-		convertSelected( parent: number ): Promise< ConvertResult > {
+		async convertSelected( parent: number ): Promise< ConvertResult > {
 			const ids = [ ...this.selected ];
+			const result = await this.write( () => convertTags( ids, parent ) );
 
-			return this.write( () => convertTags( ids, parent ) );
+			this.removed = result.converted.map( ( one ) => one.tag );
+
+			return result;
 		},
 	},
 } );

@@ -1,7 +1,7 @@
 /**
  * A category's icon source, and the icon fields a save sends for it.
  *
- * A category draws one icon, so the drawer asks for one source and, on save,
+ * A category draws one icon, so the form asks for one source and, on save,
  * sends the picked source's value with every other icon field empty. That
  * clears the sources not picked, so no hidden icon is left to win by
  * precedence on the front end.

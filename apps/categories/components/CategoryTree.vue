@@ -9,8 +9,9 @@
  * After a refused move the tree is loaded again from the server.
  *
  * The other actions (edit, add child, move to, merge, delete) are handed to
- * the app, which owns the drawer and dialogs. A category's article count
- * links to the Articles app filtered by that category.
+ * the app, which owns the form and dialogs. A category's article count
+ * links to the Articles app filtered by that category. The category the
+ * app's form holds is marked with `aria-current` and an accent bar.
  *
  * @since 1.0.0
  */
@@ -44,6 +45,11 @@ interface DropInfo {
 	dropPosition: number;
 	dropToGap: boolean;
 }
+
+const props = defineProps< {
+	/** The category the form is editing, or null. */
+	editingId: number | null;
+} >();
 
 const emit = defineEmits< {
 	( event: 'action', action: TreeAction, item: CategoryItem ): void;
@@ -551,7 +557,17 @@ function onMenu( item: CategoryItem, key: string ): void {
 				@drop="onDrop"
 			>
 				<template #title="node">
-					<span class="lkb-tree__node">
+					<span
+						class="lkb-tree__node"
+						:class="{
+							'is-editing': props.editingId === itemOf( node ).id,
+						}"
+						:aria-current="
+							props.editingId === itemOf( node ).id
+								? 'true'
+								: undefined
+						"
+					>
 						<span class="lkb-tree__name">{{
 							itemOf( node ).name
 						}}</span>
@@ -745,6 +761,17 @@ function onMenu( item: CategoryItem, key: string ): void {
 	align-items: center;
 	gap: 12px;
 	min-width: 0;
+}
+
+/* The category in the form: an accent bar beside it and its name in the accent. */
+.lkb-tree__node.is-editing {
+	box-shadow: inset 3px 0 0 var( --lkb-accent );
+	margin-left: -10px;
+	padding-left: 10px;
+}
+
+.lkb-tree__node.is-editing .lkb-tree__name {
+	color: var( --lkb-accent );
 }
 
 .lkb-tree__name {

@@ -22,9 +22,8 @@
  *
  * Consumed by the articles app's filters and columns popovers.
  * Confirmations do not use it: ConfirmButton opens a modal dialog, which
- * traps focus itself. `FOCUSABLE`
- * is shared with the category drawer's focus trap. `useEscapeClose()` applies
- * the same rule for open selects to a drawer or dialog.
+ * traps focus itself. `useEscapeClose()` applies the same rule for open
+ * selects to a dialog or an edit form.
  *
  * @since 1.0.0
  */
@@ -33,7 +32,7 @@ import { nextTick, onBeforeUnmount, onMounted, ref, useId } from 'vue';
 import type { Ref } from 'vue';
 
 /** What a keyboard user can tab to. */
-export const FOCUSABLE =
+const FOCUSABLE =
 	'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 /**
@@ -88,26 +87,27 @@ function ownsEscape( target: EventTarget | null ): boolean {
 }
 
 /**
- * Close a drawer or dialog on Escape, but not while a select in it is open.
+ * Close a dialog, or leave an edit form, on Escape, but not while a select
+ * in it is open.
  *
- * Ant Design's drawer and modal close on any Escape pressed inside them,
- * even one that an open select uses to close its list, so the user loses
- * what they typed. Give the drawer or modal `:keyboard="false"` and call
- * this instead: Escape on an open select or date picker closes only that,
- * and any other Escape inside `container` calls `close`.
+ * Ant Design's modal closes on any Escape pressed inside it, even one that
+ * an open select uses to close its list, so the user loses what they typed.
+ * Give the modal `:keyboard="false"` and call this instead: Escape on an open
+ * select or date picker closes only that, and any other Escape inside
+ * `container` calls `close`.
  *
  * Whether the control owns the key is noted in the capture phase, before it
- * handles it; the drawer or dialog closes in the bubble phase, so an open
+ * handles it; the dialog or form closes in the bubble phase, so an open
  * popover that stopped the key (see `usePopoverFocus`) closes alone. A
- * confirmation dialog opened from the drawer is rendered outside it and
- * stops the key itself, so it also closes alone.
+ * confirmation dialog opened from inside is rendered outside it and stops
+ * the key itself, so it also closes alone.
  *
- * Consumed by the category drawer and the Categories and Tags dialogs.
+ * Consumed by the Categories and Tags dialogs and their add and edit forms.
  *
  * @since 1.0.0
  *
- * @param {Function} isOpen    Whether the drawer or dialog is open now.
- * @param {string}   container A selector matching the drawer's or dialog's root.
+ * @param {Function} isOpen    Whether the dialog or edit is open now.
+ * @param {string}   container A selector matching the dialog's or form's root.
  * @param {Function} close     Closes it.
  *
  * @return {void}
@@ -212,7 +212,7 @@ export function usePopoverFocus(): {
 			return;
 		}
 
-		// Only this overlay closes, not a drawer or dialog it was opened from.
+		// Only this overlay closes, not a dialog or form it was opened from.
 		event.stopPropagation();
 
 		const target = returnTo;
