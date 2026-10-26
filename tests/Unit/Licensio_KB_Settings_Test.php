@@ -314,7 +314,7 @@ class Licensio_KB_Settings_Test extends Licensio_KB_Test_Case {
         foreach ( array( 'red;}body{background:url(//evil/x)', '</style><script>alert(1)</script>', 'red', '#gggggg', '' ) as $payload ) {
             $settings->set( 'brand_color', $payload );
 
-            $this->assertSame( '#3c569f', $settings->get( 'brand_color' ), 'A non-colour must fall back to the default.' );
+            $this->assertSame( '', $settings->get( 'brand_color' ), 'A non-colour must fall back to the empty default.' );
         }
     }
 
@@ -326,6 +326,9 @@ class Licensio_KB_Settings_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     public function test_brand_color_accepts_valid_hex_values() {
+        $this->assertSame( '', Licensio_KB_Settings::sanitize_brand_color( '' ), 'An empty colour means use the theme, so it is accepted.' );
+        $this->assertSame( '', ( new Licensio_KB_Settings() )->defaults()['brand_color'], 'The brand colour defaults to the theme.' );
+
         $settings = new Licensio_KB_Settings();
 
         $settings->set( 'brand_color', '#ff0000' );
@@ -511,7 +514,7 @@ class Licensio_KB_Settings_Test extends Licensio_KB_Test_Case {
         $settings = new Licensio_KB_Settings();
 
         $this->assertSame( 'evil', $settings->get( 'article_slug' ) );
-        $this->assertSame( '#3c569f', $settings->get( 'brand_color' ) );
+        $this->assertSame( '', $settings->get( 'brand_color' ) );
         $this->assertSame( 90, $settings->get( 'analytics_retention_days' ) );
         $this->assertSame( 'contained', $settings->get( 'layout_width' ) );
     }

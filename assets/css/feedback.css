@@ -1,19 +1,19 @@
 /**
  * Licensio Knowledge Base — article feedback widget.
  *
- * Every rule is scoped to `.licensio-kb-feedback`, and every colour is read
- * from the custom properties Licensio_KB_Templates declares on `.licensio-kb`,
- * so a site that changes its brand colour restyles this widget too without a
- * single rule-level override. The fallbacks let the widget stand alone if a
- * theme renders the article footer outside the `.licensio-kb` wrapper.
+ * Every rule is scoped to `.licensio-kb-feedback`. The widget sets no colour of
+ * its own: it takes the theme's text colour, draws its border and tint from
+ * `currentColor`, and uses the brand colour only when one is set. The
+ * fallbacks let the widget stand alone if a theme renders the article footer
+ * outside the `.licensio-kb` wrapper.
  */
 
 .licensio-kb-feedback {
 	margin: var(--licensio-kb-space, 2.5rem) 0 0;
 	padding: var(--licensio-kb-gap, 1.5rem);
-	border: 1px solid var(--licensio-kb-line, #dcefe4);
+	border: 1px solid var(--licensio-kb-line, color-mix(in srgb, currentColor 18%, transparent));
 	border-radius: var(--licensio-kb-radius, 18px);
-	background: var(--licensio-kb-tint, rgba(43, 163, 119, 0.08));
+	background: var(--licensio-kb-tint, color-mix(in srgb, currentColor 5%, transparent));
 }
 
 .licensio-kb-feedback__heading {
@@ -31,19 +31,24 @@
 .licensio-kb-feedback__button {
 	min-width: 5rem;
 	padding: 0.5rem 1rem;
-	border: 1px solid var(--licensio-kb-brand, #2ba377);
+	border: 1px solid var(--licensio-kb-brand, currentColor);
 	border-radius: var(--licensio-kb-radius, 18px);
-	background: var(--licensio-kb-surface, #fff);
-	color: var(--licensio-kb-brand, #2ba377);
+	background: transparent;
+	color: var(--licensio-kb-brand, currentColor);
 	font: inherit;
 	line-height: 1.2;
 	cursor: pointer;
 }
 
+/*
+ * Filled with the brand colour on hover when there is one. Without it there is
+ * no colour to fill with that is known to contrast with the text, so the hover
+ * deepens the tint instead and the label keeps the text colour.
+ */
 .licensio-kb-feedback__button:hover:not( [disabled] ),
 .licensio-kb-feedback__button:focus-visible {
-	background: var(--licensio-kb-brand, #2ba377);
-	color: var(--licensio-kb-brand-contrast, #fff);
+	background: var(--licensio-kb-brand, color-mix(in srgb, currentColor 14%, transparent));
+	color: var(--licensio-kb-brand-contrast, currentColor);
 }
 
 .licensio-kb-feedback__button[disabled] {
@@ -66,9 +71,9 @@
 	width: 100%;
 	margin-bottom: 0.75rem;
 	padding: 0.5rem;
-	border: 1px solid var(--licensio-kb-line, #dcefe4);
+	border: 1px solid var(--licensio-kb-line, color-mix(in srgb, currentColor 18%, transparent));
 	border-radius: var(--licensio-kb-radius, 18px);
-	background: var(--licensio-kb-surface, #fff);
+	background: transparent;
 	color: inherit;
 	font: inherit;
 	resize: vertical;
@@ -85,6 +90,6 @@
 
 .licensio-kb-feedback__summary {
 	margin: 0.5rem 0 0;
-	color: var(--licensio-kb-muted, #8b86a0);
+	color: var(--licensio-kb-muted, color-mix(in srgb, currentColor 80%, transparent));
 	font-size: 0.875rem;
 }

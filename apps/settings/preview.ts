@@ -11,7 +11,9 @@
  * `-rgb` and `-contrast` properties have to be computed here. `hexToRgb` and
  * `contrastColor` mirror `Licensio_KB_Templates::hex_to_rgb()` and
  * `::contrast_color()` — same fallback, same luminance coefficients, same
- * threshold. A unit test pins the PHP side of that pair.
+ * threshold. A unit test pins the PHP side of that pair. Like the PHP, an empty
+ * or unusable brand colour publishes none of the three properties, which is
+ * what lets the preview fall back to the theme's colours.
  *
  * @since 1.0.0
  */
@@ -93,6 +95,11 @@ export function previewProperties(
 
 		if ( preview.kind === 'color' ) {
 			const hex = String( value ?? '' );
+
+			if ( ! /^#([0-9a-f]{3}){1,2}$/i.test( hex ) ) {
+				return;
+			}
+
 			const rgb = hexToRgb( hex );
 
 			properties[ preview.properties.value ] = hex;

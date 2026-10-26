@@ -1033,6 +1033,31 @@ class Licensio_KB_Templates_Test extends Licensio_KB_Test_Case {
         $this->assertStringContainsString( '--licensio-kb-brand:#ff0000', $css );
         $this->assertStringContainsString( '--licensio-kb-brand-rgb:255,0,0', $css );
         $this->assertStringStartsWith( '.licensio-kb{', $css );
+        $this->assertStringContainsString( '.licensio-kb a,.licensio-kb a:hover,.licensio-kb a:focus{color:var(--licensio-kb-brand)}', $css );
+    }
+
+    /**
+     * With no brand colour the theme's colours are left alone.
+     *
+     * The stylesheet's `var()` fallbacks only apply while the brand properties
+     * are undeclared, and links keep the theme's colour only while no rule
+     * paints them, so an empty brand colour must print neither.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_empty_brand_colour_declares_nothing_brand_related() {
+        $this->options[ Licensio_KB_Settings::OPTION_NAME ] = array( 'brand_color' => '' );
+
+        $properties = $this->templates->custom_properties();
+        $css        = $this->templates->inline_css();
+
+        $this->assertArrayNotHasKey( '--licensio-kb-brand', $properties );
+        $this->assertArrayNotHasKey( '--licensio-kb-brand-rgb', $properties );
+        $this->assertArrayNotHasKey( '--licensio-kb-brand-contrast', $properties );
+        $this->assertStringNotContainsString( 'licensio-kb-brand', $css );
+        $this->assertStringContainsString( '--licensio-kb-max-width:72rem', $css );
     }
 
     /**
@@ -1163,9 +1188,9 @@ class Licensio_KB_Templates_Test extends Licensio_KB_Test_Case {
         $properties = $templates->custom_properties();
         $css        = $templates->inline_css();
 
-        $this->assertSame( '#3c569f', $properties['--licensio-kb-brand'] );
+        $this->assertArrayNotHasKey( '--licensio-kb-brand', $properties );
         $this->assertSame( '72rem', $properties['--licensio-kb-max-width'] );
-        $this->assertSame( '0 4px 14px rgba(16,24,40,0.06)', $properties['--licensio-kb-card-shadow'] );
+        $this->assertSame( Licensio_KB_Templates::CARD_SHADOW, $properties['--licensio-kb-card-shadow'] );
 
         $this->assertStringNotContainsString( 'evil.test', $css );
         $this->assertStringNotContainsString( '}body{', $css );
@@ -1173,24 +1198,24 @@ class Licensio_KB_Templates_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * The last-resort brand colour is the Licensio green, not a stray blue.
+     * A store with no registered defaults still invents no brand colour.
      *
-     * The registered default is what a real settings store hands back, so the
-     * literal in the template layer is only reached by a store that does not
-     * declare one at all. That makes it the one value nothing else can correct,
-     * and the one place a stale colour could sit unnoticed.
+     * Without a brand colour the knowledge base takes the theme's colours, so
+     * the template layer must not supply one of its own when the store has
+     * nothing to hand back.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_the_last_resort_brand_colour_is_the_licensio_indigo() {
+    public function test_a_store_without_defaults_invents_no_brand_colour() {
         $templates = new Licensio_KB_Templates( new Licensio_KB_Defaultless_Settings() );
 
         $properties = $templates->custom_properties();
 
-        $this->assertSame( '#3c569f', $properties['--licensio-kb-brand'] );
-        $this->assertSame( '60,86,159', $properties['--licensio-kb-brand-rgb'] );
+        $this->assertArrayNotHasKey( '--licensio-kb-brand', $properties );
+        $this->assertArrayNotHasKey( '--licensio-kb-brand-rgb', $properties );
+        $this->assertSame( '72rem', $properties['--licensio-kb-max-width'] );
     }
 
     /**
@@ -1211,31 +1236,34 @@ class Licensio_KB_Templates_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * The stylesheet pins the knowledge base design tokens.
+     * The front-end stylesheets set no colour and no font of their own.
      *
-     * Radius, card shadow and heading font are what make the knowledge base
-     * render the same page on every theme, and nothing else asserts them: the
-     * brand colour is covered by the settings tests and the card icons by
-     * their own cross-layer contract test, but these three can be edited to
-     * any value and every other test still passes. A regression here is
-     * invisible in CI and obvious on the page, which is the worst
-     * combination, so this pins them the same way the arrow contract is
-     * pinned.
-     *
-     * Each is asserted as a plain literal because the tokens are owned
-     * outright: the knowledge base is meant to look the same whatever theme
-     * is active, so a deferral to a theme token would be the bug.
+     * The knowledge base inherits its text colour, link colour and typeface
+     * from the active theme, and separates its panels with tints mixed from
+     * `currentColor`. A fixed hex or rgb colour, or a font family, would make
+     * it look pasted on to any theme that differs from the one it was written
+     * against, and nothing on the page would fail loudly, so the stylesheets
+     * are checked for them directly. The radius is pinned because the layout
+     * is meant to stay the same.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_the_stylesheet_pins_the_licensio_design_tokens() {
+    public function test_the_front_end_stylesheets_set_no_colour_or_font() {
+        foreach ( array( 'licensio-kb.css', 'search.css', 'feedback.css', 'blocks.css' ) as $file ) {
+            $css = (string) file_get_contents( LICENSIO_KB_ABSPATH . 'assets/css/' . $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+            $css = (string) preg_replace( '#/\*.*?\*/#s', '', $css );
+
+            $this->assertDoesNotMatchRegularExpression( '/#[0-9a-f]{3,8}\b/i', $css, $file . ' sets a fixed hex colour.' );
+            $this->assertDoesNotMatchRegularExpression( '/\b(rgb|rgba|hsl|hsla)\s*\(/i', $css, $file . ' sets a fixed colour function.' );
+            $this->assertDoesNotMatchRegularExpression( '/font-family\s*:/i', $css, $file . ' sets a font family.' );
+        }
+
         $css = (string) file_get_contents( LICENSIO_KB_ABSPATH . 'assets/css/licensio-kb.css' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 
         $this->assertStringContainsString( '--licensio-kb-radius: 10px;', $css );
-        $this->assertStringContainsString( '--licensio-kb-card-shadow: 0 4px 14px rgba(16, 24, 40, 0.06);', $css );
-        $this->assertStringContainsString( '--licensio-kb-font-head: "Plus Jakarta Sans"', $css );
+        $this->assertStringNotContainsString( '--licensio-kb-brand:', $css, 'The stylesheet must not declare a brand colour of its own.' );
     }
     /**
      * An article card exposes exactly one link.
