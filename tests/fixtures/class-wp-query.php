@@ -80,6 +80,38 @@ if ( ! class_exists( 'WP_Query' ) ) {
         public $is_feed = false;
 
         /**
+         * The index of the post the loop is on, or -1 before the loop.
+         *
+         * @since 1.0.0
+         * @var int
+         */
+        public $current_post = -1;
+
+        /**
+         * The number of posts the query found for this page.
+         *
+         * @since 1.0.0
+         * @var int
+         */
+        public $post_count = 0;
+
+        /**
+         * Whether the loop is running.
+         *
+         * @since 1.0.0
+         * @var bool
+         */
+        public $in_the_loop = false;
+
+        /**
+         * The post the loop is on.
+         *
+         * @since 1.0.0
+         * @var WP_Post|null
+         */
+        public $post = null;
+
+        /**
          * Constructor.
          *
          * @since 1.0.0

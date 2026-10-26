@@ -50,6 +50,8 @@ abstract class Licensio_KB_Test_Case extends TestCase {
         parent::setUp();
         Monkey\setUp();
 
+        Licensio_KB_Templates::forget_rendered_views();
+
         $this->options = array();
         $this->writes  = array();
 
@@ -160,6 +162,8 @@ abstract class Licensio_KB_Test_Case extends TestCase {
         Functions\when( 'is_multisite' )->justReturn( false );
 
         Functions\when( 'is_admin' )->justReturn( false );
+
+        Functions\when( 'in_the_loop' )->justReturn( false );
 
         Functions\when( 'wp_json_encode' )->alias(
             function ( $value ) {

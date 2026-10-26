@@ -14,6 +14,7 @@
  * `bin/e2e-env.sh`.
  *
  * @since 1.0.0
+ * @since 1.0.0 Checks the view block is kept out of the post editor inserter.
  */
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
@@ -143,6 +144,47 @@ test.describe( 'Knowledge base blocks', () => {
 		}
 	} );
 
+	test( 'the view block is not offered in the post editor', async ( {
+		page,
+	} ) => {
+		await newPost( page );
+
+		// A view in a post renders nothing on the front end, so only the
+		// Site Editor, where templates are built, offers it.
+		await expect
+			.poll( () =>
+				page.evaluate(
+					() =>
+						(
+							window as Window & {
+								wp?: {
+									blocks?: {
+										getBlockType: ( name: string ) => {
+											supports?: { inserter?: boolean };
+										};
+									};
+								};
+							}
+						 ).wp?.blocks?.getBlockType( 'licensio-kb/view' )
+							?.supports?.inserter
+				)
+			)
+			.toBe( false );
+
+		await page
+			.getByRole( 'button', {
+				name: /Block Inserter|Toggle block inserter/,
+			} )
+			.click();
+		await page.getByPlaceholder( 'Search' ).fill( 'Knowledge Base' );
+		await expect( blockOption( page, BLOCKS[ 0 ].title ) ).toBeVisible( {
+			timeout: 20_000,
+		} );
+		await expect( blockOption( page, 'Knowledge Base View' ) ).toHaveCount(
+			0
+		);
+	} );
+
 	test( 'a published page renders every block and every shortcode', async ( {
 		page,
 		request,
@@ -184,12 +226,29 @@ test.describe( 'Knowledge base blocks', () => {
 
 		const body = await created.json();
 
-		await page.goto( body.link );
+		try {
+			await page.goto( body.link );
 
-		for ( const block of BLOCKS ) {
-			// One from the block, one from its shortcode.
-			await expect( page.locator( `.${ block.marker }` ) ).toHaveCount(
-				2
+			for ( const block of BLOCKS ) {
+				// One from the block, one from its shortcode.
+				await expect(
+					page.locator( `.${ block.marker }` )
+				).toHaveCount( 2 );
+			}
+		} finally {
+			// Delete the page again, or every run adds one more to the site and its menus.
+			const deleted = await request.delete(
+				`/?rest_route=/wp/v2/pages/${ body.id }&force=true`,
+				{
+					headers: {
+						'X-WP-Nonce': nonce,
+						Cookie: cookieHeader,
+					},
+				}
+			);
+
+			expect( deleted.ok(), 'The coverage page was not deleted.' ).toBe(
+				true
 			);
 		}
 	} );

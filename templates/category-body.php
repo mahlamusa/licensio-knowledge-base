@@ -4,10 +4,10 @@
  *
  * The content half of a category archive: the page header, the divided
  * sub-category grid and the article list. The classic template wraps it in the
- * theme's header and footer; the `[licensio_kb_view view="category"]`
- * shortcode renders it inside a block template, so both template paradigms
- * serve the same markup and the same stylesheet. Override from a theme by
- * copying this file to `licensio-kb/category-body.php`.
+ * theme's header and footer; the `licensio-kb/view` block renders it inside a
+ * block template, so both template paradigms serve the same markup and the same
+ * stylesheet. Override from a theme by copying this file to
+ * `licensio-kb/category-body.php`.
  *
  * The grid follows the sidebar, the way the knowledge base archive does: two
  * columns of sub-category cards beside one, three without — and with no

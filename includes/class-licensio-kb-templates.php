@@ -13,6 +13,7 @@
  *
  * @package Licensio_KB
  * @since   1.0.0
+ * @since   1.0.0 The view shortcode renders the single article, tag and search bodies too.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -21,6 +22,7 @@ defined( 'ABSPATH' ) || exit;
  * Loads, styles and feeds the classic knowledge base templates.
  *
  * @since 1.0.0
+ * @since 1.0.0 Serves the single article, tag and search bodies to block templates.
  */
 class Licensio_KB_Templates {
 
@@ -57,16 +59,28 @@ class Licensio_KB_Templates {
      *
      * The keys are what a block template names; the values are the body
      * templates. A whitelist rather than a pass-through so the shortcode can
-     * never be pointed at a template that was not built to stand alone —
-     * `single`, for one, expects article hooks a template part does not fire.
+     * never be pointed at a template that was not built to stand alone.
+     * `single-body` fires the article hooks itself, so it stands alone too.
      *
      * @since 1.0.0
+     * @since 1.0.0 Added the single article, tag and search bodies.
      * @var array<string, string>
      */
     const VIEW_BODIES = array(
         'archive'  => 'archive-body',
         'category' => 'category-body',
+        'single'   => 'single-body',
+        'tag'      => 'tag-body',
+        'search'   => 'search-body',
     );
+
+    /**
+     * The views rendered so far in this request, keyed by view name.
+     *
+     * @since 1.0.0
+     * @var array<string, true>
+     */
+    private static $rendered_views = array();
 
     /**
      * Layout width setting values mapped to a CSS length.
@@ -140,21 +154,26 @@ class Licensio_KB_Templates {
     }
 
     /**
-     * Render a knowledge base view body inside a block template.
+     * Render a knowledge base view body from the view shortcode.
      *
-     * A block theme resolves a knowledge base request to one of the plugin's
-     * block templates, and those templates render this shortcode for the body
-     * of the view — the same `archive-body` / `category-body` template the
-     * classic layer includes between `get_header()` and `get_footer()`. That
-     * single shared body is what keeps the page identical under a classic
-     * theme, a block theme and any theme in between: one markup, one
-     * stylesheet, no second design to drift.
+     * The shortcode renders the same `archive-body`, `category-body`,
+     * `single-body`, `tag-body` or `search-body` template the classic layer
+     * includes between `get_header()` and `get_footer()`, so a template built
+     * around it serves one markup and one stylesheet under any theme.
+     *
+     * The body templates loop the main query, so the shortcode only renders
+     * from template level, outside any loop. Inside a loop, which is where
+     * post content is rendered, the body's loop would reach the end of the
+     * main query and rewind it, and the outer loop would then start again,
+     * render the shortcode again and never finish. See `render_view()`.
      *
      * @since 1.0.0
+     * @since 1.0.0 Renders the single article, tag and search bodies as well.
+     * @since 1.0.0 Renders nothing inside a loop or for a view the request is not.
      *
      * @param array<string, mixed>|string $atts The shortcode attributes.
      *
-     * @return string The view body markup, or an empty string for an unknown view.
+     * @return string The view body markup, or an empty string when the view cannot render here.
      */
     public function render_view_shortcode( $atts = array() ) {
         $atts = shortcode_atts(
@@ -163,13 +182,103 @@ class Licensio_KB_Templates {
             self::VIEW_SHORTCODE_TAG
         );
 
-        $view = isset( self::VIEW_BODIES[ $atts['view'] ] ) ? self::VIEW_BODIES[ $atts['view'] ] : '';
-
-        if ( '' === $view ) {
+        if ( in_the_loop() ) {
             return '';
         }
 
-        return licensio_kb_get_template( $view, array(), false );
+        return self::render_view( (string) $atts['view'] );
+    }
+
+    /**
+     * Render one of the view bodies for the current request.
+     *
+     * Renders nothing for an unknown view, for a view the current request is
+     * not (a tag archive body on a page, say), from inside post content, and
+     * while another view body is already rendering. Every one of those is a
+     * view placed somewhere it was never built for: the body would loop a
+     * main query that is not the one it expects, or render itself inside
+     * itself.
+     *
+     * Each view also renders at most once per request. A block theme builds
+     * the template before `wp_head` and before any template part or widget
+     * area that follows it, so the template's own view is always the one that
+     * renders; a copy placed in a widget, or expanded by a plugin that runs
+     * shortcodes over the post outside `the_content`, renders nothing rather
+     * than a second article with the same IDs and the article hooks again.
+     * Under a classic theme the page templates include the bodies directly,
+     * so a view rendered through here would always be that second copy, and
+     * renders nothing.
+     *
+     * @since 1.0.0
+     * @since 1.0.0 Renders each view at most once per request, and only for block templates.
+     *
+     * @param string $view The view name: a key of `VIEW_BODIES`.
+     *
+     * @return string The view body markup, or an empty string when the view cannot render here.
+     */
+    public static function render_view( $view ) {
+        static $rendering = false;
+
+        $view = (string) $view;
+
+        if ( ! isset( self::VIEW_BODIES[ $view ] ) || $rendering || isset( self::$rendered_views[ $view ] ) || doing_filter( 'the_content' ) ) {
+            return '';
+        }
+
+        if ( ! licensio_kb_use_block_templates() || ! self::view_matches_request( $view ) ) {
+            return '';
+        }
+
+        self::$rendered_views[ $view ] = true;
+        $rendering                     = true;
+
+        try {
+            $markup = licensio_kb_get_template( self::VIEW_BODIES[ $view ], array(), false );
+        } finally {
+            $rendering = false;
+        }
+
+        return (string) $markup;
+    }
+
+    /**
+     * Forget which views this request has rendered.
+     *
+     * A request renders each view once, so this is for code that renders
+     * more than one request in one process, such as the test suite.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public static function forget_rendered_views() {
+        self::$rendered_views = array();
+    }
+
+    /**
+     * Whether a view is the one the current request asks for.
+     *
+     * @since 1.0.0
+     *
+     * @param string $view The view name: a key of `VIEW_BODIES`.
+     *
+     * @return bool True when the view body belongs on this request.
+     */
+    public static function view_matches_request( $view ) {
+        switch ( (string) $view ) {
+            case 'single':
+                return is_singular( Licensio_KB_Post_Types::POST_TYPE );
+            case 'category':
+                return is_tax( Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
+            case 'tag':
+                return is_tax( Licensio_KB_Post_Types::TAXONOMY_TAG );
+            case 'search':
+                return is_search() && self::is_article_search();
+            case 'archive':
+                return is_post_type_archive( Licensio_KB_Post_Types::POST_TYPE );
+        }
+
+        return false;
     }
 
     /**

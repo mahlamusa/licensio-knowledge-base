@@ -451,7 +451,7 @@ class Licensio_KB_Blocks_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     public function test_every_block_registers_its_block_and_its_shortcode() {
-        $this->assertCount( 4, $this->registered, 'Four blocks are expected.' );
+        $this->assertCount( 5, $this->registered, 'Five blocks are expected.' );
 
         foreach ( $this->pairs() as $block_name => $pair ) {
             $this->assertArrayHasKey(
@@ -466,6 +466,384 @@ class Licensio_KB_Blocks_Test extends Licensio_KB_Test_Case {
                 $block_name . ' and its shortcode must share one callable.'
             );
         }
+    }
+
+    /**
+     * The view block is registered without a shortcode of its own.
+     *
+     * The `[licensio_kb_view]` shortcode belongs to the template layer and
+     * renders from template level only; the block renders inside core's loop.
+     * They must not share a callback.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_view_block_registers_no_shortcode() {
+        $callback = $this->render_callback( 'licensio-kb/view' );
+
+        $this->assertIsCallable( $callback );
+        $this->assertArrayNotHasKey( Licensio_KB_Templates::VIEW_SHORTCODE_TAG, $this->shortcodes );
+    }
+
+    /**
+     * The editor preview points each view at real, public content.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_view_block_previews_each_view_against_published_content() {
+        $block = new Licensio_KB_View_Block();
+        $term  = new WP_Term(
+            array(
+                'term_id' => 3,
+                'slug'    => 'billing',
+                'name'    => 'Billing',
+            )
+        );
+
+        $this->articles = array(
+            new WP_Post(
+                array(
+                    'ID'         => 42,
+                    'post_title' => 'Resetting your password',
+                    'post_type'  => Licensio_KB_Post_Types::POST_TYPE,
+                )
+            ),
+        );
+
+        $term_args = array();
+
+        Functions\when( 'get_terms' )->alias(
+            function ( $args ) use ( $term, &$term_args ) {
+                $term_args = $args;
+
+                return array( $term );
+            }
+        );
+
+        $this->assertSame( array( 'post_type' => Licensio_KB_Post_Types::POST_TYPE ), $block->preview_query_args( 'archive' ) );
+
+        $this->assertSame(
+            array(
+                'p'         => 42,
+                'post_type' => Licensio_KB_Post_Types::POST_TYPE,
+            ),
+            $block->preview_query_args( 'single' )
+        );
+        $this->assertSame( 'publish', $this->query_args['post_status'] );
+        $this->assertFalse( $this->query_args['has_password'], 'A protected article is never previewed.' );
+
+        $this->assertSame(
+            array(
+                's'         => 'Resetting your password',
+                'post_type' => Licensio_KB_Post_Types::POST_TYPE,
+            ),
+            $block->preview_query_args( 'search' )
+        );
+
+        $this->assertSame(
+            array(
+                'taxonomy' => Licensio_KB_Post_Types::TAXONOMY_TAG,
+                'term'     => 'billing',
+            ),
+            $block->preview_query_args( 'tag' )
+        );
+        $this->assertTrue( $term_args['hide_empty'] );
+
+        $this->assertSame(
+            array(
+                'taxonomy' => Licensio_KB_Post_Types::TAXONOMY_CATEGORY,
+                'term'     => 'billing',
+            ),
+            $block->preview_query_args( 'category' )
+        );
+    }
+
+    /**
+     * With nothing published there is nothing to preview.
+     *
+     * The editor then shows its labelled placeholder.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_view_block_has_nothing_to_preview_on_an_empty_site() {
+        $block = new Licensio_KB_View_Block();
+
+        $this->articles = array();
+
+        Functions\when( 'get_terms' )->justReturn( array() );
+
+        foreach ( array( 'single', 'search', 'tag', 'category' ) as $view ) {
+            $this->assertSame( array(), $block->preview_query_args( $view ), $view );
+            $this->assertSame( '', $block->preview( $view ), $view );
+        }
+    }
+
+    /**
+     * Stand a view body in for the preview, through the request conditional it asks first.
+     *
+     * The archive body is the one view whose preview needs no stored content,
+     * so `is_post_type_archive()` is where the preview's render first reaches
+     * the template layer. The stand-in moves the globals a view body's loop
+     * moves, then either says the request is not an archive or throws.
+     *
+     * @since 1.0.0
+     *
+     * @param bool $fails Whether the stand-in body throws.
+     *
+     * @return void
+     */
+    private function stub_preview_body( $fails ) {
+        Functions\when( 'wp_is_block_theme' )->justReturn( true );
+        Functions\when( 'is_post_type_archive' )->alias(
+            function () use ( $fails ) {
+                // phpcs:disable WordPress.WP.GlobalVariablesOverride.Prohibited -- The stand-in moves the globals a real view body moves.
+                $GLOBALS['post']       = new WP_Post( array( 'ID' => 8 ) );
+                $GLOBALS['id']         = 8;
+                $GLOBALS['authordata'] = 'sample author';
+                $GLOBALS['pages']      = array( 'sample page' );
+                $GLOBALS['numpages']   = 1;
+                // phpcs:enable WordPress.WP.GlobalVariablesOverride.Prohibited
+
+                if ( $fails ) {
+                    throw new RuntimeException( 'The view body failed.' );
+                }
+
+                return false;
+            }
+        );
+    }
+
+    /**
+     * Data for the preview restore tests: a body that returns and one that throws.
+     *
+     * @since 1.0.0
+     *
+     * @return array<string, array{0: bool}> Whether the body throws.
+     */
+    public function preview_outcomes() {
+        return array(
+            'returns' => array( false ),
+            'throws'  => array( true ),
+        );
+    }
+
+    /**
+     * A preview puts back every global it moved.
+     *
+     * The edited post's query, global post and postdata are what the rest of
+     * the request renders with, so they come back exactly as they were.
+     *
+     * @since 1.0.0
+     *
+     * @dataProvider preview_outcomes
+     *
+     * @param bool $fails Whether the view body throws.
+     *
+     * @return void
+     */
+    public function test_the_view_block_preview_restores_the_globals_it_moved( $fails ) {
+        $query  = new WP_Query();
+        $edited = new WP_Post( array( 'ID' => 5 ) );
+
+        // phpcs:disable WordPress.WP.GlobalVariablesOverride.Prohibited -- The test stands up the request the preview runs in.
+        $GLOBALS['wp_query']     = $query;
+        $GLOBALS['wp_the_query'] = $query;
+        $GLOBALS['post']         = $edited;
+        $GLOBALS['id']           = 5;
+        $GLOBALS['authordata']   = 'edited author';
+        $GLOBALS['pages']        = array( 'edited page' );
+        // phpcs:enable WordPress.WP.GlobalVariablesOverride.Prohibited
+        unset( $GLOBALS['numpages'] );
+
+        $this->stub_preview_body( $fails );
+
+        $thrown = false;
+
+        try {
+            $this->assertSame( '', ( new Licensio_KB_View_Block() )->preview( 'archive' ) );
+        } catch ( RuntimeException $exception ) {
+            $thrown = true;
+        }
+
+        $this->assertSame( $fails, $thrown, 'The stand-in body ran.' );
+
+        $this->assertSame( $query, $GLOBALS['wp_query'] );
+        $this->assertSame( $query, $GLOBALS['wp_the_query'] );
+        $this->assertSame( $edited, $GLOBALS['post'] );
+        $this->assertSame( 5, $GLOBALS['id'] );
+        $this->assertSame( 'edited author', $GLOBALS['authordata'] );
+        $this->assertSame( array( 'edited page' ), $GLOBALS['pages'] );
+        $this->assertArrayNotHasKey( 'numpages', $GLOBALS, 'A global that was not set is unset again.' );
+
+        unset( $GLOBALS['wp_query'], $GLOBALS['wp_the_query'], $GLOBALS['post'], $GLOBALS['id'], $GLOBALS['authordata'], $GLOBALS['pages'] );
+    }
+
+    /**
+     * A preview with no post of its own leaves no sample post behind.
+     *
+     * The Site Editor previews a template with no global post and no
+     * postdata, so every global the sample article's loop set is unset again.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_view_block_preview_leaves_no_sample_postdata_without_a_post() {
+        foreach ( Licensio_KB_View_Block::PREVIEW_GLOBALS as $name ) {
+            unset( $GLOBALS[ $name ] );
+        }
+
+        $this->stub_preview_body( false );
+
+        $this->assertSame( '', ( new Licensio_KB_View_Block() )->preview( 'archive' ) );
+
+        foreach ( Licensio_KB_View_Block::PREVIEW_GLOBALS as $name ) {
+            $this->assertArrayNotHasKey( $name, $GLOBALS, $name );
+        }
+    }
+
+    /**
+     * A request that is not a REST request is never an editor preview.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_request_outside_rest_is_not_a_preview() {
+        Functions\when( 'current_user_can' )->justReturn( true );
+
+        $this->assertFalse( Licensio_KB_View_Block::is_preview_request() );
+    }
+
+    /**
+     * A REST request from a user who can edit posts is an editor preview.
+     *
+     * @runInSeparateProcess
+     * @preserveGlobalState disabled
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_rest_request_from_an_editor_is_a_preview() {
+        define( 'REST_REQUEST', true );
+
+        Functions\expect( 'current_user_can' )->once()->with( 'edit_posts' )->andReturn( true );
+
+        $this->assertTrue( Licensio_KB_View_Block::is_preview_request() );
+    }
+
+    /**
+     * A REST request from a user who cannot edit posts is not a preview.
+     *
+     * @runInSeparateProcess
+     * @preserveGlobalState disabled
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_rest_request_from_a_reader_is_not_a_preview() {
+        define( 'REST_REQUEST', true );
+
+        Functions\when( 'current_user_can' )->justReturn( false );
+
+        $this->assertFalse( Licensio_KB_View_Block::is_preview_request() );
+    }
+
+    /**
+     * Post content rendered for a REST response is not a preview.
+     *
+     * @runInSeparateProcess
+     * @preserveGlobalState disabled
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_post_content_in_a_rest_response_is_not_a_preview() {
+        define( 'REST_REQUEST', true );
+
+        Functions\when( 'current_user_can' )->justReturn( true );
+
+        Filters\expectApplied( 'the_content' )->once()->andReturnUsing(
+            function () {
+                return Licensio_KB_View_Block::is_preview_request() ? 'PREVIEW' : 'NOT A PREVIEW';
+            }
+        );
+
+        $this->assertSame( 'NOT A PREVIEW', apply_filters( 'the_content', '' ) );
+    }
+
+    /**
+     * The view block is kept out of the inserter outside the Site Editor.
+     *
+     * A view placed in a post or page renders nothing on the front end, so
+     * only the Site Editor, where templates are built, offers it.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_view_block_is_offered_in_the_site_editor_only() {
+        $block    = new Licensio_KB_View_Block();
+        $path     = LICENSIO_KB_ABSPATH . 'blocks/view/block.json';
+        $metadata = json_decode( (string) file_get_contents( $path ), true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+
+        $this->assertFalse( $metadata['supports']['inserter'], 'The block is out of the inserter by default.' );
+
+        Functions\when( 'is_admin' )->justReturn( true );
+
+        foreach ( array( 'post.php', 'post-new.php', 'widgets.php', 'customize.php' ) as $screen ) {
+            $GLOBALS['pagenow'] = $screen; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- The test picks the admin screen.
+
+            $this->assertFalse( $block->offer_in_site_editor( $metadata )['supports']['inserter'], $screen );
+        }
+
+        $GLOBALS['pagenow'] = 'site-editor.php'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- The test picks the admin screen.
+
+        $this->assertTrue( $block->offer_in_site_editor( $metadata )['supports']['inserter'] );
+
+        $other = array(
+            'name'     => 'licensio-kb/faq',
+            'supports' => array(),
+        );
+
+        $this->assertSame( $other, $block->offer_in_site_editor( $other ), 'Other blocks are left alone.' );
+
+        unset( $GLOBALS['pagenow'] );
+    }
+
+    /**
+     * The view block's editor preview can load the feedback form styles.
+     *
+     * The Single Article preview renders the feedback form, and the widget
+     * registers its stylesheet only on the front end, so the block registrar
+     * registers the same handle, source and version on `init`.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_feedback_stylesheet_is_registered_for_the_editor() {
+        $styles = array();
+
+        Functions\when( 'wp_register_style' )->alias(
+            function ( $handle, $src ) use ( &$styles ) {
+                $styles[ $handle ] = $src;
+
+                return true;
+            }
+        );
+
+        $this->blocks->register_assets();
+
+        $this->assertSame( LICENSIO_KB_ASSETS_URL . 'css/feedback.css', $styles[ Licensio_KB_Feedback_Widget::STYLE_HANDLE ] ?? null );
     }
 
     /**
@@ -486,6 +864,7 @@ class Licensio_KB_Blocks_Test extends Licensio_KB_Test_Case {
             'category-grid' => 'Licensio_KB_Category_Grid_Block',
             'breadcrumbs'   => 'Licensio_KB_Breadcrumbs_Block',
             'faq'           => 'Licensio_KB_FAQ_Block',
+            'view'          => 'Licensio_KB_View_Block',
         );
 
         foreach ( $expected as $directory => $class_name ) {
@@ -500,7 +879,11 @@ class Licensio_KB_Blocks_Test extends Licensio_KB_Test_Case {
             $this->assertSame( Licensio_KB_Blocks::CATEGORY, $metadata['category'] );
             $this->assertSame( 'file:./index.js', $metadata['editorScript'] );
             $this->assertSame( Licensio_KB_Blocks::STYLE_HANDLE, $metadata['style'] );
-            $this->assertSame( Licensio_KB_Blocks::EDITOR_STYLE_HANDLE, $metadata['editorStyle'] );
+            $this->assertSame(
+                'view' === $directory ? array( Licensio_KB_Blocks::EDITOR_STYLE_HANDLE, Licensio_KB_Feedback_Widget::STYLE_HANDLE ) : Licensio_KB_Blocks::EDITOR_STYLE_HANDLE,
+                $metadata['editorStyle'],
+                $directory . ' declares a different editor style.'
+            );
 
             $this->assertSame(
                 array_keys( $class_name::defaults() ),

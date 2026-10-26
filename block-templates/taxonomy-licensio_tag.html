@@ -1,44 +1,8 @@
 <!-- wp:template-part {"slug":"header","tagName":"header"} /-->
 
-<!-- wp:group {"tagName":"main","className":"licensio-kb licensio-kb--tag","layout":{"type":"constrained"}} -->
-<main class="wp-block-group licensio-kb licensio-kb--tag">
-<!-- wp:template-part {"slug":"licensio-kb-header","tagName":"div"} /-->
-
-<!-- wp:group {"className":"licensio-kb__header","layout":{"type":"constrained"}} -->
-<div class="wp-block-group licensio-kb__header">
-<!-- wp:query-title {"type":"archive","level":1,"className":"licensio-kb__title"} /-->
-
-<!-- wp:term-description {"className":"licensio-kb__description"} /-->
-</div>
-<!-- /wp:group -->
-
-<!-- wp:query {"queryId":0,"query":{"perPage":10,"pages":0,"offset":0,"postType":"licensio_article","order":"asc","orderBy":"title","author":"","search":"","exclude":[],"sticky":"","inherit":true},"className":"licensio-kb__list","layout":{"type":"default"}} -->
-<div class="wp-block-query licensio-kb__list">
-<!-- wp:post-template -->
-<!-- wp:group {"className":"licensio-kb-card","layout":{"type":"constrained"}} -->
-<div class="wp-block-group licensio-kb-card">
-<!-- wp:post-title {"isLink":true,"className":"licensio-kb-card__title"} /-->
-
-<!-- wp:post-excerpt {"className":"licensio-kb-card__excerpt"} /-->
-</div>
-<!-- /wp:group -->
-<!-- /wp:post-template -->
-
-<!-- wp:query-pagination {"className":"licensio-kb__pagination"} -->
-<!-- wp:query-pagination-previous /-->
-
-<!-- wp:query-pagination-numbers /-->
-
-<!-- wp:query-pagination-next /-->
-<!-- /wp:query-pagination -->
-
-<!-- wp:query-no-results -->
-<!-- wp:paragraph {"className":"licensio-kb__no-results"} -->
-<p class="licensio-kb__no-results">No articles carry this tag yet.</p>
-<!-- /wp:paragraph -->
-<!-- /wp:query-no-results -->
-</div>
-<!-- /wp:query -->
+<!-- wp:group {"tagName":"main","layout":{"type":"constrained"}} -->
+<main class="wp-block-group">
+<!-- wp:licensio-kb/view {"view":"tag"} /-->
 </main>
 <!-- /wp:group -->
 

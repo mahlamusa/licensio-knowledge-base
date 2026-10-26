@@ -387,6 +387,444 @@ class Licensio_KB_Templates_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * The view shortcode renders the same single article body.
+     *
+     * A block theme renders the single article through the view shortcode, so
+     * it must carry the hero with its breadcrumbs and search field, the
+     * article and the hooks, exactly once each, as the classic template does.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_view_shortcode_renders_the_single_article_body() {
+        Actions\expectDone( 'licensio_before_article' )->once();
+        Actions\expectDone( 'licensio_after_article' )->once();
+        Actions\expectDone( 'licensio_article_footer' )->once();
+
+        $markup = $this->render_single_article( 'Resetting your password', true );
+
+        $this->assertStringContainsString( 'ARTICLE BODY', $markup );
+        $this->assertStringContainsString( 'class="licensio-kb__hero"', $markup );
+        $this->assertStringContainsString( 'class="licensio-kb__crumbs"', $markup );
+        $this->assertStringContainsString( 'class="licensio-kb__search"', $markup );
+        $this->assertStringContainsString( 'licensio-kb licensio-kb--single', $markup );
+        $this->assertSame( 1, substr_count( $markup, 'class="licensio-kb__hero"' ) );
+    }
+
+    /**
+     * The view block renders the article core's loop already set up.
+     *
+     * On a single article core loops the main query around the block
+     * template. The block must render the current article once, with the
+     * hooks once each, and never open a loop of its own: a second loop would
+     * fire the main query's loop hooks twice.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_view_block_renders_the_current_article_inside_the_loop() {
+        Actions\expectDone( 'licensio_before_article' )->once();
+        Actions\expectDone( 'licensio_after_article' )->once();
+        Actions\expectDone( 'licensio_article_footer' )->once();
+        Actions\expectDone( 'loop_start' )->never();
+        Actions\expectDone( 'loop_end' )->never();
+
+        $markup = $this->render_single_article( 'Resetting your password', false, true );
+
+        $this->assertSame( 1, substr_count( $markup, 'ARTICLE BODY' ) );
+        $this->assertSame( 1, substr_count( $markup, 'class="licensio-kb__hero"' ) );
+        $this->assertSame( 1, substr_count( $markup, '<article ' ) );
+        $this->assertStringContainsString( 'licensio-kb licensio-kb--single', $markup );
+        $this->assertStringNotContainsString( 'licensio-kb-block--view', $markup, 'The body carries its own wrappers.' );
+    }
+
+    /**
+     * A theme override that opens its own loop renders the article once.
+     *
+     * Core has already moved the main query onto its one article when the
+     * view block renders, so an override of `single-body.php` written with
+     * the usual `while ( have_posts() ) : the_post();` loop would find no
+     * posts left and render an empty article. The block puts the query back
+     * to the start of its loop for the body, and afterwards back to where
+     * core left it so core's own loop ends normally.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_theme_override_with_its_own_loop_renders_the_article_once() {
+        $article = new WP_Post(
+            array(
+                'ID'        => 42,
+                'post_type' => Licensio_KB_Post_Types::POST_TYPE,
+            )
+        );
+
+        // Where core's singular loop leaves the main query when the block renders.
+        $query               = new WP_Query();
+        $query->posts        = array( $article );
+        $query->post_count   = 1;
+        $query->current_post = 0;
+        $query->in_the_loop  = true;
+        $query->post         = $article;
+
+        // phpcs:disable WordPress.WP.GlobalVariablesOverride.Prohibited -- The test stands up core's loop.
+        $GLOBALS['wp_query'] = $query;
+        $GLOBALS['post']     = $article;
+        // phpcs:enable WordPress.WP.GlobalVariablesOverride.Prohibited
+
+        $this->stub_view_request( 'single' );
+        $this->stub_theme_lookup();
+
+        Functions\when( 'wp_is_block_theme' )->justReturn( true );
+        Functions\when( 'in_the_loop' )->alias(
+            function () {
+                return $GLOBALS['wp_query']->in_the_loop;
+            }
+        );
+        Functions\when( 'get_the_ID' )->justReturn( 42 );
+        Functions\when( 'get_queried_object_id' )->justReturn( 42 );
+
+        // The two loop functions, as WP_Query runs them on the global query.
+        Functions\when( 'have_posts' )->alias(
+            function () {
+                $loop = $GLOBALS['wp_query'];
+
+                if ( $loop->current_post + 1 < $loop->post_count ) {
+                    return true;
+                }
+
+                if ( $loop->current_post + 1 === $loop->post_count ) {
+                    $loop->current_post = -1;
+                    $loop->post         = $loop->posts[0];
+                }
+
+                $loop->in_the_loop = false;
+
+                return false;
+            }
+        );
+        Functions\when( 'the_post' )->alias(
+            function () {
+                $loop = $GLOBALS['wp_query'];
+
+                $loop->in_the_loop = true;
+                ++$loop->current_post;
+                $loop->post      = $loop->posts[ $loop->current_post ];
+                $GLOBALS['post'] = $loop->post; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- The stand-in sets up the post as the_post() does.
+            }
+        );
+
+        file_put_contents( $this->theme_dir . '/licensio-kb/single-body.php', '<?php while ( have_posts() ) : the_post(); echo "ARTICLE " . get_the_ID() . ";"; endwhile;' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+
+        $markup = ( new Licensio_KB_View_Block() )->render( array( 'view' => 'single' ) );
+
+        $this->assertSame( 'ARTICLE 42;', $markup );
+        $this->assertSame( 0, $query->current_post, 'The main query is back on its article.' );
+        $this->assertTrue( $query->in_the_loop, 'Core\'s loop is still running.' );
+        $this->assertSame( $article, $query->post );
+        $this->assertSame( $article, $GLOBALS['post'] );
+
+        unset( $GLOBALS['wp_query'], $GLOBALS['post'] );
+    }
+
+    /**
+     * Inside a loop the view block renders nothing but the queried article.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_view_block_renders_nothing_for_another_post_or_view_inside_a_loop() {
+        $block = new Licensio_KB_View_Block();
+
+        Functions\when( 'in_the_loop' )->justReturn( true );
+        Functions\when( 'get_queried_object_id' )->justReturn( 42 );
+        $this->forbid_the_loop();
+
+        $this->stub_view_request( 'single' );
+        Functions\when( 'get_the_ID' )->justReturn( 7 );
+
+        $this->assertSame( '', $block->render( array( 'view' => 'single' ) ), 'A post other than the queried article.' );
+
+        $this->stub_view_request( 'tag' );
+
+        $this->assertSame( '', $block->render( array( 'view' => 'tag' ) ), 'A listing view inside a loop.' );
+    }
+
+    /**
+     * The view block renders nothing for an unknown view or another request.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_view_block_renders_nothing_for_an_unknown_view_or_another_request() {
+        $block = new Licensio_KB_View_Block();
+
+        $this->stub_view_request( 'tag' );
+        $this->forbid_the_loop();
+
+        $this->assertSame( '', $block->render( array( 'view' => 'nope' ) ) );
+        $this->assertSame( '', $block->render( array( 'view' => 'single' ) ) );
+        $this->assertSame( '', $block->render( array( 'view' => 'search' ) ) );
+    }
+
+    /**
+     * Data for the guard tests: every view the shortcode knows.
+     *
+     * @since 1.0.0
+     *
+     * @return array<string, array{0: string}> View name sets.
+     */
+    public function view_names() {
+        return array(
+            'single'   => array( 'single' ),
+            'category' => array( 'category' ),
+            'tag'      => array( 'tag' ),
+            'search'   => array( 'search' ),
+            'archive'  => array( 'archive' ),
+        );
+    }
+
+    /**
+     * Point the conditionals at a view, including the article search scope.
+     *
+     * @since 1.0.0
+     *
+     * @param string $view The view the request should be.
+     *
+     * @return void
+     */
+    private function stub_view_request( $view ) {
+        $this->stub_conditionals( $view, 'search' === $view ? Licensio_KB_Post_Types::POST_TYPE : '' );
+    }
+
+    /**
+     * Fail the test if a view body starts looping the main query.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    private function forbid_the_loop() {
+        Functions\expect( 'have_posts' )->never();
+        Functions\expect( 'the_post' )->never();
+    }
+
+    /**
+     * Inside a loop the view shortcode renders nothing.
+     *
+     * Post content is rendered inside a loop. A view body there would loop
+     * the main query to its end and rewind it, so the outer loop would start
+     * over and render the shortcode again until PHP ran out of memory.
+     *
+     * @since 1.0.0
+     *
+     * @dataProvider view_names
+     *
+     * @param string $view The view name.
+     *
+     * @return void
+     */
+    public function test_the_view_shortcode_renders_nothing_inside_a_loop( $view ) {
+        $this->stub_view_request( $view );
+        $this->stub_shortcode_atts();
+        $this->forbid_the_loop();
+
+        Functions\when( 'in_the_loop' )->justReturn( true );
+
+        $this->assertSame( '', $this->templates->render_view_shortcode( array( 'view' => $view ) ) );
+    }
+
+    /**
+     * A view renders nothing on a request it does not belong to.
+     *
+     * @since 1.0.0
+     *
+     * @dataProvider view_names
+     *
+     * @param string $view The view name.
+     *
+     * @return void
+     */
+    public function test_the_view_shortcode_renders_nothing_for_another_request( $view ) {
+        $other = 'tag' === $view ? 'category' : 'tag';
+
+        $this->stub_view_request( $other );
+        $this->stub_shortcode_atts();
+        $this->forbid_the_loop();
+
+        $this->assertSame( '', $this->templates->render_view_shortcode( array( 'view' => $view ) ) );
+    }
+
+    /**
+     * A view only matches its own request.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_each_view_matches_only_its_own_request() {
+        $views = array_keys( Licensio_KB_Templates::VIEW_BODIES );
+
+        foreach ( $views as $request ) {
+            $this->stub_view_request( $request );
+
+            foreach ( $views as $view ) {
+                $this->assertSame( $view === $request, Licensio_KB_Templates::view_matches_request( $view ), $view . ' on ' . $request );
+            }
+        }
+
+        $this->stub_conditionals( 'search' );
+
+        $this->assertFalse( Licensio_KB_Templates::view_matches_request( 'search' ), 'A site-wide search is not the knowledge base search.' );
+        $this->assertFalse( Licensio_KB_Templates::view_matches_request( 'nope' ) );
+    }
+
+    /**
+     * A view renders nothing while post content is being filtered.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_view_renders_nothing_from_inside_post_content() {
+        $this->stub_view_request( 'tag' );
+        $this->forbid_the_loop();
+
+        Filters\expectApplied( 'the_content' )->once()->andReturnUsing(
+            function () {
+                return Licensio_KB_Templates::render_view( 'tag' );
+            }
+        );
+
+        $this->assertSame( '', apply_filters( 'the_content', 'CONTENT' ) );
+    }
+
+    /**
+     * A view body cannot render a view inside itself.
+     *
+     * A theme override of a body that prints the shortcode again would
+     * otherwise recurse until PHP gave up.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_view_body_cannot_render_a_view_inside_itself() {
+        $this->stub_view_request( 'tag' );
+        $this->stub_theme_lookup();
+
+        Functions\when( 'wp_is_block_theme' )->justReturn( true );
+
+        file_put_contents( $this->theme_dir . '/licensio-kb/tag-body.php', '<?php echo "OUTER[" . Licensio_KB_Templates::render_view( "tag" ) . "]";' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+
+        $this->assertSame( 'OUTER[]', Licensio_KB_Templates::render_view( 'tag' ) );
+
+        Licensio_KB_Templates::forget_rendered_views();
+
+        $this->assertSame( 'OUTER[]', Licensio_KB_Templates::render_view( 'tag' ), 'The guard is released after each render.' );
+    }
+
+    /**
+     * Each view renders at most once per request.
+     *
+     * A block theme renders the template's own view first. A copy of the
+     * same view in a widget area, or expanded by a plugin that runs shortcodes
+     * over the post in `wp_head`, would otherwise print a second article with
+     * the same IDs and fire the article hooks again.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_each_view_renders_at_most_once_per_request() {
+        $this->stub_view_request( 'tag' );
+        $this->stub_theme_lookup();
+        $this->stub_shortcode_atts();
+
+        Functions\when( 'wp_is_block_theme' )->justReturn( true );
+        Functions\when( 'in_the_loop' )->justReturn( false );
+
+        file_put_contents( $this->theme_dir . '/licensio-kb/tag-body.php', '<?php echo "TAG BODY";' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+
+        $this->assertSame( 'TAG BODY', Licensio_KB_Templates::render_view( 'tag' ), 'The template renders the view.' );
+        $this->assertSame( '', $this->templates->render_view_shortcode( array( 'view' => 'tag' ) ), 'A second copy renders nothing.' );
+        $this->assertSame( '', ( new Licensio_KB_View_Block() )->render( array( 'view' => 'tag' ) ), 'Nor does a block.' );
+    }
+
+    /**
+     * A view that cannot render here does not use up its one render.
+     *
+     * A copy placed in post content runs before the template's own view
+     * only on a request that renders post content first, and must not stop
+     * the template's view from rendering afterwards.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_refused_view_does_not_count_as_rendered() {
+        $this->stub_view_request( 'tag' );
+        $this->stub_theme_lookup();
+
+        Functions\when( 'wp_is_block_theme' )->justReturn( true );
+
+        file_put_contents( $this->theme_dir . '/licensio-kb/tag-body.php', '<?php echo "TAG BODY";' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+
+        Filters\expectApplied( 'the_content' )->once()->andReturnUsing(
+            function () {
+                return Licensio_KB_Templates::render_view( 'tag' );
+            }
+        );
+
+        $this->assertSame( '', apply_filters( 'the_content', 'CONTENT' ) );
+        $this->assertSame( 'TAG BODY', Licensio_KB_Templates::render_view( 'tag' ) );
+    }
+
+    /**
+     * Under a classic theme a view renders nothing.
+     *
+     * The classic page templates include the view bodies directly, so a view
+     * rendered from a widget or a shortcode would always be a second copy of
+     * the page's own body.
+     *
+     * @since 1.0.0
+     *
+     * @dataProvider view_names
+     *
+     * @param string $view The view name.
+     *
+     * @return void
+     */
+    public function test_a_view_renders_nothing_under_a_classic_theme( $view ) {
+        $this->stub_view_request( $view );
+        $this->forbid_the_loop();
+
+        Functions\when( 'wp_is_block_theme' )->justReturn( false );
+
+        $this->assertSame( '', Licensio_KB_Templates::render_view( $view ) );
+    }
+
+    /**
+     * Make shortcode_atts() merge the way core does.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    private function stub_shortcode_atts() {
+        Functions\when( 'shortcode_atts' )->alias(
+            function ( $pairs, $atts ) {
+                return array_merge( $pairs, array_intersect_key( (array) $atts, $pairs ) );
+            }
+        );
+    }
+
+    /**
      * The article title reaches the page escaped.
      *
      * @since 1.0.0
@@ -685,36 +1123,54 @@ class Licensio_KB_Templates_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * Render templates/single.php against a one-post loop.
+     * Render a single article against a one-post loop.
+     *
+     * Through templates/single.php by default, through the view shortcode, or
+     * through the view block inside core's loop, all of which include the
+     * same single-body.php.
      *
      * @since 1.0.0
+     * @since 1.0.0 Added the view shortcode path.
+     * @since 1.0.0 Added the view block path.
      *
-     * @param string $title The article title.
+     * @param string $title         The article title.
+     * @param bool   $via_shortcode Whether to render through the view shortcode instead of the classic template.
+     * @param bool   $via_block     Whether to render through the view block, inside a loop that already set up the article.
      *
      * @return string The rendered markup.
      */
-    private function render_single_article( $title = 'Resetting your password' ) {
+    private function render_single_article( $title = 'Resetting your password', $via_shortcode = false, $via_block = false ) {
         $this->stub_conditionals( 'single' );
         $this->stub_article( 42, $title );
 
         // The hero now carries the search field, which reads the current query.
         Functions\when( 'get_search_query' )->justReturn( '' );
 
-        $remaining = 1;
+        // The view block and shortcode render for block templates only.
+        Functions\when( 'wp_is_block_theme' )->justReturn( $via_shortcode || $via_block );
 
-        Functions\when( 'have_posts' )->alias(
-            function () use ( &$remaining ) {
-                if ( $remaining > 0 ) {
-                    --$remaining;
+        if ( $via_block ) {
+            Functions\when( 'in_the_loop' )->justReturn( true );
+            Functions\when( 'get_the_ID' )->justReturn( 42 );
+            Functions\when( 'get_queried_object_id' )->justReturn( 42 );
+            $this->forbid_the_loop();
+        } else {
+            $remaining = 1;
 
-                    return true;
+            Functions\when( 'have_posts' )->alias(
+                function () use ( &$remaining ) {
+                    if ( $remaining > 0 ) {
+                        --$remaining;
+
+                        return true;
+                    }
+
+                    return false;
                 }
+            );
 
-                return false;
-            }
-        );
-
-        Functions\when( 'the_post' )->justReturn( null );
+            Functions\when( 'the_post' )->justReturn( null );
+        }
         Functions\when( 'get_header' )->justReturn( null );
         Functions\when( 'get_footer' )->justReturn( null );
         Functions\when( 'get_the_term_list' )->justReturn( '' );
@@ -728,6 +1184,20 @@ class Licensio_KB_Templates_Test extends Licensio_KB_Test_Case {
                 echo 'ARTICLE BODY';
             }
         );
+
+        if ( $via_block ) {
+            return ( new Licensio_KB_View_Block() )->render( array( 'view' => 'single' ) );
+        }
+
+        if ( $via_shortcode ) {
+            Functions\when( 'shortcode_atts' )->alias(
+                function ( $pairs, $atts ) {
+                    return array_merge( $pairs, array_intersect_key( (array) $atts, $pairs ) );
+                }
+            );
+
+            return $this->templates->render_view_shortcode( array( 'view' => 'single' ) );
+        }
 
         ob_start();
 

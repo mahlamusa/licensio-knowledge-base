@@ -20,19 +20,27 @@
  *    slug that is already there.
  * 3. Fires the `licensio_before_article` / `licensio_after_article` /
  *    `licensio_article_footer` contract around `core/post-content` on a single
- *    article, so #8 and #9 attach once and work under either paradigm. Binding
- *    to the block rather than to this plugin's own template means the contract
- *    survives a theme shipping its own `single-licensio_article.html`.
+ *    article, for a template the theme or a user builds from core blocks. The
+ *    plugin's own Single Article template has no `core/post-content` block:
+ *    its view block renders `single-body.php`, which fires the hooks itself.
+ *    Binding to the block rather than to a template means the feedback form
+ *    and view tracking still attach once when a theme ships its own
+ *    `single-licensio_article.html`.
  * 4. Restores the two things core does not do for a custom post type: a
  *    `search-licensio_article` template is not part of core's search hierarchy,
  *    and a `core/search` block has no way to scope itself to a post type.
  *
- * The plugin templates deliberately ship no search form of their own beyond the
- * one in `licensio-kb-header`; the richer type-ahead search is the
- * `licensio-kb/search` block (#7).
+ * Every template renders its view through the `licensio-kb/view` block, so a
+ * block theme serves the same body templates the classic layer does. The
+ * `licensio-kb-header` part is no longer placed in any of them, because each
+ * view's hero carries its own search field; it stays registered as a scoped
+ * search bar a site can add to a template of its own.
+ * The richer type-ahead search is the `licensio-kb/search` block.
  *
  * @package Licensio_KB
  * @since   1.0.0
+ * @since   1.0.0 Every template renders its view through the view block.
+ * @since   1.0.0 Documented which templates the article hook filter serves.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -41,6 +49,7 @@ defined( 'ABSPATH' ) || exit;
  * Registers, resolves and decorates the knowledge base block templates.
  *
  * @since 1.0.0
+ * @since 1.0.0 Described the header part as an optional search bar.
  */
 class Licensio_KB_Block_Templates {
 
@@ -77,7 +86,7 @@ class Licensio_KB_Block_Templates {
     const THEME_PART_DIRECTORY = 'parts';
 
     /**
-     * The template part slug shared by every knowledge base template.
+     * The template part slug of the knowledge base search bar.
      *
      * @since 1.0.0
      * @var string
@@ -147,6 +156,7 @@ class Licensio_KB_Block_Templates {
      * The `wp_template_part` files this plugin ships.
      *
      * @since 1.0.0
+     * @since 1.0.0 Described the header part as an optional search bar.
      *
      * @return array<string, array{title: string, description: string, area: string}> Slug to part information.
      */
@@ -154,7 +164,7 @@ class Licensio_KB_Block_Templates {
         return array(
             self::HEADER_PART => array(
                 'title'       => __( 'Knowledge Base Header', 'licensio-knowledge-base' ),
-                'description' => __( 'Shown at the top of every knowledge base template. Edit it once to change them all.', 'licensio-knowledge-base' ),
+                'description' => __( 'A search bar scoped to knowledge base articles. Add it to any template that needs one.', 'licensio-knowledge-base' ),
                 'area'        => 'header',
             ),
         );
@@ -293,16 +303,19 @@ class Licensio_KB_Block_Templates {
     /**
      * Fire the article hook contract around the `core/post-content` block.
      *
-     * Bound to the block rather than to this plugin's own template so the
-     * contract still holds when a theme ships its own
-     * `single-licensio_article.html`, and skipped entirely under a classic
-     * theme where the PHP templates already fire it.
+     * Only a theme's or a user's own single article template reaches this:
+     * the plugin's Single Article template renders `single-body.php` through
+     * the view block, and that body fires the hooks itself. Bound to the block
+     * rather than to a template so the contract still holds when a theme
+     * ships its own `single-licensio_article.html`, and skipped entirely under
+     * a classic theme where the PHP templates already fire it.
      *
      * The listing guard matters: a Query Loop on an archive renders
-     * `core/post-content` once per result, and a feedback form under every card
-     * is not what #8 asked for.
+     * `core/post-content` once per result, and a feedback form under every
+     * card would be one per article listed rather than one per article page.
      *
      * @since 1.0.0
+     * @since 1.0.0 Documented that only theme and user templates reach it.
      *
      * @param string|mixed        $block_content The rendered block markup.
      * @param array<string,mixed> $block         The parsed block.
@@ -338,11 +351,14 @@ class Licensio_KB_Block_Templates {
     /**
      * Scope a knowledge base `core/search` block to the article post type.
      *
-     * The core search block has no post type control, so without this the
-     * search box in `licensio-kb-header` would run a site-wide search and the
-     * article search template would never be reached.
+     * The core search block has no post type control, so without this a
+     * search box carrying the knowledge base class, such as the one in the
+     * optional `licensio-kb-header` part, would run a site-wide search and the
+     * article search template would never be reached. The shipped templates
+     * no longer place that part; each view's hero carries its own search field.
      *
      * @since 1.0.0
+     * @since 1.0.0 Documented the header part as optional.
      *
      * @param string|mixed        $block_content The rendered block markup.
      * @param array<string,mixed> $block         The parsed block.
