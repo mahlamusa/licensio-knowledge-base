@@ -581,6 +581,11 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     public function test_has_positions_is_cached_until_an_order_is_saved() {
+        /**
+         * The object cache double: group to key to value.
+         *
+         * @var array<string, array<string, int>> $store
+         */
         $store = array();
 
         Functions\when( 'wp_cache_get_last_changed' )->alias(

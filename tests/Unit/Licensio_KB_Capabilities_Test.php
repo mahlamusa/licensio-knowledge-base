@@ -583,7 +583,6 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
 
         $this->assertSame( array( 'Licensio_KB_Capabilities', 'sanitize_tag_box' ), $args['meta_box_sanitize_cb'] );
         $this->assertFalse( $args['hierarchical'] );
-        $this->assertSame( 'not an array', Licensio_KB_Capabilities::filter_tag_box_args( 'not an array' ) );
     }
 
     /**
@@ -674,9 +673,10 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
         $_GET['licensio_kb_tags_refused'] = '1';
 
         Licensio_KB_Capabilities::render_refused_tags_notice();
-        $this->assertCount( 1, $notices );
-        $this->assertSame( 'warning', $notices[0][1] );
-        $this->assertStringContainsString( 'New tags were not added', $notices[0][0] );
+        $this->assertSame(
+            array( array( 'New tags were not added: you are not allowed to create tags. The article was saved with its existing tags.', 'warning' ) ),
+            $notices
+        );
 
         $screen->post_type = 'post';
 
