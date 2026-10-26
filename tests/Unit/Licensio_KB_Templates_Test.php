@@ -387,6 +387,32 @@ class Licensio_KB_Templates_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * The view shortcode renders the same single article body.
+     *
+     * A block theme renders the single article through the view shortcode, so
+     * it must carry the hero with its breadcrumbs and search field, the
+     * article and the hooks, exactly once each, as the classic template does.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_view_shortcode_renders_the_single_article_body() {
+        Actions\expectDone( 'licensio_before_article' )->once();
+        Actions\expectDone( 'licensio_after_article' )->once();
+        Actions\expectDone( 'licensio_article_footer' )->once();
+
+        $markup = $this->render_single_article( 'Resetting your password', true );
+
+        $this->assertStringContainsString( 'ARTICLE BODY', $markup );
+        $this->assertStringContainsString( 'class="licensio-kb__hero"', $markup );
+        $this->assertStringContainsString( 'class="licensio-kb__crumbs"', $markup );
+        $this->assertStringContainsString( 'class="licensio-kb__search"', $markup );
+        $this->assertStringContainsString( 'licensio-kb licensio-kb--single', $markup );
+        $this->assertSame( 1, substr_count( $markup, 'class="licensio-kb__hero"' ) );
+    }
+
+    /**
      * The article title reaches the page escaped.
      *
      * @since 1.0.0
@@ -685,15 +711,20 @@ class Licensio_KB_Templates_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * Render templates/single.php against a one-post loop.
+     * Render a single article against a one-post loop.
+     *
+     * Through templates/single.php by default, or through the view shortcode a
+     * block template renders, which includes the same single-body.php.
      *
      * @since 1.0.0
+     * @since 1.0.0 Added the view shortcode path.
      *
-     * @param string $title The article title.
+     * @param string $title         The article title.
+     * @param bool   $via_shortcode Whether to render through the view shortcode instead of the classic template.
      *
      * @return string The rendered markup.
      */
-    private function render_single_article( $title = 'Resetting your password' ) {
+    private function render_single_article( $title = 'Resetting your password', $via_shortcode = false ) {
         $this->stub_conditionals( 'single' );
         $this->stub_article( 42, $title );
 
@@ -728,6 +759,16 @@ class Licensio_KB_Templates_Test extends Licensio_KB_Test_Case {
                 echo 'ARTICLE BODY';
             }
         );
+
+        if ( $via_shortcode ) {
+            Functions\when( 'shortcode_atts' )->alias(
+                function ( $pairs, $atts ) {
+                    return array_merge( $pairs, array_intersect_key( (array) $atts, $pairs ) );
+                }
+            );
+
+            return $this->templates->render_view_shortcode( array( 'view' => 'single' ) );
+        }
 
         ob_start();
 

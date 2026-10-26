@@ -57,15 +57,17 @@ class Licensio_KB_Templates {
      *
      * The keys are what a block template names; the values are the body
      * templates. A whitelist rather than a pass-through so the shortcode can
-     * never be pointed at a template that was not built to stand alone —
-     * `single`, for one, expects article hooks a template part does not fire.
+     * never be pointed at a template that was not built to stand alone.
+     * `single-body` fires the article hooks itself, so it stands alone too.
      *
      * @since 1.0.0
+     * @since 1.0.0 Added the single article body.
      * @var array<string, string>
      */
     const VIEW_BODIES = array(
         'archive'  => 'archive-body',
         'category' => 'category-body',
+        'single'   => 'single-body',
     );
 
     /**
@@ -144,9 +146,9 @@ class Licensio_KB_Templates {
      *
      * A block theme resolves a knowledge base request to one of the plugin's
      * block templates, and those templates render this shortcode for the body
-     * of the view — the same `archive-body` / `category-body` template the
-     * classic layer includes between `get_header()` and `get_footer()`. That
-     * single shared body is what keeps the page identical under a classic
+     * of the view — the same `archive-body`, `category-body` or `single-body`
+     * template the classic layer includes between `get_header()` and
+     * `get_footer()`. That single shared body is what keeps the page identical under a classic
      * theme, a block theme and any theme in between: one markup, one
      * stylesheet, no second design to drift.
      *

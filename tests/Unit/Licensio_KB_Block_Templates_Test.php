@@ -245,7 +245,7 @@ class Licensio_KB_Block_Templates_Test extends Licensio_KB_Test_Case {
         $this->assertTrue( $single->has_theme_file );
         $this->assertFalse( $single->is_custom );
         $this->assertSame( 'Single Article', $single->title );
-        $this->assertStringContainsString( 'wp:post-content', $single->content );
+        $this->assertStringContainsString( '[licensio_kb_view view="single"]', $single->content );
     }
 
     /**
@@ -605,7 +605,7 @@ class Licensio_KB_Block_Templates_Test extends Licensio_KB_Test_Case {
         $template = $this->block_templates->build_template( 'single-licensio_article', 'wp_template' );
 
         $this->assertInstanceOf( 'WP_Block_Template', $template );
-        $this->assertStringContainsString( 'wp:post-content', $template->content );
+        $this->assertStringContainsString( '[licensio_kb_view view="single"]', $template->content );
         $this->assertNotSame( 'RESERIALIZED', $template->content );
     }
 
@@ -879,10 +879,12 @@ class Licensio_KB_Block_Templates_Test extends Licensio_KB_Test_Case {
     /**
      * The redesigned views render the shared body through the view shortcode.
      *
-     * The archive and the category template no longer drive their own Query
-     * Loop: they render `[licensio_kb_view]`, which includes the same body
-     * template the classic layer includes, so a block theme and a classic
-     * theme serve the same markup.
+     * The archive, category and single article templates do not build their
+     * own markup from blocks: they render `[licensio_kb_view]`, which includes
+     * the same body template the classic layer includes, so a block theme and
+     * a classic theme serve the same markup. For the single article that is
+     * what brings the breadcrumbs, the search field, the table of contents and
+     * the sidebar to a block theme.
      *
      * @since 1.0.0
      *
@@ -892,6 +894,7 @@ class Licensio_KB_Block_Templates_Test extends Licensio_KB_Test_Case {
         $views = array(
             'archive-licensio_article'   => 'archive',
             'taxonomy-licensio_category' => 'category',
+            'single-licensio_article'    => 'single',
         );
 
         foreach ( $views as $slug => $view ) {
@@ -900,6 +903,32 @@ class Licensio_KB_Block_Templates_Test extends Licensio_KB_Test_Case {
             $this->assertInstanceOf( 'WP_Block_Template', $template, $slug );
             $this->assertStringContainsString( '[licensio_kb_view view="' . $view . '"]', $template->content, $slug );
             $this->assertStringNotContainsString( '<!-- wp:query ', $template->content, $slug );
+        }
+    }
+
+    /**
+     * The view shortcode sits in an HTML block, never a shortcode block.
+     *
+     * WordPress expands the shortcodes in a block template before it renders
+     * the blocks, so a shortcode block receives the finished view markup and
+     * runs wpautop over it. That put line breaks inside every card link and
+     * pushed the article counts under the category headings. An HTML block
+     * passes the markup through untouched.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_no_template_wraps_markup_in_a_shortcode_block() {
+        foreach ( array_keys( $this->block_templates->templates() ) as $slug ) {
+            $template = $this->block_templates->build_template( $slug, 'wp_template' );
+
+            $this->assertInstanceOf( 'WP_Block_Template', $template, $slug );
+            $this->assertStringNotContainsString( 'wp:shortcode', $template->content, $slug );
+
+            if ( false !== strpos( $template->content, '[licensio_kb_view ' ) ) {
+                $this->assertMatchesRegularExpression( '/<!-- wp:html -->\s*\[licensio_kb_view view="[a-z]+"\]\s*<!-- \/wp:html -->/', $template->content, $slug );
+            }
         }
     }
 
@@ -929,8 +958,10 @@ class Licensio_KB_Block_Templates_Test extends Licensio_KB_Test_Case {
     /**
      * The templates that still open with the hero pull in the shared header part.
      *
-     * The redesigned archive and category views dropped the part along with
-     * the hero band it carried; single, tag and search still open with it.
+     * The redesigned archive, category and single article views dropped the
+     * part: the first two along with the hero band it carried, and the single
+     * article because its shared hero already renders a search field. Tag and
+     * search still open with it.
      *
      * @since 1.0.0
      *
@@ -938,7 +969,6 @@ class Licensio_KB_Block_Templates_Test extends Licensio_KB_Test_Case {
      */
     public function test_every_template_pulls_in_the_shared_header_part() {
         $with_part = array(
-            'single-' . Licensio_KB_Post_Types::POST_TYPE,
             'taxonomy-' . Licensio_KB_Post_Types::TAXONOMY_TAG,
             'search-' . Licensio_KB_Post_Types::POST_TYPE,
         );

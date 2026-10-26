@@ -91,7 +91,12 @@ test.describe( 'Knowledge base block templates in the Site Editor', () => {
 
 		await openTemplateList( page );
 
-		await templateCard( page, 'Single Article' ).click();
+		/*
+		 * The search results template, because it is still built from blocks
+		 * the canvas can click into. The single article, archive and category
+		 * templates render their whole view through one HTML block.
+		 */
+		await templateCard( page, 'Article Search Results' ).click();
 
 		await switchOffWelcomeGuides( page, 'core/edit-site', [
 			'welcomeGuide',
@@ -100,7 +105,10 @@ test.describe( 'Knowledge base block templates in the Site Editor', () => {
 
 		const canvas = page.frameLocator( 'iframe[name="editor-canvas"]' );
 
-		await canvas.locator( '[data-type="core/post-title"]' ).first().click();
+		await canvas
+			.locator( '[data-type="core/query-title"]' )
+			.first()
+			.click();
 		await page.keyboard.press( 'Enter' );
 		await page.keyboard.type( MARKER );
 
@@ -130,31 +138,16 @@ test.describe( 'Knowledge base block templates in the Site Editor', () => {
 		).toContainText( /updated|saved/i, { timeout: 20_000 } );
 
 		// The saved customisation is what the front end now renders.
-		const article = await page.evaluate( async () => {
-			// The query-string form of the REST route works with any permalink setting.
-			const response = await window.fetch(
-				'/?rest_route=/wp/v2/licensio_articles&per_page=1'
-			);
-			const items = await response.json();
+		const results = '/?s=licence&post_type=licensio_article';
 
-			return Array.isArray( items ) && items.length > 0
-				? items[ 0 ].link
-				: '';
-		} );
-
-		test.skip(
-			'' === article,
-			'The site has no published knowledge base article to render.'
-		);
-
-		await page.goto( article );
+		await page.goto( results );
 		await expect( page.getByText( MARKER ).first() ).toBeVisible();
 
 		// Reset puts the plugin's own copy back.
 		await openTemplateList( page );
 		await page
 			.getByRole( 'gridcell' )
-			.filter( { has: templateCard( page, 'Single Article' ) } )
+			.filter( { has: templateCard( page, 'Article Search Results' ) } )
 			.getByRole( 'button', { name: 'Actions' } )
 			.click();
 		await page.getByRole( 'menuitem', { name: /Reset/ } ).click();
@@ -163,7 +156,7 @@ test.describe( 'Knowledge base block templates in the Site Editor', () => {
 			page.locator( '.components-snackbar' ).first()
 		).toContainText( /reset/i, { timeout: 20_000 } );
 
-		await page.goto( article );
+		await page.goto( results );
 		await expect( page.getByText( MARKER ) ).toHaveCount( 0 );
 	} );
 } );
