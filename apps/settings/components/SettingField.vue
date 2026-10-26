@@ -5,7 +5,7 @@
  * The control is chosen by the server, not by the key, so a setting a third
  * party adds to the registry gets an editor here without this file knowing it
  * exists. The label names the control through its `for` and the
- * control's id.
+ * control's id. A number's allowed range shows once, under the label.
  *
  * @since 1.0.0
  */
@@ -134,10 +134,6 @@ function update( value: SettingValue ): void {
 				<span v-if="field.unit" class="licensio-kb-settings__unit">
 					{{ field.unit }}
 				</span>
-
-				<span v-if="bounds" class="licensio-kb-settings__bounds">{{
-					bounds
-				}}</span>
 
 				<span v-if="changed" class="licensio-kb-settings__changed"
 					>•</span

@@ -140,7 +140,7 @@ function nameOf( id: number ): string {
 				<li v-for="entry in store.bulk.skipped" :key="'s' + entry.id">
 					{{
 						sprintf(
-							/* translators: 1: article title, 2: why it was skipped. */
+							/* translators: 1: article title, 2: why it was skipped or failed. */
 							__( '%1$s — %2$s', 'licensio-knowledge-base' ),
 							nameOf( entry.id ),
 							reasonLabel( entry.reason )
@@ -158,7 +158,7 @@ function nameOf( id: number ): string {
 				<li v-for="entry in store.bulk.failed" :key="'f' + entry.id">
 					{{
 						sprintf(
-							/* translators: 1: article title, 2: why it failed. */
+							/* translators: 1: article title, 2: why it was skipped or failed. */
 							__( '%1$s — %2$s', 'licensio-knowledge-base' ),
 							nameOf( entry.id ),
 							entry.message

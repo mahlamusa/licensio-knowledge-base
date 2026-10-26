@@ -387,7 +387,7 @@ watch(
 							'licensio-knowledge-base'
 					  )
 					: __(
-							'No tags yet. Add your first tag above.',
+							'No tags yet. Add your first tag with the Add New Tag form.',
 							'licensio-knowledge-base'
 					  ),
 			}"
