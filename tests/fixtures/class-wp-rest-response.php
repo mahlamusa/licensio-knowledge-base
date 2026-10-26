@@ -43,6 +43,14 @@ if ( ! class_exists( 'WP_REST_Response' ) ) {
         private $headers = array();
 
         /**
+         * The response links, by relation.
+         *
+         * @since 1.0.0
+         * @var array<string, array<int, array<string, string>>>
+         */
+        private $links = array();
+
+        /**
          * Constructor.
          *
          * @since 1.0.0
@@ -105,6 +113,44 @@ if ( ! class_exists( 'WP_REST_Response' ) ) {
          */
         public function get_status() {
             return $this->status;
+        }
+
+        /**
+         * Add a link.
+         *
+         * @since 1.0.0
+         *
+         * @param string $rel  The link relation.
+         * @param string $href The link target.
+         *
+         * @return void
+         */
+        public function add_link( $rel, $href ) {
+            $this->links[ $rel ][] = array( 'href' => $href );
+        }
+
+        /**
+         * Remove every link with a relation.
+         *
+         * @since 1.0.0
+         *
+         * @param string $rel The link relation.
+         *
+         * @return void
+         */
+        public function remove_link( $rel ) {
+            unset( $this->links[ $rel ] );
+        }
+
+        /**
+         * The links, by relation.
+         *
+         * @since 1.0.0
+         *
+         * @return array<string, array<int, array<string, string>>> The links.
+         */
+        public function get_links() {
+            return $this->links;
         }
     }
 }

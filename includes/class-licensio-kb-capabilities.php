@@ -110,7 +110,11 @@ class Licensio_KB_Capabilities {
      * admin request; `licensio_capabilities` is the supported way to change who
      * holds it.
      *
-     * @since 1.0.0 Grants the article capabilities to authors and contributors too.
+     * Creating a category or tag is refused for users who cannot manage the
+     * knowledge base, whichever route asks, and the block editor is not
+     * offered to create tags for them.
+     *
+     * @since 1.0.0 Grants the article capabilities to authors and contributors too, and keeps term creation to managers.
      *
      * @return void
      */
@@ -119,6 +123,8 @@ class Licensio_KB_Capabilities {
         add_filter( 'licensio_category_taxonomy_args', array( $this, 'filter_taxonomy_args' ) );
         add_filter( 'licensio_tag_taxonomy_args', array( $this, 'filter_taxonomy_args' ) );
         add_action( 'admin_init', array( __CLASS__, 'add_capabilities' ), 5 );
+        add_filter( 'pre_insert_term', array( __CLASS__, 'guard_term_creation' ), 10, 2 );
+        add_filter( 'rest_prepare_' . Licensio_KB_Post_Types::POST_TYPE, array( __CLASS__, 'hide_term_creation' ) );
     }
 
     /**
@@ -366,6 +372,86 @@ class Licensio_KB_Capabilities {
         $args['capabilities'] = self::taxonomy_capabilities();
 
         return $args;
+    }
+
+    /**
+     * Refuse to create a category or tag for a user who cannot manage the knowledge base.
+     *
+     * Hooked to `pre_insert_term`, so it holds for every route that creates
+     * a term: core REST, the block editor, the classic article screen's tag
+     * box and the plugin's own routes. Core lets anyone who may assign a
+     * non-hierarchical taxonomy's terms create new ones; article writers may
+     * only file articles under existing categories and tags. Assigning an
+     * existing term never reaches this filter.
+     *
+     * Requests without a user (cron, a WP-CLI command run without `--user`)
+     * and WP-CLI itself are left alone, so imports and other system inserts
+     * still work.
+     *
+     * @since 1.0.0
+     *
+     * @param string|WP_Error $term     The term name, or an error from an earlier callback.
+     * @param string          $taxonomy The taxonomy.
+     *
+     * @return string|WP_Error The term name, or a 403 error when the user may not create terms.
+     */
+    public static function guard_term_creation( $term, $taxonomy ) {
+        if ( is_wp_error( $term ) || ! in_array( $taxonomy, array( Licensio_KB_Post_Types::TAXONOMY_CATEGORY, Licensio_KB_Post_Types::TAXONOMY_TAG ), true ) ) {
+            return $term;
+        }
+
+        if ( 0 === get_current_user_id() || static::running_cli() || self::current_user_can_manage() ) {
+            return $term;
+        }
+
+        return new WP_Error(
+            'licensio_kb_cannot_create_term',
+            Licensio_KB_Post_Types::TAXONOMY_TAG === $taxonomy
+                ? __( 'Sorry, you are not allowed to create tags. Choose an existing tag.', 'licensio-knowledge-base' )
+                : __( 'Sorry, you are not allowed to create categories. Choose an existing category.', 'licensio-knowledge-base' ),
+            array( 'status' => 403 )
+        );
+    }
+
+    /**
+     * Whether the request is a WP-CLI command.
+     *
+     * @since 1.0.0
+     *
+     * @return bool True under WP-CLI.
+     */
+    protected static function running_cli() {
+        return defined( 'WP_CLI' ) && WP_CLI;
+    }
+
+    /**
+     * Take the create-term actions off an article's REST answer for users who cannot create terms.
+     *
+     * Hooked to `rest_prepare_licensio_article`. Core offers the action to
+     * create tags to anyone who may assign them, and the block editor reads it
+     * to offer "Add new tag". Without it the editor only suggests existing
+     * tags, matching `guard_term_creation()`.
+     *
+     * @since 1.0.0
+     *
+     * @param WP_REST_Response $response The article response.
+     *
+     * @return WP_REST_Response The response.
+     */
+    public static function hide_term_creation( $response ) {
+        if ( ! $response instanceof WP_REST_Response || self::current_user_can_manage() ) {
+            return $response;
+        }
+
+        foreach ( array( Licensio_KB_Post_Types::TAXONOMY_CATEGORY, Licensio_KB_Post_Types::TAXONOMY_TAG ) as $taxonomy ) {
+            $object = get_taxonomy( $taxonomy );
+
+            if ( is_object( $object ) && ! empty( $object->rest_base ) ) {
+                $response->remove_link( 'https://api.w.org/action-create-' . $object->rest_base );
+            }
+        }
+
+        return $response;
     }
 
     /**

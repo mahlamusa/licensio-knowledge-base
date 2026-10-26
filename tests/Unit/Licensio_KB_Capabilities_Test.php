@@ -391,6 +391,8 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
             has_action( 'admin_init', array( 'Licensio_KB_Capabilities', 'add_capabilities' ) ),
             'A site whose code changed without an activation must still receive the capability.'
         );
+        $this->assertNotFalse( has_filter( 'pre_insert_term', array( 'Licensio_KB_Capabilities', 'guard_term_creation' ) ) );
+        $this->assertNotFalse( has_filter( 'rest_prepare_licensio_article', array( 'Licensio_KB_Capabilities', 'hide_term_creation' ) ) );
     }
 
     /**
@@ -413,6 +415,144 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
 
         $this->assertTrue( Licensio_KB_Capabilities::current_user_can_manage() );
         $this->assertSame( array( 'manage_licensio_kb' ), $asked );
+    }
+
+    /**
+     * Each role, as the current user, with the capabilities its role was granted.
+     *
+     * @since 1.0.0
+     *
+     * @return array<string, array{0: string, 1: bool}> Role name and whether it may create terms.
+     */
+    public function term_creation_roles() {
+        return array(
+            'administrator' => array( 'administrator', true ),
+            'editor'        => array( 'editor', true ),
+            'author'        => array( 'author', false ),
+            'contributor'   => array( 'contributor', false ),
+            'subscriber'    => array( 'subscriber', false ),
+        );
+    }
+
+    /**
+     * Only a role that manages the knowledge base may create categories and tags.
+     *
+     * Core lets anyone who may assign a tag create one; article writers may
+     * only file articles under existing terms, whatever route asks.
+     *
+     * @since 1.0.0
+     *
+     * @dataProvider term_creation_roles
+     *
+     * @param string $role    The current user's role.
+     * @param bool   $creates Whether the role may create terms.
+     *
+     * @return void
+     */
+    public function test_only_managers_create_categories_and_tags( $role, $creates ) {
+        Licensio_KB_Capabilities::add_capabilities();
+
+        Functions\when( 'get_current_user_id' )->justReturn( 7 );
+        Functions\when( 'current_user_can' )->alias(
+            function ( $capability ) use ( $role ) {
+                return $this->roles[ $role ]->has_cap( $capability );
+            }
+        );
+
+        $guard = $this->outside_cli();
+
+        foreach ( array( 'licensio_tag', 'licensio_category' ) as $taxonomy ) {
+            $result = $guard::guard_term_creation( 'New term', $taxonomy );
+
+            if ( $creates ) {
+                $this->assertSame( 'New term', $result, sprintf( '%s may create a %s.', $role, $taxonomy ) );
+                continue;
+            }
+
+            $this->assertInstanceOf( WP_Error::class, $result, sprintf( '%s must not create a %s.', $role, $taxonomy ) );
+            $this->assertSame( 'licensio_kb_cannot_create_term', $result->get_error_code() );
+            $this->assertSame( array( 'status' => 403 ), $result->get_error_data() );
+        }
+    }
+
+    /**
+     * System inserts, WP-CLI and other taxonomies are left alone.
+     *
+     * Imports run from cron or WP-CLI, with no user or as the command's user.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_term_creation_is_only_guarded_for_a_signed_in_user_outside_cli() {
+        Functions\when( 'current_user_can' )->justReturn( false );
+        Functions\when( 'get_current_user_id' )->justReturn( 0 );
+
+        $guard = $this->outside_cli();
+
+        $this->assertSame( 'Imported', $guard::guard_term_creation( 'Imported', 'licensio_tag' ), 'No user is a system insert.' );
+
+        Functions\when( 'get_current_user_id' )->justReturn( 7 );
+
+        $this->assertSame( 'Imported', Licensio_KB_Capabilities::guard_term_creation( 'Imported', 'licensio_tag' ), 'WP-CLI may create terms.' );
+        $this->assertSame( 'Blog tag', $guard::guard_term_creation( 'Blog tag', 'post_tag' ), 'Other taxonomies are not ours.' );
+
+        $earlier = new WP_Error( 'earlier', 'Refused before.' );
+
+        $this->assertSame( $earlier, $guard::guard_term_creation( $earlier, 'licensio_tag' ) );
+    }
+
+    /**
+     * The block editor is not offered to create terms by a user who cannot.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_create_term_actions_are_hidden_from_non_managers() {
+        Functions\when( 'get_taxonomy' )->alias(
+            function ( $taxonomy ) {
+                return (object) array( 'rest_base' => 'licensio_tag' === $taxonomy ? 'licensio_tags' : 'licensio_categories' );
+            }
+        );
+
+        $response = new WP_REST_Response( array() );
+        $response->add_link( 'https://api.w.org/action-create-licensio_tags', 'x' );
+        $response->add_link( 'https://api.w.org/action-assign-licensio_tags', 'x' );
+
+        Functions\when( 'current_user_can' )->justReturn( true );
+        Licensio_KB_Capabilities::hide_term_creation( $response );
+        $this->assertArrayHasKey( 'https://api.w.org/action-create-licensio_tags', $response->get_links(), 'A manager keeps it.' );
+
+        Functions\when( 'current_user_can' )->justReturn( false );
+        Licensio_KB_Capabilities::hide_term_creation( $response );
+        $this->assertSame( array( 'https://api.w.org/action-assign-licensio_tags' ), array_keys( $response->get_links() ) );
+    }
+
+    /**
+     * The term guard as it runs outside WP-CLI.
+     *
+     * The unit suite defines `WP_CLI`, which the guard lets through.
+     *
+     * @since 1.0.0
+     *
+     * @return string The class name to call the guard on.
+     */
+    private function outside_cli() {
+        $guard = new class() extends Licensio_KB_Capabilities {
+            /**
+             * Never WP-CLI.
+             *
+             * @since 1.0.0
+             *
+             * @return bool False.
+             */
+            protected static function running_cli() {
+                return false;
+            }
+        };
+
+        return get_class( $guard );
     }
 
     /**

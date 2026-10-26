@@ -86,8 +86,11 @@ async function logInAs( page: Page, role: Role ): Promise< void > {
  * @since 1.0.0
  *
  * @param {Page}   page   The page, on the Articles app.
+ * A route starting with `/` is taken from the REST root instead, such as
+ * `/wp/v2/licensio_tags`.
+ *
  * @param {string} method The HTTP method.
- * @param {string} route  The route under `licensio-kb/v1`.
+ * @param {string} route  The route under `licensio-kb/v1`, or from the REST root.
  * @param {Object} body   The JSON body, for writes.
  *
  * @return {Promise<number>} The response status.
@@ -108,15 +111,17 @@ async function callRoute(
 			const [ routePath, query ] = path.split( '?' );
 			const url = new URL( config.root, window.location.href );
 			const base = url.searchParams.get( 'rest_route' );
+			const fromRoot = routePath.startsWith( '/' );
+			const join = ( prefix: string ) =>
+				fromRoot
+					? prefix.replace( /\/?licensio-kb\/v1\/?$/, '' ) + routePath
+					: prefix.replace( /\/?$/, '/' ) + routePath;
 
 			// Plain permalinks put the route in `rest_route`.
 			if ( null !== base ) {
-				url.searchParams.set(
-					'rest_route',
-					base.replace( /\/?$/, '/' ) + routePath
-				);
+				url.searchParams.set( 'rest_route', join( base ) );
 			} else {
-				url.pathname = url.pathname.replace( /\/?$/, '/' ) + routePath;
+				url.pathname = join( url.pathname );
 			}
 
 			new URLSearchParams( query ?? '' ).forEach( ( value, key ) =>
@@ -248,6 +253,11 @@ test.describe( 'Article writers by role', () => {
 			foreach ( get_posts( array( 'post_type' => 'licensio_article', 'post_status' => 'any', 'posts_per_page' => -1, 's' => '${ suffix }', 'fields' => 'ids' ) ) as $id ) {
 				wp_delete_post( $id, true );
 			}
+			foreach ( array( 'licensio_tag', 'licensio_category' ) as $taxonomy ) {
+				foreach ( get_terms( array( 'taxonomy' => $taxonomy, 'hide_empty' => false, 'search' => '${ suffix }', 'fields' => 'ids' ) ) as $term_id ) {
+					wp_delete_term( $term_id, $taxonomy );
+				}
+			}
 		` );
 	} );
 
@@ -317,6 +327,18 @@ test.describe( 'Article writers by role', () => {
 		expect(
 			await callRoute( page, 'GET', 'terms?taxonomy=licensio_tag' )
 		).toBe( 200 );
+
+		// Existing terms only: core's term routes refuse to create any.
+		expect(
+			await callRoute( page, 'POST', '/wp/v2/licensio_tags', {
+				name: `Roles author tag ${ suffix }`,
+			} )
+		).toBe( 403 );
+		expect(
+			await callRoute( page, 'POST', '/wp/v2/licensio_categories', {
+				name: `Roles author category ${ suffix }`,
+			} )
+		).toBe( 403 );
 
 		const categories = await page.goto(
 			'/wp-admin/admin.php?page=licensio-kb-categories'
@@ -421,6 +443,16 @@ test.describe( 'Article writers by role', () => {
 			)
 		).toBe( 403 );
 		expect( await callRoute( page, 'GET', 'categories' ) ).toBe( 403 );
+		expect(
+			await callRoute( page, 'POST', '/wp/v2/licensio_tags', {
+				name: `Roles contributor tag ${ suffix }`,
+			} )
+		).toBe( 403 );
+		expect(
+			await callRoute( page, 'POST', '/wp/v2/licensio_categories', {
+				name: `Roles contributor category ${ suffix }`,
+			} )
+		).toBe( 403 );
 
 		// A draft from the block editor lands in the app.
 		const title = `Roles contributor new ${ suffix }`;
@@ -458,5 +490,10 @@ test.describe( 'Article writers by role', () => {
 
 		expect( await callRoute( page, 'GET', 'authors' ) ).toBe( 200 );
 		expect( await callRoute( page, 'GET', 'categories' ) ).toBe( 200 );
+		expect(
+			await callRoute( page, 'POST', '/wp/v2/licensio_tags', {
+				name: `Roles editor tag ${ suffix }`,
+			} )
+		).toBe( 201 );
 	} );
 } );
