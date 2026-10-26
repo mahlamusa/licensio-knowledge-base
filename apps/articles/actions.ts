@@ -325,7 +325,7 @@ export async function performAction(
 	);
 
 	if ( '' !== run.error || run.skipped.length || run.failed.length ) {
-		store.bulk.open = true;
+		run.open = true;
 	}
 
 	if ( 0 === run.done.length ) {

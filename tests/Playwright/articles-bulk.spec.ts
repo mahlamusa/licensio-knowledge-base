@@ -6,7 +6,10 @@
  * article back, an article another user is editing is skipped and reported,
  * Cancel on the bulk Popconfirm sends nothing, a slow "Select all
  * matching" answer is dropped once the user has moved to another view,
- * unticking a row after "Select all matching" keeps the rest selected, and
+ * unticking a row after "Select all matching" keeps the rest selected and
+ * ticking it again keeps the selection across pages, a row action or quick
+ * edit cannot start while a run is going, so each Undo puts back only its
+ * own article, and
  * Replace with no terms chosen is sent as a request to clear them.
  *
  * The spec seeds its own data with wp-cli and removes it afterwards: 250
@@ -199,7 +202,7 @@ test.describe( 'Articles bulk actions', () => {
 			} )
 			.click();
 		await expect( app.locator( '.lkb-bulk__count' ) ).toHaveText(
-			`${ ARTICLES } selected`
+			`All ${ ARTICLES } matching articles are selected`
 		);
 
 		await app
@@ -208,6 +211,90 @@ test.describe( 'Articles bulk actions', () => {
 			.uncheck();
 		await expect( app.locator( '.lkb-bulk__count' ) ).toHaveText(
 			`${ ARTICLES - 1 } selected`
+		);
+
+		// Ticking it again restores the whole cross-page selection, which
+		// then survives a move to the next page.
+		await app
+			.locator( '.ant-table-tbody .ant-checkbox-input' )
+			.first()
+			.check();
+		await expect( app.locator( '.lkb-bulk__count' ) ).toHaveText(
+			`All ${ ARTICLES } matching articles are selected`
+		);
+		await expect(
+			app.getByRole( 'button', {
+				name: `Select all ${ ARTICLES } matching`,
+			} )
+		).toHaveCount( 0 );
+
+		await app.locator( '.ant-pagination-next' ).click();
+		await expect( app.locator( '.lkb-bulk__count' ) ).toHaveText(
+			`All ${ ARTICLES } matching articles are selected`
+		);
+	} );
+
+	test( 'row actions and quick edit are disabled while a run is going, so Undo puts back only its own article', async ( {
+		page,
+	} ) => {
+		const app = await openSeeded( page );
+		const bulk = recordWrites( page, 'bulk' );
+		let release: () => void = () => undefined;
+		const held = new Promise< void >( ( resolve ) => {
+			release = resolve;
+		} );
+
+		await page.route( /articles%2Fbulk|articles\/bulk/, async ( route ) => {
+			await held;
+			await route.continue();
+		} );
+
+		// The locked article's Trash is disabled anyway, so use two others.
+		const keys = await app
+			.locator( '.ant-table-tbody .ant-table-row' )
+			.getByRole( 'button', { name: 'Trash', disabled: false } )
+			.evaluateAll( ( buttons ) =>
+				buttons
+					.slice( 0, 2 )
+					.map(
+						( button ) =>
+							button.closest( 'tr' )?.dataset.rowKey ?? ''
+					)
+			);
+		const trashOf = ( key: string ) =>
+			app
+				.locator( `tr[data-row-key="${ key }"]` )
+				.getByRole( 'button', { name: 'Trash' } );
+		const quickEditOf = ( key: string ) =>
+			app
+				.locator( `tr[data-row-key="${ key }"]` )
+				.getByRole( 'button', { name: 'Quick edit' } );
+		const second = trashOf( keys[ 1 ] );
+
+		await trashOf( keys[ 0 ] ).click();
+		await confirmPopconfirm( page );
+		await expect(
+			second,
+			'Another row action cannot start while the first runs.'
+		).toBeDisabled();
+		await expect(
+			quickEditOf( keys[ 1 ] ),
+			'Quick edit cannot open while a run is going, as its end closes it.'
+		).toBeDisabled();
+
+		release();
+
+		const toast = page.locator( '.ant-notification-notice' ).last();
+
+		await expect( toast ).toContainText( '1 article moved to the trash.' );
+		await expect( second ).toBeEnabled();
+		await expect( quickEditOf( keys[ 1 ] ) ).toBeEnabled();
+		expect( bulk ).toHaveLength( 1 );
+
+		await page.unroute( /articles%2Fbulk|articles\/bulk/ );
+		await toast.getByRole( 'button', { name: 'Undo' } ).click();
+		await expect( page.locator( '.ant-message' ) ).toContainText(
+			'1 article put back.'
 		);
 	} );
 
@@ -300,7 +387,7 @@ test.describe( 'Articles bulk actions', () => {
 			} )
 			.click();
 		await expect( app.locator( '.lkb-bulk__count' ) ).toHaveText(
-			`${ ARTICLES } selected`
+			`All ${ ARTICLES } matching articles are selected`
 		);
 
 		await chooseAction( page, app, 'Move to trash' );

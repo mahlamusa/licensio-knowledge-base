@@ -3,8 +3,8 @@
  *
  * Opens the app through its hidden admin page and checks what only a real
  * WordPress can answer: the pills match the database, a Popconfirm stands
- * before every write and Cancel sends nothing, a quick edit is saved only
- * once confirmed, and the list state lives in the URL: filters replace the
+ * before a trash and Cancel sends nothing, a quick edit saves at once without
+ * one, and the list state lives in the URL: filters replace the
  * history entry while sort and page push one. An out of range page moves
  * back to the last page, a failed load shows no empty state, and a quick
  * edit reloads the list and its counts. A keyboard trash moves focus to the Undo toast, whose
@@ -21,7 +21,6 @@
 import { expect, test, type Page, type Request } from '@playwright/test';
 import {
 	cancelPopconfirm,
-	confirmPopconfirm,
 	contentManagerUrl,
 	openContentManager,
 	openPopconfirm,
@@ -153,7 +152,9 @@ test.describe( 'Articles app', () => {
 		expect( writes ).toHaveLength( 0 );
 	} );
 
-	test( 'quick edit saves only after confirmation', async ( { page } ) => {
+	test( 'quick edit saves at once, without a Popconfirm', async ( {
+		page,
+	} ) => {
 		const app = await openContentManager( page, 'articles' );
 		const writes = recordWrites( page );
 		const row = app.locator( '.ant-table-row' ).first();
@@ -167,12 +168,9 @@ test.describe( 'Articles app', () => {
 		await form.getByLabel( 'Title' ).fill( title );
 		await form.getByRole( 'button', { name: /Save/ } ).click();
 
-		expect( writes ).toHaveLength( 0 );
-
-		await confirmPopconfirm( page );
-
 		try {
 			await expect( app.getByText( title ) ).toBeVisible();
+			await expect( openPopconfirm( page ) ).toHaveCount( 0 );
 
 			expect( writes ).toHaveLength( 1 );
 			expect( writes[ 0 ].method() ).toBe( 'PATCH' );
@@ -323,7 +321,7 @@ test.describe( 'Articles app', () => {
 		await expect( app.getByText( 'No articles match' ) ).toHaveCount( 0 );
 	} );
 
-	test( 'a quick edit that publishes a draft takes it out of the Drafts view', async ( {
+	test( 'a quick edit that publishes a draft takes it out of the Drafts view and keeps focus on the page', async ( {
 		page,
 	} ) => {
 		const app = await openContentManager( page, 'articles' );
@@ -368,12 +366,15 @@ test.describe( 'Articles app', () => {
 				.filter( { hasText: /^Published$/ } )
 				.click();
 			await form.getByRole( 'button', { name: /Save/ } ).click();
-			await confirmPopconfirm( page );
 
 			await expect( row ).toHaveCount( 0 );
 			await expect(
 				app.locator( '.ant-table-expanded-row' )
 			).toHaveCount( 0 );
+			await expect(
+				app.locator( '.lkb-page__title' ),
+				'Focus stays on the page when the form goes away.'
+			).toBeFocused();
 			await expect( pill( 'Drafts' ) ).toContainText(
 				`(${ drafts - 1 })`
 			);
