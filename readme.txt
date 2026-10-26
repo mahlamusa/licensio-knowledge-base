@@ -205,11 +205,11 @@ Included as PHP source in `libraries/`:
 3. A single article with breadcrumbs, a search bar and an "On this page" table of contents.
 4. The search block with live type-ahead suggestions.
 5. All Articles: status tabs, filters, and categories, helpfulness rating, views and reading time columns.
-6. The analytics dashboard: views, searches and zero-result searches over time.
+6. The analytics dashboard: searches and article views over time, search effectiveness, and the questions with no answer.
 7. The feedback inbox.
 8. The settings screen.
-9. Categories: the drag-and-drop category tree with each category's own article order.
-10. Tags: search, the unused filter, and bulk merge, delete and convert to category.
+9. Categories: the add category form beside the drag-and-drop category tree, with each category's own article order.
+10. Tags: the add tag form beside the tag list, with search, the unused filter, and bulk merge, delete and convert to category.
 
 == Changelog ==
 
