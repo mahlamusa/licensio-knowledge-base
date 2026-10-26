@@ -38,6 +38,14 @@ class Licensio_KB_Order_WPDB extends Licensio_KB_Test_WPDB {
     public $position_reads = array();
 
     /**
+     * The statements asking whether a category has positions, in order.
+     *
+     * @since 1.0.0
+     * @var string[]
+     */
+    public $presence_reads = array();
+
+    /**
      * The post meta INSERT that fails, counted from 1; 0 for none.
      *
      * @since 1.0.0
@@ -159,5 +167,30 @@ class Licensio_KB_Order_WPDB extends Licensio_KB_Test_WPDB {
         );
 
         return $rows;
+    }
+
+    /**
+     * Answer whether any article holds a meta key.
+     *
+     * The meta key is read from the interpolated statement.
+     *
+     * @since 1.0.0
+     *
+     * @param string $query The statement.
+     *
+     * @return string|null '1' when an article holds the key, otherwise null.
+     */
+    public function get_var( $query = '' ) {
+        $this->presence_reads[] = (string) $query;
+
+        preg_match( "/meta_key = '([^']*)'/", (string) $query, $matches );
+
+        foreach ( call_user_func( $this->meta ) as $values ) {
+            if ( isset( $values[ $matches[1] ] ) ) {
+                return '1';
+            }
+        }
+
+        return null;
     }
 }

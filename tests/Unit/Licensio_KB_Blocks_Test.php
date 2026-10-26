@@ -1148,6 +1148,11 @@ class Licensio_KB_Blocks_Test extends Licensio_KB_Test_Case {
     public function test_the_faq_follows_the_category_order_when_limited_to_one_category() {
         $this->stub_articles( array() );
 
+        // No object cache, so each render asks the double again.
+        Functions\when( 'wp_cache_get_last_changed' )->justReturn( '1' );
+        Functions\when( 'wp_cache_get' )->justReturn( false );
+        Functions\when( 'wp_cache_set' )->justReturn( true );
+
         $ordered = true;
 
         Functions\when( 'get_term_by' )->justReturn(
