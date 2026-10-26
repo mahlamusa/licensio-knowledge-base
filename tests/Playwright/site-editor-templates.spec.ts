@@ -65,7 +65,9 @@ test.describe( 'Knowledge base block templates in the Site Editor', () => {
 			'Article Tag',
 			'Article Search Results',
 		] ) {
-			await expect( templateCard( page, title ) ).toBeVisible();
+			await expect( templateCard( page, title ) ).toBeVisible( {
+				timeout: 20_000,
+			} );
 		}
 	} );
 
@@ -84,6 +86,9 @@ test.describe( 'Knowledge base block templates in the Site Editor', () => {
 	test( 'a template can be customised, saved and reset', async ( {
 		page,
 	} ) => {
+		// Two cold Site Editor loads and two saves do not fit the default test budget.
+		test.slow();
+
 		await openTemplateList( page );
 
 		await templateCard( page, 'Single Article' ).click();
