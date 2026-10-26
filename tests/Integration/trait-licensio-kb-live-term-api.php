@@ -513,6 +513,42 @@ trait Licensio_KB_Live_Term_API {
     }
 
     /**
+     * Insert many published articles under one term and recount it.
+     *
+     * @since 1.0.0
+     *
+     * @param int $term_id The term.
+     * @param int $count   How many articles.
+     *
+     * @return int[] The article IDs.
+     */
+    protected function live_seed_articles( $term_id, $count ) {
+        $posts = array();
+
+        for ( $i = 0; $i < $count; $i++ ) {
+            $posts[] = "(1, NOW(), NOW(), '', 'Bulk {$i}', '', 'publish', 'open', '', 'bulk-{$i}', '', '', NOW(), NOW(), '', 0, 'licensio_article')";
+        }
+
+        $this->db->query(
+            'INSERT INTO ' . $this->table( 'posts' ) . ' (post_author, post_date, post_date_gmt, post_content, post_title, post_excerpt, post_status, comment_status, post_password, post_name, to_ping, pinged, post_modified, post_modified_gmt, post_content_filtered, menu_order, post_type) VALUES '
+            . implode( ', ', $posts )
+        );
+
+        $ids   = range( (int) $this->db->insert_id, (int) $this->db->insert_id + $count - 1 );
+        $tt_id = (int) $this->live_rows( 'SELECT term_taxonomy_id FROM ' . $this->table( 'term_taxonomy' ) . ' WHERE term_id = ' . (int) $term_id )[0]['term_taxonomy_id'];
+        $rows  = array();
+
+        foreach ( $ids as $id ) {
+            $rows[] = '(' . $id . ', ' . $tt_id . ')';
+        }
+
+        $this->db->query( 'INSERT INTO ' . $this->table( 'term_relationships' ) . ' (object_id, term_taxonomy_id) VALUES ' . implode( ', ', $rows ) );
+        $this->live_recount( $tt_id );
+
+        return $ids;
+    }
+
+    /**
      * Make the relationship delete of one term fail for one object.
      *
      * Swaps `$wpdb` for an adapter that refuses the batched `DELETE` taking

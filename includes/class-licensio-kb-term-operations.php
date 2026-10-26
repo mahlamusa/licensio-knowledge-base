@@ -4,8 +4,10 @@
  *
  * Moving article assignments from one term to another and merging terms are
  * needed by category delete with reassignment, category merge, tag merge and
- * tag conversion. They live here once, so both REST controllers apply the same
- * rules and fire the same hooks.
+ * tag conversion. Taking a term off all its articles before the term is
+ * deleted is needed by category delete without reassignment and tag delete.
+ * They live here once, so both REST controllers apply the same rules and fire
+ * the same hooks.
  *
  * Every move is all or nothing and is recorded, so a caller whose later step
  * fails can put the articles back with `undo()`. The relationship rows move
@@ -21,7 +23,7 @@
  * `deleted_term_relationships` ( $object_id, array( $tt_id ), $taxonomy ).
  * `set_object_terms` is not fired, since no object's whole term list is set.
  * `licensio_kb_term_assignments_changed` ( int[] $object_ids, string
- * $taxonomy ) also fires, once per taxonomy for every move, merge or undo, so
+ * $taxonomy ) also fires, once per taxonomy for every move, merge, removal or undo, so
  * the search index can refresh the articles that changed.
  *
  * A move rewrites articles the user may not be able to open, so the REST
@@ -190,18 +192,110 @@ class Licensio_KB_Term_Operations {
     }
 
     /**
+     * Take a term off every object assigned to it.
+     *
+     * For deleting a term whose objects are not moved elsewhere: a category
+     * deleted with its articles left without it, or a deleted tag. Core's
+     * `wp_delete_term()` would rewrite the terms of every assigned object one
+     * object at a time; here the relationship rows are deleted in batches, as
+     * in `move_assignments()`, so the delete that follows finds the term
+     * empty. The term itself is left in place.
+     *
+     * All or nothing: if a batch fails, the objects already handled get the
+     * term back and the error is returned. On success `$record` receives what
+     * was removed, so a caller whose own later step fails (the term's delete)
+     * can put the objects back with `undo()`.
+     *
+     * No capability is checked here. Callers must check the current user's
+     * capability first, and `check_articles()` for the objects.
+     *
+     * @since 1.0.0
+     *
+     * @param int        $term_id  The term to take off its objects.
+     * @param string     $taxonomy The term's taxonomy.
+     * @param array|null $record   Optional. Receives the removal made, for `undo()`; empty when nothing was removed.
+     *
+     * @return int|WP_Error The number of objects that lost the term, or an error when an input is invalid or a write fails.
+     */
+    public function remove_assignments( $term_id, $taxonomy, &$record = null ) {
+        $record  = array();
+        $term_id = absint( $term_id );
+
+        if ( ! in_array( $taxonomy, array( Licensio_KB_Post_Types::TAXONOMY_CATEGORY, Licensio_KB_Post_Types::TAXONOMY_TAG ), true ) ) {
+            return new WP_Error(
+                'licensio_kb_invalid_taxonomy',
+                __( 'That taxonomy is not a knowledge base taxonomy.', 'licensio-knowledge-base' ),
+                array( 'status' => 400 )
+            );
+        }
+
+        $term = get_term( $term_id, $taxonomy );
+
+        if ( ! $term instanceof WP_Term ) {
+            return new WP_Error(
+                'licensio_kb_invalid_term',
+                __( 'One of the chosen terms does not exist.', 'licensio-knowledge-base' ),
+                array( 'status' => 404 )
+            );
+        }
+
+        $object_ids = get_objects_in_term( $term_id, $taxonomy );
+
+        if ( is_wp_error( $object_ids ) ) {
+            return $object_ids;
+        }
+
+        $object_ids = array_values( array_unique( array_map( 'intval', (array) $object_ids ) ) );
+
+        if ( array() === $object_ids ) {
+            return 0;
+        }
+
+        return $this->with_deferred_counting(
+            function () use ( $term, $taxonomy, $object_ids, &$record ) {
+                $record = array(
+                    array(
+                        'from'          => (int) $term->term_id,
+                        'from_tt'       => (int) $term->term_taxonomy_id,
+                        'from_taxonomy' => (string) $taxonomy,
+                        'to'            => 0,
+                        'to_tt'         => 0,
+                        'to_taxonomy'   => (string) $taxonomy,
+                        'added'         => array(),
+                        'removed'       => array(),
+                    ),
+                );
+
+                $written = $this->write_relationships( 'remove', $object_ids, $record[0]['from_tt'], (string) $taxonomy, $record[0]['removed'] );
+
+                if ( is_wp_error( $written ) ) {
+                    $this->undo( $record );
+                    $record = array();
+
+                    return $written;
+                }
+
+                $this->refresh( $record );
+
+                return count( $object_ids );
+            }
+        );
+    }
+
+    /**
      * Put back the assignments a move or merge recorded.
      *
      * Works through the record newest first: the objects that lost the source
      * term get it back, and the objects that gained the target term lose it
-     * again; an object that had the target before the move keeps it. Best
+     * again; an object that had the target before the move keeps it. A
+     * removal, which has no target, only gives the term back. Best
      * effort: a write that fails here is skipped, since the caller is already
      * reporting the error that made it undo. Caches and counts are refreshed
      * for every object in the record.
      *
      * @since 1.0.0
      *
-     * @param array<int, array<string, mixed>> $record The record `move_assignments()` or `move_across_taxonomies()` filled.
+     * @param array<int, array<string, mixed>> $record The record `move_assignments()`, `move_across_taxonomies()` or `remove_assignments()` filled.
      *
      * @return void
      */
@@ -447,7 +541,8 @@ class Licensio_KB_Term_Operations {
         foreach ( $objects as $taxonomy => $object_ids ) {
             $object_ids = array_values( array_unique( $object_ids ) );
 
-            wp_update_term_count( array_values( array_unique( $terms[ $taxonomy ] ) ), $taxonomy );
+            // A removal records no target term, so its zero is left out.
+            wp_update_term_count( array_values( array_unique( array_filter( $terms[ $taxonomy ] ) ) ), $taxonomy );
 
             if ( array() === $object_ids ) {
                 continue;

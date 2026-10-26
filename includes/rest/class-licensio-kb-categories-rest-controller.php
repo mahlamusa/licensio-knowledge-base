@@ -859,13 +859,14 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      * of `parent` is refused for a top-level category, which has no parent to
      * move them to; `none` leaves the articles without this category.
      *
-     * The articles are moved first, then the child categories, then the
-     * category is deleted. All or nothing: if a step fails, the articles and
-     * child categories already moved are put back, the category is kept and
-     * the error is returned. Articles are only moved when the user may edit
-     * every one of them and nobody else has one open in the editor.
+     * The articles are moved (or, for `none`, lose the category) first, in
+     * batches, then the child categories, then the empty category is deleted.
+     * All or nothing: if a step fails, the articles and child categories
+     * already moved are put back, the category is kept and the error is
+     * returned. Articles are only changed when the user may edit every one of
+     * them and nobody else has one open in the editor.
      *
-     * @since 1.0.0 Checks each article before moving it.
+     * @since 1.0.0 Checks each article before changing it, and takes the category off in batches for `none`.
      *
      * @param WP_REST_Request $request The request.
      *
@@ -898,20 +899,26 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
             return $plan;
         }
 
-        $moved  = 0;
-        $record = array();
+        $moved   = 0;
+        $record  = array();
+        $checked = $this->operations->check_articles( array( $id ), Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
+
+        if ( is_wp_error( $checked ) ) {
+            return $checked;
+        }
 
         if ( $plan['articles'] > 0 ) {
-            $checked = $this->operations->check_articles( array( $id ), Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
-
-            if ( is_wp_error( $checked ) ) {
-                return $checked;
-            }
-
             $moved = $this->operations->move_assignments( $id, $plan['articles'], Licensio_KB_Post_Types::TAXONOMY_CATEGORY, $record );
 
             if ( is_wp_error( $moved ) ) {
                 return $moved;
+            }
+        } else {
+            // Taken off in batches, so the delete below finds the category empty.
+            $removed = $this->operations->remove_assignments( $id, Licensio_KB_Post_Types::TAXONOMY_CATEGORY, $record );
+
+            if ( is_wp_error( $removed ) ) {
+                return $removed;
             }
         }
 

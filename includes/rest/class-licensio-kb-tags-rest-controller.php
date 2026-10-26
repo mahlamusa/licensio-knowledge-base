@@ -772,7 +772,12 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
      * Each tag is deleted on its own, so one that fails does not stop the
      * rest. The answer says which were deleted and which failed.
      *
-     * @since 1.0.0
+     * A tag is taken off its articles in batches before it is deleted, so
+     * core does not rewrite them one at a time; if the delete then fails, the
+     * articles get the tag back. A tag with an article the user may not edit,
+     * or that someone else has open in the editor, is kept and reported.
+     *
+     * @since 1.0.0 Checks each article first and takes the tag off in batches.
      *
      * @param WP_REST_Request $request The request.
      *
@@ -791,12 +796,23 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
                 continue;
             }
 
-            $result = wp_delete_term( $id, Licensio_KB_Post_Types::TAXONOMY_TAG );
+            $record = array();
+            $result = $this->term_operations->check_articles( array( $id ), Licensio_KB_Post_Types::TAXONOMY_TAG );
+
+            if ( true === $result ) {
+                $result = $this->term_operations->remove_assignments( $id, Licensio_KB_Post_Types::TAXONOMY_TAG, $record );
+            }
+
+            if ( ! is_wp_error( $result ) ) {
+                $result = wp_delete_term( $id, Licensio_KB_Post_Types::TAXONOMY_TAG );
+            }
 
             if ( true === $result ) {
                 $deleted[] = $id;
                 continue;
             }
+
+            $this->term_operations->undo( $record );
 
             $failed[] = self::failure(
                 $id,

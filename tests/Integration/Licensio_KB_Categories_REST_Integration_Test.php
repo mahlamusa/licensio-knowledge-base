@@ -954,7 +954,7 @@ class Licensio_KB_Categories_REST_Integration_Test extends Licensio_KB_Analytics
         $size   = ( 2 * Licensio_KB_Term_Operations::BATCH_SIZE ) + 1;
         $source = $this->ids['Upgrade'];
         $target = $this->ids['Billing'];
-        $ids    = $this->seed_articles( $source, $size );
+        $ids    = $this->live_seed_articles( $source, $size );
 
         $before = $this->live_snapshot();
 
@@ -994,39 +994,83 @@ class Licensio_KB_Categories_REST_Integration_Test extends Licensio_KB_Analytics
     }
 
     /**
-     * Insert many published articles into one category and recount it.
+     * Deleting a category with thousands of articles and `none` removes them in batches.
+     *
+     * The articles lose the category in one statement per batch, so core's
+     * delete finds the category empty and rewrites no article one at a time.
+     * The articles keep their other categories, and a late batch that fails
+     * puts every article back and keeps the category.
      *
      * @since 1.0.0
      *
-     * @param int $term_id The category.
-     * @param int $count   How many articles.
-     *
-     * @return int[] The article IDs.
+     * @return void
      */
-    private function seed_articles( $term_id, $count ) {
-        $posts = array();
+    public function test_a_large_delete_leaving_articles_uncategorised_removes_them_in_batches() {
+        $size     = 3000;
+        $source   = $this->ids['Upgrade'];
+        $other    = $this->ids['Billing'];
+        $ids      = $this->live_seed_articles( $source, $size );
+        $tt_id    = (int) $this->live_term_row( $source, Licensio_KB_Post_Types::TAXONOMY_CATEGORY )['term_taxonomy_id'];
+        $other_tt = (int) $this->live_term_row( $other, Licensio_KB_Post_Types::TAXONOMY_CATEGORY )['term_taxonomy_id'];
 
-        for ( $i = 0; $i < $count; $i++ ) {
-            $posts[] = "(1, NOW(), NOW(), '', 'Bulk {$i}', '', 'publish', 'open', '', 'bulk-{$i}', '', '', NOW(), NOW(), '', 0, 'licensio_article')";
-        }
+        $this->db->query( 'INSERT INTO ' . $this->table( 'term_relationships' ) . ' (object_id, term_taxonomy_id) SELECT object_id, ' . $other_tt . ' FROM ' . $this->table( 'term_relationships' ) . ' WHERE term_taxonomy_id = ' . $tt_id );
 
-        $this->db->query(
-            'INSERT INTO ' . $this->table( 'posts' ) . ' (post_author, post_date, post_date_gmt, post_content, post_title, post_excerpt, post_status, comment_status, post_password, post_name, to_ping, pinged, post_modified, post_modified_gmt, post_content_filtered, menu_order, post_type) VALUES '
-            . implode( ', ', $posts )
+        $request = $this->request(
+            array(
+                'id'                => $source,
+                'reassign_articles' => 'none',
+                'reassign_children' => 'parent',
+            )
+        );
+        $before  = $this->live_snapshot();
+
+        $this->live_fail_removal( $source, Licensio_KB_Post_Types::TAXONOMY_CATEGORY, end( $ids ) );
+
+        $this->assertInstanceOf( 'WP_Error', $this->controller->delete_item( $request ) );
+        $this->assertSame( $before, $this->live_snapshot(), 'The batches written before the failure are put back and the category is kept.' );
+
+        $GLOBALS['wpdb']        = $this->adapter; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Back to the plain adapter.
+        $this->adapter->queries = array();
+
+        $left_at_delete = null;
+
+        Brain\Monkey\Functions\when( 'wp_delete_term' )->alias(
+            function ( $term_id, $taxonomy ) use ( $tt_id, &$left_at_delete ) {
+                $left_at_delete = $this->count_rows( 'term_relationships', 'term_taxonomy_id = ' . $tt_id );
+
+                return $this->live_delete_term( $term_id, $taxonomy );
+            }
         );
 
-        $ids   = range( (int) $this->db->insert_id, (int) $this->db->insert_id + $count - 1 );
-        $tt_id = (int) $this->live_rows( 'SELECT term_taxonomy_id FROM ' . $this->table( 'term_taxonomy' ) . ' WHERE term_id = ' . (int) $term_id )[0]['term_taxonomy_id'];
-        $rows  = array();
+        $result = $this->controller->delete_item( $request );
 
-        foreach ( $ids as $id ) {
-            $rows[] = '(' . $id . ', ' . $tt_id . ')';
-        }
+        $this->assertIsArray( $result );
+        $this->assertSame( 0, $result['moved'] );
+        $this->assertSame( 0, $left_at_delete, 'Core deletes an empty category.' );
+        $this->assertNull( $this->parent_of( $source ) );
+        $this->assertSame( $size, $this->count_rows( 'term_relationships', 'term_taxonomy_id = ' . $other_tt ), 'The articles keep their other category.' );
+        $this->assertCount( (int) ceil( $size / Licensio_KB_Term_Operations::BATCH_SIZE ), $this->relationship_deletes( $tt_id ), 'One statement per batch, not one per article.' );
+        $this->assertContains( 'licensio_kb_term_assignments_changed', $this->fired_actions );
+    }
 
-        $this->db->query( 'INSERT INTO ' . $this->table( 'term_relationships' ) . ' (object_id, term_taxonomy_id) VALUES ' . implode( ', ', $rows ) );
-        $this->live_recount( $tt_id );
-
-        return $ids;
+    /**
+     * The batched relationship deletes the adapter ran for one term.
+     *
+     * @since 1.0.0
+     *
+     * @param int $tt_id The term taxonomy ID.
+     *
+     * @return string[] The statements.
+     */
+    private function relationship_deletes( $tt_id ) {
+        return array_values(
+            array_filter(
+                $this->adapter->queries,
+                function ( $query ) use ( $tt_id ) {
+                    return 1 === preg_match( '/^DELETE FROM \S+ WHERE term_taxonomy_id = ' . (int) $tt_id . ' AND object_id IN /', (string) $query );
+                }
+            )
+        );
     }
 
     /**

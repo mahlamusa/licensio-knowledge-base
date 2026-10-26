@@ -1501,7 +1501,7 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * By default a delete leaves the articles and moves the children up.
+     * By default a delete takes the category off its articles and moves the children up.
      *
      * @since 1.0.0
      *
@@ -1526,7 +1526,7 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
             ),
             $result
         );
-        $this->assertSame( array( 'update 2 parent=0', 'delete 1' ), $this->events );
+        $this->assertSame( array( 'unassign 101 from 1', 'update 2 parent=0', 'delete 1' ), $this->events, 'The articles lose the category before core deletes it.' );
     }
 
     /**
@@ -1995,7 +1995,7 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * A delete whose child move fails puts back the children already moved and keeps the category.
+     * A delete whose child move fails puts back the children and the articles and keeps the category.
      *
      * @since 1.0.0
      *
@@ -2018,7 +2018,7 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
         );
 
         $this->assert_error( 'db_update_error', 400, $result );
-        $this->assertSame( array( 'update 2 parent=4', 'update 2 parent=1' ), $this->events );
+        $this->assertSame( array( 'unassign 101 from 1', 'update 2 parent=4', 'update 2 parent=1', 'assign 101 to 1' ), $this->events );
         $this->assertSame( 1, $this->terms[2]['parent'] );
         $this->assertSame( 1, $this->terms[6]['parent'] );
     }
