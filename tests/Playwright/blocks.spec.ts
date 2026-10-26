@@ -195,7 +195,7 @@ test.describe( 'Knowledge base blocks', () => {
 			}
 		} finally {
 			// Delete the page again, or every run adds one more to the site and its menus.
-			await request.delete(
+			const deleted = await request.delete(
 				`/?rest_route=/wp/v2/pages/${ body.id }&force=true`,
 				{
 					headers: {
@@ -203,6 +203,10 @@ test.describe( 'Knowledge base blocks', () => {
 						Cookie: cookieHeader,
 					},
 				}
+			);
+
+			expect( deleted.ok(), 'The coverage page was not deleted.' ).toBe(
+				true
 			);
 		}
 	} );

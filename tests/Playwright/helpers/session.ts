@@ -31,11 +31,12 @@ const FIRST_ADMIN_RENDER = 30_000;
 /**
  * Sign in as the administrator.
  *
- * Waits for the redirect into wp-admin before looking for the admin bar, so a
- * rejected sign-in fails here on the URL rather than on a missing admin bar.
+ * Waits for either the admin bar or the login error. A rejected sign-in
+ * comes straight back with the error, so it fails at once with a clear
+ * message instead of waiting out the cold first render allowance.
  *
  * @since 1.0.0
- * @since 1.0.0 Waits for the redirect and allows for a cold first admin render.
+ * @since 1.0.0 Allows for a cold first admin render and fails fast on a rejected sign-in.
  *
  * @param {Page} page The browser page.
  *
@@ -45,11 +46,16 @@ export async function logIn( page: Page ): Promise< void > {
 	await page.goto( '/wp-login.php' );
 	await page.fill( '#user_login', user );
 	await page.fill( '#user_pass', password );
-	await Promise.all( [
-		page.waitForURL( /\/wp-admin\//, { timeout: FIRST_ADMIN_RENDER } ),
-		page.click( '#wp-submit' ),
-	] );
-	await expect( page.locator( '#wpadminbar' ) ).toBeVisible( {
+	await page.click( '#wp-submit' );
+
+	const adminBar = page.locator( '#wpadminbar' );
+	const loginError = page.locator( '#login_error' );
+
+	await expect( adminBar.or( loginError ).first() ).toBeVisible( {
 		timeout: FIRST_ADMIN_RENDER,
 	} );
+	await expect( loginError, 'WordPress rejected the sign-in.' ).toHaveCount(
+		0
+	);
+	await expect( page ).toHaveURL( /\/wp-admin\// );
 }
