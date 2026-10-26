@@ -351,6 +351,105 @@ class Licensio_KB_Assets_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * An asset loader reading the manifest fixture, with a set dev server answer.
+     *
+     * @since 1.0.0
+     *
+     * @param bool|null $hmr Whether the dev server serves the apps; null when it must not be probed.
+     *
+     * @return Licensio_KB_Assets The asset loader.
+     */
+    private function assets_with_dev_server( $hmr ) {
+        return new class( $hmr ) extends Licensio_KB_Assets {
+
+            /**
+             * Whether the dev server serves the apps; null when it must not be probed.
+             *
+             * @since 1.0.0
+             * @var bool|null
+             */
+            private $hmr;
+
+            /**
+             * Build the double.
+             *
+             * @since 1.0.0
+             *
+             * @param bool|null $hmr Whether the dev server serves the apps; null when it must not be probed.
+             */
+            public function __construct( $hmr ) {
+                $this->hmr = $hmr;
+            }
+
+            /**
+             * Whether the dev server serves the apps.
+             *
+             * @since 1.0.0
+             *
+             * @return bool The configured answer.
+             *
+             * @throws LogicException When the test said the dev server must not be probed.
+             */
+            public function is_hmr_enabled() {
+                if ( null === $this->hmr ) {
+                    throw new LogicException( 'The dev server was probed.' );
+                }
+
+                return $this->hmr;
+            }
+        };
+    }
+
+    /**
+     * Built apps can load, and the dev server is never probed for them.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_built_apps_can_load_without_probing_the_dev_server() {
+        $assets = $this->assets_with_dev_server( null );
+
+        $this->assertTrue( $assets->apps_can_load( array( 'apps/analytics/index.ts', 'apps/settings/index.ts' ) ) );
+        $this->assertTrue( $assets->apps_can_load( array() ) );
+    }
+
+    /**
+     * One app missing from the manifest stops the apps loading without the dev server.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_missing_app_cannot_load_without_the_dev_server() {
+        $this->assertFalse( $this->assets_with_dev_server( false )->apps_can_load( array( 'apps/analytics/index.ts', 'apps/tags/index.ts' ) ) );
+    }
+
+    /**
+     * A missing app can load when the dev server serves the apps.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_missing_app_can_load_from_the_dev_server() {
+        $this->assertTrue( $this->assets_with_dev_server( true )->apps_can_load( array( 'apps/analytics/index.ts', 'apps/tags/index.ts' ) ) );
+    }
+
+    /**
+     * An entry the manifest does not have cannot load without the HMR constant.
+     *
+     * Uses the real dev server check, which is off when `HMR_DEV` is not set.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_unbuilt_entry_cannot_load_without_the_hmr_constant() {
+        $this->assertFalse( ( new Licensio_KB_Assets() )->apps_can_load( array( 'apps/nope/index.ts' ) ) );
+    }
+
+    /**
      * The shared frontend namespace is registered as a classic script.
      *
      * It must be served from `assets/`, not from the Vite `dist/` output: a Vite

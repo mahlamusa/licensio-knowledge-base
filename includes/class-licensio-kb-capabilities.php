@@ -140,6 +140,15 @@ class Licensio_KB_Capabilities {
      * each time would lose any capability an administrator had granted by hand.
      * Exposed for the uninstall path and for tests.
      *
+     * After the roles named by `licensio_capabilities` are revoked, every role
+     * of the current site is swept for the plugin's own capability. A role
+     * that was granted it by hand, or through a filter that has since been
+     * removed, would otherwise keep it after the plugin is gone. The sweep
+     * touches only `manage_licensio_kb`, never the capabilities a filter
+     * lists, which may be core capabilities the role still needs. An explicit
+     * denial (granted as false) is removed too, so isset() is the check
+     * rather than has_cap().
+     *
      * @since 1.0.0
      *
      * @return void
@@ -154,6 +163,12 @@ class Licensio_KB_Capabilities {
 
             foreach ( (array) $capabilities as $capability ) {
                 $role->remove_cap( (string) $capability );
+            }
+        }
+
+        foreach ( wp_roles()->role_objects as $role ) {
+            if ( $role instanceof WP_Role && isset( $role->capabilities[ self::CAPABILITY ] ) ) {
+                $role->remove_cap( self::CAPABILITY );
             }
         }
     }

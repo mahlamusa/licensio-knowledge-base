@@ -174,6 +174,14 @@ class Licensio_KB_Live_WPDB {
     public $termmeta = '';
 
     /**
+     * The options table name.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    public $options = '';
+
+    /**
      * Build the adapter.
      *
      * @since 1.0.0
@@ -192,6 +200,7 @@ class Licensio_KB_Live_WPDB {
         $this->term_taxonomy      = $prefix . 'term_taxonomy';
         $this->term_relationships = $prefix . 'term_relationships';
         $this->termmeta           = $prefix . 'termmeta';
+        $this->options            = $prefix . 'options';
     }
 
     /**

@@ -38,6 +38,16 @@ abstract class Licensio_KB_REST_Controller extends WP_REST_Controller {
     protected $namespace = LICENSIO_KB_REST_NAMESPACE;
 
     /**
+     * The transient name prefix the rate-limit counters are stored under.
+     *
+     * Public so the uninstaller deletes the counters by the same prefix.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    const RATE_LIMIT_TRANSIENT_PREFIX = 'licensio_rl_';
+
+    /**
      * The capability required for management endpoints.
      *
      * @since 1.0.0
@@ -203,7 +213,7 @@ abstract class Licensio_KB_REST_Controller extends WP_REST_Controller {
      * @return string The transient key.
      */
     private static function rate_limit_key( $bucket, $hash ) {
-        return 'licensio_rl_' . md5( (string) $bucket . '|' . (string) $hash );
+        return self::RATE_LIMIT_TRANSIENT_PREFIX . md5( (string) $bucket . '|' . (string) $hash );
     }
 
     /**

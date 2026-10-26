@@ -79,6 +79,32 @@ class Licensio_KB_Admin_Page_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * Admin notices are placed above the application, not inside it.
+     *
+     * WordPress moves notices to just after `.wp-header-end`, or after the
+     * first `.wrap h1` when there is none, which on a mounted application is
+     * inside its header. The marker must be inside the wrap and before the
+     * mount element.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_header_end_marker_is_before_the_mount_element() {
+        $markup = $this->render();
+
+        $wrap   = strpos( $markup, 'class="wrap lkb-wrap"' );
+        $marker = strpos( $markup, '<hr class="wp-header-end">' );
+        $mount  = strpos( $markup, 'id="licensio-kb-settings"' );
+
+        $this->assertNotFalse( $wrap );
+        $this->assertNotFalse( $marker );
+        $this->assertNotFalse( $mount );
+        $this->assertLessThan( $marker, $wrap );
+        $this->assertLessThan( $mount, $marker );
+    }
+
+    /**
      * The application gets the mount point it was promised.
      *
      * @since 1.0.0

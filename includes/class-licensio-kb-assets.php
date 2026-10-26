@@ -277,6 +277,31 @@ class Licensio_KB_Assets {
     }
 
     /**
+     * Whether the given admin apps can load.
+     *
+     * An app can load when the build manifest has a file for its entry, or
+     * when the Vite dev server serves the apps. The dev server is only probed
+     * once an entry is found missing, so a built install never opens a socket.
+     *
+     * @since 1.0.0
+     *
+     * @param string[] $entries Source paths relative to the plugin root.
+     *
+     * @return bool True when every app can load.
+     */
+    public function apps_can_load( array $entries ) {
+        foreach ( $entries as $entry ) {
+            $chunk = $this->manifest_entry( $entry );
+
+            if ( empty( $chunk['file'] ) ) {
+                return $this->is_hmr_enabled();
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * Every stylesheet an entry needs, including its shared chunks'.
      *
      * Vite attaches the CSS of a *shared* chunk to that chunk's own manifest

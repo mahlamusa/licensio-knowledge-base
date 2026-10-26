@@ -295,12 +295,14 @@ test.describe( 'Articles bulk actions', () => {
 
 		await expect( toast ).toContainText( '1 article moved to the trash.' );
 		await expect( confirmDialog( page ) ).toBeHidden();
-		// The trashed row is gone with its Trash button, so focus lands on
-		// the page title rather than the body.
+		// The trashed row is gone with its Trash button, so focus passes
+		// through the page title on to the Undo toast rather than the body.
 		await expect(
 			app.locator( `tr[data-row-key="${ keys[ 0 ] }"]` )
 		).toHaveCount( 0 );
-		await expect( page.locator( '.lkb-page__title' ) ).toBeFocused();
+		await expect(
+			toast.getByRole( 'button', { name: 'Undo' } )
+		).toBeFocused();
 		await expect( second ).toBeEnabled();
 		await expect( quickEditOf( keys[ 1 ] ) ).toBeEnabled();
 		expect( bulk ).toHaveLength( 1 );
