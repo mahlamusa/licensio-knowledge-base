@@ -443,6 +443,7 @@ defineExpose( { reload: loadRuns } );
 				:data-source="entries"
 				:row-key="( entry: LogEntry ) => entry.id"
 				:loading="loading"
+				:scroll="{ x: true }"
 				:pagination="{
 					current: page,
 					pageSize: PAGE_SIZE,

@@ -205,7 +205,7 @@ const expandedKeys = computed( () =>
 			:columns="columns"
 			:data-source="store.items"
 			:loading="store.loading"
-			:scroll="{ x: 'max-content' }"
+			:scroll="{ x: true }"
 			:expanded-row-keys="expandedKeys"
 			:show-expand-column="false"
 			:row-selection="{
@@ -560,6 +560,25 @@ const expandedKeys = computed( () =>
 	margin-bottom: 2.8px;
 	font-size: 13px;
 	line-height: 1.3em;
+}
+
+/*
+ * The table wraps to the screen rather than scrolling, and the auto layout
+ * would otherwise share the spare width evenly, squeezing long titles into a
+ * narrow column. A floor keeps the title the widest column, as in core. On
+ * small laptop screens the floor is lower, so the default columns still fit
+ * without a scroll bar down to 1024px.
+ */
+@media ( min-width: 783px ) {
+	.lkb-title {
+		min-width: 160px;
+	}
+}
+
+@media ( min-width: 1280px ) {
+	.lkb-title {
+		min-width: 200px;
+	}
 }
 
 .lkb-title__link {

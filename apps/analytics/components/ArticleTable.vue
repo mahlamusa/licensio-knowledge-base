@@ -72,6 +72,7 @@ const columns = computed( () => {
 		:data-source="rows"
 		:row-key="( row: ArticleRow ) => row.article_id"
 		:pagination="false"
+		:scroll="{ x: true }"
 		size="small"
 	>
 		<template #emptyText>
