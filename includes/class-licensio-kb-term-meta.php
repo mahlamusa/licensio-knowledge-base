@@ -369,8 +369,8 @@ class Licensio_KB_Term_Meta {
             return '';
         }
 
-        $size = function_exists( 'getimagesizefromstring' ) ? @getimagesizefromstring( $bytes ) : false; // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Bytes that are not an image raise a notice; that is the answer, not an error.
-        $mime = is_array( $size ) && isset( $size['mime'] ) ? (string) $size['mime'] : '';
+        $size = @getimagesizefromstring( $bytes ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Bytes that are not an image raise a notice; that is the answer, not an error.
+        $mime = is_array( $size ) ? $size['mime'] : '';
 
         if ( ! in_array( $mime, self::ICON_DATA_TYPES, true ) ) {
             return '';
