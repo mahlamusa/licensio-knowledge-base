@@ -182,6 +182,7 @@ const columns = computed( () => [
 	{
 		title: __( 'Published', 'licensio-knowledge-base' ),
 		key: 'count',
+		class: 'lkb-tags__count',
 		width: 110,
 		sorter: true,
 		sortOrder: sortOrder( 'count' ),
@@ -577,6 +578,19 @@ watch(
 
 .lkb-tags__description {
 	color: var( --lkb-ink-muted );
+}
+
+/*
+ * The Published column holds a short number under a sortable header, so its
+ * cells are narrower at the sides. At 1024px with the admin menu expanded the
+ * table is only just wide enough for its fixed parts (row actions, a slug,
+ * the headers); this keeps it from scrolling sideways by a few pixels.
+ */
+.lkb-tablecard--core :deep( .ant-table-thead > tr > th.lkb-tags__count ),
+.lkb-tablecard--core
+	:deep( .ant-table-tbody > tr.ant-table-row > td.lkb-tags__count ) {
+	padding-right: 4px;
+	padding-left: 4px;
 }
 
 /*
