@@ -518,7 +518,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      */
     public function get_preferences_args() {
         return array(
-            'columns'  => array(
+            'columns'        => array(
                 'type'     => 'array',
                 'required' => true,
                 'items'    => array(
@@ -526,10 +526,14 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
                     'enum' => self::COLUMNS,
                 ),
             ),
-            'per_page' => array(
+            'per_page'       => array(
                 'type'     => 'integer',
                 'required' => true,
                 'enum'     => self::PER_PAGE_OPTIONS,
+            ),
+            'columns_chosen' => array(
+                'type'    => 'boolean',
+                'default' => false,
             ),
         );
     }
@@ -1688,8 +1692,9 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
     public function update_preferences( $request ) {
         $preferences = self::sanitize_preferences(
             array(
-                'columns'  => $request->get_param( 'columns' ),
-                'per_page' => $request->get_param( 'per_page' ),
+                'columns'        => $request->get_param( 'columns' ),
+                'per_page'       => $request->get_param( 'per_page' ),
+                'columns_chosen' => $request->get_param( 'columns_chosen' ),
             )
         );
 
@@ -1705,7 +1710,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      *
      * @param int $user_id The user ID.
      *
-     * @return array{columns: string[], per_page: int} The preferences.
+     * @return array{columns: string[], per_page: int, columns_chosen: bool} The preferences.
      */
     public static function preferences( $user_id ) {
         return self::sanitize_preferences( get_user_meta( (int) $user_id, self::PREFERENCES_META, true ) );
@@ -1714,11 +1719,16 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
     /**
      * Hold preferences to the allow-listed columns and page sizes.
      *
+     * `columns_chosen` is true once the user picked their columns in the
+     * Columns picker. Until then the app may hide the less used default
+     * columns on medium screens, so the term columns stay readable; a choice
+     * the user made is shown exactly.
+     *
      * @since 1.0.0
      *
      * @param mixed $value The stored or submitted preferences.
      *
-     * @return array{columns: string[], per_page: int} The clean preferences.
+     * @return array{columns: string[], per_page: int, columns_chosen: bool} The clean preferences.
      */
     public static function sanitize_preferences( $value ) {
         $value    = is_array( $value ) ? $value : array();
@@ -1727,8 +1737,9 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
 
         return array(
             // Kept in table order, whatever order they were sent in.
-            'columns'  => array_values( array_intersect( self::COLUMNS, array_map( 'strval', $columns ) ) ),
-            'per_page' => in_array( $per_page, self::PER_PAGE_OPTIONS, true ) ? $per_page : self::PER_PAGE_OPTIONS[0],
+            'columns'        => array_values( array_intersect( self::COLUMNS, array_map( 'strval', $columns ) ) ),
+            'per_page'       => in_array( $per_page, self::PER_PAGE_OPTIONS, true ) ? $per_page : self::PER_PAGE_OPTIONS[0],
+            'columns_chosen' => ! empty( $value['columns_chosen'] ),
         );
     }
 

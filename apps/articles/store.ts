@@ -11,6 +11,7 @@
  * @since 1.0.0
  */
 
+import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { errorMessage, PER_PAGE } from '../components/rest';
 import {
@@ -76,9 +77,52 @@ interface State {
 	bulk: BulkRun;
 }
 
+/**
+ * The default columns hidden on medium screens (783 to 1279px, the range the
+ * table's styles call small laptop screens) until the user picks their own
+ * columns, so Categories and Tags get a readable width there.
+ */
+const MEDIUM_HIDDEN: ArticleColumn[] = [
+	'attachments',
+	'rating',
+	'views',
+	'reading_time',
+];
+
+const mediumQuery = window.matchMedia(
+	'(min-width: 783px) and (max-width: 1279px)'
+);
+const medium = ref( mediumQuery.matches );
+
+mediumQuery.addEventListener( 'change', ( event ) => {
+	medium.value = event.matches;
+} );
+
 let preferencesTimer: ReturnType< typeof setTimeout > | undefined;
 let latestLoad = 0;
 let latestSelect = 0;
+
+/**
+ * The columns shown at the current width.
+ *
+ * Until the user picks their columns, the less used defaults are left out
+ * on medium screens.
+ *
+ * @since 1.0.0
+ *
+ * @param {State} state The store state.
+ *
+ * @return {ArticleColumn[]} The columns.
+ */
+function visibleColumns( state: State ): ArticleColumn[] {
+	const { columns, columns_chosen: chosen } = state.preferences;
+
+	if ( chosen || ! medium.value ) {
+		return columns;
+	}
+
+	return columns.filter( ( column ) => ! MEDIUM_HIDDEN.includes( column ) );
+}
 
 /**
  * An empty bulk run.
@@ -126,6 +170,7 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 			preferences: {
 				columns: [ ...preferences.columns ],
 				per_page: perPage,
+				columns_chosen: !! preferences.columns_chosen,
 			},
 			quickEditId: 0,
 			bulk: emptyRun(),
@@ -200,7 +245,33 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 		 * @return {(column: ArticleColumn) => boolean} The check.
 		 */
 		shows( state ): ( column: ArticleColumn ) => boolean {
-			return ( column ) => state.preferences.columns.includes( column );
+			return ( column ) => visibleColumns( state ).includes( column );
+		},
+
+		/**
+		 * The columns shown at the current width, which the Columns picker
+		 * shows ticked.
+		 *
+		 * @param {State} state The store state.
+		 *
+		 * @return {ArticleColumn[]} The columns.
+		 */
+		visibleColumns( state ): ArticleColumn[] {
+			return visibleColumns( state );
+		},
+
+		/**
+		 * Whether columns are left out at the current width.
+		 *
+		 * @param {State} state The store state.
+		 *
+		 * @return {boolean} True when some are.
+		 */
+		trimmed( state ): boolean {
+			return (
+				visibleColumns( state ).length <
+				state.preferences.columns.length
+			);
 		},
 	},
 
@@ -430,7 +501,14 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 				undefined !== preferences.per_page &&
 				preferences.per_page !== this.preferences.per_page;
 
-			this.preferences = { ...this.preferences, ...preferences };
+			this.preferences = {
+				...this.preferences,
+				...preferences,
+				// A column change is the user's choice, shown exactly from now on.
+				columns_chosen:
+					undefined !== preferences.columns ||
+					this.preferences.columns_chosen,
+			};
 
 			clearTimeout( preferencesTimer );
 			preferencesTimer = setTimeout( () => {

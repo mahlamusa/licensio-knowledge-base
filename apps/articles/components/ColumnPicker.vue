@@ -6,6 +6,10 @@
  * the user's own view preferences, saved per user straight away; they change
  * no content, so they do not ask for confirmation.
  *
+ * The boxes ticked are the columns shown at the current width: on medium
+ * screens some default columns are left out until the user picks their own,
+ * and a pick made here is kept exactly as shown.
+ *
  * @since 1.0.0
  */
 
@@ -62,7 +66,7 @@ const perPageOptions: PerPage[] = [ 20, 50, 100 ];
 					{{ __( 'Columns', 'licensio-knowledge-base' ) }}
 				</legend>
 				<a-checkbox-group
-					:value="store.preferences.columns"
+					:value="store.visibleColumns"
 					:options="columns"
 					@change="
 						( value: unknown ) =>

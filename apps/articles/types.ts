@@ -267,6 +267,8 @@ export interface AuthorPage {
 export interface ListPreferences {
 	columns: ArticleColumn[];
 	per_page: PerPage;
+	/** True once the user picked their columns in the Columns picker. */
+	columns_chosen: boolean;
 }
 
 /**

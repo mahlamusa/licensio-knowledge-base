@@ -594,7 +594,8 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * Preferences keep only allow-listed columns and page sizes.
+     * Preferences keep only allow-listed columns and page sizes, and say whether
+     * the user chose their columns.
      *
      * @since 1.0.0
      *
@@ -603,13 +604,15 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
     public function test_preferences_are_allow_listed() {
         $this->assertSame(
             array(
-                'columns'  => array( 'author', 'views', 'modified' ),
-                'per_page' => 50,
+                'columns'        => array( 'author', 'views', 'modified' ),
+                'per_page'       => 50,
+                'columns_chosen' => true,
             ),
             Licensio_KB_Articles_REST_Controller::sanitize_preferences(
                 array(
-                    'columns'  => array( 'modified', 'views', 'post_content', 'author' ),
-                    'per_page' => 50,
+                    'columns'        => array( 'modified', 'views', 'post_content', 'author' ),
+                    'per_page'       => 50,
+                    'columns_chosen' => '1',
                 )
             )
         );
@@ -618,6 +621,7 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
 
         $this->assertSame( Licensio_KB_Articles_REST_Controller::DEFAULT_COLUMNS, $defaults['columns'] );
         $this->assertSame( 20, $defaults['per_page'] );
+        $this->assertFalse( $defaults['columns_chosen'] );
         $this->assertSame( 20, Licensio_KB_Articles_REST_Controller::sanitize_preferences( array( 'per_page' => 25 ) )['per_page'] );
     }
 

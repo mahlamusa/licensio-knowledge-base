@@ -7,7 +7,9 @@
  * show on hover or focus (always on touch and narrow screens): Edit hands the
  * tag to the page, which loads it into the left form; Quick edit opens the
  * row's name, slug and description in place, with Save and Cancel under
- * the description, after the fields in tab order. Save
+ * the description, after the fields in tab order. As in core, the open row's
+ * fields share one cell across the Name, Slug and Description columns, so
+ * they keep a readable width when those columns are narrow. Save
  * sends without asking, and the row keeps
  * the user's input when the server refuses it, as it does a slug another tag
  * already uses. The slug the server settled on (made from the name if the
@@ -142,6 +144,22 @@ function sortOrder( key: TagOrderBy ): 'ascend' | 'descend' | null {
 	return 'asc' === store.order ? 'ascend' : 'descend';
 }
 
+/**
+ * The cell attributes of a column that an open Quick edit row spans: its
+ * Name cell takes the Slug and Description columns too, which then have no
+ * cell of their own in that row.
+ *
+ * @since 1.0.0
+ *
+ * @param {number} span The open row's column span: 3 for Name, 0 otherwise.
+ *
+ * @return {Function} The column's `customCell`.
+ */
+function quickEditCell( span: number ) {
+	return ( record: TagItem ) =>
+		editingId.value === record.id ? { colSpan: span } : {};
+}
+
 const columns = computed( () => [
 	{
 		title: __( 'Name', 'licensio-knowledge-base' ),
@@ -149,11 +167,17 @@ const columns = computed( () => [
 		sorter: true,
 		sortOrder: sortOrder( 'name' ),
 		sortDirections: [ 'ascend', 'descend', 'ascend' ],
+		customCell: quickEditCell( 3 ),
 	},
-	{ title: __( 'Slug', 'licensio-knowledge-base' ), key: 'slug' },
+	{
+		title: __( 'Slug', 'licensio-knowledge-base' ),
+		key: 'slug',
+		customCell: quickEditCell( 0 ),
+	},
 	{
 		title: __( 'Description', 'licensio-knowledge-base' ),
 		key: 'description',
+		customCell: quickEditCell( 0 ),
 	},
 	{
 		title: __( 'Articles', 'licensio-knowledge-base' ),
@@ -412,12 +436,58 @@ watch(
 		>
 			<template #bodyCell="{ column, record }">
 				<template v-if="'name' === column.key">
-					<a-input
-						v-if="editingId === record.id"
-						v-model:value="draft.name"
-						class="lkb-tags__field"
-						:aria-label="__( 'Name', 'licensio-knowledge-base' )"
-					/>
+					<div v-if="editingId === record.id" class="lkb-tags__quick">
+						<label class="lkb-tags__label">
+							{{ __( 'Name', 'licensio-knowledge-base' ) }}
+							<a-input
+								v-model:value="draft.name"
+								class="lkb-tags__field"
+								:aria-label="
+									__( 'Name', 'licensio-knowledge-base' )
+								"
+							/>
+						</label>
+						<label class="lkb-tags__label">
+							{{ __( 'Slug', 'licensio-knowledge-base' ) }}
+							<a-input
+								v-model:value="draft.slug"
+								class="lkb-tags__field"
+								:aria-label="
+									__( 'Slug', 'licensio-knowledge-base' )
+								"
+							/>
+						</label>
+						<label class="lkb-tags__label">
+							{{ __( 'Description', 'licensio-knowledge-base' ) }}
+							<a-textarea
+								v-model:value="draft.description"
+								class="lkb-tags__field"
+								:auto-size="{ minRows: 1, maxRows: 4 }"
+								:aria-label="
+									__(
+										'Description',
+										'licensio-knowledge-base'
+									)
+								"
+							/>
+						</label>
+
+						<!-- After the last field, so Tab reaches every field before Save. -->
+						<div class="lkb-rowactions is-open">
+							<a-button
+								type="primary"
+								size="small"
+								:disabled="! canSave( record as TagItem )"
+								:loading="store.saving"
+								@click="save( record as TagItem )"
+							>
+								{{ __( 'Save', 'licensio-knowledge-base' ) }}
+							</a-button>
+							<a-button size="small" @click="cancelEdit">
+								{{ __( 'Cancel', 'licensio-knowledge-base' ) }}
+							</a-button>
+						</div>
+					</div>
 					<strong v-else>{{ record.name }}</strong>
 
 					<div v-if="editingId !== record.id" class="lkb-rowactions">
@@ -463,47 +533,13 @@ watch(
 				</template>
 
 				<template v-else-if="'slug' === column.key">
-					<a-input
-						v-if="editingId === record.id"
-						v-model:value="draft.slug"
-						class="lkb-tags__field"
-						:aria-label="__( 'Slug', 'licensio-knowledge-base' )"
-					/>
-					<code v-else class="lkb-tags__slug">{{ record.slug }}</code>
+					<code class="lkb-tags__slug">{{ record.slug }}</code>
 				</template>
 
 				<template v-else-if="'description' === column.key">
-					<a-textarea
-						v-if="editingId === record.id"
-						v-model:value="draft.description"
-						class="lkb-tags__field"
-						:auto-size="{ minRows: 1, maxRows: 4 }"
-						:aria-label="
-							__( 'Description', 'licensio-knowledge-base' )
-						"
-					/>
-					<span v-else class="lkb-tags__description">{{
+					<span class="lkb-tags__description">{{
 						descriptions.get( record.id ) || '—'
 					}}</span>
-
-					<!-- After the last field, so Tab reaches every field before Save. -->
-					<div
-						v-if="editingId === record.id"
-						class="lkb-rowactions is-open"
-					>
-						<a-button
-							type="primary"
-							size="small"
-							:disabled="! canSave( record as TagItem )"
-							:loading="store.saving"
-							@click="save( record as TagItem )"
-						>
-							{{ __( 'Save', 'licensio-knowledge-base' ) }}
-						</a-button>
-						<a-button size="small" @click="cancelEdit">
-							{{ __( 'Cancel', 'licensio-knowledge-base' ) }}
-						</a-button>
-					</div>
 				</template>
 
 				<template v-else-if="'count' === column.key">
@@ -549,6 +585,29 @@ watch(
 	.lkb-tags__field {
 		min-width: 160px;
 	}
+}
+
+/*
+ * An open Quick edit row's fields side by side while each can be at least
+ * 180px wide, otherwise stacked, so none is squeezed on a small laptop.
+ */
+.lkb-tags__quick {
+	display: grid;
+	grid-template-columns: repeat(
+		auto-fit,
+		minmax( min( 180px, 100% ), 1fr )
+	);
+	gap: 8px 12px;
+}
+
+.lkb-tags__label {
+	display: grid;
+	gap: 4px;
+	font-size: 13px;
+}
+
+.lkb-tags__quick .lkb-rowactions {
+	grid-column: 1 / -1;
 }
 
 /* An open Quick edit row: its Save and Cancel, always shown. */

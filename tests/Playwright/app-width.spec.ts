@@ -10,9 +10,13 @@
  * and a tag slug still reads as one word rather than breaking letter by letter.
  * Once the page scrolls, the app header sits right under a fixed admin bar,
  * and at the top of the screen on a phone, where the admin bar scrolls away.
+ * On a small laptop (1024px) the Articles table leaves out Attachments,
+ * Rating, Views and Reading time until the user picks columns, so Categories
+ * and Tags have room, and an open Tags Quick edit row keeps its fields
+ * readable.
  *
- * When wp-cli is available (`LICENSIO_KB_WP_CLI`), a long-titled article and
- * a long tag name are added for the run and removed after it, and the admin
+ * When wp-cli is available (`LICENSIO_KB_WP_CLI`), a long-titled article,
+ * a long tag name and a category for it are added for the run and removed after it, and the admin
  * user's article columns are reset to the defaults, so the wrapping is
  * checked with long content and the default columns.
  *
@@ -155,7 +159,9 @@ test.describe( 'App width', () => {
 			$short = wp_insert_term( '${ SHORT_SLUG }', 'licensio_tag' );
 			$post  = wp_insert_post( array( 'post_type' => 'licensio_article', 'post_status' => 'publish', 'post_title' => 'How to configure automatic license key renewal and handle expired subscriptions across multisite networks', 'post_author' => $admin ? $admin->ID : 0 ) );
 			wp_set_object_terms( $post, array( (int) $long['term_id'] ), 'licensio_tag' );
-			echo wp_json_encode( array( 'admin' => $admin ? $admin->ID : 0, 'prefs' => $prefs, 'terms' => array( (int) $long['term_id'], (int) $short['term_id'] ), 'post' => $post ) );
+			$category = wp_insert_term( 'Width check category ${ suffix }', 'licensio_category' );
+			wp_set_object_terms( $post, array( (int) $category['term_id'] ), 'licensio_category' );
+			echo wp_json_encode( array( 'admin' => $admin ? $admin->ID : 0, 'prefs' => $prefs, 'terms' => array( (int) $long['term_id'], (int) $short['term_id'] ), 'category' => (int) $category['term_id'], 'post' => $post ) );
 		` );
 	} );
 
@@ -170,6 +176,7 @@ test.describe( 'App width', () => {
 			foreach ( $seeded['terms'] as $term ) {
 				wp_delete_term( $term, 'licensio_tag' );
 			}
+			wp_delete_term( $seeded['category'], 'licensio_category' );
 			if ( $seeded['admin'] && $seeded['prefs'] ) {
 				update_user_meta( $seeded['admin'], 'licensio_kb_article_list_prefs', $seeded['prefs'] );
 			}
@@ -231,6 +238,118 @@ test.describe( 'App width', () => {
 				)
 				.toBe( top );
 		}
+	} );
+
+	test( 'Articles shows fewer default columns on a small laptop', async ( {
+		page,
+	} ) => {
+		test.skip( ! seeded, 'Set LICENSIO_KB_WP_CLI to run.' );
+
+		await page.setViewportSize( { width: 1024, height: 900 } );
+		await page.goto( contentManagerUrl( 'articles' ) );
+
+		const app = page.locator( '#lkb-main' );
+		const header = ( name: string ) =>
+			app.getByRole( 'columnheader', { name, exact: true } );
+
+		await expect( header( 'Categories' ) ).toBeVisible();
+
+		// Until the user picks columns, the less used defaults are left out.
+		for ( const name of [
+			'Attachments',
+			'Rating',
+			'Views',
+			'Reading time',
+		] ) {
+			await expect( header( name ) ).toHaveCount( 0 );
+		}
+
+		for ( const name of [ 'Categories', 'Tags' ] ) {
+			expect(
+				( await header( name ).boundingBox() )?.width ?? 0,
+				`${ name } column width`
+			).toBeGreaterThanOrEqual( 130 );
+		}
+
+		// The picker ticks what is shown, and a column ticked there shows.
+		await app
+			.getByRole( 'button', { name: 'Columns and rows per page' } )
+			.click();
+
+		const picker = page.locator( '.ant-popover' ).filter( {
+			has: page.getByRole( 'checkbox', { name: 'Reading time' } ),
+		} );
+
+		await expect(
+			picker.getByRole( 'checkbox', { name: 'Rating' } )
+		).not.toBeChecked();
+		await expect(
+			picker.getByRole( 'checkbox', { name: 'Categories' } )
+		).toBeChecked();
+
+		const saved = page.waitForResponse(
+			( response ) =>
+				response.url().includes( 'preferences' ) &&
+				'PUT' === response.request().method()
+		);
+
+		await picker.getByRole( 'checkbox', { name: 'Reading time' } ).check();
+		await expect( header( 'Reading time' ) ).toBeVisible();
+		await expect( header( 'Rating' ) ).toHaveCount( 0 );
+		await saved;
+
+		// The choice is kept on reload, and the table still fits.
+		await page.reload();
+		await expect( header( 'Reading time' ) ).toBeVisible();
+		await expect
+			.poll( async () => {
+				const frame = await measureFrame( page );
+
+				return frame.page + frame.container + frame.inner;
+			} )
+			.toBe( 0 );
+
+		// Back to the defaults for the other tests.
+		wpEval(
+			`delete_user_meta( ${
+				JSON.parse( seeded ).admin
+			}, 'licensio_kb_article_list_prefs' );`
+		);
+	} );
+
+	test( 'Tags Quick edit fields stay readable on a small laptop', async ( {
+		page,
+	} ) => {
+		test.skip( ! seeded, 'Set LICENSIO_KB_WP_CLI to run.' );
+
+		await page.setViewportSize( { width: 1024, height: 900 } );
+		await page.goto( contentManagerUrl( 'tags' ) );
+		await page.getByLabel( 'Search tags' ).fill( SHORT_SLUG );
+		await page.getByLabel( 'Search tags' ).press( 'Enter' );
+		await page
+			.locator( '.ant-table-row', { hasText: SHORT_SLUG } )
+			.locator( '[data-lkb-quick]' )
+			.click();
+
+		const open = page.locator( '.ant-table-row' ).filter( {
+			has: page.locator( 'textarea' ),
+		} );
+
+		for ( const name of [ 'Name', 'Slug', 'Description' ] ) {
+			expect(
+				( await open.getByLabel( name, { exact: true } ).boundingBox() )
+					?.width ?? 0,
+				`${ name } field width`
+			).toBeGreaterThanOrEqual( 180 );
+		}
+
+		await expect
+			.poll( async () => {
+				const frame = await measureFrame( page );
+
+				return frame.page + frame.container + frame.inner;
+			} )
+			.toBe( 0 );
 	} );
 
 	for ( const screen of SCREENS ) {
