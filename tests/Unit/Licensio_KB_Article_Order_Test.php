@@ -49,6 +49,9 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
         $GLOBALS['wpdb'] = new Licensio_KB_Order_WPDB( // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
             function () {
                 return $this->meta;
+            },
+            function ( $id, $key, $value ) {
+                $this->meta[ $id ][ $key ] = $value;
             }
         );
 
@@ -644,14 +647,18 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
             6 => array(),
         );
 
+        Functions\expect( 'wp_cache_delete_multiple' )->once()->with( array( 3, 4, 5 ), 'post_meta' );
+        Functions\expect( 'wp_cache_set_posts_last_changed' )->once();
+
         ( new Licensio_KB_Article_Order() )->append_merged_order( array( 8, 9 ), 7, Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
 
         $this->assertSame( '10', $this->stored( 1, 'licensio_order_7' ), 'An article already ordered in the target keeps its place.' );
         $this->assertSame( '20', $this->stored( 2, 'licensio_order_7' ) );
-        $this->assertSame( 30, $this->stored( 3, 'licensio_order_7' ) );
-        $this->assertSame( 40, $this->stored( 4, 'licensio_order_7' ) );
-        $this->assertSame( 50, $this->stored( 5, 'licensio_order_7' ), 'The second source follows the first.' );
+        $this->assertSame( '30', $this->stored( 3, 'licensio_order_7' ) );
+        $this->assertSame( '40', $this->stored( 4, 'licensio_order_7' ) );
+        $this->assertSame( '50', $this->stored( 5, 'licensio_order_7' ), 'The second source follows the first.' );
         $this->assertSame( '', $this->stored( 6, 'licensio_order_7' ) );
+        $this->assertCount( 1, $GLOBALS['wpdb']->queries, 'The appended positions are written in one INSERT.' );
     }
 
     /**
@@ -666,9 +673,12 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
             3 => array( 'licensio_order_8' => '4' ),
         );
 
+        Functions\when( 'wp_cache_delete_multiple' )->justReturn( array() );
+        Functions\when( 'wp_cache_set_posts_last_changed' )->justReturn( null );
+
         ( new Licensio_KB_Article_Order() )->append_merged_order( array( 8 ), 7, Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
 
-        $this->assertSame( 10, $this->stored( 3, 'licensio_order_7' ) );
+        $this->assertSame( '10', $this->stored( 3, 'licensio_order_7' ) );
     }
 
     /**

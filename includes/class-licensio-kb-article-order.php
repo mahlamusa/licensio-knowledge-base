@@ -103,6 +103,14 @@ class Licensio_KB_Article_Order {
     const STEP = 10;
 
     /**
+     * How many positions one INSERT writes when a merge appends an order.
+     *
+     * @since 1.0.0
+     * @var int
+     */
+    const INSERT_BATCH = 500;
+
+    /**
      * Register the WordPress hooks.
      *
      * @since 1.0.0
@@ -498,6 +506,10 @@ class Licensio_KB_Article_Order {
      * are restored. An article that already has a position in the target
      * keeps it. The source keys are cleaned up by the delete that follows.
      *
+     * The new positions are written in batched INSERTs, since none of those
+     * articles holds the target key yet: one `update_post_meta()` per
+     * article took seconds on a category with thousands of articles.
+     *
      * @since 1.0.0
      *
      * @param int[]  $sources  The merged category term IDs.
@@ -511,10 +523,11 @@ class Licensio_KB_Article_Order {
             return;
         }
 
-        $target  = absint( $target );
-        $current = self::positions( $target );
-        $next    = empty( $current ) ? 0 : max( $current );
-        $key     = self::meta_key( $target );
+        $target   = absint( $target );
+        $current  = self::positions( $target );
+        $next     = empty( $current ) ? 0 : max( $current );
+        $key      = self::meta_key( $target );
+        $appended = array();
 
         foreach ( (array) $sources as $source ) {
             $source = absint( $source );
@@ -528,12 +541,57 @@ class Licensio_KB_Article_Order {
                     continue;
                 }
 
-                $next                  += self::STEP;
-                $current[ $article_id ] = $next;
-
-                update_post_meta( $article_id, $key, $next );
+                $next                   += self::STEP;
+                $current[ $article_id ]  = $next;
+                $appended[ $article_id ] = $next;
             }
         }
+
+        self::insert_positions( $key, $appended );
+    }
+
+    /**
+     * Insert order keys for articles that hold none yet.
+     *
+     * Writes `INSERT_BATCH` rows per statement, then drops those articles'
+     * post meta cache and bumps the posts cache version, as
+     * `update_post_meta()` would.
+     *
+     * @since 1.0.0
+     *
+     * @param string          $key       The order meta key.
+     * @param array<int, int> $positions Article ID to position.
+     *
+     * @return void
+     */
+    private static function insert_positions( $key, array $positions ) {
+        global $wpdb;
+
+        if ( empty( $positions ) ) {
+            return;
+        }
+
+        foreach ( array_chunk( $positions, self::INSERT_BATCH, true ) as $batch ) {
+            $values = array( $wpdb->postmeta );
+
+            foreach ( $batch as $article_id => $position ) {
+                $values[] = (int) $article_id;
+                $values[] = $key;
+                $values[] = (string) $position;
+            }
+
+            $rows = implode( ', ', array_fill( 0, count( $batch ), '( %d, %s, %s )' ) );
+
+            // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- $rows holds only placeholders, one triple per article.
+            $sql = $wpdb->prepare( "INSERT INTO %i ( post_id, meta_key, meta_value ) VALUES {$rows}", $values );
+            // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
+
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Prepared above.
+            $wpdb->query( $sql );
+        }
+
+        wp_cache_delete_multiple( array_keys( $positions ), 'post_meta' );
+        wp_cache_set_posts_last_changed();
     }
 
     /**

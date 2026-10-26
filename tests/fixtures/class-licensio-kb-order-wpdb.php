@@ -22,6 +22,14 @@ class Licensio_KB_Order_WPDB extends Licensio_KB_Test_WPDB {
     private $meta;
 
     /**
+     * Stores one inserted meta row: post ID, meta key, value.
+     *
+     * @since 1.0.0
+     * @var callable|null
+     */
+    private $write;
+
+    /**
      * The values bound by the last prepare() call.
      *
      * @since 1.0.0
@@ -42,23 +50,56 @@ class Licensio_KB_Order_WPDB extends Licensio_KB_Test_WPDB {
      *
      * @since 1.0.0
      *
-     * @param callable $meta Returns the meta store: post ID to meta key to value.
+     * @param callable      $meta  Returns the meta store: post ID to meta key to value.
+     * @param callable|null $write Stores one inserted meta row: post ID, meta key, value.
      */
-    public function __construct( callable $meta ) {
-        $this->meta = $meta;
+    public function __construct( callable $meta, ?callable $write = null ) {
+        $this->meta  = $meta;
+        $this->write = $write;
+    }
+
+    /**
+     * Run a statement, storing the rows of a post meta INSERT.
+     *
+     * @since 1.0.0
+     *
+     * @param string $query The statement.
+     *
+     * @return int|false The rows inserted, or what the parent double answers.
+     */
+    public function query( $query ) {
+        if ( null === $this->write || 0 !== strpos( (string) $query, 'INSERT INTO `' . $this->postmeta . '`' ) ) {
+            return parent::query( $query );
+        }
+
+        $this->queries[] = (string) $query;
+
+        preg_match_all( "/\\( (\\d+), '([^']*)', '([^']*)' \\)/", (string) $query, $rows, PREG_SET_ORDER );
+
+        foreach ( $rows as $row ) {
+            call_user_func( $this->write, (int) $row[1], $row[2], $row[3] );
+        }
+
+        return count( $rows );
     }
 
     /**
      * Interpolate a statement and remember the values bound to it.
      *
+     * Takes the values as arguments or as one array, as `wpdb::prepare()` does.
+     *
      * @since 1.0.0
      *
      * @param string $query   The statement.
-     * @param mixed  ...$args The values.
+     * @param mixed  ...$args The values, or one array of them.
      *
      * @return string The interpolated statement.
      */
     public function prepare( $query, ...$args ) {
+        if ( 1 === count( $args ) && is_array( $args[0] ) ) {
+            $args = $args[0];
+        }
+
         $this->bound = $args;
 
         return parent::prepare( $query, ...$args );
