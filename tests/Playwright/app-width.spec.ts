@@ -249,8 +249,11 @@ test.describe( 'App width', () => {
 		await page.goto( contentManagerUrl( 'articles' ) );
 
 		const app = page.locator( '#lkb-main' );
+		// A sortable header's name ends with its sort icons.
 		const header = ( name: string ) =>
-			app.getByRole( 'columnheader', { name, exact: true } );
+			app.getByRole( 'columnheader', {
+				name: new RegExp( `^${ name }( caret-up caret-down)?$` ),
+			} );
 
 		await expect( header( 'Categories' ) ).toBeVisible();
 
