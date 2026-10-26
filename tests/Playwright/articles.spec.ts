@@ -374,10 +374,33 @@ test.describe( 'Articles app', () => {
 	test( 'titles match core and row actions show on hover, focus and phone width', async ( {
 		page,
 	} ) => {
+		// The title's type and colour, the padding of its cell and the size
+		// of the row actions under it.
 		const style = ( element: Element ) => {
 			const computed = window.getComputedStyle( element );
+			const cell = window.getComputedStyle(
+				element.closest( 'th, td' ) as Element
+			);
+			const actions = window.getComputedStyle(
+				element
+					.closest( 'th, td' )
+					?.querySelector( '.row-actions, .lkb-rowactions' ) as Element
+			);
 
-			return [ computed.fontSize, computed.fontWeight ];
+			return {
+				title: [
+					computed.fontSize,
+					computed.fontWeight,
+					computed.lineHeight,
+					computed.color,
+				],
+				padding: cell.padding,
+				actions: [
+					actions.fontSize,
+					actions.lineHeight,
+					actions.paddingTop,
+				],
+			};
 		};
 
 		await page.goto( '/wp-admin/edit.php' );
@@ -387,7 +410,7 @@ test.describe( 'Articles app', () => {
 		const row = app.locator( '.ant-table-row' ).first();
 		const actions = row.locator( '.lkb-rowactions' );
 
-		expect( core ).toEqual( [ '14px', '600' ] );
+		expect( core.title.slice( 0, 2 ) ).toEqual( [ '14px', '600' ] );
 		expect(
 			await row.locator( '.lkb-title__link' ).evaluate( style )
 		).toEqual( core );
