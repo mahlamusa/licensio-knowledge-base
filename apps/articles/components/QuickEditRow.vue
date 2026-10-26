@@ -4,9 +4,9 @@
  *
  * Title, slug, status, publish date, visibility, categories, tags (new tags
  * can be typed in), author and comments. Save sends only the fields that
- * changed, without asking first, and waits while a bulk run is going. A
- * field error from the server shows under its field
- * and the form keeps what was typed. A row another user has locked answers
+ * changed, without asking first, and is disabled while a bulk run is going.
+ * A field error from the server shows under its field and the form keeps
+ * what was typed. A row another user has locked answers
  * 409, which is shown and puts the lock on the row.
  *
  * @since 1.0.0

@@ -31,6 +31,8 @@
 	   a reader has to perceive or act on. */
 	--lkb-brand: #40b58a;
 	--lkb-brand-tint: #edf9f4;
+	--lkb-brand-tint-hover: #dcf2e8;
+	--lkb-brand-tint-edge: #a7dcc5;
 
 	/* Interactive. Buttons, links, focus rings, active nav, status dots. */
 	--lkb-accent: #247a5c;
@@ -42,8 +44,10 @@
 	--lkb-surface: #ffffff;
 	--lkb-page: #fafbfa;
 	--lkb-sunken: #f4f7f5;
-	--lkb-border: #e4e9e6;
-	--lkb-border-strong: #cdd6d1;
+	/* The boundary of a control (inputs, selects, default buttons): 3.5:1 on
+	   the surface and 3.4:1 on the page, over the 3:1 WCAG asks of a UI
+	   component. Cards and tables use `--lkb-border-wp`. */
+	--lkb-border: #7f8c85;
 
 	/* Ink. */
 	--lkb-ink: #11221b;

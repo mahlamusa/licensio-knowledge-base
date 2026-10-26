@@ -39,7 +39,7 @@ const declarations = computed( () =>
 			<p>
 				{{
 					__(
-						'A sample article card, drawn with the values above.',
+						'A sample article card, drawn with the values below.',
 						'licensio-knowledge-base'
 					)
 				}}

@@ -30,13 +30,13 @@ import {
 	Menu,
 	Modal,
 	Radio,
+	Select,
 	Skeleton,
 	Tag,
 	Tree,
 } from 'ant-design-vue';
 import 'ant-design-vue/dist/reset.css';
 import '../styles/admin.css';
-import './categories.css';
 import { configure } from '../components/rest';
 import { settings } from './api';
 import App from './App.vue';
@@ -62,6 +62,7 @@ if ( mount ) {
 		Menu,
 		Modal,
 		Radio,
+		Select,
 		Skeleton,
 		Tag,
 		Tree,

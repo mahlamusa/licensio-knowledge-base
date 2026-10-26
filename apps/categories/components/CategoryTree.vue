@@ -147,12 +147,15 @@ function onExpand( keys: Array< string | number > ): void {
  *
  * @param {Array<string|number>} keys The selected keys.
  *
- * @return {void}
+ * @return {Promise<void>} Resolves once the category is selected, or kept.
  */
-function onSelect( keys: Array< string | number > ): void {
+async function onSelect( keys: Array< string | number > ): Promise< void > {
 	const next = keys.length ? Number( keys[ 0 ] ) : null;
 
-	if ( next === store.selectedId || ! store.confirmDiscardOrder() ) {
+	if (
+		next === store.selectedId ||
+		! ( await store.confirmDiscardOrder() )
+	) {
 		return;
 	}
 

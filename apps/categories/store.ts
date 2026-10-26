@@ -24,6 +24,7 @@ import {
 	updateCategory,
 } from './api';
 import { __ } from '../components/i18n';
+import { useConfirm } from '../components/confirm';
 import { errorMessage } from '../components/rest';
 import type {
 	ArticleReassignment,
@@ -265,22 +266,32 @@ export const useCategoriesStore = defineStore( 'licensioKBCategories', {
 		/**
 		 * Ask before an unsaved article order is thrown away.
 		 *
+		 * Asked in the screen's centred confirmation dialog, like every other
+		 * confirmation in the app.
+		 *
 		 * @since 1.0.0
 		 *
-		 * @return {boolean} True when there is nothing to lose or the user agreed to lose it.
+		 * @return {Promise<boolean>} True when there is nothing to lose or the user agreed to lose it.
 		 */
-		confirmDiscardOrder(): boolean {
+		confirmDiscardOrder(): Promise< boolean > {
 			if ( ! this.orderDirty ) {
-				return true;
+				return Promise.resolve( true );
 			}
 
-			// eslint-disable-next-line no-alert
-			return window.confirm(
-				__(
-					'The article order has unsaved changes. Discard them?',
+			// Not a React hook: it hands back the page's shared dialog state.
+			// eslint-disable-next-line react-hooks/rules-of-hooks
+			return useConfirm().ask( {
+				title: __(
+					'Discard the unsaved article order?',
 					'licensio-knowledge-base'
-				)
-			);
+				),
+				description: __(
+					'The article order has unsaved changes. Discarding them puts the saved order back.',
+					'licensio-knowledge-base'
+				),
+				okText: __( 'Discard', 'licensio-knowledge-base' ),
+				danger: true,
+			} );
 		},
 
 		/**

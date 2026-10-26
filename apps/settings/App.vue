@@ -7,7 +7,9 @@ import { lkbTheme } from '../styles/theme';
  * on the right as label-and-control rows. A save runs on click and is refused
  * whole rather than applied in part; discarding edits and a reset, which
  * restores the registry defaults, ask first; and a guard stops the browser
- * leaving with unsaved edits on the page.
+ * leaving with unsaved edits on the page. A failed load shows its error with
+ * a Retry, and the save bar (Discard, Reset all, Save) stays hidden until the
+ * settings have loaded, so nothing unseen can be reset.
  *
  * @since 1.0.0
  */
@@ -191,10 +193,25 @@ async function confirmReset(): Promise< string > {
 	return message;
 }
 
-onMounted( async () => {
+/**
+ * Load the settings and open the first section.
+ *
+ * Also the Retry of a failed load, so the section list opens the same way.
+ *
+ * @since 1.0.0
+ *
+ * @return {Promise<void>} Resolves once loaded, or once the error is shown.
+ */
+async function load(): Promise< void > {
 	await store.load();
 
-	activeGroup.value = groups.value.length > 0 ? groups.value[ 0 ].id : '';
+	if ( ! activeGroup.value ) {
+		activeGroup.value = groups.value.length > 0 ? groups.value[ 0 ].id : '';
+	}
+}
+
+onMounted( async () => {
+	await load();
 
 	window.addEventListener( 'beforeunload', guardUnload );
 	document.addEventListener( 'click', guardNavigation, true );
@@ -232,6 +249,32 @@ onBeforeUnmount( () => {
 						}}
 					</a-button>
 				</div>
+
+				<a-alert
+					v-if="store.error && ! store.loaded"
+					type="error"
+					show-icon
+					:message="store.error"
+					class="lkb-pane__notice"
+				>
+					<template #description>
+						{{
+							__(
+								'The settings could not be loaded, so none can be changed or reset until they are.',
+								'licensio-knowledge-base'
+							)
+						}}
+					</template>
+					<template #action>
+						<a-button
+							size="small"
+							:loading="store.loading"
+							@click="load"
+						>
+							{{ __( 'Retry', 'licensio-knowledge-base' ) }}
+						</a-button>
+					</template>
+				</a-alert>
 
 				<a-spin :spinning="store.loading || store.saving">
 					<div v-if="store.loaded" class="lkb-settings__layout">
@@ -341,7 +384,11 @@ onBeforeUnmount( () => {
 				</a-spin>
 			</div>
 
-			<footer class="lkb-bar" :class="{ 'is-dirty': store.dirty }">
+			<footer
+				v-if="store.loaded"
+				class="lkb-bar"
+				:class="{ 'is-dirty': store.dirty }"
+			>
 				<p class="lkb-bar__status">
 					<template v-if="store.dirty">
 						{{ __( 'Unsaved changes', 'licensio-knowledge-base' ) }}

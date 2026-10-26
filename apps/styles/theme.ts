@@ -12,6 +12,17 @@
  * `#40b58a` button is 2.56:1 against a 4.5:1 requirement. The accent measures
  * 5.23:1 and passes both.
  *
+ * `colorBorder` is the boundary Ant draws round inputs, selects and default
+ * buttons, so it is `--lkb-border` at 3.5:1 rather than a faint rule; cards
+ * and tables draw with Ant's own lighter `colorBorderSecondary`. A tag is a
+ * label, not a control, so it keeps the light wp-admin rule
+ * (`--lkb-border-wp`).
+ *
+ * The tints Ant derives from the accent come out a muddy grey-green
+ * (#afbab4), which painted the selected tree row and every info alert. They
+ * are pinned to the brand tint `--lkb-brand-tint` instead, with a light green
+ * edge for the info alert.
+ *
  * @since 1.0.0
  */
 
@@ -26,9 +37,18 @@ export const lkbTheme: ThemeConfig = {
 		colorInfo: '#247a5c',
 		colorText: '#11221b',
 		colorTextSecondary: '#5b6b64',
-		colorBorder: '#e4e9e6',
+		colorBorder: '#7f8c85',
+		colorPrimaryBg: '#edf9f4',
+		colorPrimaryBgHover: '#dcf2e8',
+		colorInfoBg: '#edf9f4',
+		colorInfoBorder: '#a7dcc5',
 		colorBgLayout: '#fafbfa',
 		borderRadius: 8,
 		fontSize: 13,
+	},
+	components: {
+		Tag: {
+			colorBorder: '#dcdcde',
+		},
 	},
 };

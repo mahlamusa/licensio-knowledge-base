@@ -8,7 +8,8 @@
  * size and weight of core's list row titles, and the row actions show on
  * hover or keyboard focus, as on core's list screens. Quick edit opens
  * in place under the row. A locked row shows who is editing it and cannot be
- * quick edited.
+ * quick edited. While a bulk action runs the row actions are paused, and
+ * hovering them says why.
  *
  * @since 1.0.0
  */
@@ -337,117 +338,151 @@ const expandedKeys = computed( () =>
 						</a-tooltip>
 					</div>
 
-					<div class="lkb-rowactions">
-						<template v-if="! inTrash">
-							<a v-if="record.edit_url" :href="record.edit_url">
-								{{ __( 'Edit', 'licensio-knowledge-base' ) }}
-							</a>
-							<a-button
-								type="link"
-								size="small"
-								class="lkb-rowactions__button"
-								:disabled="
-									!! record.lock ||
-									! record.edit_url ||
-									store.bulk.running
-								"
-								:aria-expanded="store.quickEditId === record.id"
-								:data-quick-edit="record.id"
-								@click="
-									toggleQuickEdit( record as ArticleItem )
-								"
-							>
-								{{
-									__(
-										'Quick edit',
+					<a-tooltip
+						:title="
+							store.bulk.running
+								? __(
+										'Row actions are paused until the bulk action finishes.',
 										'licensio-knowledge-base'
-									)
-								}}
-							</a-button>
-							<a v-if="record.view_url" :href="record.view_url">
-								{{
-									'publish' === record.status
-										? __(
-												'View',
-												'licensio-knowledge-base'
-										  )
-										: __(
-												'Preview',
-												'licensio-knowledge-base'
-										  )
-								}}
-							</a>
-							<a
-								v-if="
-									record.needs_attention ||
-									store.query.needs_attention
-								"
-								:href="feedbackUrl( record.id )"
-							>
-								{{
-									__(
-										'View feedback',
-										'licensio-knowledge-base'
-									)
-								}}
-							</a>
-							<ConfirmButton
-								type="link"
-								size="small"
-								danger
-								:disabled="!! record.lock || store.bulk.running"
-								:title="confirmTitle( 'trash', {}, 1 )"
-								:ok-text="
-									__(
-										'Move to trash',
-										'licensio-knowledge-base'
-									)
-								"
-								@confirm="
-									performAction( 'trash', {}, [ record.id ] )
-								"
-							>
-								{{ __( 'Trash', 'licensio-knowledge-base' ) }}
-							</ConfirmButton>
-						</template>
-						<template v-else>
-							<a-button
-								type="link"
-								size="small"
-								:disabled="store.bulk.running"
-								@click="
-									performAction( 'restore', {}, [
-										record.id,
-									] )
-								"
-							>
-								{{ __( 'Restore', 'licensio-knowledge-base' ) }}
-							</a-button>
-							<ConfirmButton
-								type="link"
-								size="small"
-								danger
-								:disabled="store.bulk.running"
-								:title="confirmTitle( 'delete', {}, 1 )"
-								:ok-text="
-									__(
-										'Delete permanently',
-										'licensio-knowledge-base'
-									)
-								"
-								@confirm="
-									performAction( 'delete', {}, [ record.id ] )
-								"
-							>
-								{{
-									__(
-										'Delete permanently',
-										'licensio-knowledge-base'
-									)
-								}}
-							</ConfirmButton>
-						</template>
-					</div>
+								  )
+								: undefined
+						"
+					>
+						<div class="lkb-rowactions">
+							<template v-if="! inTrash">
+								<a
+									v-if="record.edit_url"
+									:href="record.edit_url"
+								>
+									{{
+										__( 'Edit', 'licensio-knowledge-base' )
+									}}
+								</a>
+								<a-button
+									type="link"
+									size="small"
+									class="lkb-rowactions__button"
+									:disabled="
+										!! record.lock ||
+										! record.edit_url ||
+										store.bulk.running
+									"
+									:aria-expanded="
+										store.quickEditId === record.id
+									"
+									:data-quick-edit="record.id"
+									@click="
+										toggleQuickEdit( record as ArticleItem )
+									"
+								>
+									{{
+										__(
+											'Quick edit',
+											'licensio-knowledge-base'
+										)
+									}}
+								</a-button>
+								<a
+									v-if="record.view_url"
+									:href="record.view_url"
+								>
+									{{
+										'publish' === record.status
+											? __(
+													'View',
+													'licensio-knowledge-base'
+											  )
+											: __(
+													'Preview',
+													'licensio-knowledge-base'
+											  )
+									}}
+								</a>
+								<a
+									v-if="
+										record.needs_attention ||
+										store.query.needs_attention
+									"
+									:href="feedbackUrl( record.id )"
+								>
+									{{
+										__(
+											'View feedback',
+											'licensio-knowledge-base'
+										)
+									}}
+								</a>
+								<ConfirmButton
+									type="link"
+									size="small"
+									danger
+									:disabled="
+										!! record.lock || store.bulk.running
+									"
+									:title="confirmTitle( 'trash', {}, 1 )"
+									:ok-text="
+										__(
+											'Move to trash',
+											'licensio-knowledge-base'
+										)
+									"
+									@confirm="
+										performAction( 'trash', {}, [
+											record.id,
+										] )
+									"
+								>
+									{{
+										__( 'Trash', 'licensio-knowledge-base' )
+									}}
+								</ConfirmButton>
+							</template>
+							<template v-else>
+								<a-button
+									type="link"
+									size="small"
+									:disabled="store.bulk.running"
+									@click="
+										performAction( 'restore', {}, [
+											record.id,
+										] )
+									"
+								>
+									{{
+										__(
+											'Restore',
+											'licensio-knowledge-base'
+										)
+									}}
+								</a-button>
+								<ConfirmButton
+									type="link"
+									size="small"
+									danger
+									:disabled="store.bulk.running"
+									:title="confirmTitle( 'delete', {}, 1 )"
+									:ok-text="
+										__(
+											'Delete permanently',
+											'licensio-knowledge-base'
+										)
+									"
+									@confirm="
+										performAction( 'delete', {}, [
+											record.id,
+										] )
+									"
+								>
+									{{
+										__(
+											'Delete permanently',
+											'licensio-knowledge-base'
+										)
+									}}
+								</ConfirmButton>
+							</template>
+						</div>
+					</a-tooltip>
 				</template>
 
 				<template v-else-if="'author' === col.key">
@@ -462,7 +497,7 @@ const expandedKeys = computed( () =>
 						class="lkb-muted"
 						>—</span
 					>
-					<span v-else>{{
+					<span v-else class="lkb-termlist">{{
 						record[ col.key ]
 							.map( ( term: { name: string } ) => term.name )
 							.join( ', ' )
@@ -530,14 +565,6 @@ const expandedKeys = computed( () =>
 </template>
 
 <style scoped>
-.lkb-tablecard {
-	overflow: hidden;
-	border: 1px solid var( --lkb-border-wp );
-	border-radius: var( --lkb-radius );
-	background: var( --lkb-surface );
-	box-shadow: var( --lkb-shadow-sm );
-}
-
 /*
  * Core's title cell is 13px with a 1.3em line height, so the 14px title link
  * and the row actions under it sit on 16.9px lines, as on the Posts screen.
@@ -600,6 +627,15 @@ const expandedKeys = computed( () =>
 
 .lkb-muted {
 	color: var( --lkb-ink-faint );
+}
+
+/*
+ * A long term name (a tag such as internationalisation) may break inside
+ * the word when the column is at its narrowest, rather than push the table
+ * past the screen on a small laptop.
+ */
+.lkb-termlist {
+	overflow-wrap: anywhere;
 }
 
 .lkb-rating--low {

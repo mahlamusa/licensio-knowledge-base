@@ -7,7 +7,8 @@ import { lkbTheme } from '../styles/theme';
  * status; marks rows reviewed or actioned one at a time or in bulk; and links
  * each row to the article editor. Every action goes through the Pinia store,
  * so nothing here reloads the page. A row's status is saved as soon as it is
- * picked; a bulk mark is sent only after the user confirmed it.
+ * picked; a bulk mark is sent only after the user confirmed it. An empty
+ * inbox says where feedback comes from and links to its settings.
  *
  * Comments are rendered with text interpolation. There is deliberately no
  * `v-html` anywhere in this file: a reader-supplied comment must never be
@@ -187,7 +188,17 @@ onMounted( () => {
 					show-icon
 					:message="store.error"
 					class="licensio-kb-inbox__error"
-				/>
+				>
+					<template #action>
+						<a-button
+							size="small"
+							:loading="store.loading"
+							@click="store.load()"
+						>
+							{{ __( 'Retry', 'licensio-knowledge-base' ) }}
+						</a-button>
+					</template>
+				</a-alert>
 
 				<a-alert
 					v-if="articleId > 0"
@@ -359,6 +370,7 @@ onMounted( () => {
 						:columns="columns"
 						:data-source="store.items"
 						:loading="store.loading"
+						:scroll="{ x: true }"
 						:row-selection="{
 							selectedRowKeys: store.selected,
 							onChange: ( keys: unknown[] ) =>
@@ -373,6 +385,58 @@ onMounted( () => {
 								store.goToPage( page ),
 						}"
 					>
+						<template #emptyText>
+							<p v-if="store.error" class="lkb-empty">
+								{{
+									__(
+										'The feedback could not be loaded.',
+										'licensio-knowledge-base'
+									)
+								}}
+							</p>
+							<p
+								v-else-if="
+									store.status || store.vote || articleId > 0
+								"
+								class="lkb-empty"
+							>
+								{{
+									__(
+										'No feedback matches these filters.',
+										'licensio-knowledge-base'
+									)
+								}}
+							</p>
+							<div v-else class="lkb-empty">
+								<p class="lkb-empty__title">
+									{{
+										__(
+											'No feedback yet.',
+											'licensio-knowledge-base'
+										)
+									}}
+								</p>
+								<p>
+									{{
+										__(
+											'Votes and comments from the Was this helpful? question under each article appear here, ready to triage.',
+											'licensio-knowledge-base'
+										)
+									}}
+								</p>
+								<a-button
+									v-if="chrome.settingsUrl"
+									:href="chrome.settingsUrl"
+								>
+									{{
+										__(
+											'Feedback settings',
+											'licensio-knowledge-base'
+										)
+									}}
+								</a-button>
+							</div>
+						</template>
 						<template #bodyCell="{ column, record }">
 							<template v-if="'article' === column.key">
 								<a v-if="record.editUrl" :href="record.editUrl">
@@ -478,6 +542,7 @@ onMounted( () => {
 
 .lkb-pills {
 	display: inline-flex;
+	flex-wrap: wrap;
 	padding: 3px;
 	border: 1px solid var( --lkb-border-wp );
 	border-radius: var( --lkb-radius );
@@ -544,12 +609,21 @@ onMounted( () => {
 
 /* ── Table ───────────────────────────────────────────────── */
 
-.lkb-tablecard {
-	overflow: hidden;
-	border: 1px solid var( --lkb-border-wp );
-	border-radius: var( --lkb-radius );
-	background: var( --lkb-surface );
-	box-shadow: var( --lkb-shadow-sm );
+/* The empty table: what will appear, and where to switch it on. */
+.lkb-empty {
+	margin: 0;
+	padding: var( --lkb-gap ) 0;
+	color: var( --lkb-ink-muted );
+}
+
+.lkb-empty p {
+	margin: 0 0 12px;
+}
+
+.lkb-empty .lkb-empty__title {
+	margin-bottom: 4px;
+	color: var( --lkb-ink );
+	font-weight: 600;
 }
 
 .licensio-kb-inbox__comment {

@@ -102,6 +102,25 @@ const descriptions = computed(
 );
 
 /**
+ * What the table says when it has no rows: a failed load, filters that match
+ * nothing, or no tags at all.
+ */
+const emptyText = computed( () => {
+	if ( store.error ) {
+		return __( 'The tags could not be loaded.', 'licensio-knowledge-base' );
+	}
+
+	if ( store.unused || store.search || store.include.length ) {
+		return __( 'No tags match these filters.', 'licensio-knowledge-base' );
+	}
+
+	return __(
+		'No tags yet. Add your first tag with the Add New Tag form.',
+		'licensio-knowledge-base'
+	);
+} );
+
+/**
  * The Ant Design sort order of a column.
  *
  * @since 1.0.0
@@ -375,18 +394,7 @@ watch(
 				total: store.total,
 				showSizeChanger: false,
 			}"
-			:locale="{
-				emptyText:
-					store.unused || store.search || store.include.length
-						? __(
-								'No tags match these filters.',
-								'licensio-knowledge-base'
-						  )
-						: __(
-								'No tags yet. Add your first tag above.',
-								'licensio-knowledge-base'
-						  ),
-			}"
+			:locale="{ emptyText }"
 			@change="onChange"
 		>
 			<template #bodyCell="{ column, record }">
@@ -500,14 +508,6 @@ watch(
 </template>
 
 <style scoped>
-.lkb-tablecard {
-	overflow: hidden;
-	border: 1px solid var( --lkb-border-wp );
-	border-radius: var( --lkb-radius );
-	background: var( --lkb-surface );
-	box-shadow: var( --lkb-shadow-sm );
-}
-
 /*
  * Ant lets cell text break anywhere, which on a phone splits a slug letter by
  * letter. Slugs break only at their hyphens, and the table scrolls inside
