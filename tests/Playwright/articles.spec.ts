@@ -415,10 +415,14 @@ test.describe( 'Articles app', () => {
 		await row.hover();
 		await row.getByRole( 'button', { name: 'Trash' } ).click();
 		await page.mouse.move( 0, 0 );
-		await expect( page.locator( '.ant-popconfirm' ) ).toBeVisible();
+		await expect( openPopconfirm( page ) ).toBeVisible();
 		await expect( actions ).toHaveCSS( 'opacity', '1' );
 		await page.keyboard.press( 'Escape' );
-		await expect( page.locator( '.ant-popconfirm' ) ).toBeHidden();
+		await expect( openPopconfirm( page ) ).toBeHidden();
+		await row
+			.getByRole( 'button', { name: 'Trash' } )
+			.evaluate( ( button ) => ( button as HTMLElement ).blur() );
+		await expect( actions ).toHaveCSS( 'opacity', '0' );
 
 		await page.setViewportSize( { width: 390, height: 844 } );
 		await expect( actions ).toHaveCSS( 'opacity', '1' );
