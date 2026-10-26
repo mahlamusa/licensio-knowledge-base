@@ -29,6 +29,30 @@ defined( 'ABSPATH' ) || exit;
 class Licensio_KB_View_Block extends Licensio_KB_Block {
 
     /**
+     * The globals an editor preview changes and puts back.
+     *
+     * The main query, the global post, and the postdata globals
+     * `WP_Query::setup_postdata()` sets for every post a loop visits.
+     *
+     * @since 1.0.0
+     * @var string[]
+     */
+    const PREVIEW_GLOBALS = array(
+        'wp_query',
+        'wp_the_query',
+        'post',
+        'id',
+        'authordata',
+        'currentday',
+        'currentmonth',
+        'page',
+        'pages',
+        'multipage',
+        'more',
+        'numpages',
+    );
+
+    /**
      * The block name.
      *
      * @since 1.0.0
@@ -209,7 +233,13 @@ class Licensio_KB_View_Block extends Licensio_KB_Block {
      * category or tag that has articles) while the view body renders, then
      * puts the real query back. Only published, unprotected content is used.
      *
+     * The view body's loop sets up the postdata globals (`$id`, `$authordata`,
+     * `$pages` and the rest) for the sample content, so those are put back
+     * too, exactly as they were: a global that was not set before the preview
+     * is unset again rather than left pointing at the sample.
+     *
      * @since 1.0.0
+     * @since 1.0.0 Restores the postdata globals, including ones that were not set.
      *
      * @param string $view The view name.
      *
@@ -222,13 +252,17 @@ class Licensio_KB_View_Block extends Licensio_KB_Block {
             return '';
         }
 
-        $saved_query = isset( $GLOBALS['wp_query'] ) ? $GLOBALS['wp_query'] : null;
-        $saved_main  = isset( $GLOBALS['wp_the_query'] ) ? $GLOBALS['wp_the_query'] : null;
-        $saved_post  = isset( $GLOBALS['post'] ) ? $GLOBALS['post'] : null;
+        $saved = array();
+
+        foreach ( self::PREVIEW_GLOBALS as $name ) {
+            if ( array_key_exists( $name, $GLOBALS ) ) {
+                $saved[ $name ] = $GLOBALS[ $name ];
+            }
+        }
 
         $query = new WP_Query( $args );
 
-        // phpcs:disable WordPress.WP.GlobalVariablesOverride.Prohibited -- The preview stands in for the main query and is put back below.
+        // phpcs:disable WordPress.WP.GlobalVariablesOverride.Prohibited, WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- The preview stands in for the main query and is put back below.
         $GLOBALS['wp_query']     = $query;
         $GLOBALS['wp_the_query'] = $query;
         $GLOBALS['post']         = isset( $args['p'] ) ? get_post( (int) $args['p'] ) : null;
@@ -236,14 +270,14 @@ class Licensio_KB_View_Block extends Licensio_KB_Block {
         try {
             $markup = Licensio_KB_Templates::render_view( $view );
         } finally {
-            $GLOBALS['wp_query']     = $saved_query;
-            $GLOBALS['wp_the_query'] = $saved_main;
-            $GLOBALS['post']         = $saved_post;
-            // phpcs:enable WordPress.WP.GlobalVariablesOverride.Prohibited
-
-            if ( $saved_post instanceof WP_Post ) {
-                setup_postdata( $saved_post );
+            foreach ( self::PREVIEW_GLOBALS as $name ) {
+                if ( array_key_exists( $name, $saved ) ) {
+                    $GLOBALS[ $name ] = $saved[ $name ];
+                } else {
+                    unset( $GLOBALS[ $name ] );
+                }
             }
+            // phpcs:enable WordPress.WP.GlobalVariablesOverride.Prohibited, WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound
         }
 
         return $markup;
