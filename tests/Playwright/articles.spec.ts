@@ -4,8 +4,8 @@
  * Opens the app through its hidden admin page and checks what only a real
  * WordPress can answer: the pills match the database, a confirmation stands
  * before a trash and Cancel sends nothing, a quick edit saves at once without
- * one, and the list state lives in the URL: filters replace the
- * history entry while sort and page push one. An out of range page moves
+ * one and fits a phone screen, and the list state lives in the URL: filters
+ * replace the history entry while sort and page push one. An out of range page moves
  * back to the last page, a failed load shows no empty state, and a quick
  * edit reloads the list and its counts. A keyboard trash moves focus to the Undo toast, whose
  * countdown waits while it has focus.
@@ -196,6 +196,43 @@ test.describe( 'Articles app', () => {
 				} );
 			}
 		}
+	} );
+
+	test( 'quick edit fits a phone screen without scrolling sideways', async ( {
+		page,
+	} ) => {
+		await page.setViewportSize( { width: 390, height: 844 } );
+
+		const app = await openContentManager( page, 'articles' );
+		const row = app.locator( '.ant-table-row' ).first();
+
+		await row.getByRole( 'button', { name: 'Quick edit' } ).click();
+
+		const form = app.locator( '.lkb-quickedit' );
+		const save = form.getByRole( 'button', { name: 'Save' } );
+
+		await expect( form ).toBeVisible();
+		await save.scrollIntoViewIfNeeded();
+		await expect( save ).toBeInViewport( { ratio: 1 } );
+
+		// Every field and both buttons sit inside the screen's width.
+		const right = await form.evaluate( ( element ) =>
+			Math.max(
+				...Array.from(
+					element.querySelectorAll( '.ant-form-item, .ant-btn' )
+				).map( ( child ) => child.getBoundingClientRect().right )
+			)
+		);
+
+		expect( right ).toBeLessThanOrEqual( 390 );
+		expect(
+			await page.evaluate(
+				() =>
+					document.documentElement.scrollWidth -
+					document.documentElement.clientWidth
+			),
+			'page overflow at 390px'
+		).toBe( 0 );
 	} );
 
 	test( 'the view is restored from the URL', async ( { page } ) => {

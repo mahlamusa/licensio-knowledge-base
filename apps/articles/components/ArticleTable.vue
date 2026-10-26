@@ -634,8 +634,47 @@ const expandedKeys = computed( () =>
  * the word when the column is at its narrowest, rather than push the table
  * past the screen on a small laptop.
  */
+/*
+ * Term lists wrap between words; a single word only breaks when it is wider
+ * than the column. The minimum width stops the table squeezing the column to
+ * one fragment per line: on a phone, where the table scrolls sideways, and on
+ * large screens. Between the two the default columns fill the screen, so the
+ * column keeps no minimum there and the table still fits without scrolling.
+ */
 .lkb-termlist {
+	display: block;
+	min-width: 120px;
 	overflow-wrap: anywhere;
+}
+
+@media ( min-width: 783px ) and ( max-width: 1279px ) {
+	.lkb-termlist {
+		min-width: 0;
+	}
+}
+
+@media ( min-width: 1440px ) {
+	.lkb-termlist {
+		min-width: 160px;
+	}
+}
+
+/*
+ * The Quick edit form sits in an expanded row of a table that may scroll
+ * sideways, so on its own it would be as wide as the whole table. The card
+ * is a size container, and the form is held to the card's visible width
+ * (less the cell's 16px padding each side) and kept in view while the table
+ * scrolls, so every field and Save fit the screen on a phone. On wider
+ * screens the table does not scroll and the form keeps the cell's width.
+ */
+.lkb-tablecard {
+	container-type: inline-size;
+}
+
+.lkb-quickedit {
+	position: sticky;
+	left: 16px;
+	max-width: calc( 100cqi - 32px );
 }
 
 .lkb-rating--low {
