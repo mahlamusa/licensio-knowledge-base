@@ -16,10 +16,9 @@
 
 import { expect, test, type Page } from '@playwright/test';
 import {
-	cancelPopconfirm,
-	confirmPopconfirm,
-	expectNoPopconfirm,
-	openPopconfirm,
+	answerConfirm,
+	confirmDialog,
+	expectNoConfirmDialog,
 } from './helpers/content-manager';
 import { logIn, password, user } from './helpers/session';
 import { wpCli, wpEval } from './helpers/wp-cli';
@@ -128,20 +127,20 @@ test.describe( 'Feedback inbox', () => {
 		await pickStatus( page, 'First E2E comment', 'Reviewed' );
 		await expect.poll( () => writes.length ).toBe( 1 );
 		await expect( status ).toHaveText( 'Reviewed' );
-		await expectNoPopconfirm( page );
+		await expectNoConfirmDialog( page );
 
 		// A bulk mark asks first, and Cancel sends nothing.
 
 		await page.locator( '.ant-table-thead .ant-checkbox-input' ).check();
 		await page.getByRole( 'button', { name: 'Mark actioned' } ).click();
-		await expect( openPopconfirm( page ) ).toContainText(
+		await expect( confirmDialog( page ) ).toContainText(
 			'Mark 2 feedback items as actioned?'
 		);
-		await cancelPopconfirm( page );
+		await answerConfirm( page, 'cancel' );
 		expect( writes ).toHaveLength( 1 );
 
 		await page.getByRole( 'button', { name: 'Mark actioned' } ).click();
-		await confirmPopconfirm( page );
+		await answerConfirm( page, 'confirm' );
 		await expect.poll( () => writes.length ).toBe( 3 );
 		await expect( rows.locator( '.ant-select-selection-item' ) ).toHaveText(
 			[ 'Actioned', 'Actioned' ]

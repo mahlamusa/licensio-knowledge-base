@@ -590,11 +590,11 @@ const expandedKeys = computed( () =>
 }
 
 /*
- * The row actions also stay while one of their confirmations is open, so it
- * never points at an empty space. The rest of their styles are shared, in
- * `../../styles/admin.css`.
+ * The row actions also stay while one of their confirmations is open, so the
+ * row it asks about stays recognisable behind the dialog. The rest of their
+ * styles are shared, in `../../styles/admin.css`.
  */
-.lkb-rowactions:has( .ant-popover-open ) {
+.lkb-rowactions:has( .is-confirming ) {
 	opacity: 1;
 }
 

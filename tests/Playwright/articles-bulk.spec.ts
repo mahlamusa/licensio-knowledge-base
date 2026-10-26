@@ -4,7 +4,7 @@
  * Covers the flows only a real WordPress can answer: a bulk trash over more
  * than one batch runs in batches of 100 with progress, Undo puts every
  * article back, an article another user is editing is skipped and reported,
- * Cancel on the bulk Popconfirm sends nothing, a slow "Select all
+ * Cancel on the bulk confirmation sends nothing, a slow "Select all
  * matching" answer is dropped once the user has moved to another view,
  * unticking a row after "Select all matching" keeps the rest selected and
  * ticking it again keeps the selection across pages, a row action or quick
@@ -25,8 +25,8 @@
 
 import { expect, test, type Page, type Request } from '@playwright/test';
 import {
-	cancelPopconfirm,
-	confirmPopconfirm,
+	answerConfirm,
+	confirmDialog,
 	contentManagerUrl,
 } from './helpers/content-manager';
 import { failOnUnresolvedComponents } from './helpers/ant-components';
@@ -172,7 +172,7 @@ test.describe( 'Articles bulk actions', () => {
 		await logIn( page );
 	} );
 
-	test( 'Cancel on the bulk Popconfirm sends no request', async ( {
+	test( 'Cancel on the bulk confirmation sends no request', async ( {
 		page,
 	} ) => {
 		const app = await openSeeded( page );
@@ -184,7 +184,7 @@ test.describe( 'Articles bulk actions', () => {
 			.locator( '.lkb-bulk' )
 			.getByRole( 'button', { name: 'Apply' } )
 			.click();
-		await cancelPopconfirm( page );
+		await answerConfirm( page, 'cancel' );
 		await page.waitForTimeout( 500 );
 
 		expect( writes ).toHaveLength( 0 );
@@ -272,7 +272,14 @@ test.describe( 'Articles bulk actions', () => {
 		const second = trashOf( keys[ 1 ] );
 
 		await trashOf( keys[ 0 ] ).click();
-		await confirmPopconfirm( page );
+
+		// The dialog waits for the request, with its confirm button spinning.
+		const ok = confirmDialog( page ).getByRole( 'button', {
+			name: 'Move to trash',
+		} );
+
+		await ok.click();
+		await expect( ok ).toHaveClass( /ant-btn-loading/ );
 		await expect(
 			second,
 			'Another row action cannot start while the first runs.'
@@ -287,6 +294,13 @@ test.describe( 'Articles bulk actions', () => {
 		const toast = page.locator( '.ant-notification-notice' ).last();
 
 		await expect( toast ).toContainText( '1 article moved to the trash.' );
+		await expect( confirmDialog( page ) ).toBeHidden();
+		// The trashed row is gone with its Trash button, so focus lands on
+		// the page title rather than the body.
+		await expect(
+			app.locator( `tr[data-row-key="${ keys[ 0 ] }"]` )
+		).toHaveCount( 0 );
+		await expect( page.locator( '.lkb-page__title' ) ).toBeFocused();
 		await expect( second ).toBeEnabled();
 		await expect( quickEditOf( keys[ 1 ] ) ).toBeEnabled();
 		expect( bulk ).toHaveLength( 1 );
@@ -316,7 +330,7 @@ test.describe( 'Articles bulk actions', () => {
 
 		await expect( apply ).toBeEnabled();
 		await apply.click();
-		await expect( page.locator( '.ant-popconfirm' ).last() ).toContainText(
+		await expect( confirmDialog( page ) ).toContainText(
 			`Remove every tag from ${ rows } articles? No tags are chosen to replace them.`
 		);
 
@@ -324,7 +338,7 @@ test.describe( 'Articles bulk actions', () => {
 			decodeURIComponent( response.url() ).includes( 'articles/bulk' )
 		);
 
-		await confirmPopconfirm( page );
+		await answerConfirm( page, 'confirm' );
 		await answered;
 
 		expect( bulk ).toHaveLength( 1 );
@@ -395,10 +409,10 @@ test.describe( 'Articles bulk actions', () => {
 			.locator( '.lkb-bulk' )
 			.getByRole( 'button', { name: 'Apply' } )
 			.click();
-		await expect( page.locator( '.ant-popconfirm' ).last() ).toContainText(
+		await expect( confirmDialog( page ) ).toContainText(
 			`Move ${ ARTICLES } articles to the trash?`
 		);
-		await confirmPopconfirm( page );
+		await answerConfirm( page, 'confirm' );
 
 		const modal = page.locator( '.ant-modal' );
 

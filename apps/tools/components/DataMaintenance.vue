@@ -282,7 +282,7 @@ onMounted( load );
 						)
 					"
 					:ok-text="__( 'Delete', 'licensio-knowledge-base' )"
-					@confirm="prune"
+					@confirm="void prune()"
 				>
 					{{ __( 'Delete expired rows', 'licensio-knowledge-base' ) }}
 				</ConfirmButton>

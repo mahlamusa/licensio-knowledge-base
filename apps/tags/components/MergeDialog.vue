@@ -2,8 +2,8 @@
 /**
  * Merge the selected tags into another tag.
  *
- * The dialog only chooses the target. The merge is sent from the Popconfirm
- * of its Merge button, so closing the dialog or cancelling the Popconfirm
+ * The dialog only chooses the target. The merge is sent from the confirmation
+ * of its Merge button, so closing the dialog or cancelling the confirmation
  * sends nothing. The selected tags cannot be picked as the target.
  *
  * The toast counts every selected tag as merged, since its articles moved,

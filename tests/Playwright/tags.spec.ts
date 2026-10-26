@@ -3,7 +3,7 @@
  *
  * Adds tags through the Add New Tag form in the left column, as on core's
  * tag screen, then checks that add and save send at once,
- * that merge, convert and delete wait for their Popconfirm and Cancel sends
+ * that merge, convert and delete wait for their confirmation and Cancel sends
  * nothing, that an edit to a slug another tag uses is refused with a message
  * and keeps the input, and that merge and convert to
  * category work on the selected tags, that a failed merge or convert shows
@@ -23,10 +23,10 @@
 
 import { expect, test, type Page } from '@playwright/test';
 import {
-	cancelPopconfirm,
-	confirmPopconfirm,
+	answerConfirm,
+	confirmDialog,
+	expectNoConfirmDialog,
 	openContentManager,
-	openPopconfirm,
 } from './helpers/content-manager';
 import { failOnUnresolvedComponents } from './helpers/ant-components';
 import { logIn, password, user } from './helpers/session';
@@ -68,15 +68,15 @@ function recordWrites( page: Page ): string[] {
 }
 
 /**
- * Open a Popconfirm, cancel it, and check no write was sent.
+ * Open a confirmation, cancel it, and check no write was sent.
  *
  * @since 1.0.0
  *
  * @param {Page}     page   The browser page.
  * @param {string[]} writes The writes recorded so far.
- * @param {Function} open   Clicks the button that opens the Popconfirm.
+ * @param {Function} open   Clicks the button that opens the confirmation.
  *
- * @return {Promise<void>} Resolves once the Popconfirm is cancelled.
+ * @return {Promise<void>} Resolves once the confirmation is cancelled.
  */
 async function cancelSendsNothing(
 	page: Page,
@@ -86,7 +86,7 @@ async function cancelSendsNothing(
 	const before = writes.length;
 
 	await open();
-	await cancelPopconfirm( page );
+	await answerConfirm( page, 'cancel' );
 	expect( writes.length ).toBe( before );
 }
 
@@ -248,7 +248,7 @@ test( 'tags are added and edited at once, merged and converted only after confir
 
 	await slug.fill( `alpha-${ suffix }` );
 	await page.getByRole( 'button', { name: 'Save' } ).first().click();
-	await expect( openPopconfirm( page ) ).toHaveCount( 0 );
+	await expect( confirmDialog( page ) ).toHaveCount( 0 );
 	await expect(
 		page.getByText(
 			`Another tag already uses the slug “alpha-${ suffix }”. Choose a different slug.`
@@ -274,7 +274,7 @@ test( 'tags are added and edited at once, merged and converted only after confir
 		merge.getByRole( 'button', { name: 'Merge' } ).click()
 	);
 	await merge.getByRole( 'button', { name: 'Merge' } ).click();
-	await confirmPopconfirm( page );
+	await answerConfirm( page, 'confirm' );
 	await expect( page.locator( '.ant-table-row' ) ).toHaveCount( 2 );
 
 	// Convert Gamma to a top-level category.
@@ -296,7 +296,7 @@ test( 'tags are added and edited at once, merged and converted only after confir
 	);
 
 	await convert.getByRole( 'button', { name: 'Convert' } ).click();
-	await confirmPopconfirm( page );
+	await answerConfirm( page, 'confirm' );
 
 	const categoryId: number = ( await ( await converted ).json() )
 		.converted[ 0 ].category.id;
@@ -313,7 +313,7 @@ test( 'tags are added and edited at once, merged and converted only after confir
 
 	await cancelSendsNothing( page, writes, () => remove.click() );
 	await remove.click();
-	await confirmPopconfirm( page );
+	await answerConfirm( page, 'confirm' );
 	await expect( page.locator( '.ant-table-row' ) ).toHaveCount( 0 );
 
 	// The Delete button went with the selection, so focus is on the title.
@@ -364,7 +364,7 @@ test( 'Escape leaves the Edit Tag form and closes a Quick edit', async ( {
 		.locator( '.lkb-bulk' )
 		.getByRole( 'button', { name: 'Delete' } )
 		.click();
-	await confirmPopconfirm( page );
+	await answerConfirm( page, 'confirm' );
 	await expect( page.locator( '.ant-table-row' ) ).toHaveCount( 0 );
 } );
 
@@ -383,7 +383,7 @@ async function deleteListed( page: Page ): Promise< void > {
 		.locator( '.lkb-bulk' )
 		.getByRole( 'button', { name: 'Delete' } )
 		.click();
-	await confirmPopconfirm( page );
+	await answerConfirm( page, 'confirm' );
 	await expect( page.locator( '.ant-table-row' ) ).toHaveCount( 0 );
 }
 
@@ -591,7 +591,7 @@ test( 'a merge reports the tags it could not delete apart from those it merged',
 		.locator( '.ant-select-item-option', { hasText: target } )
 		.click();
 	await merge.getByRole( 'button', { name: 'Merge' } ).click();
-	await confirmPopconfirm( page );
+	await answerConfirm( page, 'confirm' );
 
 	await expect(
 		page.locator( '.ant-message-notice', {
@@ -646,7 +646,7 @@ test( 'a failed merge or convert shows its error inside the dialog', async ( {
 		.locator( '.ant-select-item-option', { hasText: target } )
 		.click();
 	await merge.getByRole( 'button', { name: 'Merge' } ).click();
-	await confirmPopconfirm( page );
+	await answerConfirm( page, 'confirm' );
 	await expect( merge.locator( '.ant-alert-error' ) ).toContainText(
 		'Server exploded.'
 	);
@@ -662,9 +662,16 @@ test( 'a failed merge or convert shows its error inside the dialog', async ( {
 		await route.fallback();
 	} );
 	await merge.getByRole( 'button', { name: 'Merge' } ).click();
-	await confirmPopconfirm( page );
+
+	// The confirmation waits for the answer, then closes; the merge dialog
+	// shows the error.
+	const ok = confirmDialog( page ).getByRole( 'button', { name: 'Merge' } );
+
+	await ok.click();
+	await expect( ok ).toHaveClass( /ant-btn-loading/ );
 	await expect( merge.locator( '.ant-alert-error' ) ).toHaveCount( 0 );
 	release();
+	await expect( confirmDialog( page ) ).toBeHidden();
 	await expect( merge.locator( '.ant-alert-error' ) ).toContainText(
 		'Server exploded.'
 	);
@@ -682,7 +689,7 @@ test( 'a failed merge or convert shows its error inside the dialog', async ( {
 		'A new dialog starts without an old error.'
 	).toHaveCount( 0 );
 	await convert.getByRole( 'button', { name: 'Convert' } ).click();
-	await confirmPopconfirm( page );
+	await answerConfirm( page, 'confirm' );
 	await expect( convert.locator( '.ant-alert-error' ) ).toContainText(
 		'Server exploded.'
 	);
@@ -789,7 +796,7 @@ test( 'Edit loads a tag into the left form, and Update saves it at once', async 
 	await editButton( page, name ).click();
 	await form.getByLabel( 'Description' ).fill( 'Edited in the form' );
 	await form.getByRole( 'button', { name: 'Update' } ).click();
-	await expect( openPopconfirm( page ) ).toHaveCount( 0 );
+	await expectNoConfirmDialog( page );
 	await expect(
 		page.locator( '.ant-message-notice', { hasText: 'Tag saved.' } )
 	).toBeVisible();

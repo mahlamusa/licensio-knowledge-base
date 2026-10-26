@@ -49,7 +49,7 @@ export function reasonLabel( reason: SkipReason ): string {
 }
 
 /**
- * The Popconfirm question for an action over a number of articles.
+ * The confirmation question for an action over a number of articles.
  *
  * @since 1.0.0
  *

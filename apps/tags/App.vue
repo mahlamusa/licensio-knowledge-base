@@ -8,7 +8,7 @@
  * the tag into the left form as Edit Tag, and Quick edit edits name, slug and
  * description inline. The bulk bar deletes, merges or converts the selected
  * tags. Adding and saving a tag send at once; delete, merge and convert ask
- * first, and Cancel sends nothing.
+ * in a confirmation dialog first, and Cancel sends nothing.
  *
  * Bulk actions work on the selected rows of the current page, at most 100,
  * so each is a single request.

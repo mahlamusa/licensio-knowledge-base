@@ -24,8 +24,8 @@
 
 import { expect, test, type Page, type Request } from '@playwright/test';
 import {
-	cancelPopconfirm,
-	confirmPopconfirm,
+	answerConfirm,
+	expectNoConfirmDialog,
 	openContentManager,
 } from './helpers/content-manager';
 import { failOnUnresolvedComponents } from './helpers/ant-components';
@@ -419,7 +419,7 @@ test.describe( 'Categories app', () => {
 			'Category moved.'
 		);
 		expect( writes ).toHaveLength( 1 );
-		await expect( page.locator( '.ant-popover:visible' ) ).toHaveCount( 0 );
+		await expectNoConfirmDialog( page );
 
 		const after = await topLevel( page );
 
@@ -884,7 +884,7 @@ test.describe( 'Categories app', () => {
 			.click();
 
 		await dialog.getByRole( 'button', { name: 'Delete' } ).click();
-		await confirmPopconfirm( page );
+		await answerConfirm( page, 'confirm' );
 
 		await expect( node( page, 'Gamma' ) ).toHaveCount( 0 );
 
@@ -913,7 +913,7 @@ test.describe( 'Categories app', () => {
 			.click();
 
 		await dialog.getByRole( 'button', { name: 'Merge' } ).click();
-		await confirmPopconfirm( page );
+		await answerConfirm( page, 'confirm' );
 
 		await expect( node( page, 'Gamma' ) ).toHaveCount( 0 );
 
@@ -1097,7 +1097,7 @@ test.describe( 'Categories app', () => {
 
 		// Reset asks first, since it throws the new order away; Cancel keeps it.
 		await pane.getByRole( 'button', { name: 'Reset' } ).click();
-		await cancelPopconfirm( page );
+		await answerConfirm( page, 'cancel' );
 		expect( await paneTitles( page ) ).toEqual( expected );
 
 		// Saving is not confirmed, and focus moves to the pane heading.
