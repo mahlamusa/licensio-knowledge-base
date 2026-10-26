@@ -524,8 +524,9 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 		 * The picker ticks the columns shown at the current width. On a
 		 * medium screen, before the user picked columns on a wider one, only
 		 * the clicked column changes: a column hidden there is turned on or
-		 * off for medium screens alone, and any other column everywhere, so
-		 * a pick there never drops the columns wider screens show. Anywhere
+		 * off for medium screens (and added back to the user's columns if
+		 * they had removed it), and any other column everywhere, so a pick
+		 * there never drops the columns wider screens show. Anywhere
 		 * else the ticked columns are the user's columns, shown exactly from
 		 * then on.
 		 *
