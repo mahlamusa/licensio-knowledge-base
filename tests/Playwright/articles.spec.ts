@@ -2,7 +2,7 @@
  * The Articles app, end to end.
  *
  * Opens the app through its hidden admin page and checks what only a real
- * WordPress can answer: the pills match the database, a Popconfirm stands
+ * WordPress can answer: the pills match the database, a confirmation stands
  * before a trash and Cancel sends nothing, a quick edit saves at once without
  * one, and the list state lives in the URL: filters replace the
  * history entry while sort and page push one. An out of range page moves
@@ -20,10 +20,10 @@
 
 import { expect, test, type Page, type Request } from '@playwright/test';
 import {
-	cancelPopconfirm,
+	answerConfirm,
+	confirmDialog,
 	contentManagerUrl,
 	openContentManager,
-	openPopconfirm,
 } from './helpers/content-manager';
 import { failOnUnresolvedComponents } from './helpers/ant-components';
 import { logIn, password, user } from './helpers/session';
@@ -139,20 +139,20 @@ test.describe( 'Articles app', () => {
 		await expect( app.locator( '.ant-table-row' ).first() ).toBeVisible();
 	} );
 
-	test( 'Cancel on a Popconfirm sends no request', async ( { page } ) => {
+	test( 'Cancel on a confirmation sends no request', async ( { page } ) => {
 		const app = await openContentManager( page, 'articles' );
 		const writes = recordWrites( page );
 		const row = app.locator( '.ant-table-row' ).first();
 
 		await row.hover();
 		await row.getByRole( 'button', { name: 'Trash' } ).click();
-		await cancelPopconfirm( page );
+		await answerConfirm( page, 'cancel' );
 		await page.waitForTimeout( 500 );
 
 		expect( writes ).toHaveLength( 0 );
 	} );
 
-	test( 'quick edit saves at once, without a Popconfirm', async ( {
+	test( 'quick edit saves at once, without a confirmation', async ( {
 		page,
 	} ) => {
 		const app = await openContentManager( page, 'articles' );
@@ -170,7 +170,7 @@ test.describe( 'Articles app', () => {
 
 		try {
 			await expect( app.getByText( title ) ).toBeVisible();
-			await expect( openPopconfirm( page ) ).toHaveCount( 0 );
+			await expect( confirmDialog( page ) ).toHaveCount( 0 );
 
 			expect( writes ).toHaveLength( 1 );
 			expect( writes[ 0 ].method() ).toBe( 'PATCH' );
@@ -458,10 +458,10 @@ test.describe( 'Articles app', () => {
 		await row.hover();
 		await row.getByRole( 'button', { name: 'Trash' } ).click();
 		await page.mouse.move( 0, 0 );
-		await expect( openPopconfirm( page ) ).toBeVisible();
+		await expect( confirmDialog( page ) ).toBeVisible();
 		await expect( actions ).toHaveCSS( 'opacity', '1' );
 		await page.keyboard.press( 'Escape' );
-		await expect( openPopconfirm( page ) ).toBeHidden();
+		await expect( confirmDialog( page ) ).toBeHidden();
 		await row
 			.getByRole( 'button', { name: 'Trash' } )
 			.evaluate( ( button ) => ( button as HTMLElement ).blur() );
@@ -494,7 +494,7 @@ test.describe( 'Articles app', () => {
 			await row.getByRole( 'button', { name: 'Trash' } ).focus();
 			await page.keyboard.press( 'Enter' );
 			await expect(
-				openPopconfirm( page ).getByRole( 'button', { name: 'Cancel' } )
+				confirmDialog( page ).getByRole( 'button', { name: 'Cancel' } )
 			).toBeFocused();
 			await page.keyboard.press( 'Tab' );
 			await page.keyboard.press( 'Enter' );

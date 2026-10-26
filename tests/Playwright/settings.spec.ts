@@ -17,10 +17,9 @@
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import {
-	cancelPopconfirm,
-	confirmPopconfirm,
-	expectNoPopconfirm,
-	openPopconfirm,
+	answerConfirm,
+	confirmDialog,
+	expectNoConfirmDialog,
 } from './helpers/content-manager';
 import { logIn, password, user } from './helpers/session';
 
@@ -119,10 +118,7 @@ test.describe( 'Knowledge base settings', () => {
 
 		await openSettings( page );
 		await page.getByRole( 'button', { name: 'Reset all' } ).click();
-		await page
-			.getByRole( 'dialog' )
-			.getByRole( 'button', { name: 'Reset everything' } )
-			.click();
+		await answerConfirm( page, 'confirm' );
 		await expect(
 			page.getByText( 'Every setting is back to its default.' )
 		).toBeVisible();
@@ -142,7 +138,7 @@ test.describe( 'Knowledge base settings', () => {
 		// A save is an update, so it runs on click without a confirmation.
 		await page.getByRole( 'button', { name: 'Save changes' } ).click();
 		await expect( page.getByText( 'Settings saved.' ) ).toBeVisible();
-		await expectNoPopconfirm( page );
+		await expectNoConfirmDialog( page );
 
 		// No permalink save, no cache flush: straight to the archive.
 		await page.goto( '/?post_type=licensio_article' );
@@ -158,19 +154,153 @@ test.describe( 'Knowledge base settings', () => {
 
 		// Cancel keeps the edit.
 		await page.getByRole( 'button', { name: 'Discard' } ).click();
-		await expect( openPopconfirm( page ) ).toContainText(
+		await expect( confirmDialog( page ) ).toContainText(
 			'Discard your unsaved changes?'
 		);
-		await cancelPopconfirm( page );
+		await answerConfirm( page, 'cancel' );
 		await expect( brandField( page ) ).toHaveValue( '#0f766e' );
 
 		// Confirming puts the stored value back.
 		await page.getByRole( 'button', { name: 'Discard' } ).click();
-		await confirmPopconfirm( page );
+		await answerConfirm( page, 'confirm' );
 		await expect( brandField( page ) ).not.toHaveValue( '#0f766e' );
 		await expect( page.locator( '.lkb-bar__status' ) ).toContainText(
 			'All changes saved.'
 		);
+
+		// Discard is disabled now, so focus lands on the page title, not the body.
+		await expect(
+			page.getByRole( 'button', { name: 'Discard' } )
+		).toBeDisabled();
+		await expect( page.locator( '.lkb-page__title' ) ).toBeFocused();
+	} );
+
+	test( 'Reset all asks in a centred dialog that blocks the page', async ( {
+		page,
+	} ) => {
+		await openSettings( page );
+
+		const trigger = page.getByRole( 'button', { name: 'Reset all' } );
+		const dialog = confirmDialog( page );
+		const box = dialog.locator( '.ant-modal' );
+		const ok = dialog.getByRole( 'button', { name: 'Reset everything' } );
+
+		await trigger.click();
+
+		// An alertdialog named by its question and described by its body.
+		await expect( dialog ).toBeVisible();
+		await expect( dialog ).toHaveAccessibleName( 'Reset every setting?' );
+		await expect( dialog ).toHaveAccessibleDescription(
+			/Every setting goes back to its default/
+		);
+		await expect(
+			dialog.getByRole( 'button', { name: 'Cancel' } )
+		).toBeFocused();
+		await expect( ok ).toHaveClass( /ant-btn-dangerous/ );
+
+		// Centred on the screen, not beside the button, once it has zoomed in.
+		const viewport = page.viewportSize() ?? { width: 0, height: 0 };
+		const offCentre = async (): Promise< number > => {
+			const rect = await box.boundingBox();
+
+			return rect
+				? Math.max(
+						Math.abs(
+							rect.x + rect.width / 2 - viewport.width / 2
+						),
+						Math.abs(
+							rect.y + rect.height / 2 - viewport.height / 2
+						)
+				  )
+				: Infinity;
+		};
+
+		await expect.poll( offCentre ).toBeLessThan( 2 );
+
+		// A translucent mask covers the whole screen, admin menu included,
+		// and a click on it neither reaches the page nor closes the dialog.
+		const mask = page.locator( '.ant-modal-mask' ).last();
+
+		await expect( mask ).toBeVisible();
+		await expect( mask ).toHaveCSS(
+			'background-color',
+			/rgba\(0, 0, 0, 0\.\d+\)/
+		);
+		await page.mouse.click( 40, 60 );
+		await expect( page ).toHaveURL( /page=licensio-kb-settings/ );
+		await expect( dialog ).toBeVisible();
+		expect(
+			await page.evaluate(
+				() =>
+					document
+						.elementFromPoint( 40, 60 )
+						?.closest( '#adminmenu' ) === null
+			)
+		).toBe( true );
+
+		// Tab stays inside the dialog.
+		for ( let i = 0; i < 4; i++ ) {
+			await page.keyboard.press( 'Tab' );
+			expect(
+				await dialog.evaluate( ( el ) =>
+					el.contains( el.ownerDocument.activeElement )
+				)
+			).toBe( true );
+		}
+
+		// Escape cancels and hands focus back to the button.
+		await page.keyboard.press( 'Escape' );
+		await expect( dialog ).toBeHidden();
+		await expect( trigger ).toBeFocused();
+
+		// While the request runs the confirm button spins; a failure keeps
+		// the dialog open with the error inside it.
+		let release = (): void => undefined;
+		const held = new Promise< void >( ( resolve ) => {
+			release = resolve;
+		} );
+
+		await page.route(
+			( url ) =>
+				decodeURIComponent( url.href ).includes(
+					'licensio-kb/v1/settings'
+				),
+			async ( route ) => {
+				if ( 'DELETE' !== route.request().method() ) {
+					await route.fallback();
+					return;
+				}
+
+				await held;
+				await route.fulfill( {
+					status: 500,
+					contentType: 'application/json',
+					body: JSON.stringify( {
+						code: 'lkb_test_failure',
+						message: 'The reset failed on purpose.',
+						data: { status: 500 },
+					} ),
+				} );
+			}
+		);
+
+		await trigger.click();
+		await ok.click();
+		await expect( ok ).toHaveClass( /ant-btn-loading/ );
+		await expect(
+			dialog.getByRole( 'button', { name: 'Cancel' } )
+		).toBeDisabled();
+		release();
+
+		await expect( dialog.getByRole( 'alert' ) ).toContainText(
+			'The reset failed on purpose.'
+		);
+		await expect( ok ).not.toHaveClass( /ant-btn-loading/ );
+		await expect( dialog ).toBeVisible();
+
+		await page.unrouteAll( { behavior: 'wait' } );
+		await answerConfirm( page, 'cancel' );
+		await expect( trigger ).toBeFocused();
 	} );
 
 	test( 'leaving with unsaved changes warns first', async ( { page } ) => {

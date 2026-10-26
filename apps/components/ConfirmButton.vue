@@ -22,6 +22,9 @@
  * before. A long run with its own progress display should not hold the
  * dialog open; call it with `void` so the dialog closes at once.
  *
+ * While its dialog is open the button carries `is-confirming`, so a row can
+ * keep showing it.
+ *
  * After the dialog closes, focus goes back to the button, so a keyboard user
  * stays where they were. If the change disabled or removed the button, as
  * discarding changes or trashing a row does, focus moves to the page title
@@ -332,6 +335,7 @@ onBeforeUnmount( keepFocusOnPage );
 		:danger="props.danger"
 		:disabled="props.disabled"
 		:loading="props.loading"
+		:class="{ 'is-confirming': open }"
 		aria-haspopup="dialog"
 		@click="show"
 	>

@@ -621,7 +621,8 @@ const expandedKeys = computed( () =>
  * when focus is inside them, and always on touch and narrow screens. They are
  * only made transparent, so they stay in the layout and the accessibility
  * tree, and Tab still reaches them. They also stay while one of their
- * confirmations is open, so it never points at an empty space.
+ * confirmations is open, so the row it asks about stays recognisable behind
+ * the dialog.
  */
 .lkb-rowactions {
 	opacity: 0;
@@ -629,7 +630,7 @@ const expandedKeys = computed( () =>
 
 .ant-table-row:hover .lkb-rowactions,
 .lkb-rowactions:focus-within,
-.lkb-rowactions:has( .ant-popover-open ) {
+.lkb-rowactions:has( .is-confirming ) {
 	opacity: 1;
 }
 

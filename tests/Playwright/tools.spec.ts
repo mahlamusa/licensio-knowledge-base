@@ -17,9 +17,9 @@
 
 import { expect, test } from '@playwright/test';
 import {
-	cancelPopconfirm,
-	expectNoPopconfirm,
-	openPopconfirm,
+	answerConfirm,
+	confirmDialog,
+	expectNoConfirmDialog,
 } from './helpers/content-manager';
 import { logIn, password, user } from './helpers/session';
 
@@ -76,7 +76,7 @@ test( 'the recount report reads as one sentence for a single article', async ( {
 	// The recount runs on click, without a confirmation.
 	await page.getByRole( 'button', { name: 'Recount scores' } ).click();
 	await expect.poll( () => recounts.length ).toBe( 1 );
-	await expectNoPopconfirm( page );
+	await expectNoConfirmDialog( page );
 
 	await expect(
 		page.locator( '.licensio-kb-data-maintenance__done' )
@@ -96,10 +96,10 @@ test( 'the recount report reads as one sentence for a single article', async ( {
 	} );
 
 	await page.getByRole( 'button', { name: 'Delete expired rows' } ).click();
-	await expect( openPopconfirm( page ) ).toContainText(
+	await expect( confirmDialog( page ) ).toContainText(
 		'Permanently delete the expired rows?'
 	);
-	await cancelPopconfirm( page );
+	await answerConfirm( page, 'cancel' );
 	expect( prunes ).toHaveLength( 0 );
 } );
 
@@ -155,16 +155,16 @@ test( 'resuming an index rebuild runs on click and a rebuild asks first', async 
 
 	// Rebuilding empties the index first, so it asks; Cancel sends nothing.
 	await page.getByRole( 'button', { name: 'Rebuild index' } ).click();
-	await expect( openPopconfirm( page ) ).toContainText(
+	await expect( confirmDialog( page ) ).toContainText(
 		'Empty the index and re-index every article?'
 	);
-	await cancelPopconfirm( page );
+	await answerConfirm( page, 'cancel' );
 	expect( starts ).toHaveLength( 0 );
 
 	// Resuming runs on click, without a confirmation.
 	await page.getByRole( 'button', { name: 'Resume rebuild' } ).click();
 	await expect.poll( () => chunks.length ).toBe( 1 );
-	await expectNoPopconfirm( page );
+	await expectNoConfirmDialog( page );
 	await expect( page.getByText( 'The index was rebuilt.' ) ).toBeVisible();
 	expect( starts ).toHaveLength( 0 );
 } );
