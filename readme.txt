@@ -89,7 +89,7 @@ Heroic Knowledge Base and BetterDocs are trademarks of their respective owners. 
 = Works with any theme =
 
 * Classic PHP templates for the archive, single articles, categories and tags, all overridable from your theme.
-* Block templates registered with the Site Editor, so block themes can edit the knowledge base like any other template.
+* Block templates registered with the Site Editor, which render the same knowledge base layout as the classic templates inside your block theme's header and footer.
 * Both layers fire the same hooks, so anything you attach works under either.
 
 = For developers =
@@ -121,7 +121,9 @@ Yes. Classic themes get the plugin's own PHP templates, and block themes get Sit
 
 = Can I override the templates in my theme? =
 
-Yes. Copy any file from the plugin's `templates/` directory into a `licensio-kb/` directory in your theme and edit it there. If you use a block theme, the block templates are editable directly in the Site Editor.
+Yes. Copy any file from the plugin's `templates/` directory into a `licensio-kb/` directory in your theme and edit it there.
+
+This works for block themes too. The five block templates (Single Article, Article Archive, Article Category, Article Tag and Article Search Results) each render the knowledge base layout as one Custom HTML block holding a `[licensio_kb_view]` shortcode, which outputs the same `*-body.php` file the classic templates use. In the Site Editor you can still change the header and footer template parts, add blocks before or after the knowledge base layout, or reset a template to the plugin's copy. To change the layout itself, copy the matching body file (`archive-body.php`, `category-body.php`, `single-body.php`, `tag-body.php` or `search-body.php`) into `licensio-kb/` in your theme, or use the plugin's `licensio_` actions and filters.
 
 = Can I change the /docs/ address? =
 

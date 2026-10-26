@@ -319,7 +319,11 @@ line of knowledge base content, so a theme with a taller header should override
 this template rather than the five pages.
 
 The loader stands aside entirely under a block theme, where the block template
-layer answers the same requests.
+layer answers the same requests. Each page template keeps its markup in a
+`*-body.php` file (`archive-body`, `category-body`, `single-body`, `tag-body`,
+`search-body`) between `get_header()` and `get_footer()`, and each block
+template renders that same file through `[licensio_kb_view view="…"]` in a
+Custom HTML block, so both theme types serve one layout.
 
 Local variables inside a template carry the `licensio_kb_` prefix, which the
 project's PHPCS ruleset requires of anything assigned at a file's top level.
