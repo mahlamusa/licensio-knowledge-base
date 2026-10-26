@@ -351,6 +351,9 @@ class Licensio_KB_Category_Order_REST_Test extends Licensio_KB_Test_Case {
         $GLOBALS['wpdb'] = new Licensio_KB_Order_WPDB( // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
             function () {
                 return array();
+            },
+            function ( $id, $key, $value ) use ( &$written ) {
+                $written[] = array( $id, $key, (int) $value );
             }
         );
 
@@ -362,13 +365,8 @@ class Licensio_KB_Category_Order_REST_Test extends Licensio_KB_Test_Case {
             }
         );
         Functions\when( 'current_user_can' )->justReturn( true );
-        Functions\when( 'update_post_meta' )->alias(
-            function ( $id, $key, $value ) use ( &$written ) {
-                $written[] = array( $id, $key, $value );
-
-                return true;
-            }
-        );
+        Functions\when( 'wp_cache_delete_multiple' )->justReturn( array() );
+        Functions\when( 'wp_cache_set_posts_last_changed' )->justReturn( null );
 
         $result = ( new Licensio_KB_Category_Order_REST_Controller() )->update_order( $this->request( 5, array( 12, 11, 13 ) ) );
 
@@ -409,18 +407,16 @@ class Licensio_KB_Category_Order_REST_Test extends Licensio_KB_Test_Case {
                     22 => array( 'licensio_order_5' => '40' ),
                     23 => array( 'licensio_order_5' => '70' ),
                 );
+            },
+            function ( $id, $key, $value ) use ( &$written ) {
+                $written[] = array( $id, $key, (int) $value );
             }
         );
 
         Functions\expect( 'get_posts' )->never();
         Functions\expect( 'current_user_can' )->never();
-        Functions\when( 'update_post_meta' )->alias(
-            function ( $id, $key, $value ) use ( &$written ) {
-                $written[] = array( $id, $key, $value );
-
-                return true;
-            }
-        );
+        Functions\when( 'wp_cache_delete_multiple' )->justReturn( array() );
+        Functions\when( 'wp_cache_set_posts_last_changed' )->justReturn( null );
 
         $result = ( new Licensio_KB_Category_Order_REST_Controller() )->update_order( $this->request( 5, array() ) );
 

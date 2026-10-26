@@ -66,14 +66,6 @@ class Licensio_KB_Article_Order_Integration_Test extends Licensio_KB_Analytics_D
             }
         );
 
-        Brain\Monkey\Functions\when( 'update_post_meta' )->alias(
-            function ( $post_id, $key, $value ) {
-                $this->set_order_row( (int) $post_id, (string) $key, (string) $value );
-
-                return true;
-            }
-        );
-
         Brain\Monkey\Functions\when( 'delete_metadata' )->alias(
             function ( $type, $object_id, $key, $value, $delete_all ) {
                 $this->assertSame( array( 'post', 0, '', true ), array( $type, $object_id, $value, $delete_all ) );

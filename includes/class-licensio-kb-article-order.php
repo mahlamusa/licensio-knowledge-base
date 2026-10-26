@@ -18,8 +18,8 @@
  *   Order an editor can set on the article), then title, then ID.
  *   `posts_clauses` adds one LEFT JOIN on the post meta table, limited to the
  *   category's key in its ON clause, and writes the ORDER BY. Nothing is
- *   filtered out, and no GROUP BY is needed: every writer uses
- *   `update_post_meta()`, so an article holds at most one row per key. Core
+ *   filtered out, and no GROUP BY is needed: every writer replaces the
+ *   article's row, so an article holds at most one row per key. Core
  *   cannot express "missing last" through `orderby` alone, since a missing
  *   position sorts as NULL, which MySQL puts first.
  * - `order => DESC` reverses the order, the `menu_order`, title and ID
@@ -458,6 +458,11 @@ class Licensio_KB_Article_Order {
      * order, so the positions stay dense and a partial list never interleaves
      * with the rest. Articles without a position stay without one.
      *
+     * Only the positions that change are written, in batches: their old rows
+     * are deleted and the new ones inserted in one transaction, rather than
+     * one `update_post_meta()` per article, which took seconds on a category
+     * with thousands of articles.
+     *
      * @since 1.0.0
      *
      * @param int   $term_id The category term ID.
@@ -471,12 +476,13 @@ class Licensio_KB_Article_Order {
         $previous = self::positions( $term_id );
         $listed   = array_flip( $ids );
         $position = 0;
+        $changed  = array();
 
         foreach ( $ids as $id ) {
             $position += self::STEP;
 
             if ( ! isset( $previous[ $id ] ) || $previous[ $id ] !== $position ) {
-                update_post_meta( $id, $key, $position );
+                $changed[ $id ] = $position;
             }
         }
 
@@ -488,9 +494,11 @@ class Licensio_KB_Article_Order {
             $position += self::STEP;
 
             if ( $old !== $position ) {
-                update_post_meta( $id, $key, $position );
+                $changed[ $id ] = $position;
             }
         }
+
+        self::write_positions( $key, $changed, true );
 
         return $ids;
     }
@@ -547,31 +555,40 @@ class Licensio_KB_Article_Order {
             }
         }
 
-        self::insert_positions( $key, $appended );
+        self::write_positions( $key, $appended, false );
     }
 
     /**
-     * Insert order keys for articles that hold none yet.
+     * Write order keys in batches.
      *
-     * Writes `INSERT_BATCH` rows per statement, then drops those articles'
-     * post meta cache and bumps the posts cache version, as
-     * `update_post_meta()` would.
+     * Writes `INSERT_BATCH` rows per statement. With `$replace`, the
+     * articles' existing rows for the key are deleted first, batch by batch,
+     * inside one transaction that is rolled back if a statement fails, so
+     * the previous order stays whole. Then drops those articles' post meta
+     * cache and bumps the posts cache version once, as `update_post_meta()`
+     * would for each.
      *
      * @since 1.0.0
      *
      * @param string          $key       The order meta key.
      * @param array<int, int> $positions Article ID to position.
+     * @param bool            $replace   Whether the articles may already hold the key.
      *
      * @return void
      */
-    private static function insert_positions( $key, array $positions ) {
+    private static function write_positions( $key, array $positions, $replace ) {
         global $wpdb;
 
         if ( empty( $positions ) ) {
             return;
         }
 
+        if ( $replace ) {
+            $wpdb->query( 'START TRANSACTION' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        }
+
         foreach ( array_chunk( $positions, self::INSERT_BATCH, true ) as $batch ) {
+            $ids    = array_map( 'intval', array_keys( $batch ) );
             $values = array( $wpdb->postmeta );
 
             foreach ( $batch as $article_id => $position ) {
@@ -583,11 +600,33 @@ class Licensio_KB_Article_Order {
             $rows = implode( ', ', array_fill( 0, count( $batch ), '( %d, %s, %s )' ) );
 
             // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- $rows holds only placeholders, one triple per article.
-            $sql = $wpdb->prepare( "INSERT INTO %i ( post_id, meta_key, meta_value ) VALUES {$rows}", $values );
+            $insert = $wpdb->prepare( "INSERT INTO %i ( post_id, meta_key, meta_value ) VALUES {$rows}", $values );
             // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 
+            $written = true;
+
+            if ( $replace ) {
+                $delete = $wpdb->prepare(
+                    'DELETE FROM %i WHERE meta_key = %s AND post_id IN ( ' . implode( ', ', array_fill( 0, count( $ids ), '%d' ) ) . ' )',
+                    array_merge( array( $wpdb->postmeta, $key ), $ids )
+                );
+
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Prepared above.
+                $written = false !== $wpdb->query( $delete );
+            }
+
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Prepared above.
-            $wpdb->query( $sql );
+            $written = $written && false !== $wpdb->query( $insert );
+
+            if ( $replace && ! $written ) {
+                $wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+                return;
+            }
+        }
+
+        if ( $replace ) {
+            $wpdb->query( 'COMMIT' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         }
 
         wp_cache_delete_multiple( array_keys( $positions ), 'post_meta' );

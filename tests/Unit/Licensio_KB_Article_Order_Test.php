@@ -29,6 +29,14 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
     private $meta = array();
 
     /**
+     * The post meta cache clears and posts cache bumps, in order.
+     *
+     * @since 1.0.0
+     * @var array<int, mixed>
+     */
+    private $cache = array();
+
+    /**
      * Back the positions query and the meta writes with the in-memory store.
      *
      * @since 1.0.0
@@ -38,7 +46,8 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
     protected function setUp(): void {
         parent::setUp();
 
-        $this->meta = array();
+        $this->meta  = array();
+        $this->cache = array();
 
         Functions\when( 'absint' )->alias(
             function ( $value ) {
@@ -55,11 +64,16 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
             }
         );
 
-        Functions\when( 'update_post_meta' )->alias(
-            function ( $id, $key, $value ) {
-                $this->meta[ $id ][ $key ] = $value;
+        Functions\when( 'wp_cache_delete_multiple' )->alias(
+            function ( $ids, $group ) {
+                $this->cache[] = array( $ids, $group );
 
-                return true;
+                return array();
+            }
+        );
+        Functions\when( 'wp_cache_set_posts_last_changed' )->alias(
+            function () {
+                $this->cache[] = 'last_changed';
             }
         );
 
@@ -565,9 +579,39 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
     public function test_save_writes_steps_of_ten() {
         $this->assertSame( array( 3, 1, 2 ), Licensio_KB_Article_Order::save( 7, array( 3, 1, 2 ) ) );
 
-        $this->assertSame( 10, $this->stored( 3, 'licensio_order_7' ) );
-        $this->assertSame( 20, $this->stored( 1, 'licensio_order_7' ) );
-        $this->assertSame( 30, $this->stored( 2, 'licensio_order_7' ) );
+        $this->assertSame( '10', $this->stored( 3, 'licensio_order_7' ) );
+        $this->assertSame( '20', $this->stored( 1, 'licensio_order_7' ) );
+        $this->assertSame( '30', $this->stored( 2, 'licensio_order_7' ) );
+    }
+
+    /**
+     * A save writes the changed positions in one batch and refreshes the caches once.
+     *
+     * The old rows are deleted and the new ones inserted inside one
+     * transaction; articles already in place are not touched.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_save_writes_in_one_batch() {
+        $this->meta = array(
+            1 => array( 'licensio_order_7' => '10' ),
+            2 => array( 'licensio_order_7' => '5' ),
+            3 => array( 'licensio_order_7' => '40' ),
+        );
+
+        Licensio_KB_Article_Order::save( 7, array( 1, 3, 2 ) );
+
+        $queries = $GLOBALS['wpdb']->queries;
+
+        $this->assertCount( 4, $queries );
+        $this->assertSame( 'START TRANSACTION', $queries[0] );
+        $this->assertSame( "DELETE FROM `wptests_postmeta` WHERE meta_key = 'licensio_order_7' AND post_id IN ( 3, 2 )", $queries[1] );
+        $this->assertStringStartsWith( "INSERT INTO `wptests_postmeta` ( post_id, meta_key, meta_value ) VALUES ( 3, 'licensio_order_7', '20' ), ( 2, 'licensio_order_7', '30' )", $queries[2] );
+        $this->assertSame( 'COMMIT', $queries[3] );
+        $this->assertSame( array( array( array( 3, 2 ), 'post_meta' ), 'last_changed' ), $this->cache );
+        $this->assertSame( '10', $this->stored( 1, 'licensio_order_7' ) );
     }
 
     /**
@@ -589,10 +633,10 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
 
         $this->assertSame( array( 3, 1 ), Licensio_KB_Article_Order::save( 7, array( 3, 1 ) ) );
 
-        $this->assertSame( 10, $this->stored( 3, 'licensio_order_7' ) );
-        $this->assertSame( 20, $this->stored( 1, 'licensio_order_7' ) );
-        $this->assertSame( 30, $this->stored( 2, 'licensio_order_7' ), 'The rest keep their relative order.' );
-        $this->assertSame( 40, $this->stored( 4, 'licensio_order_7' ), 'A far position no longer interleaves.' );
+        $this->assertSame( '10', $this->stored( 3, 'licensio_order_7' ) );
+        $this->assertSame( '20', $this->stored( 1, 'licensio_order_7' ) );
+        $this->assertSame( '30', $this->stored( 2, 'licensio_order_7' ), 'The rest keep their relative order.' );
+        $this->assertSame( '40', $this->stored( 4, 'licensio_order_7' ), 'A far position no longer interleaves.' );
         $this->assertSame( '', $this->stored( 5, 'licensio_order_7' ), 'An article without a position stays without one.' );
         $this->assertSame( '', $this->stored( 6, 'licensio_order_7' ) );
     }
@@ -610,21 +654,10 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
             2 => array( 'licensio_order_7' => '20' ),
         );
 
-        $writes = array();
-
-        Functions\when( 'update_post_meta' )->alias(
-            function ( $id, $key, $value ) use ( &$writes ) {
-                $writes[] = $id;
-
-                $this->meta[ $id ][ $key ] = $value;
-
-                return true;
-            }
-        );
-
         Licensio_KB_Article_Order::save( 7, array( 1 ) );
 
-        $this->assertSame( array(), $writes );
+        $this->assertSame( array(), $GLOBALS['wpdb']->queries, 'Nothing is written.' );
+        $this->assertSame( array(), $this->cache );
     }
 
     /**
@@ -647,9 +680,6 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
             6 => array(),
         );
 
-        Functions\expect( 'wp_cache_delete_multiple' )->once()->with( array( 3, 4, 5 ), 'post_meta' );
-        Functions\expect( 'wp_cache_set_posts_last_changed' )->once();
-
         ( new Licensio_KB_Article_Order() )->append_merged_order( array( 8, 9 ), 7, Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
 
         $this->assertSame( '10', $this->stored( 1, 'licensio_order_7' ), 'An article already ordered in the target keeps its place.' );
@@ -659,6 +689,7 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
         $this->assertSame( '50', $this->stored( 5, 'licensio_order_7' ), 'The second source follows the first.' );
         $this->assertSame( '', $this->stored( 6, 'licensio_order_7' ) );
         $this->assertCount( 1, $GLOBALS['wpdb']->queries, 'The appended positions are written in one INSERT.' );
+        $this->assertSame( array( array( array( 3, 4, 5 ), 'post_meta' ), 'last_changed' ), $this->cache );
     }
 
     /**
@@ -672,9 +703,6 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
         $this->meta = array(
             3 => array( 'licensio_order_8' => '4' ),
         );
-
-        Functions\when( 'wp_cache_delete_multiple' )->justReturn( array() );
-        Functions\when( 'wp_cache_set_posts_last_changed' )->justReturn( null );
 
         ( new Licensio_KB_Article_Order() )->append_merged_order( array( 8 ), 7, Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
 
