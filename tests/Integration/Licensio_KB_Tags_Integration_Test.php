@@ -641,4 +641,121 @@ class Licensio_KB_Tags_Integration_Test extends Licensio_KB_Analytics_DB_Test_Ca
         $this->assertSame( 'term_exists', $clash->get_error_code() );
         $this->assertSame( 409, $clash->get_error_data()['status'] );
     }
+
+    /**
+     * A tag a map_meta_cap rule denies cannot be edited, deleted, merged or converted.
+     *
+     * The user holds every taxonomy capability; only `edit_term` and
+     * `delete_term` on one tag, or `edit_term` on the parent category, are
+     * refused, as a map_meta_cap filter would. Each request goes through its
+     * permission callback first, as the REST server sends it, and is refused
+     * before anything is written.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_tag_denied_by_its_meta_capability_is_left_alone() {
+        $locked = $this->make_term( 'Locked' );
+        $open   = $this->make_term( 'Open' );
+        $parent = $this->make_term( 'Parent', Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
+
+        $this->make_article( array( 'tags' => array( $locked ) ) );
+        $this->make_article( array( 'tags' => array( $open ) ) );
+
+        $denied = array( 'edit_term:' . $locked, 'delete_term:' . $locked, 'edit_term:' . $parent );
+
+        Brain\Monkey\Functions\when( 'rest_authorization_required_code' )->justReturn( 403 );
+        Brain\Monkey\Functions\when( 'get_taxonomy' )->alias(
+            function ( $taxonomy ) {
+                return (object) array(
+                    'cap' => (object) array(
+                        'manage_terms' => 'manage_' . $taxonomy,
+                        'edit_terms'   => 'edit_' . $taxonomy,
+                        'delete_terms' => 'delete_' . $taxonomy,
+                        'assign_terms' => 'assign_' . $taxonomy,
+                    ),
+                );
+            }
+        );
+        Brain\Monkey\Functions\when( 'current_user_can' )->alias(
+            function ( $cap, $id = 0 ) use ( $denied ) {
+                return ! in_array( $cap . ':' . (int) $id, $denied, true );
+            }
+        );
+
+        $before   = $this->live_snapshot();
+        $requests = array(
+            'update'         => array(
+                'update_permissions_check',
+                'update_item',
+                array(
+                    'id'   => $locked,
+                    'name' => 'Renamed',
+                ),
+            ),
+            'delete'         => array( 'delete_permissions_check', 'bulk_delete', array( 'ids' => array( $open, $locked ) ) ),
+            'merge away'     => array(
+                'merge_permissions_check',
+                'merge',
+                array(
+                    'sources' => array( $locked ),
+                    'target'  => $open,
+                ),
+            ),
+            'merge into'     => array(
+                'merge_permissions_check',
+                'merge',
+                array(
+                    'sources' => array( $open ),
+                    'target'  => $locked,
+                ),
+            ),
+            'convert'        => array(
+                'convert_permissions_check',
+                'convert',
+                array(
+                    'ids'    => array( $open, $locked ),
+                    'parent' => 0,
+                ),
+            ),
+            'convert parent' => array(
+                'convert_permissions_check',
+                'convert',
+                array(
+                    'ids'    => array( $open ),
+                    'parent' => $parent,
+                ),
+            ),
+        );
+
+        foreach ( $requests as $label => $request ) {
+            list( $permission, $handler, $params ) = $request;
+
+            $rest    = new WP_REST_Request( array(), '/licensio-kb/v1/tags', $params );
+            $allowed = $this->controller->$permission( $rest );
+
+            if ( true === $allowed ) {
+                $this->controller->$handler( $rest );
+            }
+
+            $this->assertInstanceOf( WP_Error::class, $allowed, $label );
+            $this->assertSame( 403, $allowed->get_error_data()['status'], $label );
+            $this->assertSame( $before, $this->live_snapshot(), $label . ' writes nothing.' );
+        }
+
+        $this->assertTrue(
+            $this->controller->convert_permissions_check(
+                new WP_REST_Request(
+                    array(),
+                    '/licensio-kb/v1/tags/convert',
+                    array(
+                        'ids'    => array( $open ),
+                        'parent' => 0,
+                    )
+                )
+            ),
+            'A tag the user may delete can still be converted.'
+        );
+    }
 }

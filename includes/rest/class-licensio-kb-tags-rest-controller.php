@@ -27,7 +27,8 @@
  *   its articles, and is then deleted. A tag that fails is left as it was.
  *
  * Every route needs `manage_licensio_kb` and the matching capability of the
- * taxonomy it changes. Term names are answered as plain text: core stores `&`
+ * taxonomy it changes, and the writes also need `edit_term` or `delete_term`
+ * on each existing term they touch, as the Categories routes do. Term names are answered as plain text: core stores `&`
  * as `&amp;`, and the app renders them as text. Descriptions are answered as
  * stored: decoding one and sending it back on save would let kses turn
  * escaped text such as `&lt;b&gt;` into markup, or strip it.
@@ -117,7 +118,7 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
                 array(
                     'methods'             => 'PATCH',
                     'callback'            => array( $this, 'update_item' ),
-                    'permission_callback' => array( $this, 'edit_permissions_check' ),
+                    'permission_callback' => array( $this, 'update_permissions_check' ),
                     'args'                => array_merge(
                         array(
                             'id' => array(
@@ -337,32 +338,62 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
     }
 
     /**
-     * Permission callback for deleting tags.
+     * Permission callback for editing one tag.
+     *
+     * Also needs `edit_term` on the tag, as the Categories routes do.
      *
      * @since 1.0.0
      *
      * @param WP_REST_Request $request The request.
      *
-     * @return true|WP_Error True when the current user may delete tags.
+     * @return true|WP_Error True when the current user may edit this tag.
+     */
+    public function update_permissions_check( $request ) {
+        $allowed = $this->edit_permissions_check( $request );
+
+        if ( true !== $allowed ) {
+            return $allowed;
+        }
+
+        return self::term_permissions_check( 'edit_term', Licensio_KB_Post_Types::TAXONOMY_TAG, array( $request->get_param( 'id' ) ) );
+    }
+
+    /**
+     * Permission callback for deleting tags.
+     *
+     * Also needs `delete_term` on each tag.
+     *
+     * @since 1.0.0
+     *
+     * @param WP_REST_Request $request The request.
+     *
+     * @return true|WP_Error True when the current user may delete these tags.
      */
     public function delete_permissions_check( $request ) {
-        return $this->taxonomy_permissions_check( $request, array( array( Licensio_KB_Post_Types::TAXONOMY_TAG, 'delete_terms' ) ) );
+        $allowed = $this->taxonomy_permissions_check( $request, array( array( Licensio_KB_Post_Types::TAXONOMY_TAG, 'delete_terms' ) ) );
+
+        if ( true !== $allowed ) {
+            return $allowed;
+        }
+
+        return self::term_permissions_check( 'delete_term', Licensio_KB_Post_Types::TAXONOMY_TAG, (array) $request->get_param( 'ids' ) );
     }
 
     /**
      * Permission callback for merging tags, which edits one and deletes others.
      *
      * Merging also moves the sources' articles onto the target, so it needs
-     * the tag assign capability too.
+     * the tag assign capability too, then `delete_term` on each source and
+     * `edit_term` on the target.
      *
      * @since 1.0.0
      *
      * @param WP_REST_Request $request The request.
      *
-     * @return true|WP_Error True when the current user may merge tags.
+     * @return true|WP_Error True when the current user may merge these tags.
      */
     public function merge_permissions_check( $request ) {
-        return $this->taxonomy_permissions_check(
+        $allowed = $this->taxonomy_permissions_check(
             $request,
             array(
                 array( Licensio_KB_Post_Types::TAXONOMY_TAG, 'edit_terms' ),
@@ -370,22 +401,35 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
                 array( Licensio_KB_Post_Types::TAXONOMY_TAG, 'assign_terms' ),
             )
         );
+
+        if ( true !== $allowed ) {
+            return $allowed;
+        }
+
+        $allowed = self::term_permissions_check( 'delete_term', Licensio_KB_Post_Types::TAXONOMY_TAG, (array) $request->get_param( 'sources' ) );
+
+        if ( true !== $allowed ) {
+            return $allowed;
+        }
+
+        return self::term_permissions_check( 'edit_term', Licensio_KB_Post_Types::TAXONOMY_TAG, array( $request->get_param( 'target' ) ) );
     }
 
     /**
      * Permission callback for converting tags to categories.
      *
      * Converting deletes tags, creates categories and assigns them to
-     * articles, so it needs all three capabilities.
+     * articles, so it needs all three capabilities, then `delete_term` on
+     * each tag and `edit_term` on the parent category the new ones go under.
      *
      * @since 1.0.0
      *
      * @param WP_REST_Request $request The request.
      *
-     * @return true|WP_Error True when the current user may convert tags.
+     * @return true|WP_Error True when the current user may convert these tags.
      */
     public function convert_permissions_check( $request ) {
-        return $this->taxonomy_permissions_check(
+        $allowed = $this->taxonomy_permissions_check(
             $request,
             array(
                 array( Licensio_KB_Post_Types::TAXONOMY_TAG, 'delete_terms' ),
@@ -393,6 +437,18 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
                 array( Licensio_KB_Post_Types::TAXONOMY_CATEGORY, 'assign_terms' ),
             )
         );
+
+        if ( true !== $allowed ) {
+            return $allowed;
+        }
+
+        $allowed = self::term_permissions_check( 'delete_term', Licensio_KB_Post_Types::TAXONOMY_TAG, (array) $request->get_param( 'ids' ) );
+
+        if ( true !== $allowed ) {
+            return $allowed;
+        }
+
+        return self::term_permissions_check( 'edit_term', Licensio_KB_Post_Types::TAXONOMY_CATEGORY, array( $request->get_param( 'parent' ) ) );
     }
 
     /**
@@ -417,15 +473,51 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
             $key      = $check[1];
 
             if ( ! is_object( $taxonomy ) || ! isset( $taxonomy->cap->$key ) || ! current_user_can( $taxonomy->cap->$key ) ) {
-                return new WP_Error(
-                    'licensio_forbidden',
-                    __( 'You are not allowed to change these terms.', 'licensio-knowledge-base' ),
-                    array( 'status' => rest_authorization_required_code() )
-                );
+                return self::forbidden_error();
             }
         }
 
         return true;
+    }
+
+    /**
+     * Check a per-term capability on each term that exists.
+     *
+     * A term that does not exist is skipped here, as the Categories routes
+     * skip one they only write to: the handler answers it, as a 404 or as a
+     * failed entry, and a 0 parent means the top level.
+     *
+     * @since 1.0.0
+     *
+     * @param string $meta_cap The per-term capability, `edit_term` or `delete_term`.
+     * @param string $taxonomy The taxonomy the IDs belong to.
+     * @param array  $ids      The term IDs as sent.
+     *
+     * @return true|WP_Error True when the current user holds the capability on every term.
+     */
+    private static function term_permissions_check( $meta_cap, $taxonomy, array $ids ) {
+        foreach ( self::ids( $ids ) as $id ) {
+            if ( get_term( $id, $taxonomy ) instanceof WP_Term && ! current_user_can( $meta_cap, $id ) ) {
+                return self::forbidden_error();
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * The error for a user who may not change these terms.
+     *
+     * @since 1.0.0
+     *
+     * @return WP_Error The 403, or 401 when signed out.
+     */
+    private static function forbidden_error() {
+        return new WP_Error(
+            'licensio_forbidden',
+            __( 'You are not allowed to change these terms.', 'licensio-knowledge-base' ),
+            array( 'status' => rest_authorization_required_code() )
+        );
     }
 
     /**

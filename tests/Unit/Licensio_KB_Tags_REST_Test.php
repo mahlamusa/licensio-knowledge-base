@@ -32,6 +32,14 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
     private $caps = array();
 
     /**
+     * Per-term capabilities refused, as `cap:id`, the way a map_meta_cap filter would.
+     *
+     * @since 1.0.0
+     * @var string[]
+     */
+    private $denied_terms = array();
+
+    /**
      * The terms that exist, keyed by taxonomy and then ID.
      *
      * @since 1.0.0
@@ -68,10 +76,11 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
     protected function setUp(): void {
         parent::setUp();
 
-        $this->routes = array();
-        $this->calls  = array();
-        $this->caps   = array( 'manage_licensio_kb', 'manage_tags', 'edit_tags', 'delete_tags', 'assign_tags', 'edit_categories', 'assign_categories' );
-        $this->terms  = array(
+        $this->routes       = array();
+        $this->calls        = array();
+        $this->denied_terms = array();
+        $this->caps         = array( 'manage_licensio_kb', 'manage_tags', 'edit_tags', 'delete_tags', 'assign_tags', 'edit_categories', 'assign_categories' );
+        $this->terms        = array(
             'licensio_tag'      => array(
                 10 => $this->term( 10, 'Billing', 'licensio_tag', 'About money' ),
                 11 => $this->term( 11, 'Invoices', 'licensio_tag' ),
@@ -107,7 +116,11 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
             }
         );
         Functions\when( 'current_user_can' )->alias(
-            function ( $cap ) {
+            function ( $cap, $id = 0 ) {
+                if ( in_array( $cap, array( 'edit_term', 'delete_term' ), true ) ) {
+                    return ! in_array( $cap . ':' . (int) $id, $this->denied_terms, true );
+                }
+
                 return in_array( $cap, $this->caps, true );
             }
         );
@@ -336,6 +349,97 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
             $this->caps = array_values( array_diff( $all, array( 'manage_licensio_kb' ) ) );
             $this->assertInstanceOf( WP_Error::class, $this->call( $case[0], $case[1], array(), 'permission_callback' ), $case[0] . ' without the management capability' );
         }
+    }
+
+    /**
+     * A tag the user may not edit or delete, by its per-term capability, cannot be changed.
+     *
+     * Each write route checks `edit_term` or `delete_term` on every tag it
+     * touches, and convert checks `edit_term` on the parent category, as the
+     * Categories routes do. Tags and parents that do not exist are left to
+     * the handler, which reports them.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_per_term_capabilities_are_checked() {
+        $patch   = array( '/tags/(?P<id>[\d]+)', 'PATCH' );
+        $delete  = array( '/tags/bulk-delete', 'POST' );
+        $merge   = array( '/tags/merge', 'POST' );
+        $convert = array( '/tags/convert', 'POST' );
+        $cases   = array(
+            array( 'edit_term:10', $patch, array( 'id' => 10 ) ),
+            array( 'delete_term:10', $delete, array( 'ids' => array( 11, 10 ) ) ),
+            array(
+                'delete_term:10',
+                $merge,
+                array(
+                    'sources' => array( 10 ),
+                    'target'  => 11,
+                ),
+            ),
+            array(
+                'edit_term:10',
+                $merge,
+                array(
+                    'sources' => array( 11 ),
+                    'target'  => 10,
+                ),
+            ),
+            array( 'delete_term:10', $convert, array( 'ids' => array( 11, 10 ) ) ),
+            array(
+                'edit_term:20',
+                $convert,
+                array(
+                    'ids'    => array( 11 ),
+                    'parent' => 20,
+                ),
+            ),
+        );
+
+        foreach ( $cases as $case ) {
+            list( $denied, $route, $params ) = $case;
+
+            $this->denied_terms = array();
+            $this->assertTrue( $this->call( $route[0], $route[1], $params, 'permission_callback' ), $route[0] . ' allowed' );
+
+            $this->denied_terms = array( $denied );
+            $refused            = $this->call( $route[0], $route[1], $params, 'permission_callback' );
+
+            $this->assertInstanceOf( WP_Error::class, $refused, $route[0] . ' without ' . $denied );
+            $this->assertSame( 'licensio_forbidden', $refused->get_error_code() );
+            $this->assertSame( 403, $refused->get_error_data()['status'] );
+        }
+
+        $this->denied_terms = array( 'edit_term:11', 'delete_term:10' );
+
+        $this->assertTrue( $this->call( $patch[0], $patch[1], array( 'id' => 10 ), 'permission_callback' ), 'Only the tag denied is refused.' );
+        $this->assertTrue( $this->call( $delete[0], $delete[1], array( 'ids' => array( 99 ) ), 'permission_callback' ), 'A missing tag is left to the handler.' );
+        $this->assertTrue(
+            $this->call(
+                $convert[0],
+                $convert[1],
+                array(
+                    'ids'    => array( 11 ),
+                    'parent' => 0,
+                ),
+                'permission_callback'
+            ),
+            'The top level has no parent to check.'
+        );
+        $this->assertTrue(
+            $this->call(
+                $convert[0],
+                $convert[1],
+                array(
+                    'ids'    => array( 11 ),
+                    'parent' => 99,
+                ),
+                'permission_callback'
+            ),
+            'A missing parent is left to the handler.'
+        );
     }
 
     /**
