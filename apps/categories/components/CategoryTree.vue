@@ -9,7 +9,7 @@
  * After a refused move the tree is loaded again from the server.
  *
  * The other actions (edit, add child, move to, merge, delete) are handed to
- * the app, which owns the drawer and dialogs. A category's article count
+ * the app, which owns the form and dialogs. A category's article count
  * links to the Articles app filtered by that category.
  *
  * @since 1.0.0

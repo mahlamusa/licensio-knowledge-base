@@ -8,8 +8,8 @@
  *
  * Ant Design Vue is registered component by component, as on the Settings
  * screen, rather than through `.use( Antd )`, which bundles the whole library.
- * Each plugin below also registers its own sub-components (`Input` brings
- * `a-input-search` and `a-textarea`).
+ * Each plugin below also registers its own sub-components (`Form` brings
+ * `a-form-item`, `Input` brings `a-input-search` and `a-textarea`).
  * The shared components in `apps/components` import what they render
  * themselves, and `message` and `notification` are imported where they are
  * called, so neither needs registering here. A tag used in a template but
@@ -24,6 +24,7 @@ import {
 	Alert,
 	Button,
 	ConfigProvider,
+	Form,
 	Input,
 	Modal,
 	Switch,
@@ -46,11 +47,18 @@ if ( mount ) {
 
 	const app = createApp( App ).use( createPinia() );
 
-	[ Alert, Button, ConfigProvider, Input, Modal, Switch, Table ].forEach(
-		( component ) => {
-			app.use( component );
-		}
-	);
+	[
+		Alert,
+		Button,
+		ConfigProvider,
+		Form,
+		Input,
+		Modal,
+		Switch,
+		Table,
+	].forEach( ( component ) => {
+		app.use( component );
+	} );
 
 	app.mount( mount );
 }

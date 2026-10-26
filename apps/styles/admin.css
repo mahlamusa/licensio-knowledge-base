@@ -3,7 +3,8 @@
  *
  * Imported by every admin app so the three screens frame identically. Holds
  * only what is common: the page ground, the content measure, the page title,
- * the boot placeholder, and the filter row and bulk bar of the list screens.
+ * the boot placeholder, the filter row and bulk bar of the list screens, and
+ * the two-column layout of the term screens.
  * Anything specific to one screen stays in that screen.
  *
  * The frame the applications mount into is printed by
@@ -172,7 +173,57 @@
 	gap: 8px;
 }
 
+/*
+ * The term screens (Tags, Categories), laid out as core's edit-tags.php: the
+ * add and edit form in a left column of about a third, the list in a right
+ * column of about two thirds. Below 782px they stack, the form first, as
+ * core's `#col-left` and `#col-right` do.
+ */
+.lkb-terms {
+	display: grid;
+	grid-template-columns: minmax(0, 35fr) minmax(0, 65fr);
+	gap: var(--lkb-gap);
+	align-items: start;
+}
+
+.lkb-terms__col {
+	display: grid;
+	gap: var(--lkb-gap);
+	min-width: 0;
+}
+
+.lkb-terms__card {
+	padding: var(--lkb-gap);
+	border: 1px solid var(--lkb-border-wp);
+	border-radius: var(--lkb-radius);
+	background: var(--lkb-surface);
+	box-shadow: var(--lkb-shadow-sm);
+}
+
+/* Core's form heading: an h2 at 1.1em of 13px, bold, above the first field. */
+.lkb-terms__heading {
+	margin: 0 0 12px;
+	color: var(--lkb-ink);
+	font-size: 14.3px;
+	font-weight: 600;
+	line-height: 1.4;
+}
+
+.lkb-terms__card .ant-form-item {
+	margin-bottom: var(--lkb-gap);
+}
+
+.lkb-terms__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
 @media ( max-width: 782px ) {
+	.lkb-terms {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
 	.lkb-page {
 		margin-left: -10px;
 	}

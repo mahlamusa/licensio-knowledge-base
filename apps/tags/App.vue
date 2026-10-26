@@ -2,11 +2,13 @@
 /**
  * Tags app.
  *
- * Lists the knowledge base tags with search, an Unused filter, sort and
- * paging; adds a tag; edits name, slug and description inline; and deletes,
- * merges or converts the selected tags from the bulk bar. Adding and saving
- * a tag send at once; delete, merge and convert ask in a Popconfirm first,
- * and Cancel sends nothing.
+ * Laid out as core's tag screen: the Add New Tag form in a left column and
+ * the list in a right column, stacked with the form first on narrow screens.
+ * The list has search, an Unused filter, sort and paging; Edit on a row loads
+ * the tag into the left form as Edit Tag, and Quick edit edits name, slug and
+ * description inline. The bulk bar deletes, merges or converts the selected
+ * tags. Adding and saving a tag send at once; delete, merge and convert ask
+ * first, and Cancel sends nothing.
  *
  * Bulk actions work on the selected rows of the current page, at most 100,
  * so each is a single request.
@@ -17,15 +19,7 @@
  * @since 1.0.0
  */
 
-import {
-	computed,
-	nextTick,
-	onMounted,
-	onUnmounted,
-	reactive,
-	ref,
-	watch,
-} from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import { SearchOutlined } from '@ant-design/icons-vue';
 import { lkbTheme } from '../styles/theme';
@@ -36,15 +30,15 @@ import { settings } from './api';
 import { useTagsStore } from './store';
 import ConvertDialog from './components/ConvertDialog.vue';
 import MergeDialog from './components/MergeDialog.vue';
+import TagForm from './components/TagForm.vue';
 import TagTable from './components/TagTable.vue';
+import type { TagItem } from './types';
 
 const store = useTagsStore();
 const chrome = settings();
 
 const searchText = ref( store.search );
-const adding = ref( false );
-const addButton = ref< { $el?: HTMLElement } | null >( null );
-const newTag = reactive( { name: '', slug: '', description: '' } );
+const editing = ref< TagItem | null >( null );
 const mergeOpen = ref( false );
 const convertOpen = ref( false );
 
@@ -75,63 +69,67 @@ const selectedLabel = computed( () =>
 );
 
 /**
- * Open or close the Add tag form, clearing it.
+ * Load a tag into the left form as Edit Tag.
  *
- * Focus moves to the Name field when it opens, and back to Add tag when it
- * closes. Escape in the form closes it like Cancel.
+ * The page scrolls to the form, which on a phone sits above the list, and
+ * focus moves to its Name field.
  *
  * @since 1.0.0
  *
- * @param {boolean} open Whether the form should be open.
+ * @param {TagItem} tag The tag.
  *
  * @return {void}
  */
-function toggleAdd( open: boolean ): void {
-	adding.value = open;
-	newTag.name = '';
-	newTag.slug = '';
-	newTag.description = '';
+function editTag( tag: TagItem ): void {
+	editing.value = tag;
 
 	nextTick( () => {
-		if ( open ) {
-			document
-				.querySelector< HTMLElement >( '.lkb-tags__add input' )
-				?.focus();
-		} else {
-			addButton.value?.$el?.focus();
-		}
+		const name = document.getElementById( 'lkb-tag-name' );
+
+		name
+			?.closest( '.lkb-tag-form' )
+			?.scrollIntoView( { block: 'nearest' } );
+		name?.focus();
 	} );
 }
 
 /**
- * Add the tag.
+ * Return the left form to Add New Tag after an update or a cancel.
+ *
+ * Focus goes back to the Edit button of the tag's row when it is still
+ * listed, otherwise to the form's Name field.
  *
  * @since 1.0.0
  *
- * @return {Promise<void>} Resolves once added, or once the error is shown.
+ * @param {number} id The tag that was edited.
+ *
+ * @return {void}
  */
-async function addTag(): Promise< void > {
-	try {
-		const created = await store.create( {
-			name: newTag.name.trim(),
-			...( '' !== newTag.slug.trim()
-				? { slug: newTag.slug.trim() }
-				: {} ),
-			...( '' !== newTag.description
-				? { description: newTag.description }
-				: {} ),
-		} );
+function closeEdit( id: number ): void {
+	editing.value = null;
 
-		toggleAdd( false );
-		message.success(
-			sprintf(
-				/* translators: %s: the new tag's name. */
-				__( 'Tag “%s” added.', 'licensio-knowledge-base' ),
-				created.name
-			)
+	nextTick( () => {
+		const button = document.querySelector< HTMLElement >(
+			`.lkb-tablecard [data-row-key="${ id }"] [data-lkb-edit]`
 		);
-	} catch {
-		// The store shows the error; the form keeps the input.
+
+		( button ?? document.getElementById( 'lkb-tag-name' ) )?.focus();
+	} );
+}
+
+/**
+ * Keep one tag open in one place: a Quick edit of the tag in the left form
+ * returns the form to Add New Tag.
+ *
+ * @since 1.0.0
+ *
+ * @param {number} id The tag opened for Quick edit.
+ *
+ * @return {void}
+ */
+function onQuickEdit( id: number ): void {
+	if ( editing.value?.id === id ) {
+		editing.value = null;
 	}
 }
 
@@ -196,14 +194,6 @@ onUnmounted( () => {
 					<h1 class="lkb-page__title">
 						{{ __( 'Tags', 'licensio-knowledge-base' ) }}
 					</h1>
-					<a-button
-						v-if="! adding"
-						ref="addButton"
-						type="primary"
-						@click="toggleAdd( true )"
-					>
-						{{ __( 'Add tag', 'licensio-knowledge-base' ) }}
-					</a-button>
 				</div>
 
 				<a-alert
@@ -220,171 +210,164 @@ onUnmounted( () => {
 					</template>
 				</a-alert>
 
-				<div
-					v-if="adding"
-					class="lkb-tags__add"
-					@keydown.esc="toggleAdd( false )"
-				>
-					<a-input
-						v-model:value="newTag.name"
-						:placeholder="__( 'Name', 'licensio-knowledge-base' )"
-						:aria-label="__( 'Name', 'licensio-knowledge-base' )"
-					/>
-					<a-input
-						v-model:value="newTag.slug"
-						:placeholder="
-							__( 'Slug (optional)', 'licensio-knowledge-base' )
-						"
-						:aria-label="__( 'Slug', 'licensio-knowledge-base' )"
-					/>
-					<a-textarea
-						v-model:value="newTag.description"
-						:auto-size="{ minRows: 1, maxRows: 4 }"
-						:placeholder="
-							__(
-								'Description (optional)',
-								'licensio-knowledge-base'
-							)
-						"
-						:aria-label="
-							__( 'Description', 'licensio-knowledge-base' )
-						"
-					/>
-					<div class="lkb-tags__add-actions">
-						<a-button
-							type="primary"
-							:disabled="'' === newTag.name.trim()"
-							:loading="store.saving"
-							@click="addTag"
+				<div class="lkb-terms">
+					<TagForm :tag="editing" @done="closeEdit" />
+
+					<div class="lkb-tags__list">
+						<a-alert
+							v-if="store.include.length"
+							type="info"
+							show-icon
+							:message="
+								__(
+									'Showing one tag.',
+									'licensio-knowledge-base'
+								)
+							"
+							class="lkb-tags__notice"
 						>
-							{{ __( 'Add tag', 'licensio-knowledge-base' ) }}
-						</a-button>
-						<a-button @click="toggleAdd( false )">
-							{{ __( 'Cancel', 'licensio-knowledge-base' ) }}
-						</a-button>
+							<template #action>
+								<a-button
+									size="small"
+									@click="store.filter( { include: [] } )"
+								>
+									{{
+										__(
+											'Show all tags',
+											'licensio-knowledge-base'
+										)
+									}}
+								</a-button>
+							</template>
+						</a-alert>
+
+						<div class="lkb-toolbar">
+							<a-input-search
+								v-model:value="searchText"
+								class="lkb-tags__search"
+								allow-clear
+								:placeholder="
+									__(
+										'Search tags',
+										'licensio-knowledge-base'
+									)
+								"
+								:aria-label="
+									__(
+										'Search tags',
+										'licensio-knowledge-base'
+									)
+								"
+								@search="
+									( value: string ) =>
+										store.filter( { search: value.trim() } )
+								"
+							>
+								<template #enterButton>
+									<a-button
+										:aria-label="
+											__(
+												'Search',
+												'licensio-knowledge-base'
+											)
+										"
+									>
+										<template #icon
+											><SearchOutlined
+										/></template>
+									</a-button>
+								</template>
+							</a-input-search>
+
+							<label class="lkb-tags__toggle">
+								<a-switch
+									:checked="store.unused"
+									@change="
+										( checked: unknown ) =>
+											store.filter( {
+												unused: Boolean( checked ),
+											} )
+									"
+								/>
+								{{
+									__(
+										'Unused only',
+										'licensio-knowledge-base'
+									)
+								}}
+							</label>
+						</div>
+
+						<div
+							class="lkb-bulk"
+							:class="{ 'is-armed': store.selected.length > 0 }"
+						>
+							<template v-if="store.selected.length">
+								<span class="lkb-bulk__count">{{
+									selectedLabel
+								}}</span>
+
+								<div class="lkb-bulk__actions">
+									<ConfirmButton
+										size="small"
+										danger
+										:title="deleteTitle"
+										:ok-text="
+											__(
+												'Delete',
+												'licensio-knowledge-base'
+											)
+										"
+										:loading="store.saving"
+										@confirm="deleteSelected"
+									>
+										{{
+											__(
+												'Delete',
+												'licensio-knowledge-base'
+											)
+										}}
+									</ConfirmButton>
+									<a-button
+										size="small"
+										:disabled="store.saving"
+										@click="mergeOpen = true"
+									>
+										{{
+											__(
+												'Merge into…',
+												'licensio-knowledge-base'
+											)
+										}}
+									</a-button>
+									<a-button
+										size="small"
+										:disabled="store.saving"
+										@click="convertOpen = true"
+									>
+										{{
+											__(
+												'Convert to category',
+												'licensio-knowledge-base'
+											)
+										}}
+									</a-button>
+								</div>
+							</template>
+
+							<span v-else class="lkb-bulk__hint">
+								{{
+									__(
+										'Select tags below to delete, merge or convert them',
+										'licensio-knowledge-base'
+									)
+								}}
+							</span>
+						</div>
+
+						<TagTable @edit="editTag" @quick-edit="onQuickEdit" />
 					</div>
 				</div>
-
-				<a-alert
-					v-if="store.include.length"
-					type="info"
-					show-icon
-					:message="
-						__( 'Showing one tag.', 'licensio-knowledge-base' )
-					"
-					class="lkb-tags__notice"
-				>
-					<template #action>
-						<a-button
-							size="small"
-							@click="store.filter( { include: [] } )"
-						>
-							{{
-								__( 'Show all tags', 'licensio-knowledge-base' )
-							}}
-						</a-button>
-					</template>
-				</a-alert>
-
-				<div class="lkb-toolbar">
-					<a-input-search
-						v-model:value="searchText"
-						class="lkb-tags__search"
-						allow-clear
-						:placeholder="
-							__( 'Search tags', 'licensio-knowledge-base' )
-						"
-						:aria-label="
-							__( 'Search tags', 'licensio-knowledge-base' )
-						"
-						@search="
-							( value: string ) =>
-								store.filter( { search: value.trim() } )
-						"
-					>
-						<template #enterButton>
-							<a-button
-								:aria-label="
-									__( 'Search', 'licensio-knowledge-base' )
-								"
-							>
-								<template #icon><SearchOutlined /></template>
-							</a-button>
-						</template>
-					</a-input-search>
-
-					<label class="lkb-tags__toggle">
-						<a-switch
-							:checked="store.unused"
-							@change="
-								( checked: unknown ) =>
-									store.filter( {
-										unused: Boolean( checked ),
-									} )
-							"
-						/>
-						{{ __( 'Unused only', 'licensio-knowledge-base' ) }}
-					</label>
-				</div>
-
-				<div
-					class="lkb-bulk"
-					:class="{ 'is-armed': store.selected.length > 0 }"
-				>
-					<template v-if="store.selected.length">
-						<span class="lkb-bulk__count">{{ selectedLabel }}</span>
-
-						<div class="lkb-bulk__actions">
-							<ConfirmButton
-								size="small"
-								danger
-								:title="deleteTitle"
-								:ok-text="
-									__( 'Delete', 'licensio-knowledge-base' )
-								"
-								:loading="store.saving"
-								@confirm="deleteSelected"
-							>
-								{{ __( 'Delete', 'licensio-knowledge-base' ) }}
-							</ConfirmButton>
-							<a-button
-								size="small"
-								:disabled="store.saving"
-								@click="mergeOpen = true"
-							>
-								{{
-									__(
-										'Merge into…',
-										'licensio-knowledge-base'
-									)
-								}}
-							</a-button>
-							<a-button
-								size="small"
-								:disabled="store.saving"
-								@click="convertOpen = true"
-							>
-								{{
-									__(
-										'Convert to category',
-										'licensio-knowledge-base'
-									)
-								}}
-							</a-button>
-						</div>
-					</template>
-
-					<span v-else class="lkb-bulk__hint">
-						{{
-							__(
-								'Select tags below to delete, merge or convert them',
-								'licensio-knowledge-base'
-							)
-						}}
-					</span>
-				</div>
-
-				<TagTable />
 
 				<MergeDialog v-model:open="mergeOpen" />
 				<ConvertDialog v-model:open="convertOpen" />
@@ -398,21 +381,8 @@ onUnmounted( () => {
 	margin-bottom: var( --lkb-gap );
 }
 
-.lkb-tags__add {
-	display: grid;
-	grid-template-columns: minmax( 0, 1fr ) minmax( 0, 1fr ) minmax( 0, 2fr ) auto;
-	gap: 8px;
-	align-items: start;
-	margin-bottom: var( --lkb-gap );
-	padding: var( --lkb-gap );
-	border: 1px solid var( --lkb-border-wp );
-	border-radius: var( --lkb-radius );
-	background: var( --lkb-surface );
-}
-
-.lkb-tags__add-actions {
-	display: flex;
-	gap: 8px;
+.lkb-tags__list {
+	min-width: 0;
 }
 
 .lkb-tags__search {
@@ -425,11 +395,5 @@ onUnmounted( () => {
 	gap: 8px;
 	color: var( --lkb-ink-wp-secondary );
 	cursor: pointer;
-}
-
-@media ( max-width: 782px ) {
-	.lkb-tags__add {
-		grid-template-columns: 1fr;
-	}
 }
 </style>

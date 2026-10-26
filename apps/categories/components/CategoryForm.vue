@@ -1,9 +1,11 @@
 <script setup lang="ts">
 /**
- * The add and edit drawer.
+ * The Add New Category and Edit Category form, in the left column as on
+ * core's category screen.
  *
- * Opening it sends nothing. Saving is not destructive, so Save writes the
- * category straight away, with no confirmation. A field error from the
+ * With no category it adds one, under the given parent; with a category it
+ * edits that one, with Update and Cancel. Saving is not destructive, so the
+ * submit button writes the category straight away, with no confirmation. A field error from the
  * server (`data.params`) is shown on its field only; any other error above
  * the form.
  *
@@ -15,20 +17,21 @@
  * The icon is one source: only the picked source is kept, and the other icon
  * fields are cleared on save (see `../icon`).
  *
- * Ant Design's drawer does not keep focus inside itself, so while it is open
- * Tab and Shift+Tab wrap around its fields and buttons. It opens with focus
- * on the Name field rather than on its panel. Escape closes it, except on an
- * open select, where it closes only the select.
+ * The page mounts a fresh form each time it loads a category into it, so the
+ * fields are filled once, on setup. Update, Cancel and Escape while editing,
+ * and a successful add, report `done`; the page then returns the form to Add
+ * and decides where focus goes. Escape on an open select closes only the
+ * select.
  *
  * @since 1.0.0
  */
 
-import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import { message } from 'ant-design-vue';
 import TermSelect from '../../components/TermSelect.vue';
-import { FOCUSABLE, useEscapeClose } from '../../components/popover-focus';
+import { useEscapeClose } from '../../components/popover-focus';
 import { errorMessage, RestError } from '../../components/rest';
-import { __, sprintf } from '../../components/i18n';
+import { __ } from '../../components/i18n';
 import type { TermValue } from '../../components/types/terms';
 import { iconInput, iconSourceOf } from '../icon';
 import type { IconSource } from '../icon';
@@ -39,8 +42,6 @@ import IconField from './IconField.vue';
 import MediaField from './MediaField.vue';
 
 const props = defineProps< {
-	/** Whether the drawer is open. */
-	open: boolean;
 	/** The category to edit, or null to add one. */
 	category: CategoryItem | null;
 	/** The parent a new category starts under. */
@@ -48,8 +49,7 @@ const props = defineProps< {
 } >();
 
 const emit = defineEmits< {
-	( event: 'close' ): void;
-	( event: 'closed' ): void;
+	( event: 'done', id: number | null ): void;
 } >();
 
 const store = useCategoriesStore();
@@ -87,14 +87,10 @@ const saving = ref( false );
 const formError = ref( '' );
 const fieldErrors = ref< Record< string, string > >( {} );
 
-const title = computed( () =>
+const heading = computed( () =>
 	props.category
-		? sprintf(
-				/* translators: %s: category name. */
-				__( 'Edit “%s”', 'licensio-knowledge-base' ),
-				props.category.name
-		  )
-		: __( 'Add category', 'licensio-knowledge-base' )
+		? __( 'Edit Category', 'licensio-knowledge-base' )
+		: __( 'Add New Category', 'licensio-knowledge-base' )
 );
 
 const exclude = computed( () =>
@@ -103,104 +99,21 @@ const exclude = computed( () =>
 
 const nameMissing = computed( () => '' === form.name.trim() );
 
-// Escape on an open select closes only the select, not the drawer.
-useEscapeClose(
-	() => props.open,
-	'.lkb-category-drawer',
-	() => emit( 'close' )
-);
-
 /**
- * Keep Tab and Shift+Tab inside the open drawer.
- *
- * Only acts while focus is in the drawer, so an open Popconfirm, which Ant
- * Design renders elsewhere in the page, keeps its own tab order.
+ * Leave the edit without saving.
  *
  * @since 1.0.0
  *
- * @param {KeyboardEvent} event The key press.
- *
  * @return {void}
  */
-function trapFocus( event: KeyboardEvent ): void {
-	const panel = document.querySelector< HTMLElement >(
-		'.lkb-category-drawer .ant-drawer-content-wrapper'
-	);
-	const active = panel?.ownerDocument.activeElement ?? null;
-
-	if ( 'Tab' !== event.key || ! panel || ! panel.contains( active ) ) {
-		return;
-	}
-
-	const items = Array.from(
-		panel.querySelectorAll< HTMLElement >( FOCUSABLE )
-	).filter( ( item ) => null !== item.offsetParent );
-
-	if ( 0 === items.length ) {
-		return;
-	}
-
-	const first = items[ 0 ];
-	const last = items[ items.length - 1 ];
-
-	if (
-		event.shiftKey &&
-		( active === first || ! items.includes( active as HTMLElement ) )
-	) {
-		event.preventDefault();
-		last.focus();
-	} else if ( ! event.shiftKey && active === last ) {
-		event.preventDefault();
-		first.focus();
+function cancel(): void {
+	if ( props.category ) {
+		emit( 'done', props.category.id );
 	}
 }
 
-watch(
-	() => props.open,
-	( open ) => {
-		if ( open ) {
-			document.addEventListener( 'keydown', trapFocus );
-		} else {
-			document.removeEventListener( 'keydown', trapFocus );
-		}
-	},
-	{ immediate: true }
-);
-
-onBeforeUnmount( () => {
-	document.removeEventListener( 'keydown', trapFocus );
-} );
-
-/**
- * Focus the Name field once the drawer has opened, or report it closed.
- *
- * A user who already tabbed to a control while the drawer slid in keeps
- * their place.
- *
- * @since 1.0.0
- *
- * @param {boolean} open Whether the drawer is now open.
- *
- * @return {void}
- */
-function onAfterOpenChange( open: boolean ): void {
-	if ( ! open ) {
-		emit( 'closed' );
-		return;
-	}
-
-	const name = document.getElementById( 'lkb-category-name' );
-	const active = name?.ownerDocument.activeElement;
-
-	if (
-		active?.closest( '.lkb-category-drawer' ) &&
-		active.matches( FOCUSABLE )
-	) {
-		return;
-	}
-
-	name?.focus();
-}
+// Escape cancels an edit; on an open select it closes only the select.
+useEscapeClose( () => null !== props.category, '.lkb-category-form', cancel );
 
 /**
  * Fill the form from the category being edited, or blank it for a new one.
@@ -228,15 +141,7 @@ function reset(): void {
 	fieldErrors.value = {};
 }
 
-watch(
-	() => props.open,
-	( open ) => {
-		if ( open ) {
-			reset();
-		}
-	},
-	{ immediate: true }
-);
+reset();
 
 /**
  * Make a new category's slug from its name, until the slug is edited.
@@ -393,7 +298,7 @@ async function save(): Promise< void > {
 		}
 
 		message.success( __( 'Category saved.', 'licensio-knowledge-base' ) );
-		emit( 'close' );
+		emit( 'done', props.category?.id ?? null );
 	} catch ( error ) {
 		fieldErrors.value = paramsOf( error );
 
@@ -412,25 +317,23 @@ async function save(): Promise< void > {
 </script>
 
 <template>
-	<a-drawer
-		:open="props.open"
-		:title="title"
-		width="min( 520px, 100vw )"
-		root-class-name="lkb-category-drawer"
-		:keyboard="false"
-		destroy-on-close
-		@close="emit( 'close' )"
-		@after-open-change="onAfterOpenChange"
+	<section
+		class="lkb-terms__card lkb-category-form"
+		aria-labelledby="lkb-category-form-title"
 	>
+		<h2 id="lkb-category-form-title" class="lkb-terms__heading">
+			{{ heading }}
+		</h2>
+
 		<a-alert
 			v-if="formError"
 			type="error"
 			show-icon
 			:message="formError"
-			class="lkb-drawer__error"
+			class="lkb-category-form__error"
 		/>
 
-		<a-form layout="vertical" @submit.prevent>
+		<a-form layout="vertical" @submit.prevent="save">
 			<a-form-item
 				:label="__( 'Name', 'licensio-knowledge-base' )"
 				html-for="lkb-category-name"
@@ -462,7 +365,7 @@ async function save(): Promise< void > {
 						  )
 				"
 			>
-				<div class="lkb-drawer__slug">
+				<div class="lkb-category-form__slug">
 					<a-input
 						id="lkb-category-slug"
 						:value="form.slug"
@@ -545,69 +448,52 @@ async function save(): Promise< void > {
 					@update:id="( value: number ) => ( form.imageId = value )"
 				/>
 			</a-form-item>
-		</a-form>
-
-		<template #footer>
-			<div class="lkb-drawer__footer">
-				<a-button @click="emit( 'close' )">
-					{{ __( 'Cancel', 'licensio-knowledge-base' ) }}
-				</a-button>
+			<div class="lkb-terms__actions">
 				<a-button
 					type="primary"
+					html-type="submit"
 					:disabled="nameMissing"
 					:loading="saving"
-					@click="save"
 				>
-					{{ __( 'Save', 'licensio-knowledge-base' ) }}
+					{{
+						props.category
+							? __( 'Update', 'licensio-knowledge-base' )
+							: __(
+									'Add New Category',
+									'licensio-knowledge-base'
+							  )
+					}}
+				</a-button>
+				<a-button v-if="props.category" @click="cancel">
+					{{ __( 'Cancel', 'licensio-knowledge-base' ) }}
 				</a-button>
 			</div>
-			<p v-if="nameMissing" class="lkb-drawer__hint">
+			<p v-if="nameMissing" class="lkb-category-form__hint">
 				{{ __( 'Enter a name to save.', 'licensio-knowledge-base' ) }}
 			</p>
-		</template>
-	</a-drawer>
+		</a-form>
+	</section>
 </template>
 
 <style scoped>
-.lkb-drawer__error {
+.lkb-category-form__error {
 	margin-bottom: var( --lkb-gap );
 }
 
-.lkb-drawer__footer {
+.lkb-category-form__slug {
 	display: flex;
-	justify-content: flex-end;
+	flex-wrap: wrap;
 	gap: 8px;
 }
 
-.lkb-drawer__slug {
-	display: flex;
-	gap: 8px;
+.lkb-category-form__slug > :first-child {
+	flex: 1 1 160px;
+	min-width: 0;
 }
 
-.lkb-drawer__hint {
+.lkb-category-form__hint {
 	margin: 6px 0 0;
 	color: var( --lkb-ink-muted );
 	font-size: 12px;
-	text-align: right;
-}
-</style>
-
-<style>
-/*
- * Fields 16px apart rather than Ant's 24px: with each field's help line the
- * default left gaps of about 45px, too loose for a tool, and pushed the
- * Image field below the fold.
- */
-.lkb-category-drawer .ant-form-item {
-	margin-bottom: var( --lkb-gap );
-}
-
-/*
- * The drawer is teleported to the body, outside the scoped styles. Start it
- * below the WordPress admin bar, which sits above it and would otherwise
- * cover its title and close button.
- */
-.lkb-category-drawer .ant-drawer-content-wrapper {
-	top: var( --wp-admin--admin-bar--height, 0px );
 }
 </style>

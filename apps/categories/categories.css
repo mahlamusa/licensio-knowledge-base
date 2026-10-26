@@ -7,8 +7,8 @@
  * and textarea beside them, and an input inside a clearable wrapper made the
  * filter box 51px tall. These rules give the inputs back the look the theme
  * gives every other control: the shared border, the accent on hover and
- * focus, and the status colours untouched. Scoped to this app's page, drawer
- * and dialogs; the same leak affects the other apps and belongs in
+ * focus, and the status colours untouched. Scoped to this app's page and
+ * dialogs; the same leak affects the other apps and belongs in
  * `../styles/admin.css` once that file is free to change.
  *
  * Fieldset legends are reset too. Ant's reset sizes a legend at 1.5em and its
@@ -21,7 +21,6 @@
 
 :is(
 		.licensio-kb-categories,
-		.lkb-category-drawer,
 		.lkb-delete-dialog,
 		.lkb-merge-dialog,
 		.lkb-move-dialog
@@ -38,7 +37,6 @@
 
 :is(
 		.licensio-kb-categories,
-		.lkb-category-drawer,
 		.lkb-delete-dialog,
 		.lkb-merge-dialog,
 		.lkb-move-dialog
@@ -49,7 +47,6 @@
 
 :is(
 		.licensio-kb-categories,
-		.lkb-category-drawer,
 		.lkb-delete-dialog,
 		.lkb-merge-dialog,
 		.lkb-move-dialog
@@ -60,7 +57,6 @@
 
 :is(
 		.licensio-kb-categories,
-		.lkb-category-drawer,
 		.lkb-delete-dialog,
 		.lkb-merge-dialog,
 		.lkb-move-dialog
@@ -73,7 +69,6 @@
 /* Inside a clearable wrapper the wrapper draws the box, not the input. */
 :is(
 		.licensio-kb-categories,
-		.lkb-category-drawer,
 		.lkb-delete-dialog,
 		.lkb-merge-dialog,
 		.lkb-move-dialog
@@ -86,7 +81,7 @@
 	box-shadow: none;
 }
 
-:is( .lkb-category-drawer, .lkb-delete-dialog, .lkb-move-dialog ) fieldset > legend {
+:is( .lkb-category-form, .lkb-delete-dialog, .lkb-move-dialog ) fieldset > legend {
 	margin-bottom: 8px;
 	padding: 0;
 	border: 0;

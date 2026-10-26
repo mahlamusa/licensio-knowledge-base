@@ -2,12 +2,16 @@
 /**
  * Categories screen.
  *
- * The category tree on the left and the selected category's article order on
- * the right (stacked on narrow screens). The tree hands its actions here,
- * and this component owns the add/edit drawer and the move, merge and delete
- * dialogs, so focus can go back to whatever opened them once they close.
+ * Laid out as core's category screen: the Add New Category form in a left
+ * column, and the category tree with the selected category's article order
+ * below it in a right column (stacked, form first, on narrow screens). The
+ * tree hands its actions here: Edit loads the category into the form as Edit
+ * Category and Add child presets its parent, scrolling to the form and
+ * focusing its Name field; this component also owns the move, merge and
+ * delete dialogs, so focus can go back to whatever opened them once they
+ * close.
  *
- * `?term={id}` opens that category's edit drawer on load and `?search=`
+ * `?term={id}` loads that category into the form on load and `?search=`
  * fills the tree filter.
  *
  * There is no `v-html` anywhere in this app.
@@ -15,7 +19,7 @@
  * @since 1.0.0
  */
 
-import { nextTick, onMounted, reactive, ref } from 'vue';
+import { nextTick, onMounted, reactive } from 'vue';
 import { lkbTheme } from '../styles/theme';
 import AppHeader from '../components/AppHeader.vue';
 import { __ } from '../components/i18n';
@@ -23,7 +27,7 @@ import { settings } from './api';
 import { useCategoriesStore } from './store';
 import type { CategoryItem } from './types';
 import ArticleOrder from './components/ArticleOrder.vue';
-import CategoryDrawer from './components/CategoryDrawer.vue';
+import CategoryForm from './components/CategoryForm.vue';
 import CategoryTree from './components/CategoryTree.vue';
 import type { TreeAction } from './components/CategoryTree.vue';
 import DeleteDialog from './components/DeleteDialog.vue';
@@ -33,10 +37,9 @@ import MoveDialog from './components/MoveDialog.vue';
 const store = useCategoriesStore();
 const chrome = settings();
 
-const addButton = ref< { $el?: HTMLElement } | null >( null );
-
-const drawer = reactive( {
-	open: false,
+// What the left form holds. A new key mounts a fresh form, filled once.
+const editor = reactive( {
+	key: 0,
 	category: null as CategoryItem | null,
 	parent: 0,
 } );
@@ -46,36 +49,56 @@ const dialog = reactive( {
 	category: null as CategoryItem | null,
 } );
 
-// The category whose actions button opened the drawer or dialog.
+// The category whose actions button opened the form or dialog.
 let returnTo: number | null = null;
 
 /**
- * Open the drawer to add a top-level category.
+ * Load the left form, then scroll to it and focus its Name field.
  *
  * @since 1.0.0
  *
+ * @param {CategoryItem|null} category The category to edit, or null to add one.
+ * @param {number}            parent   The parent a new category starts under.
+ *
  * @return {void}
  */
-function addCategory(): void {
-	returnTo = null;
-	drawer.category = null;
-	drawer.parent = 0;
-	drawer.open = true;
+function loadForm( category: CategoryItem | null, parent: number ): void {
+	editor.category = category;
+	editor.parent = parent;
+	editor.key++;
+
+	nextTick( () => {
+		const name = document.getElementById( 'lkb-category-name' );
+
+		name
+			?.closest( '.lkb-category-form' )
+			?.scrollIntoView( { block: 'nearest' } );
+		name?.focus();
+	} );
 }
 
 /**
- * Open the drawer to edit a category.
+ * Return the form to Add New Category after an add, an update or a cancel.
+ *
+ * After an update or a cancel, focus goes back to the actions button that
+ * opened the edit when it is still there; otherwise, and after an add, it
+ * stays in the form, on its Name field, ready for the next category.
  *
  * @since 1.0.0
  *
- * @param {CategoryItem} item The category.
+ * @param {number|null} id The category that was edited, or null after an add.
  *
  * @return {void}
  */
-function editCategory( item: CategoryItem ): void {
-	drawer.category = item;
-	drawer.parent = item.parent;
-	drawer.open = true;
+function onFormDone( id: number | null ): void {
+	if ( null === id ) {
+		returnTo = null;
+	}
+
+	editor.category = null;
+	editor.parent = 0;
+	editor.key++;
+	restoreFocus();
 }
 
 /**
@@ -102,14 +125,12 @@ function onAction( action: TreeAction, item: CategoryItem ): void {
 	returnTo = item.id;
 
 	if ( 'edit' === action ) {
-		editCategory( item );
+		loadForm( item, item.parent );
 		return;
 	}
 
 	if ( 'child' === action ) {
-		drawer.category = null;
-		drawer.parent = item.id;
-		drawer.open = true;
+		loadForm( null, item.id );
 		return;
 	}
 
@@ -129,10 +150,10 @@ function closeDialog(): void {
 }
 
 /**
- * Put focus back on what opened the drawer or dialog.
+ * Put focus back on what opened the form or dialog.
  *
- * Its category's actions button when it is still there, otherwise the Add
- * category button.
+ * Its category's actions button when it is still there, otherwise the form's
+ * Name field.
  *
  * @since 1.0.0
  *
@@ -147,7 +168,7 @@ function restoreFocus(): void {
 						`[data-lkb-actions="${ returnTo }"]`
 				  );
 
-		( actions ?? addButton.value?.$el )?.focus();
+		( actions ?? document.getElementById( 'lkb-category-name' ) )?.focus();
 	} );
 }
 
@@ -166,7 +187,7 @@ onMounted( async () => {
 	if ( term ) {
 		returnTo = null;
 		store.selectedId = term.id;
-		editCategory( term );
+		loadForm( term, term.parent );
 	}
 } );
 </script>
@@ -181,13 +202,6 @@ onMounted( async () => {
 					<h1 class="lkb-page__title">
 						{{ __( 'Categories', 'licensio-knowledge-base' ) }}
 					</h1>
-					<a-button
-						ref="addButton"
-						type="primary"
-						@click="addCategory"
-					>
-						{{ __( 'Add category', 'licensio-knowledge-base' ) }}
-					</a-button>
 				</div>
 
 				<a-alert
@@ -208,58 +222,64 @@ onMounted( async () => {
 					</template>
 				</a-alert>
 
-				<div
-					v-if="! store.loaded && store.loading"
-					class="lkb-categories__card"
-				>
-					<a-skeleton active :paragraph="{ rows: 6 }" />
-				</div>
+				<div class="lkb-terms">
+					<CategoryForm
+						:key="editor.key"
+						:category="editor.category"
+						:parent="editor.parent"
+						@done="onFormDone"
+					/>
 
-				<div
-					v-else-if="store.loaded && 0 === store.items.length"
-					class="lkb-categories__card lkb-categories__empty"
-				>
-					<h2>
-						{{
-							__( 'No categories yet', 'licensio-knowledge-base' )
-						}}
-					</h2>
-					<p>
-						{{
-							__(
-								'Categories group your articles. Add the first one to get started.',
-								'licensio-knowledge-base'
-							)
-						}}
-					</p>
-					<a-button type="primary" @click="addCategory">
-						{{ __( 'Add category', 'licensio-knowledge-base' ) }}
-					</a-button>
-				</div>
+					<div class="lkb-terms__col lkb-categories">
+						<div
+							v-if="! store.loaded && store.loading"
+							class="lkb-terms__card"
+						>
+							<a-skeleton active :paragraph="{ rows: 6 }" />
+						</div>
 
-				<div v-else-if="store.loaded" class="lkb-categories">
-					<section
-						class="lkb-categories__card"
-						:aria-label="
-							__( 'Category tree', 'licensio-knowledge-base' )
-						"
-					>
-						<CategoryTree @action="onAction" />
-					</section>
+						<div
+							v-else-if="store.loaded && 0 === store.items.length"
+							class="lkb-terms__card lkb-categories__empty"
+						>
+							<h2>
+								{{
+									__(
+										'No categories yet',
+										'licensio-knowledge-base'
+									)
+								}}
+							</h2>
+							<p>
+								{{
+									__(
+										'Categories group your articles. Add the first one with the form.',
+										'licensio-knowledge-base'
+									)
+								}}
+							</p>
+						</div>
 
-					<div class="lkb-categories__card">
-						<ArticleOrder :category="store.selected" />
+						<template v-else-if="store.loaded">
+							<section
+								class="lkb-terms__card"
+								:aria-label="
+									__(
+										'Category tree',
+										'licensio-knowledge-base'
+									)
+								"
+							>
+								<CategoryTree @action="onAction" />
+							</section>
+
+							<div class="lkb-terms__card">
+								<ArticleOrder :category="store.selected" />
+							</div>
+						</template>
 					</div>
 				</div>
 			</div>
-
-			<CategoryDrawer
-				:open="drawer.open"
-				:category="drawer.category"
-				:parent="drawer.parent"
-				@close="drawer.open = false"
-				@closed="restoreFocus"
-			/>
 
 			<MoveDialog
 				:open="'move' === dialog.kind"
@@ -290,21 +310,6 @@ onMounted( async () => {
 	margin-bottom: var( --lkb-gap );
 }
 
-.lkb-categories {
-	display: grid;
-	grid-template-columns: minmax( 0, 1fr ) minmax( 0, 1fr );
-	gap: var( --lkb-gap );
-	align-items: start;
-}
-
-.lkb-categories__card {
-	padding: var( --lkb-gap );
-	border: 1px solid var( --lkb-border-wp );
-	border-radius: var( --lkb-radius );
-	background: var( --lkb-surface );
-	box-shadow: var( --lkb-shadow-sm );
-}
-
 .lkb-categories__empty {
 	text-align: center;
 }
@@ -316,11 +321,5 @@ onMounted( async () => {
 
 .lkb-categories__empty p {
 	color: var( --lkb-ink-muted );
-}
-
-@media ( max-width: 782px ) {
-	.lkb-categories {
-		grid-template-columns: minmax( 0, 1fr );
-	}
 }
 </style>
