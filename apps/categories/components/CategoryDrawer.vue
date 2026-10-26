@@ -594,6 +594,15 @@ async function save(): Promise< void > {
 
 <style>
 /*
+ * Fields 16px apart rather than Ant's 24px: with each field's help line the
+ * default left gaps of about 45px, too loose for a tool, and pushed the
+ * Image field below the fold.
+ */
+.lkb-category-drawer .ant-form-item {
+	margin-bottom: var( --lkb-gap );
+}
+
+/*
  * The drawer is teleported to the body, outside the scoped styles. Start it
  * below the WordPress admin bar, which sits above it and would otherwise
  * cover its title and close button.

@@ -226,13 +226,13 @@ const inlinePreview = computed( () => {
 <style scoped>
 .lkb-icon-field {
 	min-width: 0;
-	margin: 0 0 var( --lkb-gap );
+	margin: 0;
 	padding: 0;
 	border: 0;
 }
 
 .lkb-icon-field__sources {
-	margin-bottom: 16px;
+	margin-bottom: 12px;
 }
 
 .lkb-icon-field__inline {
