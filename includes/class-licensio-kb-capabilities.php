@@ -2,11 +2,23 @@
 /**
  * Capability model.
  *
- * The knowledge base is managed through a single custom capability,
- * `manage_licensio_kb`, granted to `administrator` and `editor` when the
- * plugin is installed on a site. Every primitive capability of the
- * `licensio_article` post type and of both taxonomies is mapped onto it, so
- * granting or revoking that one capability is the whole access decision.
+ * Two layers, following the core post model.
+ *
+ * Articles have their own primitive capabilities (`edit_licensio_articles`,
+ * `publish_licensio_articles`, `delete_others_licensio_articles` and so on),
+ * mapped like core posts and granted per role the way core grants the post
+ * capabilities: administrators and editors get all of them, authors write,
+ * publish and delete their own articles, and contributors write and delete
+ * their own drafts. With `map_meta_cap` on, core works out `edit_post`,
+ * `delete_post` and `read_post` for each article from these, so per-article
+ * ownership and status rules are core's own. Assigning existing categories
+ * and tags follows `edit_licensio_articles`, as `assign_terms` follows
+ * `edit_posts` in core.
+ *
+ * Everything else — creating, editing and deleting categories and tags, and
+ * the Categories, Tags, Settings, Tools, Analytics and Feedback screens — is
+ * managed through a single custom capability, `manage_licensio_kb`, granted
+ * to `administrator` and `editor`.
  *
  * A custom capability rather than `manage_options` is deliberate: the people
  * who write documentation are usually not the people who administer the site,
@@ -24,7 +36,7 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Grants and maps the knowledge base management capability.
+ * Grants and maps the knowledge base article and management capabilities.
  *
  * @since 1.0.0
  */
@@ -39,10 +51,46 @@ class Licensio_KB_Capabilities {
     const CAPABILITY = 'manage_licensio_kb';
 
     /**
+     * The article post type's primitive capabilities, by core's name for each.
+     *
+     * @since 1.0.0
+     * @var array<string, string>
+     */
+    const ARTICLE_CAPABILITIES = array(
+        'edit_posts'             => 'edit_licensio_articles',
+        'edit_others_posts'      => 'edit_others_licensio_articles',
+        'edit_published_posts'   => 'edit_published_licensio_articles',
+        'edit_private_posts'     => 'edit_private_licensio_articles',
+        'publish_posts'          => 'publish_licensio_articles',
+        'read_private_posts'     => 'read_private_licensio_articles',
+        'delete_posts'           => 'delete_licensio_articles',
+        'delete_others_posts'    => 'delete_others_licensio_articles',
+        'delete_published_posts' => 'delete_published_licensio_articles',
+        'delete_private_posts'   => 'delete_private_licensio_articles',
+    );
+
+    /**
+     * The article capabilities core gives an author for posts.
+     *
+     * @since 1.0.0
+     * @var string[]
+     */
+    const AUTHOR_ARTICLE_CAPABILITIES = array( 'edit_posts', 'edit_published_posts', 'publish_posts', 'delete_posts', 'delete_published_posts' );
+
+    /**
+     * The article capabilities core gives a contributor for posts.
+     *
+     * @since 1.0.0
+     * @var string[]
+     */
+    const CONTRIBUTOR_ARTICLE_CAPABILITIES = array( 'edit_posts', 'delete_posts' );
+
+    /**
      * Register the WordPress hooks.
      *
-     * The capability is granted on activation — see the plugin bootstrap, which
-     * hooks `licensio_activated` so a network activation grants it inside each
+     * The capabilities are granted on activation and after an upgrade — see the
+     * plugin bootstrap, which hooks `licensio_activated` and
+     * `licensio_upgraded`, so a network activation grants them inside each
      * site's own install routine.
      *
      * `admin_init` is the repair path, following the same pattern
@@ -55,12 +103,14 @@ class Licensio_KB_Capabilities {
      *
      * The check is free on the overwhelmingly common path: roles are already in
      * memory from the autoloaded `wp_user_roles` option, and has_cap() means
-     * nothing is written unless a capability is genuinely absent. The cost of
+     * nothing is written unless a capability is genuinely absent. It is also
+     * what gives an existing install the article capabilities the first time an
+     * administrator loads wp-admin after the plugin files change. The cost of
      * that is that a capability revoked by hand is granted back on the next
      * admin request; `licensio_capabilities` is the supported way to change who
      * holds it.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Grants the article capabilities to authors and contributors too.
      *
      * @return void
      */
@@ -74,14 +124,28 @@ class Licensio_KB_Capabilities {
     /**
      * The roles that receive knowledge base capabilities, and what they receive.
      *
-     * @since 1.0.0
+     * Administrators and editors manage the knowledge base and hold every
+     * article capability. Authors and contributors get the article
+     * capabilities core gives them for posts, and nothing to manage.
+     *
+     * A role that manages the knowledge base, including one added through
+     * the filter, always holds every article capability too.
+     *
+     * @since 1.0.0 Adds the article capabilities and the author and contributor roles.
      *
      * @return array<string, string[]> Role name to the capabilities granted to it.
      */
     public static function role_capabilities() {
+        $all     = array_merge( array( self::CAPABILITY ), array_values( self::ARTICLE_CAPABILITIES ) );
+        $article = static function ( array $names ) {
+            return array_values( array_intersect_key( self::ARTICLE_CAPABILITIES, array_flip( $names ) ) );
+        };
+
         $roles = array(
-            'administrator' => array( self::CAPABILITY ),
-            'editor'        => array( self::CAPABILITY ),
+            'administrator' => $all,
+            'editor'        => $all,
+            'author'        => $article( self::AUTHOR_ARTICLE_CAPABILITIES ),
+            'contributor'   => $article( self::CONTRIBUTOR_ARTICLE_CAPABILITIES ),
         );
 
         /**
@@ -91,7 +155,9 @@ class Licensio_KB_Capabilities {
          * site that adds a role here also has it cleaned up. Changes take effect
          * the next time the plugin is activated or upgraded; call
          * Licensio_KB_Capabilities::add_capabilities() directly to apply them
-         * immediately.
+         * immediately. A role given `manage_licensio_kb` here also receives
+         * every article capability, so managing the knowledge base still
+         * includes managing its articles.
          *
          * @since 1.0.0
          *
@@ -99,7 +165,17 @@ class Licensio_KB_Capabilities {
          */
         $roles = apply_filters( 'licensio_capabilities', $roles );
 
-        return is_array( $roles ) ? $roles : array();
+        if ( ! is_array( $roles ) ) {
+            return array();
+        }
+
+        foreach ( $roles as $role_name => $capabilities ) {
+            if ( is_array( $capabilities ) && in_array( self::CAPABILITY, $capabilities, true ) ) {
+                $roles[ $role_name ] = array_values( array_unique( array_merge( $capabilities, array_values( self::ARTICLE_CAPABILITIES ) ) ) );
+            }
+        }
+
+        return $roles;
     }
 
     /**
@@ -141,15 +217,15 @@ class Licensio_KB_Capabilities {
      * Exposed for the uninstall path and for tests.
      *
      * After the roles named by `licensio_capabilities` are revoked, every role
-     * of the current site is swept for the plugin's own capability. A role
-     * that was granted it by hand, or through a filter that has since been
+     * of the current site is swept for the plugin's own capabilities. A role
+     * that was granted one by hand, or through a filter that has since been
      * removed, would otherwise keep it after the plugin is gone. The sweep
-     * touches only `manage_licensio_kb`, never the capabilities a filter
-     * lists, which may be core capabilities the role still needs. An explicit
-     * denial (granted as false) is removed too, so isset() is the check
-     * rather than has_cap().
+     * touches only `manage_licensio_kb` and the article capabilities, never
+     * the capabilities a filter lists, which may be core capabilities the
+     * role still needs. An explicit denial (granted as false) is removed too,
+     * so isset() is the check rather than has_cap().
      *
-     * @since 1.0.0
+     * @since 1.0.0 Sweeps the article capabilities too.
      *
      * @return void
      */
@@ -166,9 +242,17 @@ class Licensio_KB_Capabilities {
             }
         }
 
+        $own = array_merge( array( self::CAPABILITY ), array_values( self::ARTICLE_CAPABILITIES ) );
+
         foreach ( wp_roles()->role_objects as $role ) {
-            if ( $role instanceof WP_Role && isset( $role->capabilities[ self::CAPABILITY ] ) ) {
-                $role->remove_cap( self::CAPABILITY );
+            if ( ! $role instanceof WP_Role ) {
+                continue;
+            }
+
+            foreach ( $own as $capability ) {
+                if ( isset( $role->capabilities[ $capability ] ) ) {
+                    $role->remove_cap( $capability );
+                }
             }
         }
     }
@@ -176,12 +260,14 @@ class Licensio_KB_Capabilities {
     /**
      * The `capabilities` argument for the article post type.
      *
-     * Every primitive capability resolves to `manage_licensio_kb`. `read` is
-     * deliberately left as core's `read`: it is what `map_meta_cap()` returns
-     * for a published article, and remapping it would make reading a public
-     * article require the management capability.
+     * Every primitive capability resolves to the article's own capability, as
+     * core's `post` resolves to `edit_posts` and friends. `create_posts` is
+     * named explicitly, because core only derives it from `edit_posts` when
+     * the key is absent. `read` is deliberately left as core's `read`: it is
+     * what `map_meta_cap()` returns for a published article, and remapping it
+     * would make reading a public article require an article capability.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Maps onto the article capabilities instead of the management capability.
      *
      * @return array<string, string> Capability name to the capability that satisfies it.
      */
@@ -198,30 +284,24 @@ class Licensio_KB_Capabilities {
          * install where an administrator got 403 on every knowledge base page,
          * plus a stream of _doing_it_wrong notices about delete_post.
          */
-        return array(
-            'create_posts'           => self::CAPABILITY,
-            'edit_posts'             => self::CAPABILITY,
-            'edit_others_posts'      => self::CAPABILITY,
-            'edit_published_posts'   => self::CAPABILITY,
-            'edit_private_posts'     => self::CAPABILITY,
-            'publish_posts'          => self::CAPABILITY,
-            'read_private_posts'     => self::CAPABILITY,
-            'delete_posts'           => self::CAPABILITY,
-            'delete_others_posts'    => self::CAPABILITY,
-            'delete_published_posts' => self::CAPABILITY,
-            'delete_private_posts'   => self::CAPABILITY,
-            'read'                   => 'read',
+        return array_merge(
+            array( 'create_posts' => self::ARTICLE_CAPABILITIES['edit_posts'] ),
+            self::ARTICLE_CAPABILITIES,
+            array( 'read' => 'read' )
         );
     }
 
     /**
      * The `capabilities` argument for both knowledge base taxonomies.
      *
-     * `assign_terms` is mapped too. Core defaults it to `edit_posts`, which on a
-     * site with the default roles would let any contributor or author file their
-     * own posts into knowledge base categories.
+     * Creating, editing and deleting terms needs the management capability.
+     * `assign_terms` follows `edit_licensio_articles`, as core's follows
+     * `edit_posts`: anyone who may write an article may file it into existing
+     * categories and tags, but not create new ones. It is the article
+     * capability rather than core's `edit_posts`, so being able to write blog
+     * posts does not let anybody file knowledge base articles.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Lets article writers assign existing terms.
      *
      * @return array<string, string> Capability name to the capability that satisfies it.
      */
@@ -230,14 +310,14 @@ class Licensio_KB_Capabilities {
             'manage_terms' => self::CAPABILITY,
             'edit_terms'   => self::CAPABILITY,
             'delete_terms' => self::CAPABILITY,
-            'assign_terms' => self::CAPABILITY,
+            'assign_terms' => self::ARTICLE_CAPABILITIES['edit_posts'],
         );
     }
 
     /**
-     * Map the article post type onto the management capability.
+     * Map the article post type onto the article capabilities.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Maps onto the article capabilities.
      *
      * @param array<string, mixed> $args The post type registration arguments.
      *
@@ -261,9 +341,9 @@ class Licensio_KB_Capabilities {
     }
 
     /**
-     * Map a knowledge base taxonomy onto the management capability.
+     * Map a knowledge base taxonomy onto the management and article capabilities.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Assigning terms follows the article capability.
      *
      * @param array<string, mixed> $args The taxonomy registration arguments.
      *

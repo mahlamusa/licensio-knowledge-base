@@ -57,6 +57,14 @@ class Licensio_KB_Articles_REST_Integration_Test extends Licensio_KB_Analytics_D
     private $controller;
 
     /**
+     * The capabilities the fake current_user_can() refuses.
+     *
+     * @since 1.0.0
+     * @var string[]
+     */
+    private $denied = array();
+
+    /**
      * Add the core tables and stub the response and status count helpers.
      *
      * @since 1.0.0
@@ -69,6 +77,17 @@ class Licensio_KB_Articles_REST_Integration_Test extends Licensio_KB_Analytics_D
         $this->install_content_schemas();
 
         Functions\when( 'rest_ensure_response' )->returnArg();
+        Functions\when( 'get_post_type_object' )->justReturn(
+            (object) array(
+                'cap' => (object) Licensio_KB_Capabilities::post_type_capabilities(),
+            )
+        );
+        Functions\when( 'get_current_user_id' )->justReturn( 2 );
+        Functions\when( 'current_user_can' )->alias(
+            function ( $capability ) {
+                return ! in_array( $capability, $this->denied, true );
+            }
+        );
         Functions\when( 'wp_count_posts' )->alias(
             function ( $type ) {
                 $result = $this->db->query(
@@ -226,6 +245,48 @@ class Licensio_KB_Articles_REST_Integration_Test extends Licensio_KB_Analytics_D
         $this->assertSame( self::sorted( array( $mine, $also ) ), self::sorted( $this->listed( array( 'author' => 2 ) ) ) );
         $this->assertSame( array( $theirs ), $this->listed( array( 'author' => 3 ) ) );
         $this->assertSame( array(), $this->listed( array( 'author' => 9 ) ) );
+    }
+
+    /**
+     * A writer who may not edit others' articles sees only their own, and counts only their own.
+     *
+     * The current user is user 2.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_writer_without_edit_others_sees_only_their_own_articles() {
+        $mine   = $this->make_article( array( 'author' => 2 ) );
+        $draft  = $this->make_article(
+            array(
+                'author' => 2,
+                'status' => 'draft',
+            )
+        );
+        $theirs = $this->make_article( array( 'author' => 3 ) );
+        $this->make_article(
+            array(
+                'author' => 3,
+                'status' => 'draft',
+            )
+        );
+
+        $this->denied = array( 'edit_others_licensio_articles' );
+
+        $page = $this->list_articles();
+
+        $this->assertSame( self::sorted( array( $mine, $draft ) ), self::sorted( $page['items'] ) );
+        $this->assertSame( self::sorted( array( $mine, $draft ) ), self::sorted( $this->listed( array( 'author' => 3 ) ) ), 'Asking for another author must still list only their own.' );
+        $this->assertSame( self::sorted( array( $mine, $draft ) ), self::sorted( $this->ids()['ids'] ) );
+        $this->assertSame( 2, $page['counts']['all'] );
+        $this->assertSame( 1, $page['counts']['publish'] );
+        $this->assertSame( 1, $page['counts']['draft'] );
+
+        $this->denied = array();
+
+        $this->assertContains( $theirs, $this->listed() );
+        $this->assertSame( 4, $this->list_articles()['counts']['all'] );
     }
 
     /**

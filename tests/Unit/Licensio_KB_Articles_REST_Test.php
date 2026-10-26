@@ -183,7 +183,8 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
         $list = $this->routes['/articles'][0];
 
         $this->assertSame( 'GET', $list['methods'] );
-        $this->assertSame( 'manage_permissions_check', $list['permission_callback'][1] );
+        $this->assertSame( 'edit_articles_permissions_check', $list['permission_callback'][1] );
+        $this->assertSame( 'authors_permissions_check', $this->routes['/authors'][0]['permission_callback'][1] );
         $this->assertSame( 100, $list['args']['per_page']['maximum'] );
         $this->assertSame( array( 7, 30, 90 ), $list['args']['window']['enum'] );
         $this->assertSame( 30, $list['args']['window']['default'] );
@@ -1161,8 +1162,164 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
         $this->denied = array( 'edit_post' );
         $this->assertInstanceOf( 'WP_Error', $this->controller->update_item_permissions_check( $this->patch( array() ) ) );
 
+        // Authors and contributors do not manage the knowledge base, but still edit their own articles.
         $this->denied = array( 'manage_licensio_kb', 'manage_options' );
+        $this->assertTrue( $this->controller->update_item_permissions_check( $this->patch( array() ) ) );
+
+        $this->denied = array( 'edit_posts' );
         $this->assertInstanceOf( 'WP_Error', $this->controller->update_item_permissions_check( $this->patch( array() ) ) );
+    }
+
+    /**
+     * The routes need the article capability, not the management one.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_article_writers_may_use_the_routes() {
+        $request = new WP_REST_Request( array(), '/licensio-kb/v1/articles', array() );
+
+        $this->denied = array( 'manage_licensio_kb', 'manage_options' );
+        $this->assertTrue( $this->controller->edit_articles_permissions_check( $request ) );
+
+        $this->denied = array( 'edit_posts' );
+        $this->assertInstanceOf( 'WP_Error', $this->controller->edit_articles_permissions_check( $request ) );
+    }
+
+    /**
+     * Only users who may edit others' articles may list the authors.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_author_list_needs_edit_others() {
+        $request = new WP_REST_Request( array(), '/licensio-kb/v1/authors', array() );
+
+        $this->assertTrue( $this->controller->authors_permissions_check( $request ) );
+
+        $this->denied = array( 'edit_others_posts' );
+        $this->assertInstanceOf( 'WP_Error', $this->controller->authors_permissions_check( $request ) );
+    }
+
+    /**
+     * A user who may not edit others' articles only lists their own.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_writer_without_edit_others_only_lists_their_own_articles() {
+        Functions\when( 'get_current_user_id' )->justReturn( 7 );
+
+        $this->assertArrayNotHasKey( 'author', $this->controller->query_args( array() ) );
+        $this->assertSame( 5, $this->controller->query_args( array( 'author' => 5 ) )['author'] );
+
+        $this->denied = array( 'edit_others_posts' );
+
+        $this->assertSame( 7, $this->controller->query_args( array() )['author'] );
+        $this->assertSame( 7, $this->controller->query_args( array( 'author' => 5 ) )['author'], 'Naming another author must not widen the list.' );
+        $this->assertSame( 7, $this->controller->query_args( array( 'author' => 5 ), true )['author'], 'Select all matching is limited too.' );
+    }
+
+    /**
+     * The status pills count only the writer's own articles.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_status_counts_are_the_writers_own() {
+        $previous = isset( $GLOBALS['wpdb'] ) ? $GLOBALS['wpdb'] : null;
+
+        // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- A double for the grouped count query.
+        $GLOBALS['wpdb'] = new class() {
+
+            /**
+             * The posts table name.
+             *
+             * @since 1.0.0
+             * @var string
+             */
+            public $posts = 'wp_posts';
+
+            /**
+             * The last query run.
+             *
+             * @since 1.0.0
+             * @var string
+             */
+            public $last = '';
+
+            /**
+             * Fill the placeholders, like wpdb::prepare().
+             *
+             * @since 1.0.0
+             *
+             * @param string $query   The SQL with placeholders.
+             * @param mixed  ...$args The values.
+             *
+             * @return string The SQL.
+             */
+            public function prepare( $query, ...$args ) {
+                return vsprintf( str_replace( array( '%i', '%s', '%d' ), array( '%s', "'%s'", '%d' ), $query ), $args );
+            }
+
+            /**
+             * Answer the grouped count.
+             *
+             * @since 1.0.0
+             *
+             * @param string $query The SQL.
+             *
+             * @return array<int, object> The rows.
+             */
+            public function get_results( $query ) {
+                $this->last = $query;
+
+                return array(
+                    (object) array(
+                        'post_status' => 'draft',
+                        'num'         => '2',
+                    ),
+                    (object) array(
+                        'post_status' => 'pending',
+                        'num'         => '1',
+                    ),
+                    (object) array(
+                        'post_status' => 'trash',
+                        'num'         => '3',
+                    ),
+                );
+            }
+        };
+
+        Functions\when( 'get_current_user_id' )->justReturn( 7 );
+        Functions\expect( 'wp_count_posts' )->never();
+
+        $this->denied = array( 'edit_others_posts' );
+
+        try {
+            $counts = Licensio_KB_Articles_REST_Controller::status_counts();
+            $query  = $GLOBALS['wpdb']->last;
+        } finally {
+            $GLOBALS['wpdb'] = $previous; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Puts the original back.
+        }
+
+        $this->assertStringContainsString( 'post_author = 7', $query );
+        $this->assertSame(
+            array(
+                'all'     => 3,
+                'publish' => 0,
+                'future'  => 0,
+                'draft'   => 2,
+                'pending' => 1,
+                'private' => 0,
+                'trash'   => 3,
+            ),
+            $counts
+        );
     }
 
     /**

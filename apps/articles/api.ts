@@ -38,6 +38,12 @@ const FALLBACK_CONFIG: ArticlesConfig = {
 	settingsUrl: '',
 	newUrl: '',
 	feedbackUrl: '',
+	can: {
+		manage: true,
+		editOthers: true,
+		publish: true,
+		createTags: true,
+	},
 	preferences: {
 		columns: [
 			'author',
@@ -69,6 +75,7 @@ export function config(): ArticlesConfig {
 		...FALLBACK_CONFIG,
 		...given,
 		preferences: given.preferences ?? FALLBACK_CONFIG.preferences,
+		can: { ...FALLBACK_CONFIG.can, ...( given.can ?? {} ) },
 		lowRating: {
 			threshold: Number( lowRating.threshold ),
 			minVotes: Number( lowRating.minVotes ),

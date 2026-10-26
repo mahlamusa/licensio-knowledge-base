@@ -405,8 +405,9 @@ const expandedKeys = computed( () =>
 								</a>
 								<a
 									v-if="
-										record.needs_attention ||
-										store.query.needs_attention
+										settings.feedbackUrl &&
+										( record.needs_attention ||
+											store.query.needs_attention )
 									"
 									:href="feedbackUrl( record.id )"
 								>
@@ -418,6 +419,7 @@ const expandedKeys = computed( () =>
 									}}
 								</a>
 								<ConfirmButton
+									v-if="record.can_delete"
 									type="link"
 									size="small"
 									danger
@@ -444,6 +446,7 @@ const expandedKeys = computed( () =>
 							</template>
 							<template v-else>
 								<a-button
+									v-if="record.can_delete"
 									type="link"
 									size="small"
 									:disabled="store.bulk.running"
@@ -461,6 +464,7 @@ const expandedKeys = computed( () =>
 									}}
 								</a-button>
 								<ConfirmButton
+									v-if="record.can_delete"
 									type="link"
 									size="small"
 									danger

@@ -21,6 +21,7 @@ import { computed, ref, watch } from 'vue';
 import ConfirmButton from '../../components/ConfirmButton.vue';
 import TermSelect from '../../components/TermSelect.vue';
 import { __, _n, sprintf } from '../../components/i18n';
+import { config } from '../api';
 import { confirmTitle, performAction } from '../actions';
 import { useArticlesStore } from '../store';
 import AuthorSelect from './AuthorSelect.vue';
@@ -43,6 +44,7 @@ type Choice =
 	| 'comments_close';
 
 const store = useArticlesStore();
+const can = config().can;
 
 const choice = ref< Choice | undefined >( undefined );
 const status = ref< BulkArgs[ 'status' ] >( undefined );
@@ -102,10 +104,17 @@ const choices = computed( () =>
 					value: 'tag_replace',
 					label: __( 'Replace tags', 'licensio-knowledge-base' ),
 				},
-				{
-					value: 'author',
-					label: __( 'Change author', 'licensio-knowledge-base' ),
-				},
+				...( can.editOthers
+					? [
+							{
+								value: 'author',
+								label: __(
+									'Change author',
+									'licensio-knowledge-base'
+								),
+							},
+					  ]
+					: [] ),
 				{
 					value: 'comments_open',
 					label: __( 'Open comments', 'licensio-knowledge-base' ),
@@ -117,6 +126,7 @@ const choices = computed( () =>
 		  ]
 );
 
+// Publishing and making private need the publish capability.
 const statusOptions = [
 	{ value: 'publish', label: __( 'Published', 'licensio-knowledge-base' ) },
 	{ value: 'draft', label: __( 'Draft', 'licensio-knowledge-base' ) },
@@ -125,7 +135,10 @@ const statusOptions = [
 		label: __( 'Pending review', 'licensio-knowledge-base' ),
 	},
 	{ value: 'private', label: __( 'Private', 'licensio-knowledge-base' ) },
-];
+].filter(
+	( option ) =>
+		can.publish || ! [ 'publish', 'private' ].includes( option.value )
+);
 
 const taxonomy = computed( () =>
 	choice.value?.startsWith( 'tag_' ) ? 'licensio_tag' : 'licensio_category'

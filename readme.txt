@@ -96,7 +96,7 @@ Heroic Knowledge Base and BetterDocs are trademarks of their respective owners. 
 
 * More than 60 actions and filters, all prefixed `licensio_`.
 * A REST API under `licensio-kb/v1` for search, feedback, analytics and settings.
-* A `manage_licensio_kb` capability, granted to administrators and editors, controls every knowledge base screen.
+* Articles have their own capabilities, mapped like posts: authors and contributors write their own articles, and a `manage_licensio_kb` capability, granted to administrators and editors, controls the management screens.
 * Every string is translatable under the `licensio-knowledge-base` text domain.
 
 == Installation ==
@@ -145,11 +145,15 @@ Yes. The import wizard under **Knowledge Base > Tools** carries over articles, c
 
 = What happens to my articles if I deactivate the plugin? =
 
-Nothing. Deactivating leaves all content and data in place. Data is only removed when you delete the plugin, and then only if you have turned on **Delete everything on uninstall** under **Knowledge Base > Settings > Privacy**. With it on, deleting the plugin drops its tables (feedback and votes, the search index, search and view history, and the import log) and deletes the settings (including the permalink slugs), the import redirects, the import URL map files, the cached category hierarchy and the request rate-limit counters. With it off, all of that is kept. Either way, deleting the plugin removes the `manage_licensio_kb` capability from every role that holds it, including roles you granted it to by hand. Articles, categories and tags are never deleted by uninstall.
+Nothing. Deactivating leaves all content and data in place. Data is only removed when you delete the plugin, and then only if you have turned on **Delete everything on uninstall** under **Knowledge Base > Settings > Privacy**. With it on, deleting the plugin drops its tables (feedback and votes, the search index, search and view history, and the import log) and deletes the settings (including the permalink slugs), the import redirects, the import URL map files, the cached category hierarchy and the request rate-limit counters. With it off, all of that is kept. Either way, deleting the plugin removes the `manage_licensio_kb` capability and the article capabilities from every role that holds them, including roles you granted them to by hand. Articles, categories and tags are never deleted by uninstall.
 
 = Who can manage the knowledge base? =
 
 Administrators and editors. Both are given the `manage_licensio_kb` capability on activation, and you can grant it to other roles with any role editor.
+
+= Can authors and contributors write articles? =
+
+Yes, the same way they write posts. Authors create, edit, publish and delete their own articles; contributors write their own drafts and submit them for review. Both can file articles under existing categories and tags, but not create new ones. In Knowledge Base > All Articles they see only their own articles. Categories, Tags, Settings, Tools, Analytics and Feedback stay with administrators and editors. The article capabilities (`edit_licensio_articles`, `publish_licensio_articles` and the rest) can be changed per role with any role editor.
 
 = Is the plugin translatable? =
 

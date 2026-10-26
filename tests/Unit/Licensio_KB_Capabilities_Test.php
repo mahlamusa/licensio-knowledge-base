@@ -2,9 +2,9 @@
 /**
  * Unit tests for the capability model.
  *
- * Covers which roles are granted the management capability, that the grant is
- * filterable, and that the capability is actually mapped onto the post type and
- * both taxonomies rather than only being handed out.
+ * Covers which roles are granted the management and article capabilities,
+ * that the grant is filterable, and that the capabilities are actually mapped
+ * onto the post type and both taxonomies rather than only being handed out.
  *
  * @package Licensio_KB
  * @since   1.0.0
@@ -41,6 +41,8 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
         $this->roles = array(
             'administrator' => new WP_Role( 'administrator', array( 'manage_options' => true ) ),
             'editor'        => new WP_Role( 'editor', array( 'edit_others_posts' => true ) ),
+            'author'        => new WP_Role( 'author', array( 'publish_posts' => true ) ),
+            'contributor'   => new WP_Role( 'contributor', array( 'edit_posts' => true ) ),
             'subscriber'    => new WP_Role( 'subscriber', array( 'read' => true ) ),
         );
 
@@ -106,8 +108,10 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
         Licensio_KB_Capabilities::add_capabilities();
         Licensio_KB_Capabilities::add_capabilities();
 
-        $this->assertSame( 1, $this->roles['administrator']->add_cap_calls );
-        $this->assertSame( 1, $this->roles['editor']->add_cap_calls );
+        $granted = 1 + count( Licensio_KB_Capabilities::ARTICLE_CAPABILITIES );
+
+        $this->assertSame( $granted, $this->roles['administrator']->add_cap_calls );
+        $this->assertSame( $granted, $this->roles['editor']->add_cap_calls );
         $this->assertTrue( $this->roles['administrator']->has_cap( 'manage_licensio_kb' ) );
     }
 
@@ -150,7 +154,9 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
         Licensio_KB_Capabilities::add_capabilities();
 
         $this->assertTrue( $this->roles['shop_manager']->has_cap( 'manage_licensio_kb' ) );
+        $this->assertTrue( $this->roles['shop_manager']->has_cap( 'edit_others_licensio_articles' ), 'Managing includes the articles.' );
         $this->assertFalse( $this->roles['administrator']->has_cap( 'manage_licensio_kb' ) );
+        $this->assertFalse( $this->roles['author']->has_cap( 'edit_licensio_articles' ) );
     }
 
     /**
@@ -182,22 +188,29 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
         $this->assertFalse( $this->roles['administrator']->has_cap( 'manage_licensio_kb' ) );
         $this->assertFalse( $this->roles['editor']->has_cap( 'manage_licensio_kb' ) );
         $this->assertTrue( $this->roles['administrator']->has_cap( 'manage_options' ) );
+
+        foreach ( array( 'administrator', 'editor', 'author', 'contributor' ) as $role ) {
+            foreach ( Licensio_KB_Capabilities::ARTICLE_CAPABILITIES as $capability ) {
+                $this->assertFalse( $this->roles[ $role ]->has_cap( $capability ), sprintf( '%s kept %s.', $role, $capability ) );
+            }
+        }
     }
 
     /**
-     * Removal sweeps every role for the management capability, and nothing else.
+     * Removal sweeps every role for the plugin's own capabilities, and nothing else.
      *
-     * A role granted the capability by hand, or through a filter that has
+     * A role granted a capability by hand, or through a filter that has
      * since been removed, is not in the filtered role list at uninstall time.
      * An explicit denial is residue as well. Core capabilities, including any
      * a filter lists, are left on roles the filter does not name.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Sweeps the article capabilities too.
      *
      * @return void
      */
-    public function test_removal_sweeps_every_role_for_the_management_capability() {
+    public function test_removal_sweeps_every_role_for_the_plugin_capabilities() {
         $this->roles['subscriber']->add_cap( 'manage_licensio_kb' );
+        $this->roles['subscriber']->add_cap( 'edit_licensio_articles' );
         $this->roles['author'] = new WP_Role(
             'author',
             array(
@@ -209,6 +222,7 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
         Licensio_KB_Capabilities::remove_capabilities();
 
         $this->assertArrayNotHasKey( 'manage_licensio_kb', $this->roles['subscriber']->capabilities );
+        $this->assertArrayNotHasKey( 'edit_licensio_articles', $this->roles['subscriber']->capabilities );
         $this->assertArrayNotHasKey( 'manage_licensio_kb', $this->roles['author']->capabilities, 'An explicit denial is residue too.' );
         $this->assertTrue( $this->roles['subscriber']->has_cap( 'read' ) );
         $this->assertTrue( $this->roles['author']->has_cap( 'edit_posts' ) );
@@ -216,7 +230,70 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * Every article primitive capability resolves to the management capability.
+     * Administrators and editors hold every article capability.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_administrator_and_editor_hold_every_article_capability() {
+        Licensio_KB_Capabilities::add_capabilities();
+
+        foreach ( array( 'administrator', 'editor' ) as $role ) {
+            foreach ( Licensio_KB_Capabilities::ARTICLE_CAPABILITIES as $capability ) {
+                $this->assertTrue( $this->roles[ $role ]->has_cap( $capability ), sprintf( '%s lacks %s.', $role, $capability ) );
+            }
+        }
+    }
+
+    /**
+     * Authors write, publish and delete their own articles, and manage nothing.
+     *
+     * The same capabilities core gives an author for posts.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_author_gets_the_core_author_article_capabilities() {
+        Licensio_KB_Capabilities::add_capabilities();
+
+        $expected = array(
+            'edit_licensio_articles',
+            'edit_published_licensio_articles',
+            'publish_licensio_articles',
+            'delete_licensio_articles',
+            'delete_published_licensio_articles',
+        );
+
+        foreach ( Licensio_KB_Capabilities::ARTICLE_CAPABILITIES as $capability ) {
+            $this->assertSame( in_array( $capability, $expected, true ), $this->roles['author']->has_cap( $capability ), $capability );
+        }
+
+        $this->assertFalse( $this->roles['author']->has_cap( 'manage_licensio_kb' ) );
+    }
+
+    /**
+     * Contributors write and delete their own drafts only.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_contributor_gets_the_core_contributor_article_capabilities() {
+        Licensio_KB_Capabilities::add_capabilities();
+
+        $expected = array( 'edit_licensio_articles', 'delete_licensio_articles' );
+
+        foreach ( Licensio_KB_Capabilities::ARTICLE_CAPABILITIES as $capability ) {
+            $this->assertSame( in_array( $capability, $expected, true ), $this->roles['contributor']->has_cap( $capability ), $capability );
+        }
+
+        $this->assertFalse( $this->roles['contributor']->has_cap( 'manage_licensio_kb' ) );
+    }
+
+    /**
+     * Every article primitive capability resolves to an article capability a role is granted.
      *
      * Granting a capability that nothing is mapped onto would leave a holder
      * with a capability and no access, which is exactly the failure this test
@@ -227,7 +304,7 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
      *
      * @return void
      */
-    public function test_every_article_capability_maps_to_the_management_capability() {
+    public function test_every_article_capability_maps_to_a_granted_article_capability() {
         $capabilities = new Licensio_KB_Capabilities();
         $args         = $capabilities->filter_post_type_args( array( 'capability_type' => 'post' ) );
 
@@ -240,16 +317,18 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
                 continue;
             }
 
-            $this->assertSame(
-                'manage_licensio_kb',
+            $this->assertContains(
                 $mapped,
-                sprintf( 'The %s capability must map onto manage_licensio_kb.', $capability )
+                Licensio_KB_Capabilities::role_capabilities()['administrator'],
+                sprintf( 'The %s capability must map onto a capability administrators are granted.', $capability )
             );
         }
 
         foreach ( array( 'create_posts', 'edit_posts', 'edit_others_posts', 'publish_posts', 'delete_posts' ) as $required ) {
             $this->assertArrayHasKey( $required, $args['capabilities'] );
         }
+
+        $this->assertSame( 'edit_licensio_articles', $args['capabilities']['create_posts'], 'Creating follows editing, as in core.' );
     }
 
     /**
@@ -267,8 +346,10 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
     /**
      * Both taxonomies map every term capability, including assigning terms.
      *
-     * Leaving `assign_terms` at core's `edit_posts` default would let any
-     * author file their own posts into knowledge base categories.
+     * Managing terms needs the management capability. Assigning existing
+     * terms follows the article capability, as in core, rather than core's
+     * `edit_posts`, which would let anyone who writes blog posts file
+     * knowledge base articles.
      *
      * @since 1.0.0
      *
@@ -283,7 +364,7 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
                 'manage_terms' => 'manage_licensio_kb',
                 'edit_terms'   => 'manage_licensio_kb',
                 'delete_terms' => 'manage_licensio_kb',
-                'assign_terms' => 'manage_licensio_kb',
+                'assign_terms' => 'edit_licensio_articles',
             ),
             $args['capabilities']
         );
@@ -378,7 +459,7 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
 
         foreach ( array( 'edit_posts', 'edit_others_posts', 'edit_published_posts', 'edit_private_posts', 'delete_posts', 'delete_others_posts', 'delete_published_posts', 'delete_private_posts', 'read_private_posts', 'publish_posts' ) as $primitive ) {
             $this->assertArrayHasKey( $primitive, $map, sprintf( 'Core needs %s to derive the meta capabilities.', $primitive ) );
-            $this->assertSame( Licensio_KB_Capabilities::CAPABILITY, $map[ $primitive ] );
+            $this->assertSame( Licensio_KB_Capabilities::ARTICLE_CAPABILITIES[ $primitive ], $map[ $primitive ] );
         }
     }
 }

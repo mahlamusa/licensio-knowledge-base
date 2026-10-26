@@ -54,9 +54,11 @@ register_deactivation_hook( __FILE__, array( 'Licensio_KB_Lifecycle', 'deactivat
  * `plugins_loaded` has already fired, then fires the activation hook. They are
  * hooked to `licensio_activated` rather than to the activation hook itself so
  * that a network activation runs them inside each site, where roles and rewrite
- * rules actually live.
+ * rules actually live. The capabilities are granted again after an upgrade, so
+ * an existing install picks up any the new version adds.
  */
 add_action( 'licensio_activated', array( 'Licensio_KB_Capabilities', 'add_capabilities' ) );
+add_action( 'licensio_upgraded', array( 'Licensio_KB_Capabilities', 'add_capabilities' ) );
 add_action( 'licensio_activated', array( 'Licensio_KB_Permalinks', 'request_flush' ) );
 add_action( 'licensio_activated', array( 'Licensio_KB_Analytics_Retention', 'schedule' ) );
 

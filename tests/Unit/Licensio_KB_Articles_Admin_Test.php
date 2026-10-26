@@ -184,6 +184,16 @@ class Licensio_KB_Articles_Admin_Test extends Licensio_KB_Test_Case {
             }
         );
         Functions\when( 'current_user_can' )->justReturn( true );
+        Functions\when( 'get_post_type_object' )->justReturn(
+            (object) array(
+                'cap' => (object) Licensio_KB_Capabilities::post_type_capabilities(),
+            )
+        );
+        Functions\when( 'get_taxonomy' )->justReturn(
+            (object) array(
+                'cap' => (object) Licensio_KB_Capabilities::taxonomy_capabilities(),
+            )
+        );
         Functions\when( 'wp_create_nonce' )->justReturn( 'a-nonce' );
         Functions\when( 'esc_url_raw' )->returnArg();
         Functions\when( 'get_current_user_id' )->justReturn( 1 );
@@ -291,7 +301,9 @@ class Licensio_KB_Articles_Admin_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * The page is the menu's first item, gated on the management capability.
+     * The page is the menu's first item, gated on the article capability.
+     *
+     * Authors and contributors reach it as well as managers.
      *
      * @since 1.0.0
      *
@@ -306,7 +318,7 @@ class Licensio_KB_Articles_Admin_Test extends Licensio_KB_Test_Case {
 
         $this->assertSame( Licensio_KB_Admin_Menu::PARENT_SLUG, $page[0] );
         $this->assertSame( 'All Articles', $page[2] );
-        $this->assertSame( Licensio_KB_Capabilities::CAPABILITY, $page[3] );
+        $this->assertSame( 'edit_licensio_articles', $page[3] );
         $this->assertSame( Licensio_KB_Content_Manager::ARTICLES_SLUG, $page[4] );
         $this->assertSame( array( $this->admin, 'render_page' ), $page[5] );
         $this->assertSame( 1, $page[6], 'Position 1 puts it before Add New.' );
@@ -429,5 +441,49 @@ class Licensio_KB_Articles_Admin_Test extends Licensio_KB_Test_Case {
                 array( 'classic_screens' => $this->classic )
             )
         );
+    }
+
+    /**
+     * The app is told what the user may do, and links they cannot open are left out.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_app_data_carries_what_the_user_may_do() {
+        Functions\when( 'current_user_can' )->alias(
+            function ( $capability ) {
+                return in_array( $capability, array( 'edit_licensio_articles', 'publish_licensio_articles' ), true );
+            }
+        );
+
+        $data = $this->admin->app_data();
+
+        $this->assertSame(
+            array(
+                'manage'     => false,
+                'editOthers' => false,
+                'publish'    => true,
+                'createTags' => false,
+            ),
+            $data['can']
+        );
+        $this->assertSame( '', $data['settingsUrl'], 'Authors cannot open Settings.' );
+        $this->assertSame( '', $data['feedbackUrl'], 'Authors cannot open Feedback.' );
+    }
+
+    /**
+     * A manager gets every flag and both links.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_manager_may_do_everything() {
+        $data = $this->admin->app_data();
+
+        $this->assertSame( array( true ), array_values( array_unique( $data['can'] ) ) );
+        $this->assertNotSame( '', $data['settingsUrl'] );
+        $this->assertNotSame( '', $data['feedbackUrl'] );
     }
 }

@@ -16,6 +16,15 @@ use Brain\Monkey\Functions;
 class Licensio_KB_Terms_REST_Test extends Licensio_KB_Test_Case {
 
     /**
+     * The capabilities the fake current_user_can() grants.
+     *
+     * @since 1.0.0
+     * @var string[]
+     */
+    private $granted = array();
+
+
+    /**
      * Every route registered during the test, keyed by route path.
      *
      * @since 1.0.0
@@ -160,7 +169,7 @@ class Licensio_KB_Terms_REST_Test extends Licensio_KB_Test_Case {
      */
     public function test_the_route_is_registered_with_its_arguments() {
         $this->assertSame( 'GET', $this->routes['/terms'][0]['methods'] );
-        $this->assertSame( 'manage_permissions_check', $this->routes['/terms'][0]['permission_callback'][1] );
+        $this->assertSame( 'search_permissions_check', $this->routes['/terms'][0]['permission_callback'][1] );
 
         $args = $this->routes['/terms'][0]['args'];
 
@@ -280,5 +289,42 @@ class Licensio_KB_Terms_REST_Test extends Licensio_KB_Test_Case {
         $this->assertSame( 'Billing & invoices', $items[0]['name'] );
         $this->assertSame( 'Tom\'s "tips"', $items[1]['name'] );
         $this->assertSame( array( 'Billing & invoices' ), $items[1]['path'] );
+    }
+
+    /**
+     * Article writers may search terms; anybody else may not.
+     *
+     * Authors and contributors pick the categories and tags of their own
+     * articles in the Articles app, so the pickers must load for them.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_article_writers_may_search_terms() {
+        $this->granted = array();
+
+        Functions\when( 'get_post_type_object' )->justReturn(
+            (object) array(
+                'cap' => (object) Licensio_KB_Capabilities::post_type_capabilities(),
+            )
+        );
+        Functions\when( 'rest_authorization_required_code' )->justReturn( 403 );
+        Functions\when( 'current_user_can' )->alias(
+            function ( $capability ) {
+                return in_array( $capability, $this->granted, true );
+            }
+        );
+
+        $controller = new Licensio_KB_Terms_REST_Controller();
+        $request    = new WP_REST_Request( array(), '/licensio-kb/v1/terms', array() );
+
+        $this->assertInstanceOf( 'WP_Error', $controller->search_permissions_check( $request ) );
+
+        $this->granted = array( 'edit_licensio_articles' );
+        $this->assertTrue( $controller->search_permissions_check( $request ) );
+
+        $this->granted = array( 'manage_licensio_kb' );
+        $this->assertTrue( $controller->search_permissions_check( $request ) );
     }
 }

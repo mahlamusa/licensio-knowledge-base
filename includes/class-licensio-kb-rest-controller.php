@@ -137,6 +137,33 @@ abstract class Licensio_KB_REST_Controller extends WP_REST_Controller {
     }
 
     /**
+     * Permission callback for the routes article writers use.
+     *
+     * Checks the article post type's own `edit_posts` capability, which
+     * authors and contributors hold as well as editors and administrators.
+     * Each route still checks the articles it touches one by one.
+     *
+     * @since 1.0.0
+     *
+     * @param WP_REST_Request $request The request.
+     *
+     * @return true|WP_Error True when the current user may write articles.
+     */
+    public function edit_articles_permissions_check( $request ) {
+        unset( $request );
+
+        if ( current_user_can( Licensio_KB_Article_Bulk::type_cap( 'edit_posts' ) ) ) {
+            return true;
+        }
+
+        return new WP_Error(
+            'licensio_forbidden',
+            __( 'You are not allowed to edit knowledge base articles.', 'licensio-knowledge-base' ),
+            array( 'status' => rest_authorization_required_code() )
+        );
+    }
+
+    /**
      * Hold a caller to a request budget, keyed on their visitor hash.
      *
      * The scaffold's shared implementation of the "rate-limited per visitor

@@ -22,7 +22,7 @@ import AuthorSelect from './AuthorSelect.vue';
 import type { TermValue } from '../../components/types/terms';
 
 const store = useArticlesStore();
-const lowRating = config().lowRating;
+const { lowRating, can } = config();
 const { open, overlayClass, setOpen } = usePopoverFocus();
 
 const dates = computed< [ string, string ] | undefined >( () =>
@@ -126,7 +126,7 @@ const attentionHelp = sprintf(
 					/>
 				</div>
 
-				<label class="lkb-filters__field">
+				<label v-if="can.editOthers" class="lkb-filters__field">
 					<span>{{ __( 'Author', 'licensio-knowledge-base' ) }}</span>
 					<AuthorSelect
 						:model-value="store.query.author"

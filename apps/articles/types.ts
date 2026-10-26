@@ -91,6 +91,8 @@ export interface ArticleItem {
 	has_password: boolean;
 	/** Another user is editing; null when free. */
 	lock: ArticleLock | null;
+	/** Whether the current user may trash, restore or delete it. */
+	can_delete: boolean;
 	/** Block editor URL; empty when the user cannot edit. */
 	edit_url: string;
 	/** Permalink, or the preview link for an unpublished article. */
@@ -285,6 +287,20 @@ export interface ListPreferences {
 }
 
 /**
+ * What the current user may do, as the page localises it.
+ */
+export interface ArticlesCan {
+	/** Manage the knowledge base: Settings, Feedback and the other screens. */
+	manage: boolean;
+	/** Edit other people's articles, and so choose an author. */
+	editOthers: boolean;
+	/** Publish, schedule and make articles private. */
+	publish: boolean;
+	/** Create tags by name. */
+	createTags: boolean;
+}
+
+/**
  * The configuration the page localises as `window.licensioKbArticles`.
  */
 export interface ArticlesConfig {
@@ -294,8 +310,10 @@ export interface ArticlesConfig {
 	settingsUrl: string;
 	/** `post-new.php?post_type=licensio_article`. */
 	newUrl: string;
-	/** The Feedback inbox URL; append `&article_id={id}`. */
+	/** The Feedback inbox URL; append `&article_id={id}`. Empty without `can.manage`. */
 	feedbackUrl: string;
+	/** What the current user may do. */
+	can: ArticlesCan;
 	/** The current user's saved list preferences. */
 	preferences: ListPreferences;
 	/** The Needs attention rule, for its help text. */
