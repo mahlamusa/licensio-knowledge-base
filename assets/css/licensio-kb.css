@@ -33,7 +33,7 @@
 	--licensio-kb-max-width: 72rem;
 	--licensio-kb-card-shadow: 0 4px 14px color-mix(in srgb, currentColor 10%, transparent);
 	--licensio-kb-card-border: 1px solid transparent;
-	--licensio-kb-card-bg: transparent;
+	--licensio-kb-card-bg: var(--licensio-kb-surface);
 
 	/*
 	 * Derived tokens. Each is mixed from `currentColor`, which resolves on the
