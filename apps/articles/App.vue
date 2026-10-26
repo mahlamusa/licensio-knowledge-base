@@ -13,14 +13,7 @@
  * @since 1.0.0
  */
 
-import {
-	computed,
-	onBeforeUnmount,
-	onMounted,
-	ref,
-	useId,
-	watch,
-} from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue';
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons-vue';
 import type { RadioChangeEvent } from 'ant-design-vue';
 import { lkbTheme } from '../styles/theme';
