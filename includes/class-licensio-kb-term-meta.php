@@ -37,6 +37,13 @@
  * an icon that wants a fixed colour can simply say so in its own `fill` and
  * `stroke` attributes, which the sanitizer keeps.
  *
+ * A new category is placed at the end of its level: when it is created with
+ * no manual order, by any route (the Categories app, REST, the classic term
+ * screen or an importer), it gets the next order after its siblings. A
+ * category moved under another parent without being given an order in the
+ * same save is appended to its new siblings the same way. An importer that
+ * carries the source's order writes it afterwards, so that order wins.
+ *
  * The term description is deliberately not duplicated here. Core already gives
  * every term a description, edits it on both term forms and exposes it in
  * REST; a second description meta would be two fields that mean the same thing
@@ -165,6 +172,22 @@ class Licensio_KB_Term_Meta {
     const ORDER_CLAUSE = 'licensio_order_clause';
 
     /**
+     * The gap between two siblings' manual orders.
+     *
+     * @since 1.0.0
+     * @var int
+     */
+    const ORDER_STEP = 10;
+
+    /**
+     * The parent and order of each category being edited, read before the edit.
+     *
+     * @since 1.0.0
+     * @var array<int, array{parent: int, order: int}>
+     */
+    private $before_edit = array();
+
+    /**
      * Register the WordPress hooks.
      *
      * Meta is registered on `init` at priority 7 — after the taxonomies are
@@ -172,13 +195,134 @@ class Licensio_KB_Term_Meta {
      * taxonomy still records the meta but nothing wires it into the REST
      * response for that taxonomy.
      *
-     * @since 1.0.0
+     * The placement hooks run at priority 20, after the classic term screen
+     * saves its fields at the default priority.
+     *
+     * @since 1.0.0 Places new and moved categories at the end of their level.
      *
      * @return void
      */
     public function init_hooks() {
         add_action( 'init', array( $this, 'register_meta' ), 7 );
         add_filter( 'get_terms_args', array( $this, 'filter_terms_args' ), 10, 2 );
+        add_action( 'created_' . Licensio_KB_Post_Types::TAXONOMY_CATEGORY, array( $this, 'place_new_category' ), 20 );
+        add_action( 'edit_terms', array( $this, 'remember_place' ), 10, 2 );
+        add_action( 'edited_' . Licensio_KB_Post_Types::TAXONOMY_CATEGORY, array( $this, 'place_moved_category' ), 20 );
+    }
+
+    /**
+     * Give a new category without a manual order the next order among its siblings.
+     *
+     * Hooked to `created_licensio_category`. An order of 0 is no order: the
+     * classic term screen posts 0 for an empty Order field.
+     *
+     * @since 1.0.0
+     *
+     * @param int $term_id The new category.
+     *
+     * @return void
+     */
+    public function place_new_category( $term_id ) {
+        $term_id = (int) $term_id;
+
+        if ( self::get_order( $term_id ) > 0 ) {
+            return;
+        }
+
+        $term = get_term( $term_id, Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
+
+        if ( $term instanceof WP_Term ) {
+            update_term_meta( $term_id, self::META_ORDER, self::next_order( (int) $term->parent, $term_id ) );
+        }
+    }
+
+    /**
+     * Note a category's parent and order before it is edited.
+     *
+     * Hooked to `edit_terms`, which fires before the update is written.
+     *
+     * @since 1.0.0
+     *
+     * @param int    $term_id  The term about to be edited.
+     * @param string $taxonomy Its taxonomy.
+     *
+     * @return void
+     */
+    public function remember_place( $term_id, $taxonomy ) {
+        if ( Licensio_KB_Post_Types::TAXONOMY_CATEGORY !== $taxonomy ) {
+            return;
+        }
+
+        $term = get_term( (int) $term_id, $taxonomy );
+
+        if ( $term instanceof WP_Term ) {
+            $this->before_edit[ (int) $term_id ] = array(
+                'parent' => (int) $term->parent,
+                'order'  => self::get_order( (int) $term_id ),
+            );
+        }
+    }
+
+    /**
+     * Append a category moved under another parent to its new siblings.
+     *
+     * Hooked to `edited_licensio_category`. Left alone when the parent did
+     * not change, or when the same save chose an order itself.
+     *
+     * @since 1.0.0
+     *
+     * @param int $term_id The edited category.
+     *
+     * @return void
+     */
+    public function place_moved_category( $term_id ) {
+        $term_id = (int) $term_id;
+
+        if ( ! isset( $this->before_edit[ $term_id ] ) ) {
+            return;
+        }
+
+        $before = $this->before_edit[ $term_id ];
+        $term   = get_term( $term_id, Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
+
+        unset( $this->before_edit[ $term_id ] );
+
+        if ( ! $term instanceof WP_Term || (int) $term->parent === $before['parent'] || self::get_order( $term_id ) !== $before['order'] ) {
+            return;
+        }
+
+        update_term_meta( $term_id, self::META_ORDER, self::next_order( (int) $term->parent, $term_id ) );
+    }
+
+    /**
+     * The order that puts a category after every sibling.
+     *
+     * @since 1.0.0
+     *
+     * @param int $parent_id The parent, 0 for the top level.
+     * @param int $term_id   The category being placed, left out of its siblings.
+     *
+     * @return int The highest sibling order plus one step.
+     */
+    public static function next_order( $parent_id, $term_id ) {
+        $siblings = get_terms(
+            array(
+                'taxonomy'               => Licensio_KB_Post_Types::TAXONOMY_CATEGORY,
+                'parent'                 => (int) $parent_id,
+                'hide_empty'             => false,
+                'fields'                 => 'ids',
+                'update_term_meta_cache' => true,
+            )
+        );
+        $highest  = 0;
+
+        foreach ( is_array( $siblings ) ? $siblings : array() as $sibling ) {
+            if ( (int) $sibling !== (int) $term_id ) {
+                $highest = max( $highest, self::get_order( (int) $sibling ) );
+            }
+        }
+
+        return $highest + self::ORDER_STEP;
     }
 
     /**

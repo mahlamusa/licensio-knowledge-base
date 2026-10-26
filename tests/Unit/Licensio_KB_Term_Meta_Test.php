@@ -503,4 +503,150 @@ class Licensio_KB_Term_Meta_Test extends Licensio_KB_Test_Case {
         $this->assertGreaterThan( 5, $priority, 'Taxonomies register on init at priority 5.' );
         $this->assertNotFalse( has_filter( 'get_terms_args', array( $term_meta, 'filter_terms_args' ) ) );
     }
+
+    /**
+     * Stub a category tree for the placement hooks: term ID to parent.
+     *
+     * @since 1.0.0
+     *
+     * @param array<int, int> $parents Term ID to parent ID.
+     *
+     * @return void
+     */
+    private function stub_tree( array &$parents ) {
+        Functions\when( 'get_term' )->alias(
+            function ( $term_id ) use ( &$parents ) {
+                return isset( $parents[ (int) $term_id ] ) ? new WP_Term(
+                    array(
+                        'term_id' => (int) $term_id,
+                        'parent'  => $parents[ (int) $term_id ],
+                    )
+                ) : null;
+            }
+        );
+        Functions\when( 'get_terms' )->alias(
+            function ( $args ) use ( &$parents ) {
+                $ids = array();
+
+                foreach ( $parents as $id => $parent ) {
+                    if ( $parent === $args['parent'] ) {
+                        $ids[] = $id;
+                    }
+                }
+
+                return $ids;
+            }
+        );
+        Functions\when( 'update_term_meta' )->alias(
+            function ( $term_id, $key, $value ) {
+                $this->meta[ $term_id . '|' . $key ] = $value;
+
+                return true;
+            }
+        );
+    }
+
+    /**
+     * A new category goes after its siblings; one given an order keeps it.
+     *
+     * Siblings without an order count as 0, so a new category also follows
+     * them, as the tree sorts unordered siblings first.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_new_category_is_placed_last_among_its_siblings() {
+        $parents = array(
+            1 => 0,
+            2 => 0,
+            3 => 1,
+            9 => 0,
+        );
+
+        $this->stub_tree( $parents );
+
+        $this->meta['1|licensio_order'] = '10';
+        $this->meta['2|licensio_order'] = '40';
+
+        $term_meta = new Licensio_KB_Term_Meta();
+
+        $term_meta->place_new_category( 9 );
+        $this->assertSame( 50, $this->meta['9|licensio_order'] );
+
+        // The only child of 1, with no ordered siblings.
+        $term_meta->place_new_category( 3 );
+        $this->assertSame( 10, $this->meta['3|licensio_order'] );
+
+        // An importer or the classic form already chose an order.
+        $parents[8]                     = 0;
+        $this->meta['8|licensio_order'] = '5';
+        $term_meta->place_new_category( 8 );
+        $this->assertSame( '5', $this->meta['8|licensio_order'] );
+    }
+
+    /**
+     * A category moved to another parent goes after its new siblings, unless the same save chose an order.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_moved_category_is_appended_to_its_new_siblings() {
+        $parents = array(
+            1 => 0,
+            2 => 0,
+            3 => 1,
+            4 => 2,
+        );
+
+        $this->stub_tree( $parents );
+
+        // Higher than its new siblings: its own order must not count.
+        $this->meta['3|licensio_order'] = '50';
+        $this->meta['4|licensio_order'] = '30';
+
+        $term_meta = new Licensio_KB_Term_Meta();
+
+        // 3 moves under 2, next to 4.
+        $term_meta->remember_place( 3, 'licensio_category' );
+        $parents[3] = 2;
+        $term_meta->place_moved_category( 3 );
+        $this->assertSame( 40, $this->meta['3|licensio_order'] );
+
+        // A rename leaves the order alone.
+        $term_meta->remember_place( 3, 'licensio_category' );
+        $term_meta->place_moved_category( 3 );
+        $this->assertSame( 40, $this->meta['3|licensio_order'] );
+
+        // A move that also sets an order keeps that order.
+        $term_meta->remember_place( 4, 'licensio_category' );
+        $parents[4]                     = 1;
+        $this->meta['4|licensio_order'] = '5';
+        $term_meta->place_moved_category( 4 );
+        $this->assertSame( '5', $this->meta['4|licensio_order'] );
+
+        // Another taxonomy is not tracked.
+        $term_meta->remember_place( 4, 'licensio_tag' );
+        $parents[4] = 0;
+        $term_meta->place_moved_category( 4 );
+        $this->assertSame( '5', $this->meta['4|licensio_order'] );
+    }
+
+    /**
+     * The placement hooks run after the classic term form saves its fields.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_placement_hooks_run_after_the_term_form() {
+        $term_meta = new Licensio_KB_Term_Meta();
+
+        $term_meta->init_hooks();
+
+        $this->assertSame( 20, has_action( 'created_licensio_category', array( $term_meta, 'place_new_category' ) ) );
+        $this->assertSame( 20, has_action( 'edited_licensio_category', array( $term_meta, 'place_moved_category' ) ) );
+        $this->assertNotFalse( has_action( 'edit_terms', array( $term_meta, 'remember_place' ) ) );
+    }
 }

@@ -751,6 +751,38 @@ class Licensio_KB_Blocks_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * Limited to one category, the FAQ follows that category's article order.
+     *
+     * Any other order the block is given, or no category at all, is left alone.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_faq_follows_the_category_order_when_limited_to_one_category() {
+        $this->stub_articles( array() );
+
+        $block = $this->render_callback( 'licensio-kb/faq' );
+
+        $block( array( 'category' => 'billing' ), '', null );
+        $this->assertSame( Licensio_KB_Article_Order::ORDERBY, $this->query_args['orderby'] );
+        $this->assertSame( 'ASC', $this->query_args['order'] );
+
+        $block(
+            array(
+                'category' => 'billing',
+                'orderBy'  => 'title',
+            ),
+            '',
+            null
+        );
+        $this->assertSame( 'title', $this->query_args['orderby'] );
+
+        $block( array(), '', null );
+        $this->assertSame( 'menu_order', $this->query_args['orderby'] );
+    }
+
+    /**
      * A hostile category name is escaped by the category grid.
      *
      * @since 1.0.0

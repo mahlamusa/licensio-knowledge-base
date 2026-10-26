@@ -115,16 +115,26 @@ class Licensio_KB_FAQ_Block extends Licensio_KB_Block {
     /**
      * The block's inner markup.
      *
-     * @since 1.0.0
+     * Limited to one category with the default order, the questions follow
+     * that category's article order, as the Categories app saves it; articles
+     * without a position follow, in their `menu_order`.
+     *
+     * @since 1.0.0 Follows the per-category article order when limited to one category.
      *
      * @param array<string, bool|int|string> $attributes The normalised attributes.
      *
      * @return string The markup.
      */
     public function content( array $attributes ) {
+        $orderby = (string) $attributes['orderBy'];
+
+        if ( '' !== (string) $attributes['category'] && 'menu_order' === $orderby ) {
+            $orderby = Licensio_KB_Article_Order::ORDERBY;
+        }
+
         $posts = $this->query_articles(
             (string) $attributes['category'],
-            (string) $attributes['orderBy'],
+            $orderby,
             (string) $attributes['order'],
             (int) $attributes['count']
         );
