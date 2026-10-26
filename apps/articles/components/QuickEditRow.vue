@@ -52,7 +52,8 @@ function initial( item: ArticleItem ) {
 	}
 
 	return {
-		title: item.title,
+		// The stored title, not the decoded one: decoding would turn a stored `&lt;` into markup on save.
+		title: item.title_raw,
 		slug: item.slug,
 		status: ( 'private' === item.status
 			? 'publish'

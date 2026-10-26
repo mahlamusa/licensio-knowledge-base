@@ -26,7 +26,9 @@
  * whatever its size.
  *
  * Term names and titles are returned as plain text: core stores `&` as
- * `&amp;`, and the app renders text, never HTML.
+ * `&amp;`, and the app renders text, never HTML. The title is also returned
+ * as stored, in `title_raw`, for Quick edit to edit: editing the decoded text
+ * would turn a stored `&lt;` into a real `<` on the next save.
  *
  * @package Licensio_KB
  * @since   1.0.0
@@ -964,6 +966,10 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
     /**
      * One list item.
      *
+     * `title` is the title as plain text, for display. `title_raw` is the
+     * title as stored, for editing, so a save that leaves it alone writes
+     * back the same bytes and never decodes `&lt;` into markup.
+     *
      * @since 1.0.0
      *
      * @param WP_Post              $post        The article.
@@ -981,6 +987,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
         return array(
             'id'              => $id,
             'title'           => self::plain_text( $post->post_title ),
+            'title_raw'       => (string) $post->post_title,
             'slug'            => (string) $post->post_name,
             'status'          => (string) $post->post_status,
             'date'            => self::iso_local( $post->post_date ),

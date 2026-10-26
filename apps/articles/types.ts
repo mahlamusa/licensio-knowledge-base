@@ -64,7 +64,10 @@ export interface ArticleLock {
  */
 export interface ArticleItem {
 	id: number;
+	/** Plain text, entities decoded, for display. */
 	title: string;
+	/** As stored, for Quick edit, so an unchanged title saves the same bytes. */
+	title_raw: string;
 	slug: string;
 	status: ArticleStatus;
 	/** Site-local `YYYY-MM-DDTHH:mm:ss`. */
