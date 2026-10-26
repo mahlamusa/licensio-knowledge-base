@@ -45,7 +45,14 @@ class Licensio_KB_Admin_Page {
      * would leave it on the page next to the one the application draws, and
      * the screen would carry its own name twice.
      *
+     * The `wp-header-end` marker sits before the mount element. WordPress
+     * moves admin notices to just after that marker, and without one it moves
+     * them after the first `.wrap h1`, which once the application has mounted
+     * is inside the application's own header. With the marker the notices
+     * stay above the application, outside the element it manages.
+     *
      * @since 1.0.0
+     * @since 1.0.0 Prints the `wp-header-end` marker before the mount element.
      *
      * @param string $title        Screen heading, already translated.
      * @param string $mount_id     DOM id the application mounts on.
@@ -56,7 +63,7 @@ class Licensio_KB_Admin_Page {
      */
     public static function shell( $title, $mount_id, $loading_text, $mount_class = '' ) {
         printf(
-            '<div class="wrap lkb-wrap"><div id="%2$s" class="lkb-page %3$s"><div class="lkb-page__boot"><h1 class="lkb-page__title">%1$s</h1><p class="lkb-page__loading">%4$s</p></div></div></div>',
+            '<div class="wrap lkb-wrap"><hr class="wp-header-end"><div id="%2$s" class="lkb-page %3$s"><div class="lkb-page__boot"><h1 class="lkb-page__title">%1$s</h1><p class="lkb-page__loading">%4$s</p></div></div></div>',
             esc_html( $title ),
             esc_attr( $mount_id ),
             esc_attr( $mount_class ),

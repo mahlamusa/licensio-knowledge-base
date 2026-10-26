@@ -227,6 +227,7 @@ final class Licensio_KB {
      * Wire the plugin together.
      *
      * @since 1.0.0
+     * @since 1.0.0 Hooks the notice for a missing admin app build.
      *
      * @return void
      */
@@ -345,6 +346,9 @@ final class Licensio_KB {
 
             $duplicates_admin = new Licensio_KB_Duplicates_Admin();
             $duplicates_admin->init_hooks();
+
+            $build_notice = new Licensio_KB_Build_Notice( $this->assets );
+            $build_notice->init_hooks();
         }
 
         add_action( 'init', array( $this, 'load_textdomain' ) );

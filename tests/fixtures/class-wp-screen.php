@@ -28,6 +28,14 @@ if ( ! class_exists( 'WP_Screen' ) ) {
         public $id = '';
 
         /**
+         * The screen base, such as `edit` or `edit-tags`.
+         *
+         * @since 1.0.0
+         * @var string
+         */
+        public $base = '';
+
+        /**
          * The taxonomy the screen is editing, if any.
          *
          * @since 1.0.0
