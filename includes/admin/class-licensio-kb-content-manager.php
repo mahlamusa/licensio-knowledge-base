@@ -644,10 +644,12 @@ class Licensio_KB_Content_Manager {
      * app offers the same Undo: the articles still in the trash that the user
      * may restore get a single-use undo snapshot of the status each had, and
      * the app URL carries its token as `undo` and the count as `undo_count`.
+     * Loading the same redirect again overwrites that snapshot; once undone,
+     * the articles are out of the trash and nothing is stored.
      * Not `trashed`: core lists that among the removable query arguments and
      * takes it out of the address before the app can read it.
      *
-     * @since 1.0.0 Carries the block editor's trash over as an Undo.
+     * @since 1.0.0 Carries the block editor's trash over as an Undo, one snapshot per user and articles.
      *
      * @param array<string, mixed> $query The request's query arguments, unslashed.
      *
@@ -712,7 +714,7 @@ class Licensio_KB_Content_Manager {
 
         if ( '' !== self::arg( $query, 'trashed' ) ) {
             $previous = self::trashed_snapshot( self::arg( $query, 'ids' ) );
-            $token    = Licensio_KB_Article_Bulk::store_snapshot( $previous );
+            $token    = Licensio_KB_Article_Bulk::store_snapshot( $previous, self::trashed_token( array_keys( $previous ) ) );
 
             if ( '' !== $token ) {
                 $args['undo_count'] = count( $previous );
@@ -721,6 +723,28 @@ class Licensio_KB_Content_Manager {
         }
 
         return self::page_url( self::ARTICLES_SLUG, $args );
+    }
+
+    /**
+     * The undo token for a block editor trash, the same for the same user and articles.
+     *
+     * Every load of the redirect stores the snapshot again, so a fixed key
+     * means a reload or a replayed link overwrites one snapshot rather than
+     * adding another. Keyed with a site secret, so it cannot be worked out
+     * from the IDs, and it is still bound to the user when claimed.
+     *
+     * @since 1.0.0
+     *
+     * @param int[] $ids The trashed article IDs.
+     *
+     * @return string The token, `Licensio_KB_Article_Bulk::TOKEN_LENGTH` hexadecimal digits.
+     */
+    private static function trashed_token( array $ids ) {
+        $ids = array_map( 'intval', $ids );
+
+        sort( $ids );
+
+        return substr( hash_hmac( 'sha256', get_current_user_id() . '|' . implode( ',', $ids ), wp_salt( 'auth' ) ), 0, Licensio_KB_Article_Bulk::TOKEN_LENGTH );
     }
 
     /**

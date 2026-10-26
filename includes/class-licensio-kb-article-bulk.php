@@ -368,18 +368,19 @@ class Licensio_KB_Article_Bulk {
     /**
      * Keep a snapshot on the server for the current user.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Accepts the token to store it under.
      *
      * @param array<int, array<string, mixed>> $previous Article ID to what it was before.
+     * @param string                           $token    The token to store it under, `TOKEN_LENGTH` letters and digits. A random one when empty.
      *
      * @return string The token that undoes it, or an empty string when there is nothing to keep.
      */
-    public static function store_snapshot( array $previous ) {
+    public static function store_snapshot( array $previous, $token = '' ) {
         if ( empty( $previous ) ) {
             return '';
         }
 
-        $token = wp_generate_password( self::TOKEN_LENGTH, false, false );
+        $token = '' !== (string) $token ? (string) $token : wp_generate_password( self::TOKEN_LENGTH, false, false );
 
         set_transient(
             self::SNAPSHOT_PREFIX . $token,
