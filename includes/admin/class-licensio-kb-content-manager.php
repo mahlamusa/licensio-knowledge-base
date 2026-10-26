@@ -220,7 +220,7 @@ class Licensio_KB_Content_Manager {
      * Vite dev server serves them.
      *
      * @since 1.0.0
-     * @since 1.0.0 Asks the asset loader which apps are missing.
+     * @since 1.0.0 Asks the asset loader whether the apps can load.
      *
      * @return bool True when the apps can load, or when no asset loader was given.
      */
@@ -229,7 +229,7 @@ class Licensio_KB_Content_Manager {
             return true;
         }
 
-        return array() === $this->assets->missing_apps( array( Licensio_KB_Articles_Admin::APP_ENTRY, Licensio_KB_Categories_Admin::APP_ENTRY, Licensio_KB_Tags_Admin::APP_ENTRY ) );
+        return $this->assets->apps_can_load( array( Licensio_KB_Articles_Admin::APP_ENTRY, Licensio_KB_Categories_Admin::APP_ENTRY, Licensio_KB_Tags_Admin::APP_ENTRY ) );
     }
 
     /**

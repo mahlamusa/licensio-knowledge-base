@@ -132,7 +132,7 @@ class Licensio_KB_Build_Notice {
             return;
         }
 
-        if ( array() === $this->assets->missing_apps( self::app_entries() ) ) {
+        if ( $this->assets->apps_can_load( self::app_entries() ) ) {
             return;
         }
 

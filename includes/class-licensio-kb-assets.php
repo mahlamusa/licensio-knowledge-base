@@ -277,34 +277,28 @@ class Licensio_KB_Assets {
     }
 
     /**
-     * The admin app entries that cannot load.
+     * Whether the given admin apps can load.
      *
-     * An entry cannot load when the build manifest has no file for it and the
-     * Vite dev server is not serving the apps. The dev server is only probed
+     * An app can load when the build manifest has a file for its entry, or
+     * when the Vite dev server serves the apps. The dev server is only probed
      * once an entry is found missing, so a built install never opens a socket.
      *
      * @since 1.0.0
      *
      * @param string[] $entries Source paths relative to the plugin root.
      *
-     * @return string[] The entries that cannot load; empty when all of them can.
+     * @return bool True when every app can load.
      */
-    public function missing_apps( array $entries ) {
-        $missing = array();
-
+    public function apps_can_load( array $entries ) {
         foreach ( $entries as $entry ) {
             $chunk = $this->manifest_entry( $entry );
 
             if ( empty( $chunk['file'] ) ) {
-                $missing[] = (string) $entry;
+                return $this->is_hmr_enabled();
             }
         }
 
-        if ( $missing && $this->is_hmr_enabled() ) {
-            return array();
-        }
-
-        return $missing;
+        return true;
     }
 
     /**
