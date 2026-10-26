@@ -233,8 +233,13 @@ test.describe( 'Articles app', () => {
 			await field.fill( stored + ' edited' );
 			await form.getByRole( 'button', { name: /Save/ } ).click();
 			await expect(
-				app.locator( '.ant-table-expanded-row' )
-			).toHaveCount( 0 );
+				row,
+				'The saved title is shown as text.'
+			).toContainText( `Entities <b>${ stamp }</b> & more edited` );
+			await expect(
+				field,
+				'The form keeps the stored title after the save.'
+			).toHaveValue( stored + ' edited' );
 
 			const raw = await page.evaluate( async ( postId ) => {
 				const config = (
