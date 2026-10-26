@@ -6,7 +6,13 @@
  * and checks that neither the page, nor the app's main region, nor a table
  * inside it scrolls sideways. On a wide monitor the screen stays a centred column with space
  * either side rather than running to the window edges. At phone width the
- * page itself must not scroll sideways; a wide table may scroll inside itself.
+ * page itself must not scroll sideways; a wide table may scroll inside itself,
+ * and a tag slug still reads as one word rather than breaking letter by letter.
+ *
+ * When wp-cli is available (`LICENSIO_KB_WP_CLI`), a long-titled article and
+ * a long tag name are added for the run and removed after it, and the admin
+ * user's article columns are reset to the defaults, so the wrapping is
+ * checked with long content and the default columns.
  *
  * The suite needs a running WordPress with this plugin active and an
  * administrator account, so it is skipped unless `LICENSIO_KB_E2E=1` and the
@@ -19,13 +25,20 @@ import { expect, test, type Page } from '@playwright/test';
 import { contentManagerUrl } from './helpers/content-manager';
 import { foldAdminMenu, measureFrame } from './helpers/layout';
 import { logIn, password, user } from './helpers/session';
+import { wpCli, wpEval } from './helpers/wp-cli';
 
 const enabled = process.env.LICENSIO_KB_E2E === '1';
 
 const SUBMENU = '/wp-admin/edit.php?post_type=licensio_article&page=';
 
 /** The desktop widths every screen must fit. */
-const DESKTOP_WIDTHS = [ 1280, 1440, 1920 ];
+const DESKTOP_WIDTHS = [ 1024, 1280, 1440, 1920 ];
+
+/** Makes this run's tag slug unique, kept short so it fits a narrow column. */
+const suffix = Date.now().toString( 36 );
+
+/** A tag whose slug has no hyphen, so it never needs to break. */
+const SHORT_SLUG = `slugcheck${ suffix }`;
 
 /** One screen to check, and how to reach it once its URL has loaded. */
 interface Screen {
@@ -122,8 +135,68 @@ test.describe( 'App width', () => {
 		'Set LICENSIO_KB_E2E=1 and the admin credentials to run.'
 	);
 
+	/** What the seeding made, removed again after the run. */
+	let seeded = '';
+
+	test.beforeAll( () => {
+		if ( ! wpCli ) {
+			return;
+		}
+
+		seeded = wpEval( `
+			$admin = get_user_by( 'login', '${ user }' );
+			$prefs = $admin ? get_user_meta( $admin->ID, 'licensio_kb_article_list_prefs', true ) : '';
+			if ( $admin ) {
+				delete_user_meta( $admin->ID, 'licensio_kb_article_list_prefs' );
+			}
+			$long  = term_exists( 'A very long tag name to check that tags wrap', 'licensio_tag' ) ?: wp_insert_term( 'A very long tag name to check that tags wrap', 'licensio_tag' );
+			$short = wp_insert_term( '${ SHORT_SLUG }', 'licensio_tag' );
+			$post  = wp_insert_post( array( 'post_type' => 'licensio_article', 'post_status' => 'publish', 'post_title' => 'How to configure automatic license key renewal and handle expired subscriptions across multisite networks', 'post_author' => $admin ? $admin->ID : 0 ) );
+			wp_set_object_terms( $post, array( (int) $long['term_id'] ), 'licensio_tag' );
+			echo wp_json_encode( array( 'admin' => $admin ? $admin->ID : 0, 'prefs' => $prefs, 'terms' => array( (int) $long['term_id'], (int) $short['term_id'] ), 'post' => $post ) );
+		` );
+	} );
+
+	test.afterAll( () => {
+		if ( ! seeded ) {
+			return;
+		}
+
+		wpEval( `
+			$seeded = json_decode( '${ seeded }', true );
+			wp_delete_post( $seeded['post'], true );
+			foreach ( $seeded['terms'] as $term ) {
+				wp_delete_term( $term, 'licensio_tag' );
+			}
+			if ( $seeded['admin'] && $seeded['prefs'] ) {
+				update_user_meta( $seeded['admin'], 'licensio_kb_article_list_prefs', $seeded['prefs'] );
+			}
+		` );
+	} );
+
 	test.beforeEach( async ( { page } ) => {
 		await logIn( page );
+	} );
+
+	test( 'a short tag slug stays on one line on a phone', async ( {
+		page,
+	} ) => {
+		test.skip( ! seeded, 'Set LICENSIO_KB_WP_CLI to run.' );
+
+		await page.setViewportSize( { width: 390, height: 844 } );
+		await page.goto( contentManagerUrl( 'tags' ) );
+		await page.getByLabel( 'Search tags' ).fill( SHORT_SLUG );
+		await page.getByLabel( 'Search tags' ).press( 'Enter' );
+
+		const slug = page
+			.locator( '.ant-table-row', { hasText: SHORT_SLUG } )
+			.locator( '.lkb-tags__slug' );
+
+		await expect( slug ).toHaveText( SHORT_SLUG );
+		expect(
+			await slug.evaluate( ( el ) => el.getClientRects().length ),
+			'lines the slug takes'
+		).toBe( 1 );
 	} );
 
 	for ( const screen of SCREENS ) {

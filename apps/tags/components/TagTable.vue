@@ -360,7 +360,7 @@ watch(
 						v-model:value="draft.slug"
 						:aria-label="__( 'Slug', 'licensio-knowledge-base' )"
 					/>
-					<code v-else>{{ record.slug }}</code>
+					<code v-else class="lkb-tags__slug">{{ record.slug }}</code>
 				</template>
 
 				<template v-else-if="'description' === column.key">
@@ -438,6 +438,16 @@ watch(
 	border-radius: var( --lkb-radius );
 	background: var( --lkb-surface );
 	box-shadow: var( --lkb-shadow-sm );
+}
+
+/*
+ * Ant lets cell text break anywhere, which on a phone splits a slug letter by
+ * letter. Slugs break only at their hyphens, and the table scrolls inside
+ * itself when they do not fit.
+ */
+.lkb-tags__slug {
+	overflow-wrap: normal;
+	word-break: normal;
 }
 
 .lkb-tags__description {
