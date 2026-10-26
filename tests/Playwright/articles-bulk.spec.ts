@@ -24,7 +24,11 @@
  */
 
 import { expect, test, type Page, type Request } from '@playwright/test';
-import { answerConfirm, contentManagerUrl } from './helpers/content-manager';
+import {
+	answerConfirm,
+	confirmDialog,
+	contentManagerUrl,
+} from './helpers/content-manager';
 import { failOnUnresolvedComponents } from './helpers/ant-components';
 import { logIn, password, user } from './helpers/session';
 import { wpCli, wpEval } from './helpers/wp-cli';
@@ -268,7 +272,14 @@ test.describe( 'Articles bulk actions', () => {
 		const second = trashOf( keys[ 1 ] );
 
 		await trashOf( keys[ 0 ] ).click();
-		await answerConfirm( page, 'confirm' );
+
+		// The dialog waits for the request, with its confirm button spinning.
+		const ok = confirmDialog( page ).getByRole( 'button', {
+			name: 'Move to trash',
+		} );
+
+		await ok.click();
+		await expect( ok ).toHaveClass( /ant-btn-loading/ );
 		await expect(
 			second,
 			'Another row action cannot start while the first runs.'
@@ -283,6 +294,7 @@ test.describe( 'Articles bulk actions', () => {
 		const toast = page.locator( '.ant-notification-notice' ).last();
 
 		await expect( toast ).toContainText( '1 article moved to the trash.' );
+		await expect( confirmDialog( page ) ).toBeHidden();
 		await expect( second ).toBeEnabled();
 		await expect( quickEditOf( keys[ 1 ] ) ).toBeEnabled();
 		expect( bulk ).toHaveLength( 1 );

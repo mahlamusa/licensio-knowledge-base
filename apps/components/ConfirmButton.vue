@@ -349,6 +349,7 @@ onBeforeUnmount( keepFocusOnPage );
 		:mask-closable="false"
 		:keyboard="! busy"
 		:focus-trigger-after-close="false"
+		destroy-on-close
 		:z-index="Z_INDEX"
 		:width="420"
 		:transition-name="reducedMotion ? '' : undefined"

@@ -613,9 +613,16 @@ test( 'a failed merge or convert shows its error inside the dialog', async ( {
 		await route.fallback();
 	} );
 	await merge.getByRole( 'button', { name: 'Merge' } ).click();
-	await answerConfirm( page, 'confirm' );
+
+	// The confirmation waits for the answer, then closes; the merge dialog
+	// shows the error.
+	const ok = confirmDialog( page ).getByRole( 'button', { name: 'Merge' } );
+
+	await ok.click();
+	await expect( ok ).toHaveClass( /ant-btn-loading/ );
 	await expect( merge.locator( '.ant-alert-error' ) ).toHaveCount( 0 );
 	release();
+	await expect( confirmDialog( page ) ).toBeHidden();
 	await expect( merge.locator( '.ant-alert-error' ) ).toContainText(
 		'Server exploded.'
 	);
