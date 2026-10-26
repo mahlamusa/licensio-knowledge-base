@@ -304,7 +304,9 @@ class Licensio_KB_Term_Meta {
      *
      * Takes SVG markup, or a Base64 SVG `data:` URL, which is decoded first.
      * Either way the markup goes through Licensio_KB_SVG_Sanitizer, so a
-     * Base64 SVG is never a way around it.
+     * Base64 SVG is never a way around it. A `data:` URL longer than twice
+     * the Base64 of the sanitiser's size cap is refused before it is decoded,
+     * since REST arguments are sanitised before the permission check runs.
      *
      * @since 1.0.0
      *
@@ -321,6 +323,11 @@ class Licensio_KB_Term_Meta {
 
         // Text that is not Base64 decodes to an empty string, and the sanitiser applies the size cap.
         if ( 1 === preg_match( '#^data:image/svg\+xml;base64,#i', $value ) ) {
+            // A loose cap on the encoded text first, as for raster icons, so a huge value is never decoded.
+            if ( strlen( $value ) > 2 * ( 64 + (int) ceil( Licensio_KB_SVG_Sanitizer::MAX_LENGTH / 3 ) * 4 ) ) {
+                return '';
+            }
+
             $value = self::decode_base64( substr( $value, strpos( $value, ',' ) + 1 ) );
         }
 

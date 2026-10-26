@@ -1369,6 +1369,10 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
         $this->assert_error( 'licensio_kb_invalid_icon', 400, Licensio_KB_Categories_REST_Controller::sanitize_icon_svg_arg( $png ) );
         $this->assert_error( 'licensio_kb_invalid_icon', 400, Licensio_KB_Categories_REST_Controller::sanitize_icon_svg_arg( array( $svg ) ) );
         $this->assertSame( '', Licensio_KB_Categories_REST_Controller::sanitize_icon_svg_arg( '' ), 'Empty clears the icon.' );
+
+        $padded = substr( $svg, 0, 30 ) . str_repeat( "\n", 200000 ) . substr( $svg, 30 );
+
+        $this->assert_error( 'licensio_kb_invalid_icon', 400, Licensio_KB_Categories_REST_Controller::sanitize_icon_svg_arg( $padded ) );
     }
 
     /**
