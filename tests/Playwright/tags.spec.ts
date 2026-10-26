@@ -11,7 +11,8 @@
  * once a bulk delete takes the Delete button away. Edit loads a tag into the
  * left form as Edit Tag; Update, Cancel and Escape return it to Add New Tag,
  * and Escape closes a Quick edit, sending nothing. Quick edit tabs through
- * its fields before Save and Cancel. Unsaved changes in the
+ * its fields before Save and Cancel, and the pager keeps focus on its first
+ * and last page. Unsaved changes in the
  * form are only dropped once confirmed, a deleted tag leaves the form, and
  * `?term=` loads a tag into it. The form and the list sit
  * side by side on a desktop and stack, form first, on a phone. The category
@@ -439,6 +440,51 @@ async function deleteListed( page: Page ): Promise< void > {
 	await answerConfirm( page, 'confirm' );
 	await expect( page.locator( '.ant-table-row' ) ).toHaveCount( 0 );
 }
+
+test( 'the pager keeps focus when the page it moved to disables the pressed control', async ( {
+	page,
+} ) => {
+	test.skip( ! wpCli, 'Set LICENSIO_KB_WP_CLI to run.' );
+
+	// One more than a page of 20, so the second page is the last.
+	const word = `Pager${ suffix }`;
+	const ids = wpEval( `
+		$ids = array();
+		for ( $i = 1; $i <= 21; $i++ ) {
+			$term = wp_insert_term( '${ word } ' . $i, 'licensio_tag' );
+			$ids[] = $term['term_id'];
+		}
+		echo implode( ',', $ids );
+	` );
+
+	try {
+		await logIn( page );
+		await openContentManager( page, 'tags' );
+		await search( page, word );
+
+		const current = page.locator( '.ant-pagination-item-active' );
+
+		await expect( page.locator( '.ant-table-row' ) ).toHaveCount( 20 );
+
+		await page.locator( '.ant-pagination-next' ).focus();
+		await page.keyboard.press( 'Enter' );
+		await expect( page.locator( '.ant-table-row' ) ).toHaveCount( 1 );
+		await expect( current ).toHaveText( '2' );
+		await expect( current ).toBeFocused();
+
+		await page.locator( '.ant-pagination-prev' ).focus();
+		await page.keyboard.press( 'Enter' );
+		await expect( page.locator( '.ant-table-row' ) ).toHaveCount( 20 );
+		await expect( current ).toHaveText( '1' );
+		await expect( current ).toBeFocused();
+	} finally {
+		wpEval( `
+			foreach ( array( ${ ids } ) as $id ) {
+				wp_delete_term( $id, 'licensio_tag' );
+			}
+		` );
+	}
+} );
 
 test( 'a description shows as plain text and is edited as stored', async ( {
 	page,

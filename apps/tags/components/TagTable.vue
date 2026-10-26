@@ -40,6 +40,7 @@
 import { computed, nextTick, reactive, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import { __, sprintf } from '../../components/i18n';
+import { changePageKeepingFocus } from '../../components/pager-focus';
 import { settings } from '../api';
 import { useTagsStore } from '../store';
 import type { TagFields, TagItem, TagOrder, TagOrderBy } from '../types';
@@ -60,6 +61,7 @@ const emit = defineEmits< {
 const store = useTagsStore();
 const { articlesUrl } = settings();
 
+const root = ref< HTMLElement | null >( null );
 const editingId = ref< number | null >( null );
 const draft = reactive( { name: '', slug: '', description: '' } );
 
@@ -164,6 +166,8 @@ const columns = computed( () => [
 /**
  * Pass a page or sort change to the store.
  *
+ * A page change made from the pager keeps focus in the pager.
+ *
  * @since 1.0.0
  *
  * @param {Object}  pagination           The table's pagination.
@@ -185,7 +189,9 @@ function onChange(
 	const orderby: TagOrderBy = 'count' === sort?.columnKey ? 'count' : 'name';
 	const order: TagOrder = 'descend' === sort?.order ? 'desc' : 'asc';
 
-	store.view( pagination.current ?? 1, orderby, order );
+	changePageKeepingFocus( root.value, () =>
+		store.view( pagination.current ?? 1, orderby, order )
+	);
 }
 
 /**
@@ -370,7 +376,11 @@ watch(
 </script>
 
 <template>
-	<div class="lkb-tablecard lkb-tablecard--core" @keydown.esc="cancelEdit">
+	<div
+		ref="root"
+		class="lkb-tablecard lkb-tablecard--core"
+		@keydown.esc="cancelEdit"
+	>
 		<a-table
 			row-key="id"
 			:columns="columns"

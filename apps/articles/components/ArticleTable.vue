@@ -18,6 +18,7 @@
 import { computed, nextTick, ref } from 'vue';
 import { LockOutlined } from '@ant-design/icons-vue';
 import ConfirmButton from '../../components/ConfirmButton.vue';
+import { changePageKeepingFocus } from '../../components/pager-focus';
 import { __, sprintf } from '../../components/i18n';
 import { statusLabel } from '../../components/status';
 import { config } from '../api';
@@ -158,45 +159,10 @@ function onChange(
 	}
 
 	if ( pagination.current && pagination.current !== store.query.page ) {
-		const pager = root.value?.querySelector( '.ant-pagination' );
-		// The pager lives in this table; there is no other node to ask for its document.
-		// eslint-disable-next-line @wordpress/no-global-active-element
-		const fromPager = !! pager?.contains( document.activeElement );
+		const current = pagination.current;
 
-		store.setPage( pagination.current );
-
-		if ( fromPager ) {
-			nextTick( keepPagerFocus );
-		}
+		changePageKeepingFocus( root.value, () => store.setPage( current ) );
 	}
-}
-
-/**
- * Keep focus in the pager after a page change made from it.
- *
- * Next page is disabled on the last page and Previous page on the first,
- * and focus on a disabled one falls back to the page. It moves to the
- * current page instead.
- *
- * @since 1.0.0
- *
- * @return {void}
- */
-function keepPagerFocus(): void {
-	const pager = root.value?.querySelector( '.ant-pagination' );
-	// eslint-disable-next-line @wordpress/no-global-active-element
-	const active = document.activeElement;
-
-	if (
-		pager?.contains( active ) &&
-		! active?.closest( '[aria-disabled="true"]' )
-	) {
-		return;
-	}
-
-	pager
-		?.querySelector< HTMLElement >( '.ant-pagination-item-active' )
-		?.focus();
 }
 
 /**
