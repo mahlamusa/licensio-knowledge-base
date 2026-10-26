@@ -13,6 +13,7 @@
  *
  * @package Licensio_KB
  * @since   1.0.0
+ * @since   1.0.0 The view shortcode renders the single article body too.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -21,6 +22,7 @@ defined( 'ABSPATH' ) || exit;
  * Loads, styles and feeds the classic knowledge base templates.
  *
  * @since 1.0.0
+ * @since 1.0.0 Serves the single article body to block templates.
  */
 class Licensio_KB_Templates {
 
@@ -153,6 +155,7 @@ class Licensio_KB_Templates {
      * stylesheet, no second design to drift.
      *
      * @since 1.0.0
+     * @since 1.0.0 Renders the single article body as well.
      *
      * @param array<string, mixed>|string $atts The shortcode attributes.
      *
