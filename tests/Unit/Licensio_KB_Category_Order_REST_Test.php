@@ -385,6 +385,43 @@ class Licensio_KB_Category_Order_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * A save whose write is rolled back answers the error, not the order.
+     *
+     * 501 articles take two batches; the second INSERT fails.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_rolled_back_save_answers_an_error() {
+        $this->stub_category( 5 );
+
+        $ids = range( 1, 501 );
+
+        $GLOBALS['wpdb'] = new Licensio_KB_Order_WPDB( // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+            function () {
+                return array();
+            },
+            function () {}
+        );
+
+        $GLOBALS['wpdb']->failing_insert = 2;
+
+        Functions\when( 'get_posts' )->justReturn( $ids );
+        Functions\when( 'current_user_can' )->justReturn( true );
+        Functions\expect( 'wp_cache_delete_multiple' )->never();
+        Functions\expect( 'wp_cache_set_posts_last_changed' )->never();
+
+        $result = ( new Licensio_KB_Category_Order_REST_Controller() )->update_order( $this->request( 5, $ids ) );
+
+        $this->assertInstanceOf( 'WP_Error', $result );
+        $this->assertSame( 'licensio_kb_order_not_saved', $result->get_error_code() );
+        $this->assertSame( 500, $result->get_error_data()['status'] );
+        $this->assertSame( 'ROLLBACK', end( $GLOBALS['wpdb']->queries ) );
+        $this->assertNotContains( 'COMMIT', $GLOBALS['wpdb']->queries );
+    }
+
+    /**
      * An empty list skips the article checks and closes the gaps in the existing positions.
      *
      * Nothing is listed first, so the positioned articles are renumbered

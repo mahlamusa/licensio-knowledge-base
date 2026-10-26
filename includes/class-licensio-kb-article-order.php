@@ -461,14 +461,15 @@ class Licensio_KB_Article_Order {
      * Only the positions that change are written, in batches: their old rows
      * are deleted and the new ones inserted in one transaction, rather than
      * one `update_post_meta()` per article, which took seconds on a category
-     * with thousands of articles.
+     * with thousands of articles. If a statement fails, the transaction is
+     * rolled back, the previous order stays whole and an error is returned.
      *
      * @since 1.0.0
      *
      * @param int   $term_id The category term ID.
      * @param int[] $ids     The article IDs, first first.
      *
-     * @return int[] The listed article IDs as saved.
+     * @return int[]|WP_Error The listed article IDs as saved, or a 500 error when the write was rolled back.
      */
     public static function save( $term_id, array $ids ) {
         $key      = self::meta_key( $term_id );
@@ -498,7 +499,13 @@ class Licensio_KB_Article_Order {
             }
         }
 
-        self::write_positions( $key, $changed, true );
+        if ( ! self::write_positions( $key, $changed, true ) ) {
+            return new WP_Error(
+                'licensio_kb_order_not_saved',
+                __( 'The order could not be saved. Try again.', 'licensio-knowledge-base' ),
+                array( 'status' => 500 )
+            );
+        }
 
         return $ids;
     }
@@ -517,6 +524,11 @@ class Licensio_KB_Article_Order {
      * The new positions are written in batched INSERTs, since none of those
      * articles holds the target key yet: one `update_post_meta()` per
      * article took seconds on a category with thousands of articles.
+     *
+     * A failed write is not reported: the merge has already moved the
+     * assignments when this hook fires and does not undo or report anything
+     * that fails after it, and the articles it misses simply fall to the
+     * unordered end of the target, where they can be ordered again.
      *
      * @since 1.0.0
      *
@@ -577,14 +589,16 @@ class Licensio_KB_Article_Order {
      * @param array<int, int> $positions Article ID to position.
      * @param bool            $replace   Whether the articles may already hold the key.
      *
-     * @return void
+     * @return bool True when every statement succeeded (or there was nothing to write), false when one failed; with `$replace` that means the transaction was rolled back.
      */
     private static function write_positions( $key, array $positions, $replace ) {
         global $wpdb;
 
         if ( empty( $positions ) ) {
-            return;
+            return true;
         }
+
+        $all_written = true;
 
         if ( $replace ) {
             $wpdb->query( 'START TRANSACTION' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -625,8 +639,10 @@ class Licensio_KB_Article_Order {
             if ( $replace && ! $written ) {
                 $wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
-                return;
+                return false;
             }
+
+            $all_written = $all_written && $written;
         }
 
         if ( $replace ) {
@@ -635,6 +651,8 @@ class Licensio_KB_Article_Order {
 
         wp_cache_delete_multiple( array_keys( $positions ), 'post_meta' );
         wp_cache_set_posts_last_changed();
+
+        return $all_written;
     }
 
     /**

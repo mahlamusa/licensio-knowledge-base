@@ -38,6 +38,22 @@ class Licensio_KB_Order_WPDB extends Licensio_KB_Test_WPDB {
     public $position_reads = array();
 
     /**
+     * The post meta INSERT that fails, counted from 1; 0 for none.
+     *
+     * @since 1.0.0
+     * @var int
+     */
+    public $failing_insert = 0;
+
+    /**
+     * The post meta INSERTs run so far.
+     *
+     * @since 1.0.0
+     * @var int
+     */
+    private $meta_inserts = 0;
+
+    /**
      * Build the double.
      *
      * @since 1.0.0
@@ -53,11 +69,14 @@ class Licensio_KB_Order_WPDB extends Licensio_KB_Test_WPDB {
     /**
      * Run a statement, storing the rows of a post meta INSERT.
      *
+     * The INSERT counted by `$failing_insert` stores nothing and fails, as a
+     * statement the server rejects would.
+     *
      * @since 1.0.0
      *
      * @param string $query The statement.
      *
-     * @return int|false The rows inserted, or what the parent double answers.
+     * @return int|false The rows inserted, false for the failing INSERT, or what the parent double answers.
      */
     public function query( $query ) {
         if ( null === $this->write || 0 !== strpos( (string) $query, 'INSERT INTO `' . $this->postmeta . '`' ) ) {
@@ -65,6 +84,12 @@ class Licensio_KB_Order_WPDB extends Licensio_KB_Test_WPDB {
         }
 
         $this->queries[] = (string) $query;
+
+        ++$this->meta_inserts;
+
+        if ( $this->meta_inserts === $this->failing_insert ) {
+            return false;
+        }
 
         preg_match_all( "/\\( (\\d+), '([^']*)', '([^']*)' \\)/", (string) $query, $rows, PREG_SET_ORDER );
 

@@ -615,6 +615,62 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * A save above one batch writes two batches in one transaction and commits once.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_save_above_one_batch_writes_two_batches_and_commits_once() {
+        $ids = range( 1, 501 );
+
+        $this->assertSame( $ids, Licensio_KB_Article_Order::save( 7, $ids ) );
+
+        $queries = $GLOBALS['wpdb']->queries;
+
+        $this->assertCount( 6, $queries );
+        $this->assertSame( 'START TRANSACTION', $queries[0] );
+        $this->assertStringStartsWith( 'DELETE FROM', $queries[1] );
+        $this->assertStringStartsWith( 'INSERT INTO', $queries[2] );
+        $this->assertSame( 500, substr_count( $queries[2], "'licensio_order_7'" ) );
+        $this->assertSame( "DELETE FROM `wptests_postmeta` WHERE meta_key = 'licensio_order_7' AND post_id IN ( 501 )", $queries[3] );
+        $this->assertSame( "INSERT INTO `wptests_postmeta` ( post_id, meta_key, meta_value ) VALUES ( 501, 'licensio_order_7', '5010' )", $queries[4] );
+        $this->assertSame( 'COMMIT', $queries[5] );
+        $this->assertSame( array( array( $ids, 'post_meta' ), 'last_changed' ), $this->cache );
+        $this->assertSame( '5010', $this->stored( 501, 'licensio_order_7' ) );
+    }
+
+    /**
+     * A failed batch rolls the save back and returns an error.
+     *
+     * The second batch's INSERT fails: ROLLBACK is sent, COMMIT is not, the
+     * caches are left alone and the caller gets a 500 error instead of the
+     * order it asked for.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_failed_batch_rolls_back_and_returns_an_error() {
+        $GLOBALS['wpdb']->failing_insert = 2;
+
+        $result = Licensio_KB_Article_Order::save( 7, range( 1, 501 ) );
+
+        $this->assertInstanceOf( 'WP_Error', $result );
+        $this->assertSame( 'licensio_kb_order_not_saved', $result->get_error_code() );
+        $this->assertSame( 500, $result->get_error_data()['status'] );
+
+        $queries = $GLOBALS['wpdb']->queries;
+
+        $this->assertCount( 6, $queries );
+        $this->assertSame( 'START TRANSACTION', $queries[0] );
+        $this->assertStringStartsWith( 'INSERT INTO', $queries[4] );
+        $this->assertSame( 'ROLLBACK', $queries[5] );
+        $this->assertNotContains( 'COMMIT', $queries );
+        $this->assertSame( array(), $this->cache, 'No cache is cleared.' );
+    }
+
+    /**
      * A partial save renumbers the other ordered articles after the listed ones.
      *
      * @since 1.0.0
