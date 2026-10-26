@@ -477,7 +477,8 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
         $this->assertTrue( $route[1]['args']['name']['required'] );
         $this->assertSame( 1, $route[1]['args']['name']['minLength'] );
         $this->assertSame( 0, $route[1]['args']['parent']['minimum'] );
-        $this->assertSame( array( 'Licensio_KB_SVG_Sanitizer', 'sanitize' ), $route[1]['args']['icon_svg']['sanitize_callback'] );
+        $this->assertSame( array( 'Licensio_KB_Categories_REST_Controller', 'sanitize_icon_svg_arg' ), $route[1]['args']['icon_svg']['sanitize_callback'] );
+        $this->assertSame( array( 'Licensio_KB_Categories_REST_Controller', 'sanitize_icon_data_arg' ), $route[1]['args']['icon_data']['sanitize_callback'] );
         $this->assertSame( array( 'Licensio_KB_Categories_REST_Controller', 'sanitize_image_arg' ), $route[1]['args']['image_id']['sanitize_callback'] );
         $this->assertSame( array( 'Licensio_KB_Categories_REST_Controller', 'sanitize_image_arg' ), $route[1]['args']['icon_id']['sanitize_callback'] );
     }
@@ -733,6 +734,7 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
                 'icon'        => 'dashicons-money',
                 'icon_id'     => 7,
                 'icon_svg'    => '',
+                'icon_data'   => '',
                 'image_id'    => 8,
                 'icon_url'    => 'https://example.test/icon-150x150.png',
                 'image_url'   => 'https://example.test/image-300x200.png',
@@ -1288,6 +1290,81 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
 
         $this->assertSame( array( 'meta 3 licensio_image_id=0' ), $this->events );
         $this->assertSame( 0, $item['image_id'] );
+    }
+
+    /**
+     * Saving one icon source clears the others.
+     *
+     * The app sends every icon field, empty for the sources not picked, so no
+     * hidden icon is left to win by precedence.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_saving_one_icon_source_clears_the_others() {
+        $png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+
+        $this->meta[3] = array(
+            'licensio_icon'     => 'dashicons-money',
+            'licensio_icon_id'  => 7,
+            'licensio_icon_svg' => '<svg viewBox="0 0 24 24"><path d="M4 4h16"/></svg>',
+        );
+
+        $item = $this->controller->update_item(
+            $this->request(
+                array(
+                    'id'        => 3,
+                    'icon'      => '',
+                    'icon_id'   => 0,
+                    'icon_svg'  => '',
+                    'icon_data' => Licensio_KB_Categories_REST_Controller::sanitize_icon_data_arg( $png ),
+                )
+            )
+        );
+
+        $this->assertSame(
+            array(
+                'meta 3 licensio_icon=',
+                'meta 3 licensio_icon_id=0',
+                'meta 3 licensio_icon_svg=',
+                'meta 3 licensio_icon_data=' . $png,
+            ),
+            $this->events
+        );
+        $this->assertSame( '', $item['icon'] );
+        $this->assertSame( 0, $item['icon_id'] );
+        $this->assertSame( '', $item['icon_svg'] );
+        $this->assertSame( $png, $item['icon_data'] );
+    }
+
+    /**
+     * A Base64 icon that is not an allowed image is refused, not dropped.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_bad_base64_icon_is_refused() {
+        Functions\when( 'size_format' )->justReturn( '64 KB' );
+
+        $png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+        $svg = 'data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMjQgMjQiPjxwYXRoIGQ9Ik00IDRoMTYiLz48L3N2Zz4=';
+
+        $this->assertSame( '', Licensio_KB_Categories_REST_Controller::sanitize_icon_data_arg( '' ), 'Empty clears the icon.' );
+        $this->assertSame( $png, Licensio_KB_Categories_REST_Controller::sanitize_icon_data_arg( $png ) );
+        $this->assert_error( 'licensio_kb_invalid_icon', 400, Licensio_KB_Categories_REST_Controller::sanitize_icon_data_arg( $svg ) );
+        $this->assert_error( 'licensio_kb_invalid_icon', 400, Licensio_KB_Categories_REST_Controller::sanitize_icon_data_arg( 'data:image/png;base64,PHNjcmlwdD4=' ) );
+        $this->assert_error( 'licensio_kb_invalid_icon', 400, Licensio_KB_Categories_REST_Controller::sanitize_icon_data_arg( 'https://example.test/icon.png' ) );
+
+        $this->assertSame(
+            '<svg viewBox="0 0 24 24"><path d="M4 4h16"/></svg>',
+            Licensio_KB_Categories_REST_Controller::sanitize_icon_svg_arg( $svg ),
+            'A Base64 SVG is decoded and sanitised.'
+        );
+        $this->assertSame( '', Licensio_KB_Categories_REST_Controller::sanitize_icon_svg_arg( '<p>not svg</p>' ), 'Markup keeps the quiet sanitiser.' );
+        $this->assert_error( 'licensio_kb_invalid_icon', 400, Licensio_KB_Categories_REST_Controller::sanitize_icon_svg_arg( 'data:image/svg+xml;base64,PHNjcmlwdD4=' ) );
+        $this->assert_error( 'licensio_kb_invalid_icon', 400, Licensio_KB_Categories_REST_Controller::sanitize_icon_svg_arg( $png ) );
     }
 
     /**

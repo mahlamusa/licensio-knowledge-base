@@ -9,13 +9,16 @@
  * the front end too, or the REST representation of a category loses its meta
  * and a programmatic `update_term_meta()` stores unsanitized values.
  *
- * Three of those keys are icons, and only one of them can be drawn, so their
- * precedence is fixed and documented rather than left to whichever template
- * happens to read first:
+ * Four of those keys are icons, and only one of them can be drawn. The
+ * Categories app keeps only the icon source the user picked and clears the
+ * others on save, but an importer or the classic term form can still leave
+ * more than one set, so their precedence is fixed and documented rather than
+ * left to whichever template happens to read first:
  *
- * 1. `licensio_icon_svg` — inline SVG.
- * 2. `licensio_icon_id`  — an uploaded attachment.
- * 3. `licensio_icon`     — a dashicon name.
+ * 1. `licensio_icon_svg`  — inline SVG.
+ * 2. `licensio_icon_data` — an inline Base64 raster image (a `data:` URL).
+ * 3. `licensio_icon_id`   — an uploaded attachment.
+ * 4. `licensio_icon`      — a dashicon name.
  *
  * Most specific first, in the sense of how completely the stored value
  * describes the icon. Inline SVG is the whole drawing, needs no second request
@@ -98,6 +101,38 @@ class Licensio_KB_Term_Meta {
     const META_ICON_SVG = 'licensio_icon_svg';
 
     /**
+     * Meta key holding an inline Base64 raster icon, as a `data:` URL.
+     *
+     * Separate from META_ICON_SVG because it is printed as the `src` of an
+     * `<img>`, not as markup. Only PNG, JPEG, GIF and WebP are kept, and only
+     * when the decoded bytes really are an image of that type; a Base64 SVG
+     * is decoded into META_ICON_SVG instead, where the SVG sanitiser sees it.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    const META_ICON_DATA = 'licensio_icon_data';
+
+    /**
+     * The largest inline Base64 icon kept, in decoded bytes.
+     *
+     * The URL is printed on every card that shows the category, so it is kept
+     * to the size of an icon rather than a photograph.
+     *
+     * @since 1.0.0
+     * @var int
+     */
+    const ICON_DATA_MAX_BYTES = 65536;
+
+    /**
+     * The image types an inline Base64 icon may have.
+     *
+     * @since 1.0.0
+     * @var string[]
+     */
+    const ICON_DATA_TYPES = array( 'image/png', 'image/jpeg', 'image/gif', 'image/webp' );
+
+    /**
      * Meta key holding the attachment ID of the category image.
      *
      * @since 1.0.0
@@ -155,7 +190,7 @@ class Licensio_KB_Term_Meta {
      */
     public function definitions() {
         return array(
-            self::META_ICON     => array(
+            self::META_ICON      => array(
                 'type'              => 'string',
                 'description'       => __( 'Dashicon name used as the category icon.', 'licensio-knowledge-base' ),
                 'single'            => true,
@@ -164,7 +199,7 @@ class Licensio_KB_Term_Meta {
                 'sanitize_callback' => array( __CLASS__, 'sanitize_icon' ),
                 'auth_callback'     => array( __CLASS__, 'auth_callback' ),
             ),
-            self::META_ICON_ID  => array(
+            self::META_ICON_ID   => array(
                 'type'              => 'integer',
                 'description'       => __( 'Attachment ID of an uploaded category icon.', 'licensio-knowledge-base' ),
                 'single'            => true,
@@ -173,16 +208,25 @@ class Licensio_KB_Term_Meta {
                 'sanitize_callback' => array( __CLASS__, 'sanitize_attachment_id' ),
                 'auth_callback'     => array( __CLASS__, 'auth_callback' ),
             ),
-            self::META_ICON_SVG => array(
+            self::META_ICON_SVG  => array(
                 'type'              => 'string',
                 'description'       => __( 'Inline SVG markup used as the category icon.', 'licensio-knowledge-base' ),
                 'single'            => true,
                 'default'           => '',
                 'show_in_rest'      => true,
-                'sanitize_callback' => array( 'Licensio_KB_SVG_Sanitizer', 'sanitize' ),
+                'sanitize_callback' => array( __CLASS__, 'sanitize_icon_svg' ),
                 'auth_callback'     => array( __CLASS__, 'auth_callback' ),
             ),
-            self::META_IMAGE_ID => array(
+            self::META_ICON_DATA => array(
+                'type'              => 'string',
+                'description'       => __( 'Inline Base64 image used as the category icon.', 'licensio-knowledge-base' ),
+                'single'            => true,
+                'default'           => '',
+                'show_in_rest'      => true,
+                'sanitize_callback' => array( __CLASS__, 'sanitize_icon_data' ),
+                'auth_callback'     => array( __CLASS__, 'auth_callback' ),
+            ),
+            self::META_IMAGE_ID  => array(
                 'type'              => 'integer',
                 'description'       => __( 'Attachment ID of the category image.', 'licensio-knowledge-base' ),
                 'single'            => true,
@@ -191,7 +235,7 @@ class Licensio_KB_Term_Meta {
                 'sanitize_callback' => array( __CLASS__, 'sanitize_attachment_id' ),
                 'auth_callback'     => array( __CLASS__, 'auth_callback' ),
             ),
-            self::META_ORDER    => array(
+            self::META_ORDER     => array(
                 'type'              => 'integer',
                 'description'       => __( 'Manual sort order of the category.', 'licensio-knowledge-base' ),
                 'single'            => true,
@@ -253,6 +297,102 @@ class Licensio_KB_Term_Meta {
         $icon = strtolower( trim( (string) $value ) );
 
         return preg_match( '/^dashicons-[a-z0-9]+(?:-[a-z0-9]+)*$/', $icon ) ? $icon : '';
+    }
+
+    /**
+     * Reduce a value to sanitised inline SVG markup.
+     *
+     * Takes SVG markup, or a Base64 SVG `data:` URL, which is decoded first.
+     * Either way the markup goes through Licensio_KB_SVG_Sanitizer, so a
+     * Base64 SVG is never a way around it.
+     *
+     * @since 1.0.0
+     *
+     * @param mixed $value The raw markup or `data:image/svg+xml;base64,` URL.
+     *
+     * @return string The sanitised SVG, or an empty string when there is nothing safe to keep.
+     */
+    public static function sanitize_icon_svg( $value ) {
+        if ( ! is_scalar( $value ) ) {
+            return '';
+        }
+
+        $value = trim( (string) $value );
+
+        if ( 1 === preg_match( '#^data:image/svg\+xml;base64,#i', $value ) ) {
+            $bytes = self::decode_base64( substr( $value, strpos( $value, ',' ) + 1 ) );
+
+            if ( '' === $bytes || strlen( $bytes ) > Licensio_KB_SVG_Sanitizer::MAX_LENGTH ) {
+                return '';
+            }
+
+            $value = $bytes;
+        }
+
+        return Licensio_KB_SVG_Sanitizer::sanitize( $value );
+    }
+
+    /**
+     * Reduce a value to an inline Base64 raster icon.
+     *
+     * Kept only when it is a `data:` URL of one of ICON_DATA_TYPES whose
+     * Base64 decodes strictly, whose bytes are no larger than
+     * ICON_DATA_MAX_BYTES and really are an image of an allowed type. The URL
+     * is rebuilt from the decoded bytes and the type they turned out to be,
+     * so nothing but the image itself survives.
+     *
+     * @since 1.0.0
+     *
+     * @param mixed $value The raw `data:` URL.
+     *
+     * @return string The `data:` URL, or an empty string when the value is not an allowed image.
+     */
+    public static function sanitize_icon_data( $value ) {
+        if ( ! is_scalar( $value ) ) {
+            return '';
+        }
+
+        $value = trim( (string) $value );
+
+        if ( 1 !== preg_match( '#^data:image/(png|jpeg|gif|webp);base64,#i', $value ) ) {
+            return '';
+        }
+
+        // A loose cap on the encoded text first, twice what the largest icon needs to leave room for line breaks, so a huge value is never decoded.
+        if ( strlen( $value ) > 2 * ( 64 + (int) ceil( self::ICON_DATA_MAX_BYTES / 3 ) * 4 ) ) {
+            return '';
+        }
+
+        $bytes = self::decode_base64( substr( $value, strpos( $value, ',' ) + 1 ) );
+
+        if ( '' === $bytes || strlen( $bytes ) > self::ICON_DATA_MAX_BYTES ) {
+            return '';
+        }
+
+        $size = function_exists( 'getimagesizefromstring' ) ? @getimagesizefromstring( $bytes ) : false; // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Bytes that are not an image raise a notice; that is the answer, not an error.
+        $mime = is_array( $size ) && isset( $size['mime'] ) ? (string) $size['mime'] : '';
+
+        if ( ! in_array( $mime, self::ICON_DATA_TYPES, true ) ) {
+            return '';
+        }
+
+        return 'data:' . $mime . ';base64,' . base64_encode( $bytes ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Rebuilding a data: URL for an image.
+    }
+
+    /**
+     * Decode strict Base64, ignoring the whitespace a pasted value wraps with.
+     *
+     * @since 1.0.0
+     *
+     * @param string $encoded The Base64 text.
+     *
+     * @return string The bytes, or an empty string when the text is not Base64.
+     */
+    private static function decode_base64( $encoded ) {
+        $encoded = (string) preg_replace( '/\s+/', '', $encoded );
+        $bytes   = base64_decode( $encoded, true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding an image the user pasted.
+
+        return is_string( $bytes ) ? $bytes : '';
     }
 
     /**
@@ -386,7 +526,23 @@ class Licensio_KB_Term_Meta {
      * @return string The sanitized SVG markup, or an empty string when none is set.
      */
     public static function get_icon_svg( $term_id ) {
-        return Licensio_KB_SVG_Sanitizer::sanitize( get_term_meta( (int) $term_id, self::META_ICON_SVG, true ) );
+        return self::sanitize_icon_svg( get_term_meta( (int) $term_id, self::META_ICON_SVG, true ) );
+    }
+
+    /**
+     * The inline Base64 raster icon stored on a category.
+     *
+     * Re-checked on the way out, like the SVG is, so a template may print it
+     * as an `<img>` source whatever wrote the row.
+     *
+     * @since 1.0.0
+     *
+     * @param int $term_id The category term ID.
+     *
+     * @return string The `data:` URL, or an empty string when none is set.
+     */
+    public static function get_icon_data( $term_id ) {
+        return self::sanitize_icon_data( get_term_meta( (int) $term_id, self::META_ICON_DATA, true ) );
     }
 
     /**
