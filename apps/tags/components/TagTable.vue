@@ -413,6 +413,7 @@ watch(
 					<a-input
 						v-if="editingId === record.id"
 						v-model:value="draft.name"
+						class="lkb-tags__field"
 						:aria-label="__( 'Name', 'licensio-knowledge-base' )"
 					/>
 					<strong v-else>{{ record.name }}</strong>
@@ -463,6 +464,7 @@ watch(
 					<a-input
 						v-if="editingId === record.id"
 						v-model:value="draft.slug"
+						class="lkb-tags__field"
 						:aria-label="__( 'Slug', 'licensio-knowledge-base' )"
 					/>
 					<code v-else class="lkb-tags__slug">{{ record.slug }}</code>
@@ -472,6 +474,7 @@ watch(
 					<a-textarea
 						v-if="editingId === record.id"
 						v-model:value="draft.description"
+						class="lkb-tags__field"
 						:auto-size="{ minRows: 1, maxRows: 4 }"
 						:aria-label="
 							__( 'Description', 'licensio-knowledge-base' )
@@ -533,6 +536,17 @@ watch(
 
 .lkb-tags__description {
 	color: var( --lkb-ink-muted );
+}
+
+/*
+ * On a phone the table would squeeze an open Quick edit row's fields to a
+ * few characters wide. A minimum width keeps them readable; the table scrolls
+ * inside its card instead, as the Articles table does.
+ */
+@media ( max-width: 782px ) {
+	.lkb-tags__field {
+		min-width: 160px;
+	}
 }
 
 /* An open Quick edit row: its Save and Cancel, always shown. */

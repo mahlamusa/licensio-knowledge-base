@@ -11,7 +11,8 @@
  * once a bulk delete takes the Delete button away. Edit loads a tag into the
  * left form as Edit Tag; Update, Cancel and Escape return it to Add New Tag,
  * and Escape closes a Quick edit, sending nothing. Quick edit tabs through
- * its fields before Save and Cancel, and the pager keeps focus on its first
+ * its fields before Save and Cancel, keeps its fields readable with Save in
+ * reach on a phone, and the pager keeps focus on its first
  * and last page. Unsaved changes in the
  * form are only dropped once confirmed, a deleted tag leaves the form, and
  * `?term=` loads a tag into it. The form and the list sit
@@ -420,6 +421,47 @@ test( 'Quick edit tabs through every field before Save and Cancel', async ( {
 		.click();
 	await answerConfirm( page, 'confirm' );
 	await expect( page.locator( '.ant-table-row' ) ).toHaveCount( 0 );
+} );
+
+test( 'Quick edit keeps readable fields on a phone and Save in reach', async ( {
+	page,
+} ) => {
+	const name = `Phone edit ${ suffix }`;
+
+	await logIn( page );
+	await page.setViewportSize( { width: 390, height: 844 } );
+	await openContentManager( page, 'tags' );
+	await addTag( page, name );
+	await search( page, name );
+	await quickEditButton( page, name ).click();
+
+	const open = page
+		.locator( '.ant-table-row' )
+		.filter( { has: page.locator( 'textarea' ) } );
+	const nameField = open.getByLabel( 'Name', { exact: true } );
+
+	expect(
+		( await nameField.boundingBox() )?.width,
+		'Name field width'
+	).toBeGreaterThanOrEqual( 140 );
+
+	// A change, so Save is enabled.
+	await nameField.fill( `${ name } changed` );
+
+	const saveButton = open.getByRole( 'button', { name: 'Save' } );
+
+	// The table scrolls inside its card to bring Save into view; the page does not.
+	await saveButton.scrollIntoViewIfNeeded();
+	await expect( saveButton ).toBeInViewport();
+	await expect( saveButton ).toBeEnabled();
+	expect(
+		await page.evaluate(
+			() => document.documentElement.scrollWidth - window.innerWidth
+		)
+	).toBeLessThanOrEqual( 0 );
+
+	await open.getByRole( 'button', { name: 'Cancel' } ).click();
+	await deleteListed( page );
 } );
 
 /**
