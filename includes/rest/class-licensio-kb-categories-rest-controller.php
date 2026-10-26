@@ -298,8 +298,10 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      * Reduce an inline SVG argument to sanitised markup.
      *
      * Markup keeps the sanitiser's quiet behaviour: what is not allowed is
-     * removed. A Base64 SVG that decodes to nothing safe is refused instead,
-     * because there is no markup left on screen to show what was dropped.
+     * removed. An SVG data URL that decodes to nothing safe is refused
+     * instead, because there is no markup left on screen to show what was
+     * dropped, and so is a value that is not text, rather than clearing the
+     * stored icon.
      *
      * @since 1.0.0
      *
@@ -310,10 +312,10 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
     public static function sanitize_icon_svg_arg( $value ) {
         $svg = Licensio_KB_Term_Meta::sanitize_icon_svg( $value );
 
-        if ( '' === $svg && is_scalar( $value ) && 0 === stripos( trim( (string) $value ), 'data:' ) ) {
+        if ( ! is_scalar( $value ) || ( '' === $svg && 0 === stripos( trim( (string) $value ), 'data:' ) ) ) {
             return new WP_Error(
                 'licensio_kb_invalid_icon',
-                __( 'This Base64 SVG could not be read as a safe SVG icon.', 'licensio-knowledge-base' ),
+                __( 'This could not be read as a safe SVG icon.', 'licensio-knowledge-base' ),
                 array( 'status' => 400 )
             );
         }
@@ -324,9 +326,10 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
     /**
      * Check an inline Base64 icon argument.
      *
-     * Empty clears the icon. Anything else must be a PNG, JPEG, GIF or WebP
-     * `data:` URL within Licensio_KB_Term_Meta::ICON_DATA_MAX_BYTES, or it is
-     * refused, so a pasted icon never vanishes without a message.
+     * An empty string clears the icon. Anything else must be a PNG, JPEG,
+     * GIF or WebP `data:` URL within Licensio_KB_Term_Meta::ICON_DATA_MAX_BYTES,
+     * or it is refused, so a pasted icon never vanishes without a message and
+     * a value that is not text never clears the stored one.
      *
      * @since 1.0.0
      *
@@ -335,7 +338,7 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      * @return string|WP_Error The `data:` URL, an empty string, or an error the REST server answers as a 400.
      */
     public static function sanitize_icon_data_arg( $value ) {
-        if ( ! is_scalar( $value ) || '' === trim( (string) $value ) ) {
+        if ( is_scalar( $value ) && '' === trim( (string) $value ) ) {
             return '';
         }
 

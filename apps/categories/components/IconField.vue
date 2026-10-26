@@ -43,7 +43,7 @@ const emit = defineEmits< {
 } >();
 
 const DASHICON = /^dashicons-[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const BASE64_IMAGE = /^data:image\/(?:png|jpeg|gif|webp|svg\+xml);base64,/i;
+const BASE64_IMAGE = /^data:image\/(?:png|jpe?g|gif|webp|svg\+xml);base64,/i;
 
 const sources = computed( () => [
 	{

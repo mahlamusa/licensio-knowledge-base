@@ -7,9 +7,10 @@
  * accessors for those keys live in Licensio_KB_Term_Meta; this class is only
  * the admin surface over them.
  *
- * Three of the fields are icons and only one of them is drawn. The precedence
- * is inline SVG, then the uploaded icon, then the dashicon name — set out in
- * full on Licensio_KB_Term_Meta. Silent precedence is a support ticket waiting
+ * Three of the fields are icons, a fourth icon source (the inline Base64
+ * image) is set only by the Categories app, and only one of them is drawn.
+ * The precedence is inline SVG, then the Base64 image, then the uploaded
+ * icon, then the dashicon name — set out in full on Licensio_KB_Term_Meta. Silent precedence is a support ticket waiting
  * to happen, so each field's description says on screen what it replaces, and
  * the fields are rendered in precedence order so the one that wins is the one
  * read first.

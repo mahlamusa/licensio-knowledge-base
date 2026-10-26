@@ -219,12 +219,16 @@ class Licensio_KB_Term_Meta_Test extends Licensio_KB_Test_Case {
         $png  = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
         $gif  = 'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
         $webp = 'UklGRhoAAABXRUJQVlA4TA0AAAAvAAAAEAcQERGIiP4HAA==';
+        $jpeg = '/9j/wAARCAABAAEDASIAAhEBAxEBAP/Z';
         $big  = base64_encode( base64_decode( $png ) . str_repeat( "\0", Licensio_KB_Term_Meta::ICON_DATA_MAX_BYTES ) );
 
         return array(
             'a png'                   => array( 'data:image/png;base64,' . $png, 'data:image/png;base64,' . $png ),
             'a gif'                   => array( 'data:image/gif;base64,' . $gif, 'data:image/gif;base64,' . $gif ),
             'a webp'                  => array( 'data:image/webp;base64,' . $webp, 'data:image/webp;base64,' . $webp ),
+            'a jpeg'                  => array( 'data:image/jpeg;base64,' . $jpeg, 'data:image/jpeg;base64,' . $jpeg ),
+            'a jpeg labelled as jpg'  => array( 'data:image/jpg;base64,' . $jpeg, 'data:image/jpeg;base64,' . $jpeg ),
+            'a png labelled as jpg'   => array( 'data:image/jpg;base64,' . $png, 'data:image/png;base64,' . $png ),
             'wrapped base64'          => array( " data:image/png;base64,\n" . chunk_split( $png, 20, "\n" ), 'data:image/png;base64,' . $png ),
             'a png labelled as a gif' => array( 'data:image/gif;base64,' . $png, 'data:image/png;base64,' . $png ),
             'an svg'                  => array( 'data:image/svg+xml;base64,' . base64_encode( '<svg/>' ), '' ),

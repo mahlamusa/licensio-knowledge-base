@@ -1356,6 +1356,8 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
         $this->assert_error( 'licensio_kb_invalid_icon', 400, Licensio_KB_Categories_REST_Controller::sanitize_icon_data_arg( $svg ) );
         $this->assert_error( 'licensio_kb_invalid_icon', 400, Licensio_KB_Categories_REST_Controller::sanitize_icon_data_arg( 'data:image/png;base64,PHNjcmlwdD4=' ) );
         $this->assert_error( 'licensio_kb_invalid_icon', 400, Licensio_KB_Categories_REST_Controller::sanitize_icon_data_arg( 'https://example.test/icon.png' ) );
+        $this->assert_error( 'licensio_kb_invalid_icon', 400, Licensio_KB_Categories_REST_Controller::sanitize_icon_data_arg( array( $png ) ) );
+        $this->assert_error( 'licensio_kb_invalid_icon', 400, Licensio_KB_Categories_REST_Controller::sanitize_icon_data_arg( null ) );
 
         $this->assertSame(
             '<svg viewBox="0 0 24 24"><path d="M4 4h16"/></svg>',
@@ -1365,6 +1367,8 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
         $this->assertSame( '', Licensio_KB_Categories_REST_Controller::sanitize_icon_svg_arg( '<p>not svg</p>' ), 'Markup keeps the quiet sanitiser.' );
         $this->assert_error( 'licensio_kb_invalid_icon', 400, Licensio_KB_Categories_REST_Controller::sanitize_icon_svg_arg( 'data:image/svg+xml;base64,PHNjcmlwdD4=' ) );
         $this->assert_error( 'licensio_kb_invalid_icon', 400, Licensio_KB_Categories_REST_Controller::sanitize_icon_svg_arg( $png ) );
+        $this->assert_error( 'licensio_kb_invalid_icon', 400, Licensio_KB_Categories_REST_Controller::sanitize_icon_svg_arg( array( $svg ) ) );
+        $this->assertSame( '', Licensio_KB_Categories_REST_Controller::sanitize_icon_svg_arg( '' ), 'Empty clears the icon.' );
     }
 
     /**

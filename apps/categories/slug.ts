@@ -5,16 +5,20 @@
  * server runs on a category name when no slug is sent: accents removed, tags
  * stripped, lower case, other non-ASCII characters percent-encoded, a few
  * punctuation characters dropped or turned into dashes, then everything but
- * `a-z`, `0-9`, `%`, `_` and `-` removed. Accent removal uses Unicode
- * decomposition plus the letters core spells out that do not decompose, so a
- * rare letter may still differ; the server's slug is what is stored.
+ * `a-z`, `0-9`, `%`, `_` and `-` removed. Accents are removed only from the
+ * Latin letters core's `remove_accents()` lists (its default, non-German
+ * rules), so Cyrillic, Greek and other accented letters are kept and encoded
+ * as core keeps them. Core's `strip_tags()` also drops an unclosed tag, which
+ * this does not; the server's slug is what is stored.
  *
  * @since 1.0.0
  */
 
-/** Letters that do not decompose into a base letter and an accent. */
+/** Letters core maps that do not decompose into a base letter and an accent. */
 const LETTERS: Record< string, string > = {
-	ß: 'ss',
+	ª: 'a',
+	º: 'o',
+	ß: 's',
 	æ: 'ae',
 	Æ: 'AE',
 	ø: 'o',
@@ -32,6 +36,8 @@ const LETTERS: Record< string, string > = {
 	ħ: 'h',
 	Ħ: 'H',
 	ı: 'i',
+	Ĳ: 'IJ',
+	ĳ: 'ij',
 	ĸ: 'k',
 	ŀ: 'l',
 	Ŀ: 'L',
@@ -41,7 +47,19 @@ const LETTERS: Record< string, string > = {
 	ſ: 's',
 	ŧ: 't',
 	Ŧ: 'T',
+	Ə: 'E',
+	ǝ: 'e',
+	ɑ: 'a',
+	'€': 'E',
+	'£': '',
 };
+
+/**
+ * The accented letters core's `remove_accents()` lists: Latin-1, Latin
+ * Extended-A, Vietnamese, Pinyin and Romanian. Only these lose their accents.
+ */
+const ACCENTED =
+	/[\u00c0-\u017f\u01a0\u01a1\u01af\u01b0\u01cd-\u01dc\u0218-\u021b\u1ea0-\u1ef9]/g;
 
 /** Encoded characters core turns into a dash. */
 const DASHES = [
@@ -174,10 +192,11 @@ function replaceAll( text: string, list: string[], by: string ): string {
  */
 export function slugify( name: string ): string {
 	let slug = name
-		.normalize( 'NFD' )
-		.replace( /[\u0300-\u036f]/g, '' )
-		.replace( /[^\u0000-\u007f]/g, ( char ) => LETTERS[ char ] ?? char )
 		.normalize( 'NFC' )
+		.replace( /[^\u0000-\u007f]/g, ( char ) => LETTERS[ char ] ?? char )
+		.replace( ACCENTED, ( char ) =>
+			char.normalize( 'NFD' ).replace( /[\u0300-\u036f]/g, '' )
+		)
 		.replace( /<[^>]*>/g, '' )
 		.replace( /%([a-fA-F0-9]{2})/g, '---$1---' )
 		.replace( /%/g, '' )

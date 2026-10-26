@@ -330,8 +330,8 @@ class Licensio_KB_Term_Meta {
     /**
      * Reduce a value to an inline Base64 raster icon.
      *
-     * Kept only when it is a `data:` URL of one of ICON_DATA_TYPES whose
-     * Base64 decodes strictly, whose bytes are no larger than
+     * Kept only when it is a `data:` URL of one of ICON_DATA_TYPES (or
+     * `image/jpg`, a common label for a JPEG) whose Base64 decodes strictly, whose bytes are no larger than
      * ICON_DATA_MAX_BYTES and really are an image of an allowed type. The URL
      * is rebuilt from the decoded bytes and the type they turned out to be,
      * so nothing but the image itself survives.
@@ -349,7 +349,7 @@ class Licensio_KB_Term_Meta {
 
         $value = trim( (string) $value );
 
-        if ( 1 !== preg_match( '#^data:image/(png|jpeg|gif|webp);base64,#i', $value ) ) {
+        if ( 1 !== preg_match( '#^data:image/(png|jpe?g|gif|webp);base64,#i', $value ) ) {
             return '';
         }
 
