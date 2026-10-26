@@ -102,19 +102,25 @@ for ( const app of readdirSync( appsDir ) ) {
 	const imported = new Map(
 		named[ 1 ]
 			.split( ',' )
-			.map( ( name ) => name.split( ' as ' ).map( ( part ) => part.trim() ) )
+			.map( ( name ) =>
+				name.split( ' as ' ).map( ( part ) => part.trim() )
+			)
 			.filter( ( [ name ] ) => name )
 			.map( ( [ name, local ] ) => [ local ?? name, name ] )
 	);
 
 	// `app.use( Button )` and `[ Button, Form ].forEach( ( c ) => app.use( c ) )`.
 	const used = [
-		...[ ...code.matchAll( /\.use\(\s*(\w+)\s*\)/g ) ].map( ( m ) => m[ 1 ] ),
+		...[ ...code.matchAll( /\.use\(\s*(\w+)\s*\)/g ) ].map(
+			( m ) => m[ 1 ]
+		),
 		...[
 			...code.matchAll(
 				/\[([^\]]*)\]\s*\.forEach\(\s*\(?\s*(\w+)\s*\)?\s*=>\s*\{?\s*\w+\.use\(\s*\2\s*\)/g
 			),
-		].flatMap( ( m ) => m[ 1 ].split( ',' ).map( ( name ) => name.trim() ) ),
+		].flatMap( ( m ) =>
+			m[ 1 ].split( ',' ).map( ( name ) => name.trim() )
+		),
 	];
 
 	const registered = registeredBy(

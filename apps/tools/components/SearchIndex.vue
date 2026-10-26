@@ -40,7 +40,10 @@ const percent = computed( () => {
 		return running.value ? 0 : 100;
 	}
 
-	return Math.min( 100, Math.round( ( indexed.value / articles.value ) * 100 ) );
+	return Math.min(
+		100,
+		Math.round( ( indexed.value / articles.value ) * 100 )
+	);
 } );
 
 /**
@@ -57,7 +60,13 @@ async function load(): Promise< void > {
 	try {
 		status.value = await indexStatus();
 	} catch ( err ) {
-		error.value = err instanceof Error ? err.message : __( 'Failed to load the index status.', 'licensio-knowledge-base' );
+		error.value =
+			err instanceof Error
+				? err.message
+				: __(
+						'Failed to load the index status.',
+						'licensio-knowledge-base'
+				  );
 	} finally {
 		loading.value = false;
 	}
@@ -80,10 +89,14 @@ async function driveChunks(): Promise< void > {
 			return;
 		}
 
-		await new Promise( ( resolve ) => setTimeout( resolve, CHUNK_PAUSE_MS ) );
+		await new Promise( ( resolve ) =>
+			setTimeout( resolve, CHUNK_PAUSE_MS )
+		);
 	}
 
-	throw new Error( __( 'The rebuild did not finish.', 'licensio-knowledge-base' ) );
+	throw new Error(
+		__( 'The rebuild did not finish.', 'licensio-knowledge-base' )
+	);
 }
 
 /**
@@ -103,7 +116,10 @@ async function rebuild(): Promise< void > {
 		await driveChunks();
 		finishedAt.value = new Date().toLocaleTimeString();
 	} catch ( err ) {
-		error.value = err instanceof Error ? err.message : __( 'The rebuild failed.', 'licensio-knowledge-base' );
+		error.value =
+			err instanceof Error
+				? err.message
+				: __( 'The rebuild failed.', 'licensio-knowledge-base' );
 	} finally {
 		running.value = false;
 	}
@@ -126,7 +142,10 @@ async function resume(): Promise< void > {
 		await driveChunks();
 		finishedAt.value = new Date().toLocaleTimeString();
 	} catch ( err ) {
-		error.value = err instanceof Error ? err.message : __( 'The rebuild failed.', 'licensio-knowledge-base' );
+		error.value =
+			err instanceof Error
+				? err.message
+				: __( 'The rebuild failed.', 'licensio-knowledge-base' );
 	} finally {
 		running.value = false;
 	}
@@ -155,7 +174,11 @@ onMounted( load );
 
 			<dl class="licensio-kb-search-index__stats">
 				<div>
-					<dt>{{ __( 'Indexed articles', 'licensio-knowledge-base' ) }}</dt>
+					<dt>
+						{{
+							__( 'Indexed articles', 'licensio-knowledge-base' )
+						}}
+					</dt>
 					<dd>{{ indexed }}</dd>
 				</div>
 				<div>
@@ -165,13 +188,20 @@ onMounted( load );
 			</dl>
 
 			<a-tag v-if="rebuilding" color="orange">
-				{{ __( 'A rebuild is part-way through', 'licensio-knowledge-base' ) }}
+				{{
+					__(
+						'A rebuild is part-way through',
+						'licensio-knowledge-base'
+					)
+				}}
 			</a-tag>
 
 			<a-progress
 				v-if="running || finishedAt"
 				:percent="percent"
-				:status="error ? 'exception' : finishedAt ? 'success' : 'active'"
+				:status="
+					error ? 'exception' : finishedAt ? 'success' : 'active'
+				"
 			/>
 
 			<p v-if="finishedAt" class="licensio-kb-search-index__done">
@@ -180,7 +210,12 @@ onMounted( load );
 
 			<div class="licensio-kb-search-index__actions">
 				<a-popconfirm
-					:title="__( 'Empty the index and re-index every article?', 'licensio-knowledge-base' )"
+					:title="
+						__(
+							'Empty the index and re-index every article?',
+							'licensio-knowledge-base'
+						)
+					"
 					:ok-text="__( 'Rebuild', 'licensio-knowledge-base' )"
 					:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
 					@confirm="rebuild"
@@ -192,7 +227,12 @@ onMounted( load );
 
 				<a-popconfirm
 					v-if="rebuilding"
-					:title="__( 'Resume the rebuild from where it stopped?', 'licensio-knowledge-base' )"
+					:title="
+						__(
+							'Resume the rebuild from where it stopped?',
+							'licensio-knowledge-base'
+						)
+					"
 					:ok-text="__( 'Resume rebuild', 'licensio-knowledge-base' )"
 					:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
 					@confirm="resume"

@@ -181,7 +181,11 @@ onMounted( async () => {
 					<h1 class="lkb-page__title">
 						{{ __( 'Categories', 'licensio-knowledge-base' ) }}
 					</h1>
-					<a-button ref="addButton" type="primary" @click="addCategory">
+					<a-button
+						ref="addButton"
+						type="primary"
+						@click="addCategory"
+					>
 						{{ __( 'Add category', 'licensio-knowledge-base' ) }}
 					</a-button>
 				</div>
@@ -194,13 +198,20 @@ onMounted( async () => {
 					class="lkb-categories__error"
 				>
 					<template #action>
-						<a-button size="small" :loading="store.loading" @click="store.load()">
+						<a-button
+							size="small"
+							:loading="store.loading"
+							@click="store.load()"
+						>
 							{{ __( 'Retry', 'licensio-knowledge-base' ) }}
 						</a-button>
 					</template>
 				</a-alert>
 
-				<div v-if="! store.loaded && store.loading" class="lkb-categories__card">
+				<div
+					v-if="! store.loaded && store.loading"
+					class="lkb-categories__card"
+				>
 					<a-skeleton active :paragraph="{ rows: 6 }" />
 				</div>
 
@@ -208,7 +219,11 @@ onMounted( async () => {
 					v-else-if="store.loaded && 0 === store.items.length"
 					class="lkb-categories__card lkb-categories__empty"
 				>
-					<h2>{{ __( 'No categories yet', 'licensio-knowledge-base' ) }}</h2>
+					<h2>
+						{{
+							__( 'No categories yet', 'licensio-knowledge-base' )
+						}}
+					</h2>
 					<p>
 						{{
 							__(
@@ -225,7 +240,9 @@ onMounted( async () => {
 				<div v-else-if="store.loaded" class="lkb-categories">
 					<section
 						class="lkb-categories__card"
-						:aria-label="__( 'Category tree', 'licensio-knowledge-base' )"
+						:aria-label="
+							__( 'Category tree', 'licensio-knowledge-base' )
+						"
 					>
 						<CategoryTree @action="onAction" />
 					</section>
@@ -270,22 +287,22 @@ onMounted( async () => {
 
 <style scoped>
 .lkb-categories__error {
-	margin-bottom: var(--lkb-gap);
+	margin-bottom: var( --lkb-gap );
 }
 
 .lkb-categories {
 	display: grid;
 	grid-template-columns: minmax( 0, 1fr ) minmax( 0, 1fr );
-	gap: var(--lkb-gap);
+	gap: var( --lkb-gap );
 	align-items: start;
 }
 
 .lkb-categories__card {
-	padding: var(--lkb-gap);
-	border: 1px solid var(--lkb-border-wp);
-	border-radius: var(--lkb-radius);
-	background: var(--lkb-surface);
-	box-shadow: var(--lkb-shadow-sm);
+	padding: var( --lkb-gap );
+	border: 1px solid var( --lkb-border-wp );
+	border-radius: var( --lkb-radius );
+	background: var( --lkb-surface );
+	box-shadow: var( --lkb-shadow-sm );
 }
 
 .lkb-categories__empty {
@@ -298,7 +315,7 @@ onMounted( async () => {
 }
 
 .lkb-categories__empty p {
-	color: var(--lkb-ink-muted);
+	color: var( --lkb-ink-muted );
 }
 
 @media ( max-width: 782px ) {

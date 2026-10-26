@@ -83,13 +83,27 @@ const attentionHelp = sprintf(
 		<template #content>
 			<div class="lkb-filters">
 				<div class="lkb-filters__field">
-					<span>{{ __( 'Category', 'licensio-knowledge-base' ) }}</span>
+					<span>{{
+						__( 'Category', 'licensio-knowledge-base' )
+					}}</span>
 					<TermSelect
 						:model-value="store.query.category || null"
 						taxonomy="licensio_category"
-						:aria-label="__( 'Filter by category', 'licensio-knowledge-base' )"
-						:placeholder="__( 'Any category', 'licensio-knowledge-base' )"
-						@update:model-value="( value ) => store.setFilters( { category: termId( value ) } )"
+						:aria-label="
+							__(
+								'Filter by category',
+								'licensio-knowledge-base'
+							)
+						"
+						:placeholder="
+							__( 'Any category', 'licensio-knowledge-base' )
+						"
+						@update:model-value="
+							( value ) =>
+								store.setFilters( {
+									category: termId( value ),
+								} )
+						"
 					/>
 				</div>
 
@@ -98,9 +112,16 @@ const attentionHelp = sprintf(
 					<TermSelect
 						:model-value="store.query.tag || null"
 						taxonomy="licensio_tag"
-						:aria-label="__( 'Filter by tag', 'licensio-knowledge-base' )"
-						:placeholder="__( 'Any tag', 'licensio-knowledge-base' )"
-						@update:model-value="( value ) => store.setFilters( { tag: termId( value ) } )"
+						:aria-label="
+							__( 'Filter by tag', 'licensio-knowledge-base' )
+						"
+						:placeholder="
+							__( 'Any tag', 'licensio-knowledge-base' )
+						"
+						@update:model-value="
+							( value ) =>
+								store.setFilters( { tag: termId( value ) } )
+						"
 					/>
 				</div>
 
@@ -108,13 +129,19 @@ const attentionHelp = sprintf(
 					<span>{{ __( 'Author', 'licensio-knowledge-base' ) }}</span>
 					<AuthorSelect
 						:model-value="store.query.author"
-						:aria-label="__( 'Filter by author', 'licensio-knowledge-base' )"
-						@update:model-value="( value ) => store.setFilters( { author: value } )"
+						:aria-label="
+							__( 'Filter by author', 'licensio-knowledge-base' )
+						"
+						@update:model-value="
+							( value ) => store.setFilters( { author: value } )
+						"
 					/>
 				</label>
 
 				<div class="lkb-filters__field">
-					<span id="lkb-filter-dates">{{ __( 'Published between', 'licensio-knowledge-base' ) }}</span>
+					<span id="lkb-filter-dates">{{
+						__( 'Published between', 'licensio-knowledge-base' )
+					}}</span>
 					<a-range-picker
 						:value="dates"
 						value-format="YYYY-MM-DD"
@@ -125,14 +152,24 @@ const attentionHelp = sprintf(
 
 				<a-checkbox
 					:checked="store.query.uncategorised"
-					@change="( event ) => store.setFilters( { uncategorised: event.target.checked } )"
+					@change="
+						( event ) =>
+							store.setFilters( {
+								uncategorised: event.target.checked,
+							} )
+					"
 				>
 					{{ __( 'Uncategorised', 'licensio-knowledge-base' ) }}
 				</a-checkbox>
 
 				<a-checkbox
 					:checked="store.query.untagged"
-					@change="( event ) => store.setFilters( { untagged: event.target.checked } )"
+					@change="
+						( event ) =>
+							store.setFilters( {
+								untagged: event.target.checked,
+							} )
+					"
 				>
 					{{ __( 'No tags', 'licensio-knowledge-base' ) }}
 				</a-checkbox>
@@ -140,7 +177,12 @@ const attentionHelp = sprintf(
 				<div>
 					<a-checkbox
 						:checked="store.query.needs_attention"
-						@change="( event ) => store.setFilters( { needs_attention: event.target.checked } )"
+						@change="
+							( event ) =>
+								store.setFilters( {
+									needs_attention: event.target.checked,
+								} )
+						"
 					>
 						{{ __( 'Needs attention', 'licensio-knowledge-base' ) }}
 					</a-checkbox>
@@ -150,7 +192,18 @@ const attentionHelp = sprintf(
 				<a-button
 					size="small"
 					:disabled="0 === store.activeFilterCount"
-					@click="store.setFilters( { category: 0, tag: 0, author: 0, after: '', before: '', uncategorised: false, untagged: false, needs_attention: false } )"
+					@click="
+						store.setFilters( {
+							category: 0,
+							tag: 0,
+							author: 0,
+							after: '',
+							before: '',
+							uncategorised: false,
+							untagged: false,
+							needs_attention: false,
+						} )
+					"
 				>
 					{{ __( 'Clear filters', 'licensio-knowledge-base' ) }}
 				</a-button>
@@ -172,7 +225,7 @@ const attentionHelp = sprintf(
 	flex-direction: column;
 	gap: 12px;
 	width: 300px;
-	max-width: calc(100vw - 48px);
+	max-width: calc( 100vw - 48px );
 }
 
 .lkb-filters__field {
@@ -188,7 +241,7 @@ const attentionHelp = sprintf(
 
 .lkb-filters__help {
 	margin: 2px 0 0 24px;
-	color: var(--lkb-ink-muted);
+	color: var( --lkb-ink-muted );
 	font-size: 12px;
 }
 </style>

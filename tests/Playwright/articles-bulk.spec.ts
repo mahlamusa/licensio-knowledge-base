@@ -216,7 +216,9 @@ test.describe( 'Articles bulk actions', () => {
 	} ) => {
 		const app = await openSeeded( page );
 		const bulk = recordWrites( page, 'bulk' );
-		const rows = await app.locator( '.ant-table-tbody .ant-table-row' ).count();
+		const rows = await app
+			.locator( '.ant-table-tbody .ant-table-row' )
+			.count();
 
 		await selectPage( app );
 		await chooseAction( page, app, 'Replace tags' );

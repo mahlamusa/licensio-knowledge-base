@@ -236,7 +236,9 @@ test.describe( 'Articles app', () => {
 		await expect( page ).toHaveURL( /window=7/ );
 		expect( await entries() ).toBe( start );
 
-		await app.locator( '.ant-table-thead th', { hasText: 'Title' } ).click();
+		await app
+			.locator( '.ant-table-thead th', { hasText: 'Title' } )
+			.click();
 		await expect( page ).toHaveURL( /orderby=title/ );
 		expect( await entries() ).toBe( start + 1 );
 
@@ -302,7 +304,9 @@ test.describe( 'Articles app', () => {
 	} ) => {
 		await page.route(
 			( url ) =>
-				/licensio-kb(%2F|\/)v1(%2F|\/)articles(&|\?|$)/.test( url.href ),
+				/licensio-kb(%2F|\/)v1(%2F|\/)articles(&|\?|$)/.test(
+					url.href
+				),
 			( route ) =>
 				route.fulfill( {
 					status: 500,
@@ -330,13 +334,17 @@ test.describe( 'Articles app', () => {
 		} );
 
 		try {
-			await page.goto( contentManagerUrl( 'articles' ) + '&status=draft' );
+			await page.goto(
+				contentManagerUrl( 'articles' ) + '&status=draft'
+			);
 
 			const pill = ( label: string ) =>
 				app.locator( '.lkb-pill', { hasText: label } );
 			const count = async ( label: string ) =>
 				Number(
-					/\((\d+)\)/.exec( ( await pill( label ).textContent() ) ?? '' )?.[ 1 ]
+					/\((\d+)\)/.exec(
+						( await pill( label ).textContent() ) ?? ''
+					)?.[ 1 ]
 				);
 			const row = app.locator( '.ant-table-row', { hasText: title } );
 
@@ -354,15 +362,21 @@ test.describe( 'Articles app', () => {
 				.locator( '.ant-select' )
 				.click();
 			await page
-				.locator( '.ant-select-dropdown:visible .ant-select-item-option' )
+				.locator(
+					'.ant-select-dropdown:visible .ant-select-item-option'
+				)
 				.filter( { hasText: /^Published$/ } )
 				.click();
 			await form.getByRole( 'button', { name: /Save/ } ).click();
 			await confirmPopconfirm( page );
 
 			await expect( row ).toHaveCount( 0 );
-			await expect( app.locator( '.ant-table-expanded-row' ) ).toHaveCount( 0 );
-			await expect( pill( 'Drafts' ) ).toContainText( `(${ drafts - 1 })` );
+			await expect(
+				app.locator( '.ant-table-expanded-row' )
+			).toHaveCount( 0 );
+			await expect( pill( 'Drafts' ) ).toContainText(
+				`(${ drafts - 1 })`
+			);
 			await expect( pill( 'Published' ) ).toContainText(
 				`(${ published + 1 })`
 			);
@@ -384,7 +398,9 @@ test.describe( 'Articles app', () => {
 			const actions = window.getComputedStyle(
 				element
 					.closest( 'th, td' )
-					?.querySelector( '.row-actions, .lkb-rowactions' ) as Element
+					?.querySelector(
+						'.row-actions, .lkb-rowactions'
+					) as Element
 			);
 
 			return {
@@ -405,7 +421,10 @@ test.describe( 'Articles app', () => {
 
 		await page.goto( '/wp-admin/edit.php' );
 
-		const core = await page.locator( '.row-title' ).first().evaluate( style );
+		const core = await page
+			.locator( '.row-title' )
+			.first()
+			.evaluate( style );
 		const app = await openContentManager( page, 'articles' );
 		const row = app.locator( '.ant-table-row' ).first();
 		const actions = row.locator( '.lkb-rowactions' );

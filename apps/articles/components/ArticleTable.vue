@@ -23,11 +23,7 @@ import { confirmTitle, performAction } from '../actions';
 import { useArticlesStore } from '../store';
 import { ORDER_BY } from '../url';
 import QuickEditRow from './QuickEditRow.vue';
-import type {
-	ArticleColumn,
-	ArticleItem,
-	ArticleOrderBy,
-} from '../types';
+import type { ArticleColumn, ArticleItem, ArticleOrderBy } from '../types';
 
 const store = useArticlesStore();
 const settings = config();
@@ -81,7 +77,11 @@ const columns = computed( () => {
 		[ 'attachments', __( 'Attachments', 'licensio-knowledge-base' ), 110 ],
 		[ 'rating', __( 'Rating', 'licensio-knowledge-base' ), 120 ],
 		[ 'views', __( 'Views', 'licensio-knowledge-base' ), 90 ],
-		[ 'reading_time', __( 'Reading time', 'licensio-knowledge-base' ), 110 ],
+		[
+			'reading_time',
+			__( 'Reading time', 'licensio-knowledge-base' ),
+			110,
+		],
 		[ 'date', __( 'Date', 'licensio-knowledge-base' ), 150 ],
 		[ 'modified', __( 'Modified', 'licensio-knowledge-base' ), 150 ],
 	];
@@ -127,9 +127,9 @@ function feedbackUrl( id: number ): string {
  *
  * @since 1.0.0
  *
- * @param {Object} pagination The table pagination.
- * @param {unknown} filters   Unused column filters.
- * @param {Object} sorter     The sorted column.
+ * @param {Object}  pagination The table pagination.
+ * @param {unknown} filters    Unused column filters.
+ * @param {Object}  sorter     The sorted column.
  *
  * @return {void}
  */
@@ -184,10 +184,11 @@ function toggleQuickEdit( item: ArticleItem ): void {
 function closeQuickEdit( id: number ): void {
 	store.quickEditId = 0;
 
-	nextTick( () =>
-		document
-			.querySelector< HTMLElement >( `[data-quick-edit="${ id }"]` )
-			?.focus()
+	nextTick(
+		() =>
+			document
+				.querySelector< HTMLElement >( `[data-quick-edit="${ id }"]` )
+				?.focus()
 	);
 }
 
@@ -209,10 +210,14 @@ const expandedKeys = computed( () =>
 			:row-selection="{
 				selectedRowKeys: store.selected,
 				preserveSelectedRowKeys: store.allMatching,
-				onChange: ( keys: Array<string | number> ) => store.select( keys.map( Number ) ),
+				onChange: ( keys: Array< string | number > ) =>
+					store.select( keys.map( Number ) ),
 				getCheckboxProps: ( record: ArticleItem ) => ( {
 					/* translators: %s: article title. */
-					'aria-label': sprintf( __( 'Select “%s”', 'licensio-knowledge-base' ), record.title ),
+					'aria-label': sprintf(
+						__( 'Select “%s”', 'licensio-knowledge-base' ),
+						record.title
+					),
 				} ),
 			}"
 			:pagination="{
@@ -225,17 +230,41 @@ const expandedKeys = computed( () =>
 			@change="onChange"
 		>
 			<template #emptyText>
-				<div v-if="! store.loading && store.loaded && ! store.error" class="lkb-empty">
+				<div
+					v-if="! store.loading && store.loaded && ! store.error"
+					class="lkb-empty"
+				>
 					<template v-if="store.isFiltered">
-						<p>{{ __( 'No articles match these filters.', 'licensio-knowledge-base' ) }}</p>
+						<p>
+							{{
+								__(
+									'No articles match these filters.',
+									'licensio-knowledge-base'
+								)
+							}}
+						</p>
 						<a-button @click="store.clearFilters()">
-							{{ __( 'Clear filters', 'licensio-knowledge-base' ) }}
+							{{
+								__( 'Clear filters', 'licensio-knowledge-base' )
+							}}
 						</a-button>
 					</template>
 					<template v-else>
-						<p>{{ __( 'No articles yet.', 'licensio-knowledge-base' ) }}</p>
+						<p>
+							{{
+								__(
+									'No articles yet.',
+									'licensio-knowledge-base'
+								)
+							}}
+						</p>
 						<a-button type="primary" :href="settings.newUrl">
-							{{ __( 'Create your first article', 'licensio-knowledge-base' ) }}
+							{{
+								__(
+									'Create your first article',
+									'licensio-knowledge-base'
+								)
+							}}
 						</a-button>
 					</template>
 				</div>
@@ -244,28 +273,65 @@ const expandedKeys = computed( () =>
 			<template #bodyCell="{ column: col, record }">
 				<template v-if="'title' === col.key">
 					<div class="lkb-title">
-						<a v-if="record.edit_url" :href="record.edit_url" class="lkb-title__link">
-							{{ record.title || __( '(no title)', 'licensio-knowledge-base' ) }}
+						<a
+							v-if="record.edit_url"
+							:href="record.edit_url"
+							class="lkb-title__link"
+						>
+							{{
+								record.title ||
+								__( '(no title)', 'licensio-knowledge-base' )
+							}}
 						</a>
 						<span v-else class="lkb-title__link">
-							{{ record.title || __( '(no title)', 'licensio-knowledge-base' ) }}
+							{{
+								record.title ||
+								__( '(no title)', 'licensio-knowledge-base' )
+							}}
 						</span>
 
-						<a-tag v-if="'publish' !== record.status" class="lkb-title__status">
+						<a-tag
+							v-if="'publish' !== record.status"
+							class="lkb-title__status"
+						>
 							{{ statusLabel( record.status ) }}
 						</a-tag>
 
-						<a-tag v-if="record.has_password" class="lkb-title__status">
-							{{ __( 'Password protected', 'licensio-knowledge-base' ) }}
+						<a-tag
+							v-if="record.has_password"
+							class="lkb-title__status"
+						>
+							{{
+								__(
+									'Password protected',
+									'licensio-knowledge-base'
+								)
+							}}
 						</a-tag>
 
 						<a-tooltip
 							v-if="record.lock"
-							:title="/* translators: %s: name of the user editing the article. */ sprintf( __( '%s is editing', 'licensio-knowledge-base' ), record.lock.name )"
+							:title="
+								/* translators: %s: name of the user editing the article. */ sprintf(
+									__(
+										'%s is editing',
+										'licensio-knowledge-base'
+									),
+									record.lock.name
+								)
+							"
 						>
 							<span class="lkb-title__lock" tabindex="0">
 								<LockOutlined aria-hidden="true" />
-								{{ /* translators: %s: name of the user editing the article. */ sprintf( __( '%s is editing', 'licensio-knowledge-base' ), record.lock.name ) }}
+								{{
+									/* translators: %s: name of the user editing the article. */ sprintf(
+										__(
+											'%s is editing',
+											'licensio-knowledge-base'
+										),
+										record.lock.name
+									)
+								}}
 							</span>
 						</a-tooltip>
 					</div>
@@ -282,15 +348,43 @@ const expandedKeys = computed( () =>
 								:disabled="!! record.lock || ! record.edit_url"
 								:aria-expanded="store.quickEditId === record.id"
 								:data-quick-edit="record.id"
-								@click="toggleQuickEdit( record as ArticleItem )"
+								@click="
+									toggleQuickEdit( record as ArticleItem )
+								"
 							>
-								{{ __( 'Quick edit', 'licensio-knowledge-base' ) }}
+								{{
+									__(
+										'Quick edit',
+										'licensio-knowledge-base'
+									)
+								}}
 							</a-button>
 							<a v-if="record.view_url" :href="record.view_url">
-								{{ 'publish' === record.status ? __( 'View', 'licensio-knowledge-base' ) : __( 'Preview', 'licensio-knowledge-base' ) }}
+								{{
+									'publish' === record.status
+										? __(
+												'View',
+												'licensio-knowledge-base'
+										  )
+										: __(
+												'Preview',
+												'licensio-knowledge-base'
+										  )
+								}}
 							</a>
-							<a v-if="record.needs_attention || store.query.needs_attention" :href="feedbackUrl( record.id )">
-								{{ __( 'View feedback', 'licensio-knowledge-base' ) }}
+							<a
+								v-if="
+									record.needs_attention ||
+									store.query.needs_attention
+								"
+								:href="feedbackUrl( record.id )"
+							>
+								{{
+									__(
+										'View feedback',
+										'licensio-knowledge-base'
+									)
+								}}
 							</a>
 							<ConfirmButton
 								type="link"
@@ -298,8 +392,15 @@ const expandedKeys = computed( () =>
 								danger
 								:disabled="!! record.lock"
 								:title="confirmTitle( 'trash', {}, 1 )"
-								:ok-text="__( 'Move to trash', 'licensio-knowledge-base' )"
-								@confirm="performAction( 'trash', {}, [ record.id ] )"
+								:ok-text="
+									__(
+										'Move to trash',
+										'licensio-knowledge-base'
+									)
+								"
+								@confirm="
+									performAction( 'trash', {}, [ record.id ] )
+								"
 							>
 								{{ __( 'Trash', 'licensio-knowledge-base' ) }}
 							</ConfirmButton>
@@ -309,8 +410,14 @@ const expandedKeys = computed( () =>
 								type="link"
 								size="small"
 								:title="confirmTitle( 'restore', {}, 1 )"
-								:ok-text="__( 'Restore', 'licensio-knowledge-base' )"
-								@confirm="performAction( 'restore', {}, [ record.id ] )"
+								:ok-text="
+									__( 'Restore', 'licensio-knowledge-base' )
+								"
+								@confirm="
+									performAction( 'restore', {}, [
+										record.id,
+									] )
+								"
 							>
 								{{ __( 'Restore', 'licensio-knowledge-base' ) }}
 							</ConfirmButton>
@@ -319,10 +426,22 @@ const expandedKeys = computed( () =>
 								size="small"
 								danger
 								:title="confirmTitle( 'delete', {}, 1 )"
-								:ok-text="__( 'Delete permanently', 'licensio-knowledge-base' )"
-								@confirm="performAction( 'delete', {}, [ record.id ] )"
+								:ok-text="
+									__(
+										'Delete permanently',
+										'licensio-knowledge-base'
+									)
+								"
+								@confirm="
+									performAction( 'delete', {}, [ record.id ] )
+								"
 							>
-								{{ __( 'Delete permanently', 'licensio-knowledge-base' ) }}
+								{{
+									__(
+										'Delete permanently',
+										'licensio-knowledge-base'
+									)
+								}}
 							</ConfirmButton>
 						</template>
 					</div>
@@ -332,28 +451,62 @@ const expandedKeys = computed( () =>
 					{{ record.author.name }}
 				</template>
 
-				<template v-else-if="'categories' === col.key || 'tags' === col.key">
-					<span v-if="0 === record[ col.key ].length" class="lkb-muted">—</span>
-					<span v-else>{{ record[ col.key ].map( ( term: { name: string } ) => term.name ).join( ', ' ) }}</span>
+				<template
+					v-else-if="'categories' === col.key || 'tags' === col.key"
+				>
+					<span
+						v-if="0 === record[ col.key ].length"
+						class="lkb-muted"
+						>—</span
+					>
+					<span v-else>{{
+						record[ col.key ]
+							.map( ( term: { name: string } ) => term.name )
+							.join( ', ' )
+					}}</span>
 				</template>
 
 				<template v-else-if="'rating' === col.key">
-					<span v-if="null === record.rating.share" class="lkb-muted">—</span>
+					<span v-if="null === record.rating.share" class="lkb-muted"
+						>—</span
+					>
 					<span
 						v-else
 						:class="{ 'lkb-rating--low': record.needs_attention }"
-						:title="/* translators: 1: helpful votes, 2: not helpful votes. */ sprintf( __( '%1$d helpful, %2$d not helpful', 'licensio-knowledge-base' ), record.rating.up, record.rating.down )"
+						:title="
+							/* translators: 1: helpful votes, 2: not helpful votes. */ sprintf(
+								__(
+									'%1$d helpful, %2$d not helpful',
+									'licensio-knowledge-base'
+								),
+								record.rating.up,
+								record.rating.down
+							)
+						"
 					>
 						{{ record.rating.share }}%
-						<span class="lkb-muted">({{ record.rating.up }}/{{ record.rating.down }})</span>
+						<span class="lkb-muted"
+							>({{ record.rating.up }}/{{
+								record.rating.down
+							}})</span
+						>
 					</span>
 				</template>
 
 				<template v-else-if="'reading_time' === col.key">
-					{{ /* translators: %d: reading time in minutes. */ record.reading_time ? sprintf( __( '%d min', 'licensio-knowledge-base' ), record.reading_time ) : '—' }}
+					{{
+						/* translators: %d: reading time in minutes. */ record.reading_time
+							? sprintf(
+									__( '%d min', 'licensio-knowledge-base' ),
+									record.reading_time
+							  )
+							: '—'
+					}}
 				</template>
 
-				<template v-else-if="'date' === col.key || 'modified' === col.key">
+				<template
+					v-else-if="'date' === col.key || 'modified' === col.key"
+				>
 					{{ displayDate( record[ col.key ] ) }}
 				</template>
 
@@ -376,10 +529,10 @@ const expandedKeys = computed( () =>
 <style scoped>
 .lkb-tablecard {
 	overflow: hidden;
-	border: 1px solid var(--lkb-border-wp);
-	border-radius: var(--lkb-radius);
-	background: var(--lkb-surface);
-	box-shadow: var(--lkb-shadow-sm);
+	border: 1px solid var( --lkb-border-wp );
+	border-radius: var( --lkb-radius );
+	background: var( --lkb-surface );
+	box-shadow: var( --lkb-shadow-sm );
 }
 
 .lkb-tablecard :deep( .ant-table-thead > tr > th ),
@@ -419,7 +572,7 @@ const expandedKeys = computed( () =>
 	display: inline-flex;
 	align-items: center;
 	gap: 4px;
-	color: var(--lkb-warning);
+	color: var( --lkb-warning );
 	font-size: 12px;
 }
 
@@ -465,21 +618,21 @@ const expandedKeys = computed( () =>
 }
 
 .lkb-muted {
-	color: var(--lkb-ink-faint);
+	color: var( --lkb-ink-faint );
 }
 
 .lkb-rating--low {
-	color: var(--lkb-danger, #b32d2e);
+	color: var( --lkb-danger, #b32d2e );
 	font-weight: 600;
 }
 
 .lkb-empty {
 	padding: 24px 0;
-	color: var(--lkb-ink-muted);
+	color: var( --lkb-ink-muted );
 }
 
 :deep( .ant-table-tbody > tr.ant-table-row-selected > td ) {
-	background: var(--lkb-brand-tint);
+	background: var( --lkb-brand-tint );
 }
 
 :deep( .ant-table-tbody > tr.ant-table-row-selected:hover > td ) {

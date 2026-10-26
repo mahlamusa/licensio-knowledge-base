@@ -21,7 +21,10 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-const root = path.resolve( path.dirname( fileURLToPath( import.meta.url ) ), '..' );
+const root = path.resolve(
+	path.dirname( fileURLToPath( import.meta.url ) ),
+	'..'
+);
 
 const potFile = process.argv[ 2 ];
 const appsDir = path.resolve( process.argv[ 3 ] ?? path.join( root, 'apps' ) );
@@ -194,7 +197,9 @@ for ( const file of sourceFiles( appsDir ) ) {
 			checked++;
 
 			if ( ! known.has( key( context, text ) ) ) {
-				const line = source.slice( 0, match.index ).split( '\n' ).length;
+				const line = source
+					.slice( 0, match.index )
+					.split( '\n' ).length;
 
 				missing.push(
 					`${ path.relative( root, file ) }:${ line }  ${ text }${

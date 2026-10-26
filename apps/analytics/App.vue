@@ -94,168 +94,247 @@ onMounted( () => {
 
 <template>
 	<a-config-provider :theme="lkbTheme">
-	<div class="lkb-page licensio-kb-analytics">
-		<AppHeader :settings-url="settings.settingsUrl" />
+		<div class="lkb-page licensio-kb-analytics">
+			<AppHeader :settings-url="settings.settingsUrl" />
 
-		<div id="lkb-main" class="lkb-page__body lkb-measure">
-			<div class="lkb-page__head">
-				<h1 class="lkb-page__title">{{ __( 'Analytics', 'licensio-knowledge-base' ) }}</h1>
-			</div>
+			<div id="lkb-main" class="lkb-page__body lkb-measure">
+				<div class="lkb-page__head">
+					<h1 class="lkb-page__title">
+						{{ __( 'Analytics', 'licensio-knowledge-base' ) }}
+					</h1>
+				</div>
 
-		<a-alert
-			v-if="store.error"
-			type="error"
-			show-icon
-			:message="store.error"
-			class="licensio-kb-analytics__notice"
-		/>
-
-		<a-alert
-			v-else-if="store.overview && ! store.collecting"
-			type="warning"
-			show-icon
-			:message="
-				__(
-					'Analytics collection is switched off, so nothing new is being recorded.',
-					'licensio-knowledge-base'
-				)
-			"
-			class="licensio-kb-analytics__notice"
-		/>
-
-		<div class="licensio-kb-analytics__range">
-			<label>
-				{{ __( 'From', 'licensio-knowledge-base' ) }}
-				<input v-model="start" type="date" />
-			</label>
-			<label>
-				{{ __( 'To', 'licensio-knowledge-base' ) }}
-				<input v-model="end" type="date" />
-			</label>
-			<a-button type="primary" @click="applyRange">
-				{{ __( 'Apply', 'licensio-knowledge-base' ) }}
-			</a-button>
-			<a-button
-				v-for="days in presets"
-				:key="days"
-				@click="applyPreset( days )"
-			>
-				{{ days }} {{ __( 'days', 'licensio-knowledge-base' ) }}
-			</a-button>
-			<span class="licensio-kb-analytics__retention">
-				{{ __( 'Rows are kept for', 'licensio-knowledge-base' ) }} {{ settings.retentionDays }}
-				{{ __( 'days.', 'licensio-knowledge-base' ) }}
-			</span>
-		</div>
-
-		<a-spin :spinning="store.loading">
-			<a-row :gutter="16" class="licensio-kb-analytics__cards">
-				<a-col :span="6">
-					<a-card>
-						<a-statistic
-							:title="__( 'Searches', 'licensio-knowledge-base' )"
-							:value="store.overview?.totals.total_searches ?? 0"
-						/>
-					</a-card>
-				</a-col>
-				<a-col :span="6">
-					<a-card>
-						<a-statistic
-							:title="__( 'Search effectiveness', 'licensio-knowledge-base' )"
-							:value="store.effectiveness"
-							suffix="%"
-						/>
-					</a-card>
-				</a-col>
-				<a-col :span="6">
-					<a-card>
-						<a-statistic
-							:title="__( 'Article views', 'licensio-knowledge-base' )"
-							:value="store.overview?.totals.total_views ?? 0"
-						/>
-					</a-card>
-				</a-col>
-				<a-col :span="6">
-					<a-card>
-						<a-statistic
-							:title="__( 'Empty searches', 'licensio-knowledge-base' )"
-							:value="
-								store.overview?.totals.zero_result_searches ?? 0
-							"
-						/>
-					</a-card>
-				</a-col>
-			</a-row>
-
-			<a-card :title="__( 'Activity', 'licensio-knowledge-base' )" class="licensio-kb-analytics__block">
-				<TrendChart :series="trend" />
-			</a-card>
-
-			<a-card
-				:title="__( 'Questions with no answer', 'licensio-knowledge-base' )"
-				class="licensio-kb-analytics__block"
-			>
-				<ZeroResultTable :rows="store.searches?.zero_results ?? []" />
-			</a-card>
-
-			<a-card
-				:title="__( 'Top searches', 'licensio-knowledge-base' )"
-				class="licensio-kb-analytics__block"
-			>
-				<SearchTable :rows="store.searches?.top ?? []" />
-			</a-card>
-
-			<a-row :gutter="16" class="licensio-kb-analytics__block">
-				<a-col :span="12">
-					<a-card :title="__( 'Most useful articles', 'licensio-knowledge-base' )">
-						<ArticleTable
-							:rows="store.articles?.most_useful ?? []"
-							metric="usefulness"
-						/>
-					</a-card>
-				</a-col>
-				<a-col :span="12">
-					<a-card :title="__( 'Least useful articles', 'licensio-knowledge-base' )">
-						<ArticleTable
-							:rows="store.articles?.least_useful ?? []"
-							metric="usefulness"
-						/>
-					</a-card>
-				</a-col>
-			</a-row>
-
-			<a-card
-				:title="__( 'Most read articles', 'licensio-knowledge-base' )"
-				class="licensio-kb-analytics__block"
-			>
-				<ArticleTable
-					:rows="store.articles?.most_viewed ?? []"
-					metric="views"
+				<a-alert
+					v-if="store.error"
+					type="error"
+					show-icon
+					:message="store.error"
+					class="licensio-kb-analytics__notice"
 				/>
-			</a-card>
 
-			<a-card
-				:title="__( 'Feedback', 'licensio-knowledge-base' )"
-				class="licensio-kb-analytics__block"
-			>
-				<a-descriptions bordered size="small" :column="4">
-					<a-descriptions-item :label="__( 'Votes', 'licensio-knowledge-base' )">
-						{{ store.feedback?.totals.total ?? 0 }}
-					</a-descriptions-item>
-					<a-descriptions-item :label="__( 'Helpful', 'licensio-knowledge-base' )">
-						{{ store.feedback?.totals.positive ?? 0 }}
-					</a-descriptions-item>
-					<a-descriptions-item :label="__( 'Not helpful', 'licensio-knowledge-base' )">
-						{{ store.feedback?.totals.negative ?? 0 }}
-					</a-descriptions-item>
-					<a-descriptions-item :label="__( 'Useful', 'licensio-knowledge-base' )">
-						{{ store.feedback?.totals.usefulness ?? 0 }}%
-					</a-descriptions-item>
-				</a-descriptions>
-			</a-card>
-		</a-spin>
+				<a-alert
+					v-else-if="store.overview && ! store.collecting"
+					type="warning"
+					show-icon
+					:message="
+						__(
+							'Analytics collection is switched off, so nothing new is being recorded.',
+							'licensio-knowledge-base'
+						)
+					"
+					class="licensio-kb-analytics__notice"
+				/>
+
+				<div class="licensio-kb-analytics__range">
+					<label>
+						{{ __( 'From', 'licensio-knowledge-base' ) }}
+						<input v-model="start" type="date" />
+					</label>
+					<label>
+						{{ __( 'To', 'licensio-knowledge-base' ) }}
+						<input v-model="end" type="date" />
+					</label>
+					<a-button type="primary" @click="applyRange">
+						{{ __( 'Apply', 'licensio-knowledge-base' ) }}
+					</a-button>
+					<a-button
+						v-for="days in presets"
+						:key="days"
+						@click="applyPreset( days )"
+					>
+						{{ days }} {{ __( 'days', 'licensio-knowledge-base' ) }}
+					</a-button>
+					<span class="licensio-kb-analytics__retention">
+						{{
+							__( 'Rows are kept for', 'licensio-knowledge-base' )
+						}}
+						{{ settings.retentionDays }}
+						{{ __( 'days.', 'licensio-knowledge-base' ) }}
+					</span>
+				</div>
+
+				<a-spin :spinning="store.loading">
+					<a-row :gutter="16" class="licensio-kb-analytics__cards">
+						<a-col :span="6">
+							<a-card>
+								<a-statistic
+									:title="
+										__(
+											'Searches',
+											'licensio-knowledge-base'
+										)
+									"
+									:value="
+										store.overview?.totals.total_searches ??
+										0
+									"
+								/>
+							</a-card>
+						</a-col>
+						<a-col :span="6">
+							<a-card>
+								<a-statistic
+									:title="
+										__(
+											'Search effectiveness',
+											'licensio-knowledge-base'
+										)
+									"
+									:value="store.effectiveness"
+									suffix="%"
+								/>
+							</a-card>
+						</a-col>
+						<a-col :span="6">
+							<a-card>
+								<a-statistic
+									:title="
+										__(
+											'Article views',
+											'licensio-knowledge-base'
+										)
+									"
+									:value="
+										store.overview?.totals.total_views ?? 0
+									"
+								/>
+							</a-card>
+						</a-col>
+						<a-col :span="6">
+							<a-card>
+								<a-statistic
+									:title="
+										__(
+											'Empty searches',
+											'licensio-knowledge-base'
+										)
+									"
+									:value="
+										store.overview?.totals
+											.zero_result_searches ?? 0
+									"
+								/>
+							</a-card>
+						</a-col>
+					</a-row>
+
+					<a-card
+						:title="__( 'Activity', 'licensio-knowledge-base' )"
+						class="licensio-kb-analytics__block"
+					>
+						<TrendChart :series="trend" />
+					</a-card>
+
+					<a-card
+						:title="
+							__(
+								'Questions with no answer',
+								'licensio-knowledge-base'
+							)
+						"
+						class="licensio-kb-analytics__block"
+					>
+						<ZeroResultTable
+							:rows="store.searches?.zero_results ?? []"
+						/>
+					</a-card>
+
+					<a-card
+						:title="__( 'Top searches', 'licensio-knowledge-base' )"
+						class="licensio-kb-analytics__block"
+					>
+						<SearchTable :rows="store.searches?.top ?? []" />
+					</a-card>
+
+					<a-row :gutter="16" class="licensio-kb-analytics__block">
+						<a-col :span="12">
+							<a-card
+								:title="
+									__(
+										'Most useful articles',
+										'licensio-knowledge-base'
+									)
+								"
+							>
+								<ArticleTable
+									:rows="store.articles?.most_useful ?? []"
+									metric="usefulness"
+								/>
+							</a-card>
+						</a-col>
+						<a-col :span="12">
+							<a-card
+								:title="
+									__(
+										'Least useful articles',
+										'licensio-knowledge-base'
+									)
+								"
+							>
+								<ArticleTable
+									:rows="store.articles?.least_useful ?? []"
+									metric="usefulness"
+								/>
+							</a-card>
+						</a-col>
+					</a-row>
+
+					<a-card
+						:title="
+							__(
+								'Most read articles',
+								'licensio-knowledge-base'
+							)
+						"
+						class="licensio-kb-analytics__block"
+					>
+						<ArticleTable
+							:rows="store.articles?.most_viewed ?? []"
+							metric="views"
+						/>
+					</a-card>
+
+					<a-card
+						:title="__( 'Feedback', 'licensio-knowledge-base' )"
+						class="licensio-kb-analytics__block"
+					>
+						<a-descriptions bordered size="small" :column="4">
+							<a-descriptions-item
+								:label="
+									__( 'Votes', 'licensio-knowledge-base' )
+								"
+							>
+								{{ store.feedback?.totals.total ?? 0 }}
+							</a-descriptions-item>
+							<a-descriptions-item
+								:label="
+									__( 'Helpful', 'licensio-knowledge-base' )
+								"
+							>
+								{{ store.feedback?.totals.positive ?? 0 }}
+							</a-descriptions-item>
+							<a-descriptions-item
+								:label="
+									__(
+										'Not helpful',
+										'licensio-knowledge-base'
+									)
+								"
+							>
+								{{ store.feedback?.totals.negative ?? 0 }}
+							</a-descriptions-item>
+							<a-descriptions-item
+								:label="
+									__( 'Useful', 'licensio-knowledge-base' )
+								"
+							>
+								{{ store.feedback?.totals.usefulness ?? 0 }}%
+							</a-descriptions-item>
+						</a-descriptions>
+					</a-card>
+				</a-spin>
+			</div>
 		</div>
-	</div>
 	</a-config-provider>
 </template>
 

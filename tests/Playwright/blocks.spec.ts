@@ -64,7 +64,9 @@ async function newPost( page: Page ): Promise< void > {
 	await switchOffWelcomeGuides( page, 'core/edit-post', [ 'welcomeGuide' ] );
 
 	await expect(
-		page.getByRole( 'button', { name: /Block Inserter|Toggle block inserter/ } )
+		page.getByRole( 'button', {
+			name: /Block Inserter|Toggle block inserter/,
+		} )
 	).toBeVisible( { timeout: 20_000 } );
 }
 
@@ -126,7 +128,9 @@ test.describe( 'Knowledge base blocks', () => {
 	} ) => {
 		await newPost( page );
 		await page
-			.getByRole( 'button', { name: /Block Inserter|Toggle block inserter/ } )
+			.getByRole( 'button', {
+				name: /Block Inserter|Toggle block inserter/,
+			} )
 			.click();
 		await page.getByPlaceholder( 'Search' ).fill( 'Knowledge Base' );
 
@@ -135,9 +139,7 @@ test.describe( 'Knowledge base blocks', () => {
 		).toBeVisible( { timeout: 20_000 } );
 
 		for ( const block of BLOCKS ) {
-			await expect(
-				blockOption( page, block.title )
-			).toBeVisible();
+			await expect( blockOption( page, block.title ) ).toBeVisible();
 		}
 	} );
 
@@ -182,7 +184,9 @@ test.describe( 'Knowledge base blocks', () => {
 
 		for ( const block of BLOCKS ) {
 			// One from the block, one from its shortcode.
-			await expect( page.locator( `.${ block.marker }` ) ).toHaveCount( 2 );
+			await expect( page.locator( `.${ block.marker }` ) ).toHaveCount(
+				2
+			);
 		}
 	} );
 } );

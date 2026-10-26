@@ -38,7 +38,11 @@ const emit = defineEmits< {
 } >();
 
 // Escape on an open select closes only the select, not the dialog.
-useEscapeClose( () => props.open, '.lkb-delete-dialog', () => emit( 'close' ) );
+useEscapeClose(
+	() => props.open,
+	'.lkb-delete-dialog',
+	() => emit( 'close' )
+);
 
 const store = useCategoriesStore();
 
@@ -182,12 +186,25 @@ async function remove(): Promise< void > {
 					)
 				}}
 			</legend>
-			<a-radio-group v-model:value="articleChoice" class="lkb-dialog__radios">
+			<a-radio-group
+				v-model:value="articleChoice"
+				class="lkb-dialog__radios"
+			>
 				<a-radio v-if="hasParent" value="parent">
-					{{ __( 'Move to parent category', 'licensio-knowledge-base' ) }}
+					{{
+						__(
+							'Move to parent category',
+							'licensio-knowledge-base'
+						)
+					}}
 				</a-radio>
 				<a-radio value="other">
-					{{ __( 'Move to another category', 'licensio-knowledge-base' ) }}
+					{{
+						__(
+							'Move to another category',
+							'licensio-knowledge-base'
+						)
+					}}
 				</a-radio>
 				<a-radio value="none">
 					{{
@@ -204,10 +221,15 @@ async function remove(): Promise< void > {
 				taxonomy="licensio_category"
 				:exclude="props.category ? [ props.category.id ] : []"
 				:aria-label="
-					__( 'Category to move the articles to', 'licensio-knowledge-base' )
+					__(
+						'Category to move the articles to',
+						'licensio-knowledge-base'
+					)
 				"
 				class="lkb-dialog__picker"
-				@update:model-value="( value ) => ( articleTarget = idOf( value ) )"
+				@update:model-value="
+					( value ) => ( articleTarget = idOf( value ) )
+				"
 			/>
 		</fieldset>
 
@@ -220,13 +242,24 @@ async function remove(): Promise< void > {
 					)
 				}}
 			</legend>
-			<a-radio-group v-model:value="childChoice" class="lkb-dialog__radios">
+			<a-radio-group
+				v-model:value="childChoice"
+				class="lkb-dialog__radios"
+			>
 				<a-radio value="parent">
-					{{ __( 'Move to parent (or top level)', 'licensio-knowledge-base' ) }}
+					{{
+						__(
+							'Move to parent (or top level)',
+							'licensio-knowledge-base'
+						)
+					}}
 				</a-radio>
 				<a-radio value="other">
 					{{
-						__( 'Move under another category', 'licensio-knowledge-base' )
+						__(
+							'Move under another category',
+							'licensio-knowledge-base'
+						)
 					}}
 				</a-radio>
 			</a-radio-group>
@@ -242,7 +275,9 @@ async function remove(): Promise< void > {
 					)
 				"
 				class="lkb-dialog__picker"
-				@update:model-value="( value ) => ( childTarget = idOf( value ) )"
+				@update:model-value="
+					( value ) => ( childTarget = idOf( value ) )
+				"
 			/>
 		</fieldset>
 
@@ -269,11 +304,11 @@ async function remove(): Promise< void > {
 
 <style scoped>
 .lkb-dialog__error {
-	margin-bottom: var(--lkb-gap);
+	margin-bottom: var( --lkb-gap );
 }
 
 .lkb-dialog__group {
-	margin: 0 0 var(--lkb-gap);
+	margin: 0 0 var( --lkb-gap );
 	padding: 0;
 	border: 0;
 }

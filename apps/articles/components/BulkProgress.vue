@@ -122,7 +122,12 @@ function nameOf( id: number ): string {
 			v-if="store.bulk.error"
 			type="error"
 			show-icon
-			:message="__( 'The run stopped at a batch the server refused.', 'licensio-knowledge-base' )"
+			:message="
+				__(
+					'The run stopped at a batch the server refused.',
+					'licensio-knowledge-base'
+				)
+			"
 			:description="store.bulk.error"
 			class="lkb-bulkprogress__alert"
 		/>
@@ -164,7 +169,7 @@ function nameOf( id: number ): string {
 <style scoped>
 .lkb-bulkprogress__line {
 	margin: 8px 0;
-	color: var(--lkb-ink-muted);
+	color: var( --lkb-ink-muted );
 }
 
 .lkb-bulkprogress__summary {

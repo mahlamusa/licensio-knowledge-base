@@ -8,10 +8,14 @@
 import type { SearchRow } from '../types';
 import { __ } from '../../components/i18n';
 
-defineProps<{ rows: SearchRow[] }>();
+defineProps< { rows: SearchRow[] } >();
 
 const columns = [
-	{ title: __( 'Search term', 'licensio-knowledge-base' ), dataIndex: 'term', key: 'term' },
+	{
+		title: __( 'Search term', 'licensio-knowledge-base' ),
+		dataIndex: 'term',
+		key: 'term',
+	},
 	{
 		title: __( 'Times searched', 'licensio-knowledge-base' ),
 		dataIndex: 'searches',
@@ -42,7 +46,12 @@ const columns = [
 		size="small"
 	>
 		<template #emptyText>
-			{{ __( 'Nothing was searched for in this range.', 'licensio-knowledge-base' ) }}
+			{{
+				__(
+					'Nothing was searched for in this range.',
+					'licensio-knowledge-base'
+				)
+			}}
 		</template>
 	</a-table>
 </template>

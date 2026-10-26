@@ -80,7 +80,11 @@ const exclude = computed( () =>
 const nameMissing = computed( () => '' === form.name.trim() );
 
 // Escape on an open select closes only the select, not the drawer.
-useEscapeClose( () => props.open, '.lkb-category-drawer', () => emit( 'close' ) );
+useEscapeClose(
+	() => props.open,
+	'.lkb-category-drawer',
+	() => emit( 'close' )
+);
 
 /**
  * Keep Tab and Shift+Tab inside the open drawer.
@@ -115,7 +119,10 @@ function trapFocus( event: KeyboardEvent ): void {
 	const first = items[ 0 ];
 	const last = items[ items.length - 1 ];
 
-	if ( event.shiftKey && ( active === first || ! items.includes( active as HTMLElement ) ) ) {
+	if (
+		event.shiftKey &&
+		( active === first || ! items.includes( active as HTMLElement ) )
+	) {
 		event.preventDefault();
 		last.focus();
 	} else if ( ! event.shiftKey && active === last ) {
@@ -160,7 +167,10 @@ function onAfterOpenChange( open: boolean ): void {
 
 	const active = document.activeElement;
 
-	if ( active?.closest( '.lkb-category-drawer' ) && active.matches( FOCUSABLE ) ) {
+	if (
+		active?.closest( '.lkb-category-drawer' ) &&
+		active.matches( FOCUSABLE )
+	) {
 		return;
 	}
 
@@ -317,7 +327,8 @@ async function save(): Promise< void > {
 		const fields = Object.keys( fieldErrors.value );
 
 		formError.value =
-			fields.length > 0 && fields.every( ( field ) => FIELDS.includes( field ) )
+			fields.length > 0 &&
+			fields.every( ( field ) => FIELDS.includes( field ) )
 				? ''
 				: errorMessage( error );
 	} finally {
@@ -387,7 +398,9 @@ async function save(): Promise< void > {
 					taxonomy="licensio_category"
 					:exclude="exclude"
 					:placeholder="__( 'Top level', 'licensio-knowledge-base' )"
-					:aria-label="__( 'Parent category', 'licensio-knowledge-base' )"
+					:aria-label="
+						__( 'Parent category', 'licensio-knowledge-base' )
+					"
 					@update:model-value="onParent"
 				/>
 			</a-form-item>
@@ -456,7 +469,7 @@ async function save(): Promise< void > {
 
 <style scoped>
 .lkb-drawer__error {
-	margin-bottom: var(--lkb-gap);
+	margin-bottom: var( --lkb-gap );
 }
 
 .lkb-drawer__footer {
@@ -467,7 +480,7 @@ async function save(): Promise< void > {
 
 .lkb-drawer__hint {
 	margin: 6px 0 0;
-	color: var(--lkb-ink-muted);
+	color: var( --lkb-ink-muted );
 	font-size: 12px;
 	text-align: right;
 }
@@ -480,6 +493,6 @@ async function save(): Promise< void > {
  * cover its title and close button.
  */
 .lkb-category-drawer .ant-drawer-content-wrapper {
-	top: var(--wp-admin--admin-bar--height, 0px);
+	top: var( --wp-admin--admin-bar--height, 0px );
 }
 </style>

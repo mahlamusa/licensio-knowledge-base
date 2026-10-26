@@ -91,18 +91,30 @@ async function selectSafeSource( root: Locator ): Promise< string > {
 	const order = labels
 		.map( ( label, index ) => ( { label, index } ) )
 		.sort( ( a, b ) =>
-			'BetterDocs' === a.label ? -1 : 'BetterDocs' === b.label ? 1 : a.index - b.index
+			'BetterDocs' === a.label
+				? -1
+				: 'BetterDocs' === b.label
+				? 1
+				: a.index - b.index
 		);
 
 	for ( const { label, index } of order ) {
 		await cards.nth( index ).locator( 'input[type="radio"]' ).check();
 
-		if ( 0 < ( await root.getByRole( 'button', { name: 'Next: categories' } ).count() ) ) {
+		if (
+			0 <
+			( await root
+				.getByRole( 'button', { name: 'Next: categories' } )
+				.count() )
+		) {
 			return label;
 		}
 	}
 
-	test.skip( true, 'Every detected source has an interrupted import; the spec will not resume a real import.' );
+	test.skip(
+		true,
+		'Every detected source has an interrupted import; the spec will not resume a real import.'
+	);
 
 	return '';
 }
@@ -132,13 +144,17 @@ async function logHasRuns( log: Locator ): Promise< boolean > {
  *
  * @since 1.0.0
  *
- * @param {Page}           page   The browser page.
- * @param {Locator}        select The select.
- * @param {string|RegExp}  option The option's text.
+ * @param {Page}          page   The browser page.
+ * @param {Locator}       select The select.
+ * @param {string|RegExp} option The option's text.
  *
  * @return {Promise<void>} Resolves once the option is picked.
  */
-async function choose( page: Page, select: Locator, option: string | RegExp ): Promise< void > {
+async function choose(
+	page: Page,
+	select: Locator,
+	option: string | RegExp
+): Promise< void > {
 	await select.click();
 	await page
 		.locator( '.ant-select-dropdown:visible .ant-select-item-option' )
@@ -158,7 +174,9 @@ test.describe( 'Migration wizard', () => {
 		await logIn( page );
 	} );
 
-	test( 'a dry run walks the wizard and lands in the log', async ( { page } ) => {
+	test( 'a dry run walks the wizard and lands in the log', async ( {
+		page,
+	} ) => {
 		test.setTimeout( 180_000 );
 
 		const root = await openMigration( page );
@@ -181,7 +199,9 @@ test.describe( 'Migration wizard', () => {
 		const label = await selectSafeSource( root );
 
 		await expect(
-			root.locator( '.licensio-kb-migration__source', { hasText: label } ).locator( 'input[type="radio"]' )
+			root
+				.locator( '.licensio-kb-migration__source', { hasText: label } )
+				.locator( 'input[type="radio"]' )
 		).toBeChecked();
 		await root.getByRole( 'button', { name: 'Next: categories' } ).click();
 
@@ -196,7 +216,9 @@ test.describe( 'Migration wizard', () => {
 
 		for ( const row of await rows.all() ) {
 			await expect(
-				row.locator( '.licensio-kb-migration__target .ant-select-selection-item' )
+				row.locator(
+					'.licensio-kb-migration__target .ant-select-selection-item'
+				)
 			).toHaveText( 'Create a new category' );
 		}
 
@@ -209,12 +231,24 @@ test.describe( 'Migration wizard', () => {
 		await expect( root.getByText( /Dry run complete/ ) ).toBeVisible( {
 			timeout: DRY_RUN_TIMEOUT,
 		} );
-		await expect( root.locator( '.licensio-kb-migration__counts-table .ant-descriptions-item-label' ).first() ).toBeVisible();
-		await expect( root.getByRole( 'button', { name: 'Looks good, run the import' } ) ).toBeVisible();
+		await expect(
+			root
+				.locator(
+					'.licensio-kb-migration__counts-table .ant-descriptions-item-label'
+				)
+				.first()
+		).toBeVisible();
+		await expect(
+			root.getByRole( 'button', { name: 'Looks good, run the import' } )
+		).toBeVisible();
 
 		// The real run asks first; cancelling leaves the dry run report alone.
-		await root.getByRole( 'button', { name: 'Looks good, run the import' } ).click();
-		await expect( openPopconfirm( page ) ).toContainText( 'Run the import now?' );
+		await root
+			.getByRole( 'button', { name: 'Looks good, run the import' } )
+			.click();
+		await expect( openPopconfirm( page ) ).toContainText(
+			'Run the import now?'
+		);
 		await cancelPopconfirm( page );
 		await expect(
 			root.getByRole( 'heading', { name: 'Verifying import (dry run)' } )
@@ -224,10 +258,18 @@ test.describe( 'Migration wizard', () => {
 		// The run is the first thing in the migration log, flagged as a dry run.
 		const log = root.locator( '.licensio-kb-migration-log' );
 
-		await expect( log.locator( '.licensio-kb-migration-log__run .ant-select-selection-item' ) ).toContainText( 'Dry run' );
-		await expect( log.locator( 'tbody tr.ant-table-row' ).first() ).toBeVisible();
 		await expect(
-			log.getByText( 'Dry run started: nothing is written except this log.' )
+			log.locator(
+				'.licensio-kb-migration-log__run .ant-select-selection-item'
+			)
+		).toContainText( 'Dry run' );
+		await expect(
+			log.locator( 'tbody tr.ant-table-row' ).first()
+		).toBeVisible();
+		await expect(
+			log.getByText(
+				'Dry run started: nothing is written except this log.'
+			)
 		).toBeVisible();
 	} );
 
@@ -235,27 +277,51 @@ test.describe( 'Migration wizard', () => {
 		const root = await openMigration( page );
 		const log = root.locator( '.licensio-kb-migration-log' );
 
-		await expect( root.getByRole( 'heading', { name: 'Migration log' } ) ).toBeVisible();
+		await expect(
+			root.getByRole( 'heading', { name: 'Migration log' } )
+		).toBeVisible();
 
-		test.skip( ! ( await logHasRuns( log ) ), 'No import has been logged on this site yet.' );
+		test.skip(
+			! ( await logHasRuns( log ) ),
+			'No import has been logged on this site yet.'
+		);
 
-		await expect( log.locator( '.licensio-kb-migration-log__run .ant-select-selection-item' ) ).toContainText( / UTC · / );
-		await expect( log.locator( 'tbody tr.ant-table-row' ).first() ).toBeVisible();
-		await expect( log.getByRole( 'link', { name: 'Download CSV' } ) ).toBeVisible();
-		await expect( log.getByRole( 'columnheader', { name: 'Title' } ) ).toBeVisible();
+		await expect(
+			log.locator(
+				'.licensio-kb-migration-log__run .ant-select-selection-item'
+			)
+		).toContainText( / UTC · / );
+		await expect(
+			log.locator( 'tbody tr.ant-table-row' ).first()
+		).toBeVisible();
+		await expect(
+			log.getByRole( 'link', { name: 'Download CSV' } )
+		).toBeVisible();
+		await expect(
+			log.getByRole( 'columnheader', { name: 'Title' } )
+		).toBeVisible();
 	} );
 
-	test( 'expanding an article row shows its meta and categories', async ( { page } ) => {
+	test( 'expanding an article row shows its meta and categories', async ( {
+		page,
+	} ) => {
 		test.setTimeout( 180_000 );
 
 		const root = await openMigration( page );
 		const log = root.locator( '.licensio-kb-migration-log' );
 		const runSelect = log.locator( '.licensio-kb-migration-log__run' );
 
-		test.skip( ! ( await logHasRuns( log ) ), 'No import has been logged on this site yet.' );
+		test.skip(
+			! ( await logHasRuns( log ) ),
+			'No import has been logged on this site yet.'
+		);
 
 		// Only an article that was created or adopted carries its meta and filing; a skipped one does not.
-		await choose( page, log.locator( '.licensio-kb-migration-log__status' ), 'Created' );
+		await choose(
+			page,
+			log.locator( '.licensio-kb-migration-log__status' ),
+			'Created'
+		);
 
 		// The run list is virtual, so step through it with the keyboard from the newest run down.
 		const seen = new Set< string >();
@@ -263,7 +329,9 @@ test.describe( 'Migration wizard', () => {
 		let found = false;
 
 		for ( let step = 0; step < MAX_RUNS_TO_SEARCH && ! found; step++ ) {
-			const label = await runSelect.locator( '.ant-select-selection-item' ).innerText();
+			const label = await runSelect
+				.locator( '.ant-select-selection-item' )
+				.innerText();
 
 			if ( seen.has( label ) ) {
 				break;
@@ -273,26 +341,48 @@ test.describe( 'Migration wizard', () => {
 
 			const article = log
 				.locator( 'tbody tr.ant-table-row' )
-				.filter( { has: page.locator( 'td', { hasText: /^article$/ } ) } )
+				.filter( {
+					has: page.locator( 'td', { hasText: /^article$/ } ),
+				} )
 				.first();
 
 			// The rows of a newly picked run arrive after the picker changes.
-			await article.waitFor( { timeout: 5_000 } ).catch( () => undefined );
+			await article
+				.waitFor( { timeout: 5_000 } )
+				.catch( () => undefined );
 
 			if ( 0 < ( await article.count() ) ) {
 				await article.locator( '.ant-table-row-expand-icon' ).click();
 
-				const details = log.locator( '.licensio-kb-migration-log__details' ).first();
+				const details = log
+					.locator( '.licensio-kb-migration-log__details' )
+					.first();
 
 				if (
-					0 < ( await details.getByRole( 'heading', { name: 'Meta' } ).count() ) &&
-					0 < ( await details.getByRole( 'heading', { name: 'Categories and tags' } ).count() )
+					0 <
+						( await details
+							.getByRole( 'heading', { name: 'Meta' } )
+							.count() ) &&
+					0 <
+						( await details
+							.getByRole( 'heading', {
+								name: 'Categories and tags',
+							} )
+							.count() )
 				) {
 					found = true;
 
-					await expect( details.getByRole( 'heading', { name: 'Meta' } ) ).toBeVisible();
-					await expect( details.getByRole( 'heading', { name: 'Categories and tags' } ) ).toBeVisible();
-					await expect( details.getByRole( 'columnheader', { name: 'Outcome' } ) ).toBeVisible();
+					await expect(
+						details.getByRole( 'heading', { name: 'Meta' } )
+					).toBeVisible();
+					await expect(
+						details.getByRole( 'heading', {
+							name: 'Categories and tags',
+						} )
+					).toBeVisible();
+					await expect(
+						details.getByRole( 'columnheader', { name: 'Outcome' } )
+					).toBeVisible();
 				}
 			}
 

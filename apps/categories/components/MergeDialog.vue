@@ -36,7 +36,11 @@ const emit = defineEmits< {
 } >();
 
 // Escape on an open select closes only the select, not the dialog.
-useEscapeClose( () => props.open, '.lkb-merge-dialog', () => emit( 'close' ) );
+useEscapeClose(
+	() => props.open,
+	'.lkb-merge-dialog',
+	() => emit( 'close' )
+);
 
 const store = useCategoriesStore();
 
@@ -90,7 +94,9 @@ watch(
 			nextTick( () => {
 				focusTimer = window.setTimeout( () => {
 					document
-						.querySelector< HTMLElement >( '.lkb-merge-dialog input' )
+						.querySelector< HTMLElement >(
+							'.lkb-merge-dialog input'
+						)
 						?.focus();
 				}, 50 );
 			} );
@@ -217,7 +223,9 @@ async function merge(): Promise< void > {
 					:model-value="sources"
 					taxonomy="licensio_category"
 					multiple
-					:aria-label="__( 'Categories to merge', 'licensio-knowledge-base' )"
+					:aria-label="
+						__( 'Categories to merge', 'licensio-knowledge-base' )
+					"
 					@update:model-value="onSources"
 				/>
 			</a-form-item>
@@ -259,7 +267,7 @@ async function merge(): Promise< void > {
 
 <style scoped>
 .lkb-dialog__error {
-	margin-bottom: var(--lkb-gap);
+	margin-bottom: var( --lkb-gap );
 }
 
 .lkb-dialog__footer {

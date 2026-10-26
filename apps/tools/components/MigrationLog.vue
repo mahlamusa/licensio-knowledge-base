@@ -69,12 +69,35 @@ const statusOptions = computed( () => [
 ] );
 
 const columns = computed( () => [
-	{ title: __( 'Status', 'licensio-knowledge-base' ), key: 'status', width: 110 },
-	{ title: __( 'Type', 'licensio-knowledge-base' ), dataIndex: 'item_type', key: 'item_type', width: 120 },
+	{
+		title: __( 'Status', 'licensio-knowledge-base' ),
+		key: 'status',
+		width: 110,
+	},
+	{
+		title: __( 'Type', 'licensio-knowledge-base' ),
+		dataIndex: 'item_type',
+		key: 'item_type',
+		width: 120,
+	},
 	{ title: __( 'Title', 'licensio-knowledge-base' ), key: 'title' },
-	{ title: __( 'Source ID', 'licensio-knowledge-base' ), dataIndex: 'source_id', key: 'source_id', width: 100 },
-	{ title: __( 'New ID', 'licensio-knowledge-base' ), dataIndex: 'target_id', key: 'target_id', width: 90 },
-	{ title: __( 'Details', 'licensio-knowledge-base' ), dataIndex: 'message', key: 'message' },
+	{
+		title: __( 'Source ID', 'licensio-knowledge-base' ),
+		dataIndex: 'source_id',
+		key: 'source_id',
+		width: 100,
+	},
+	{
+		title: __( 'New ID', 'licensio-knowledge-base' ),
+		dataIndex: 'target_id',
+		key: 'target_id',
+		width: 90,
+	},
+	{
+		title: __( 'Details', 'licensio-knowledge-base' ),
+		dataIndex: 'message',
+		key: 'message',
+	},
 ] );
 
 /**
@@ -87,10 +110,20 @@ const columns = computed( () => [
  * @return {string} The label.
  */
 function runLabel( item: LogRun ): string {
-	const kind = item.dry_run ? __( 'Dry run', 'licensio-knowledge-base' ) : __( 'Import', 'licensio-knowledge-base' );
-	const failed = item.failed > 0 ? ` · ${ item.failed } ${ __( 'failed', 'licensio-knowledge-base' ) }` : '';
+	const kind = item.dry_run
+		? __( 'Dry run', 'licensio-knowledge-base' )
+		: __( 'Import', 'licensio-knowledge-base' );
+	const failed =
+		item.failed > 0
+			? ` · ${ item.failed } ${ __(
+					'failed',
+					'licensio-knowledge-base'
+			  ) }`
+			: '';
 
-	return `${ item.started_at } UTC · ${ item.source } · ${ kind } · ${ item.entries } ${ __( 'entries', 'licensio-knowledge-base' ) }${ failed }`;
+	return `${ item.started_at } UTC · ${ item.source } · ${ kind } · ${
+		item.entries
+	} ${ __( 'entries', 'licensio-knowledge-base' ) }${ failed }`;
 }
 
 /**
@@ -143,8 +176,14 @@ function statusLabel( entry: LogEntry ): string {
  */
 function termsOf( entry: LogEntry ): Array< LogTerm & { group: string } > {
 	return [
-		...( entry.details.categories ?? [] ).map( ( term ) => ( { ...term, group: __( 'Category', 'licensio-knowledge-base' ) } ) ),
-		...( entry.details.tags ?? [] ).map( ( term ) => ( { ...term, group: __( 'Tag', 'licensio-knowledge-base' ) } ) ),
+		...( entry.details.categories ?? [] ).map( ( term ) => ( {
+			...term,
+			group: __( 'Category', 'licensio-knowledge-base' ),
+		} ) ),
+		...( entry.details.tags ?? [] ).map( ( term ) => ( {
+			...term,
+			group: __( 'Tag', 'licensio-knowledge-base' ),
+		} ) ),
 	];
 }
 
@@ -172,10 +211,14 @@ function metaOf( entry: LogEntry ): LogMeta[] {
  */
 function otherDetails( entry: LogEntry ): Array< [ string, string ] > {
 	return Object.entries( entry.details )
-		.filter( ( [ key ] ) => ! [ 'categories', 'tags', 'meta' ].includes( key ) )
+		.filter(
+			( [ key ] ) => ! [ 'categories', 'tags', 'meta' ].includes( key )
+		)
 		.map( ( [ key, value ] ) => [
 			words( key ),
-			typeof value === 'object' ? JSON.stringify( value ) : String( value ),
+			typeof value === 'object'
+				? JSON.stringify( value )
+				: String( value ),
 		] );
 }
 
@@ -205,11 +248,21 @@ async function loadRuns(): Promise< void > {
 	try {
 		runs.value = await fetchLogRuns();
 
-		const wanted = props.runId && runs.value.some( ( item ) => item.run_id === props.runId );
+		const wanted =
+			props.runId &&
+			runs.value.some( ( item ) => item.run_id === props.runId );
 
-		selectedRun.value = wanted ? ( props.runId as string ) : runs.value[ 0 ]?.run_id ?? '';
+		selectedRun.value = wanted
+			? ( props.runId as string )
+			: runs.value[ 0 ]?.run_id ?? '';
 	} catch ( caught ) {
-		error.value = caught instanceof Error ? caught.message : __( 'The log could not be loaded.', 'licensio-knowledge-base' );
+		error.value =
+			caught instanceof Error
+				? caught.message
+				: __(
+						'The log could not be loaded.',
+						'licensio-knowledge-base'
+				  );
 	}
 }
 
@@ -231,12 +284,22 @@ async function loadEntries(): Promise< void > {
 	error.value = '';
 
 	try {
-		const result = await fetchLogEntries( selectedRun.value, status.value, page.value );
+		const result = await fetchLogEntries(
+			selectedRun.value,
+			status.value,
+			page.value
+		);
 
 		entries.value = result.items;
 		total.value = result.total;
 	} catch ( caught ) {
-		error.value = caught instanceof Error ? caught.message : __( 'The log could not be loaded.', 'licensio-knowledge-base' );
+		error.value =
+			caught instanceof Error
+				? caught.message
+				: __(
+						'The log could not be loaded.',
+						'licensio-knowledge-base'
+				  );
 	} finally {
 		loading.value = false;
 	}
@@ -256,7 +319,13 @@ async function clear( everything: boolean ): Promise< void > {
 		await clearLog( everything ? '' : selectedRun.value );
 		await loadRuns();
 	} catch ( caught ) {
-		error.value = caught instanceof Error ? caught.message : __( 'The log could not be cleared.', 'licensio-knowledge-base' );
+		error.value =
+			caught instanceof Error
+				? caught.message
+				: __(
+						'The log could not be cleared.',
+						'licensio-knowledge-base'
+				  );
 	}
 }
 
@@ -292,11 +361,22 @@ defineExpose( { reload: loadRuns } );
 
 <template>
 	<div class="licensio-kb-migration-log">
-		<a-alert v-if="error" type="error" show-icon :message="error" class="licensio-kb-migration-log__error" />
+		<a-alert
+			v-if="error"
+			type="error"
+			show-icon
+			:message="error"
+			class="licensio-kb-migration-log__error"
+		/>
 
 		<a-empty
 			v-if="! runs.length && ! error"
-			:description="__( 'No imports have been logged yet.', 'licensio-knowledge-base' )"
+			:description="
+				__(
+					'No imports have been logged yet.',
+					'licensio-knowledge-base'
+				)
+			"
 		/>
 
 		<template v-else-if="runs.length">
@@ -306,7 +386,11 @@ defineExpose( { reload: loadRuns } );
 					class="licensio-kb-migration-log__run"
 					:aria-label="__( 'Run', 'licensio-knowledge-base' )"
 				>
-					<a-select-option v-for="item in runs" :key="item.run_id" :value="item.run_id">
+					<a-select-option
+						v-for="item in runs"
+						:key="item.run_id"
+						:value="item.run_id"
+					>
 						{{ runLabel( item ) }}
 					</a-select-option>
 				</a-select>
@@ -323,21 +407,35 @@ defineExpose( { reload: loadRuns } );
 				</a-button>
 
 				<a-popconfirm
-					:title="__( 'Delete this run\'s log entries? The imported content is not affected.', 'licensio-knowledge-base' )"
+					:title="
+						__(
+							'Delete this run\'s log entries? The imported content is not affected.',
+							'licensio-knowledge-base'
+						)
+					"
 					:ok-text="__( 'Delete', 'licensio-knowledge-base' )"
 					:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
 					@confirm="clear( false )"
 				>
-					<a-button>{{ __( 'Delete this run\'s log', 'licensio-knowledge-base' ) }}</a-button>
+					<a-button>{{
+						__( "Delete this run's log", 'licensio-knowledge-base' )
+					}}</a-button>
 				</a-popconfirm>
 
 				<a-popconfirm
-					:title="__( 'Clear the whole migration log? The imported content is not affected.', 'licensio-knowledge-base' )"
+					:title="
+						__(
+							'Clear the whole migration log? The imported content is not affected.',
+							'licensio-knowledge-base'
+						)
+					"
 					:ok-text="__( 'Clear log', 'licensio-knowledge-base' )"
 					:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
 					@confirm="clear( true )"
 				>
-					<a-button danger>{{ __( 'Clear all logs', 'licensio-knowledge-base' ) }}</a-button>
+					<a-button danger>{{
+						__( 'Clear all logs', 'licensio-knowledge-base' )
+					}}</a-button>
 				</a-popconfirm>
 			</div>
 
@@ -346,19 +444,31 @@ defineExpose( { reload: loadRuns } );
 				:data-source="entries"
 				:row-key="( entry: LogEntry ) => entry.id"
 				:loading="loading"
-				:pagination="{ current: page, pageSize: PAGE_SIZE, total, showSizeChanger: false }"
+				:pagination="{
+					current: page,
+					pageSize: PAGE_SIZE,
+					total,
+					showSizeChanger: false,
+				}"
 				:row-expandable="expandable"
 				size="small"
 				class="licensio-kb-migration-log__table"
 				@change="onTableChange"
 			>
 				<template #emptyText>
-					{{ __( 'No entries match this filter.', 'licensio-knowledge-base' ) }}
+					{{
+						__(
+							'No entries match this filter.',
+							'licensio-knowledge-base'
+						)
+					}}
 				</template>
 
 				<template #bodyCell="{ column, record }">
 					<template v-if="column.key === 'status'">
-						<a-tag :color="STATUS_COLORS[ record.status ] ?? 'default'">
+						<a-tag
+							:color="STATUS_COLORS[ record.status ] ?? 'default'"
+						>
 							{{ statusLabel( record ) }}
 						</a-tag>
 					</template>
@@ -373,33 +483,102 @@ defineExpose( { reload: loadRuns } );
 				<template #expandedRowRender="{ record }">
 					<div class="licensio-kb-migration-log__details">
 						<section v-if="termsOf( record ).length">
-							<h4>{{ __( 'Categories and tags', 'licensio-knowledge-base' ) }}</h4>
+							<h4>
+								{{
+									__(
+										'Categories and tags',
+										'licensio-knowledge-base'
+									)
+								}}
+							</h4>
 							<ul>
-								<li v-for="term in termsOf( record )" :key="term.group + term.source_id">
-									{{ term.group }}: <strong>{{ term.name || term.source_id }}</strong>
-									({{ term.source_id }} → {{ term.target_id || '—' }})
-									<a-tag :color="term.status === 'missing' ? 'red' : 'default'">{{ words( term.status ) }}</a-tag>
+								<li
+									v-for="term in termsOf( record )"
+									:key="term.group + term.source_id"
+								>
+									{{ term.group }}:
+									<strong>{{
+										term.name || term.source_id
+									}}</strong>
+									({{ term.source_id }} →
+									{{ term.target_id || '—' }})
+									<a-tag
+										:color="
+											term.status === 'missing'
+												? 'red'
+												: 'default'
+										"
+										>{{ words( term.status ) }}</a-tag
+									>
 								</li>
 							</ul>
 						</section>
 
 						<section v-if="metaOf( record ).length">
-							<h4>{{ __( 'Meta', 'licensio-knowledge-base' ) }}</h4>
+							<h4>
+								{{ __( 'Meta', 'licensio-knowledge-base' ) }}
+							</h4>
 							<table class="licensio-kb-migration-log__meta">
 								<thead>
 									<tr>
-										<th>{{ __( 'Key', 'licensio-knowledge-base' ) }}</th>
-										<th>{{ __( 'Value', 'licensio-knowledge-base' ) }}</th>
-										<th>{{ __( 'Outcome', 'licensio-knowledge-base' ) }}</th>
-										<th>{{ __( 'Where', 'licensio-knowledge-base' ) }}</th>
+										<th>
+											{{
+												__(
+													'Key',
+													'licensio-knowledge-base'
+												)
+											}}
+										</th>
+										<th>
+											{{
+												__(
+													'Value',
+													'licensio-knowledge-base'
+												)
+											}}
+										</th>
+										<th>
+											{{
+												__(
+													'Outcome',
+													'licensio-knowledge-base'
+												)
+											}}
+										</th>
+										<th>
+											{{
+												__(
+													'Where',
+													'licensio-knowledge-base'
+												)
+											}}
+										</th>
 									</tr>
 								</thead>
 								<tbody>
-									<tr v-for="meta in metaOf( record )" :key="meta.key">
-										<td><code>{{ meta.key }}</code></td>
-										<td class="licensio-kb-migration-log__value">{{ meta.value }}</td>
+									<tr
+										v-for="meta in metaOf( record )"
+										:key="meta.key"
+									>
 										<td>
-											<a-tag :color="ACTION_COLORS[ meta.action ] ?? 'default'">{{ words( meta.action ) }}</a-tag>
+											<code>{{ meta.key }}</code>
+										</td>
+										<td
+											class="licensio-kb-migration-log__value"
+										>
+											{{ meta.value }}
+										</td>
+										<td>
+											<a-tag
+												:color="
+													ACTION_COLORS[
+														meta.action
+													] ?? 'default'
+												"
+												>{{
+													words( meta.action )
+												}}</a-tag
+											>
 										</td>
 										<td>{{ meta.target }}</td>
 									</tr>
@@ -407,8 +586,14 @@ defineExpose( { reload: loadRuns } );
 							</table>
 						</section>
 
-						<dl v-if="otherDetails( record ).length" class="licensio-kb-migration-log__other">
-							<template v-for="[ key, value ] in otherDetails( record )" :key="key">
+						<dl
+							v-if="otherDetails( record ).length"
+							class="licensio-kb-migration-log__other"
+						>
+							<template
+								v-for="[ key, value ] in otherDetails( record )"
+								:key="key"
+							>
 								<dt>{{ key }}</dt>
 								<dd>{{ value }}</dd>
 							</template>

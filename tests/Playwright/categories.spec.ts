@@ -121,7 +121,11 @@ async function makeArticles(
 						page,
 						'POST',
 						'licensio_articles',
-						{ title, status: 'publish', licensio_categories: [ category ] },
+						{
+							title,
+							status: 'publish',
+							licensio_categories: [ category ],
+						},
 						'wp/v2'
 					) as Promise< { id: number } >
 			)
@@ -143,7 +147,7 @@ async function makeArticles(
  * @return {Promise<void>} Resolves once none is left.
  */
 async function clearArticles( page: Page ): Promise< void > {
-	for ( ;; ) {
+	for (;;) {
 		const found = ( await api(
 			page,
 			'GET',
@@ -158,7 +162,13 @@ async function clearArticles( page: Page ): Promise< void > {
 
 		await Promise.all(
 			found.map( ( one ) =>
-				api( page, 'DELETE', `licensio_articles/${ one.id }?force=true`, undefined, 'wp/v2' )
+				api(
+					page,
+					'DELETE',
+					`licensio_articles/${ one.id }?force=true`,
+					undefined,
+					'wp/v2'
+				)
 			)
 		);
 	}
@@ -175,7 +185,9 @@ async function clearArticles( page: Page ): Promise< void > {
  */
 async function paneTitles( page: Page ): Promise< string[] > {
 	return (
-		await page.locator( '.lkb-order__item .lkb-order__name > a' ).allTextContents()
+		await page
+			.locator( '.lkb-order__item .lkb-order__name > a' )
+			.allTextContents()
 	).map( ( title ) => title.trim() );
 }
 
@@ -300,7 +312,9 @@ function node( page: Page, name: string ) {
 		.filter( {
 			has: page.locator( '.lkb-tree__name', {
 				hasText: new RegExp(
-					'^\\s*' + name.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ) + '\\s*$'
+					'^\\s*' +
+						name.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ) +
+						'\\s*$'
 				),
 			} ),
 		} )
@@ -335,17 +349,28 @@ async function topLevel( page: Page ): Promise< string[] > {
  *
  * @return {Promise<void>} Resolves once the item is clicked.
  */
-async function act( page: Page, name: string, action: string ): Promise< void > {
-	await page.getByRole( 'button', { name: `Actions for ${ name }`, exact: true } ).click();
+async function act(
+	page: Page,
+	name: string,
+	action: string
+): Promise< void > {
 	await page
-		.locator( '.ant-dropdown:not(.ant-dropdown-hidden) .ant-dropdown-menu-item' )
+		.getByRole( 'button', { name: `Actions for ${ name }`, exact: true } )
+		.click();
+	await page
+		.locator(
+			'.ant-dropdown:not(.ant-dropdown-hidden) .ant-dropdown-menu-item'
+		)
 		.filter( { hasText: action } )
 		.click();
 }
 
 test.describe( 'Categories app', () => {
 	test.describe.configure( { mode: 'serial' } );
-	test.skip( ! enabled || ! user || ! password, 'Needs LICENSIO_KB_E2E=1 and admin credentials.' );
+	test.skip(
+		! enabled || ! user || ! password,
+		'Needs LICENSIO_KB_E2E=1 and admin credentials.'
+	);
 
 	test.beforeEach( async ( { page } ) => {
 		await logIn( page );
@@ -360,7 +385,9 @@ test.describe( 'Categories app', () => {
 		await expect( node( page, 'Gamma child' ) ).toBeVisible();
 	} );
 
-	test( 'a cancelled drop puts the tree back and sends nothing', async ( { page } ) => {
+	test( 'a cancelled drop puts the tree back and sends nothing', async ( {
+		page,
+	} ) => {
 		const writes = recordWrites( page );
 
 		await node( page, 'Alpha' ).dragTo( node( page, 'Gamma' ), {
@@ -369,17 +396,25 @@ test.describe( 'Categories app', () => {
 
 		await cancelPopconfirm( page );
 
-		expect( await topLevel( page ) ).toEqual( [ 'Alpha', 'Beta', 'Gamma' ] );
+		expect( await topLevel( page ) ).toEqual( [
+			'Alpha',
+			'Beta',
+			'Gamma',
+		] );
 		expect( writes ).toHaveLength( 0 );
 	} );
 
-	test( 'a confirmed drop is saved and survives a reload', async ( { page } ) => {
+	test( 'a confirmed drop is saved and survives a reload', async ( {
+		page,
+	} ) => {
 		await node( page, 'Alpha' ).dragTo( node( page, 'Gamma' ), {
 			targetPosition: { x: 60, y: 22 },
 		} );
 
 		await confirmPopconfirm( page );
-		await expect( page.locator( '.ant-message' ) ).toContainText( 'Category moved.' );
+		await expect( page.locator( '.ant-message' ) ).toContainText(
+			'Category moved.'
+		);
 
 		const after = await topLevel( page );
 
@@ -390,7 +425,9 @@ test.describe( 'Categories app', () => {
 		expect( await topLevel( page ) ).toEqual( after );
 	} );
 
-	test( 'a category cannot be dropped into its own child', async ( { page } ) => {
+	test( 'a category cannot be dropped into its own child', async ( {
+		page,
+	} ) => {
 		const writes = recordWrites( page );
 
 		await node( page, 'Gamma' ).dragTo( node( page, 'Gamma child' ) );
@@ -407,18 +444,31 @@ test.describe( 'Categories app', () => {
 		await act( page, 'Alpha', 'Move down' );
 		await cancelPopconfirm( page );
 		expect( writes ).toHaveLength( 0 );
-		expect( await topLevel( page ) ).toEqual( [ 'Alpha', 'Beta', 'Gamma' ] );
+		expect( await topLevel( page ) ).toEqual( [
+			'Alpha',
+			'Beta',
+			'Gamma',
+		] );
 
 		await act( page, 'Alpha', 'Move down' );
 		await confirmPopconfirm( page );
-		await expect.poll( () => topLevel( page ) ).toEqual( [ 'Beta', 'Alpha', 'Gamma' ] );
+		await expect
+			.poll( () => topLevel( page ) )
+			.toEqual( [ 'Beta', 'Alpha', 'Gamma' ] );
 		expect( writes ).toHaveLength( 1 );
 	} );
 
-	test( 'the actions menu works from the keyboard alone', async ( { page } ) => {
+	test( 'the actions menu works from the keyboard alone', async ( {
+		page,
+	} ) => {
 		const writes = recordWrites( page );
-		const trigger = page.getByRole( 'button', { name: 'Actions for Alpha', exact: true } );
-		const edit = page.getByRole( 'menuitem', { name: 'Edit' } ).locator( 'visible=true' );
+		const trigger = page.getByRole( 'button', {
+			name: 'Actions for Alpha',
+			exact: true,
+		} );
+		const edit = page
+			.getByRole( 'menuitem', { name: 'Edit' } )
+			.locator( 'visible=true' );
 
 		// Escape closes the menu and puts focus back on its button.
 		await trigger.focus();
@@ -433,16 +483,26 @@ test.describe( 'Categories app', () => {
 		await expect( edit ).toBeFocused();
 		await page.keyboard.press( 'ArrowDown' );
 		await page.keyboard.press( 'ArrowDown' );
-		await expect( page.getByRole( 'menuitem', { name: 'Move down' } ).locator( 'visible=true' ) ).toBeFocused();
+		await expect(
+			page
+				.getByRole( 'menuitem', { name: 'Move down' } )
+				.locator( 'visible=true' )
+		).toBeFocused();
 		await page.keyboard.press( 'Enter' );
 
 		// The move Popconfirm opens on Cancel, like every other, and Escape cancels it.
 		const confirm = page.locator( '.lkb-move-confirm' );
 
-		await expect( confirm.getByRole( 'button', { name: 'Cancel' } ) ).toBeFocused();
-		await expect.poll( () => topLevel( page ) ).toEqual( [ 'Beta', 'Alpha', 'Gamma' ] );
+		await expect(
+			confirm.getByRole( 'button', { name: 'Cancel' } )
+		).toBeFocused();
+		await expect
+			.poll( () => topLevel( page ) )
+			.toEqual( [ 'Beta', 'Alpha', 'Gamma' ] );
 		await page.keyboard.press( 'Escape' );
-		await expect.poll( () => topLevel( page ) ).toEqual( [ 'Alpha', 'Beta', 'Gamma' ] );
+		await expect
+			.poll( () => topLevel( page ) )
+			.toEqual( [ 'Alpha', 'Beta', 'Gamma' ] );
 		await expect( trigger ).toBeFocused();
 		expect( writes ).toHaveLength( 0 );
 
@@ -451,26 +511,41 @@ test.describe( 'Categories app', () => {
 		await page.keyboard.press( 'ArrowDown' );
 		await page.keyboard.press( 'ArrowDown' );
 		await page.keyboard.press( 'Enter' );
-		await expect( confirm.getByRole( 'button', { name: 'Cancel' } ) ).toBeFocused();
+		await expect(
+			confirm.getByRole( 'button', { name: 'Cancel' } )
+		).toBeFocused();
 		await page.keyboard.press( 'Tab' );
-		await expect( confirm.getByRole( 'button', { name: 'Move' } ) ).toBeFocused();
+		await expect(
+			confirm.getByRole( 'button', { name: 'Move' } )
+		).toBeFocused();
 		await page.keyboard.press( 'Enter' );
-		await expect.poll( () => topLevel( page ) ).toEqual( [ 'Beta', 'Alpha', 'Gamma' ] );
+		await expect
+			.poll( () => topLevel( page ) )
+			.toEqual( [ 'Beta', 'Alpha', 'Gamma' ] );
 		expect( writes ).toHaveLength( 1 );
 	} );
 
-	test( 'the drawer adds a category with a Dashicon and an SVG icon', async ( { page } ) => {
-		await page.getByRole( 'button', { name: 'Add category' } ).first().click();
+	test( 'the drawer adds a category with a Dashicon and an SVG icon', async ( {
+		page,
+	} ) => {
+		await page
+			.getByRole( 'button', { name: 'Add category' } )
+			.first()
+			.click();
 
 		const drawer = page.locator( '.ant-drawer-content' );
 
 		// The drawer opens with focus on its Name field.
 		await expect( drawer.getByLabel( 'Name' ) ).toBeFocused();
 		await drawer.getByLabel( 'Name' ).fill( 'Delta & co' );
-		await drawer.getByLabel( 'Icon', { exact: true } ).fill( 'dashicons-book-alt' );
+		await drawer
+			.getByLabel( 'Icon', { exact: true } )
+			.fill( 'dashicons-book-alt' );
 		await drawer
 			.getByLabel( 'Inline SVG icon' )
-			.fill( '<svg viewBox="0 0 1 1"><script>alert(1)</script><path d="M0 0h1v1z"/></svg>' );
+			.fill(
+				'<svg viewBox="0 0 1 1"><script>alert(1)</script><path d="M0 0h1v1z"/></svg>'
+			);
 
 		await drawer.getByRole( 'button', { name: 'Save' } ).click();
 		await confirmPopconfirm( page );
@@ -487,8 +562,13 @@ test.describe( 'Categories app', () => {
 		expect( delta?.icon_svg ).not.toContain( 'script' );
 	} );
 
-	test( 'the drawer keeps focus where the user tabbed while it opened', async ( { page } ) => {
-		await page.getByRole( 'button', { name: 'Add category' } ).first().click();
+	test( 'the drawer keeps focus where the user tabbed while it opened', async ( {
+		page,
+	} ) => {
+		await page
+			.getByRole( 'button', { name: 'Add category' } )
+			.first()
+			.click();
 		await page.keyboard.press( 'Tab' );
 
 		const drawer = page.locator( '.ant-drawer-content' );
@@ -502,11 +582,18 @@ test.describe( 'Categories app', () => {
 		await expect( drawer.getByLabel( 'Name' ) ).not.toBeFocused();
 	} );
 
-	test( 'Escape on an open select closes only the select, not the drawer', async ( { page } ) => {
-		await page.getByRole( 'button', { name: 'Add category' } ).first().click();
+	test( 'Escape on an open select closes only the select, not the drawer', async ( {
+		page,
+	} ) => {
+		await page
+			.getByRole( 'button', { name: 'Add category' } )
+			.first()
+			.click();
 
 		const drawer = page.locator( '.ant-drawer-content' );
-		const list = page.locator( '.ant-select-dropdown:not(.ant-select-dropdown-hidden)' );
+		const list = page.locator(
+			'.ant-select-dropdown:not(.ant-select-dropdown-hidden)'
+		);
 
 		await drawer.getByLabel( 'Name' ).fill( 'Kept name' );
 		await drawer.getByLabel( 'Parent category' ).click();
@@ -521,22 +608,29 @@ test.describe( 'Categories app', () => {
 		await expect( drawer ).toBeHidden();
 	} );
 
-	test( 'a slug another category uses is shown once, on the Slug field', async ( { page } ) => {
+	test( 'a slug another category uses is shown once, on the Slug field', async ( {
+		page,
+	} ) => {
 		await act( page, 'Beta', 'Edit' );
 
 		const drawer = page.locator( '.ant-drawer-content' );
-		const message = 'Another category already uses the slug “alpha”. Choose a different slug.';
+		const message =
+			'Another category already uses the slug “alpha”. Choose a different slug.';
 
 		await drawer.getByLabel( 'Slug' ).fill( 'alpha' );
 		await drawer.getByRole( 'button', { name: 'Save' } ).click();
 		await confirmPopconfirm( page );
 
-		await expect( drawer.locator( '.ant-form-item-explain-error' ) ).toHaveText( message );
+		await expect(
+			drawer.locator( '.ant-form-item-explain-error' )
+		).toHaveText( message );
 		await expect( drawer.getByText( message ) ).toHaveCount( 1 );
 		await expect( drawer.locator( '.lkb-drawer__error' ) ).toHaveCount( 0 );
 	} );
 
-	test( 'Escape on an open select closes only the select, not the merge dialog', async ( { page } ) => {
+	test( 'Escape on an open select closes only the select, not the merge dialog', async ( {
+		page,
+	} ) => {
 		await act( page, 'Gamma', 'Merge…' );
 
 		const dialog = page.locator( '.ant-modal-content' );
@@ -547,7 +641,10 @@ test.describe( 'Categories app', () => {
 			await expect( list ).toBeVisible();
 			await page.keyboard.press( 'Escape' );
 			await expect( list ).toHaveCount( 0 );
-			await expect( dialog, `Escape on ${ label } leaves the dialog open.` ).toBeVisible();
+			await expect(
+				dialog,
+				`Escape on ${ label } leaves the dialog open.`
+			).toBeVisible();
 		}
 
 		// A second Escape closes the dialog.
@@ -555,7 +652,9 @@ test.describe( 'Categories app', () => {
 		await expect( dialog ).toBeHidden();
 	} );
 
-	test( 'delete moves the children to the chosen category', async ( { page } ) => {
+	test( 'delete moves the children to the chosen category', async ( {
+		page,
+	} ) => {
 		await act( page, 'Gamma', 'Delete…' );
 
 		const dialog = page.locator( '.ant-modal-content' );
@@ -581,13 +680,17 @@ test.describe( 'Categories app', () => {
 		expect( child?.parent ).toBe( beta?.id );
 	} );
 
-	test( 'merge re-parents children and deletes the source', async ( { page } ) => {
+	test( 'merge re-parents children and deletes the source', async ( {
+		page,
+	} ) => {
 		await act( page, 'Gamma', 'Merge…' );
 
 		const dialog = page.locator( '.ant-modal-content' );
 
 		// The dialog opens with focus on its first field.
-		await expect( dialog.getByLabel( 'Categories to merge' ) ).toBeFocused();
+		await expect(
+			dialog.getByLabel( 'Categories to merge' )
+		).toBeFocused();
 		await dialog.getByLabel( 'Merge into' ).click();
 		await page
 			.locator( '.ant-select-item-option' )
@@ -607,7 +710,9 @@ test.describe( 'Categories app', () => {
 		).toBe( alpha?.id );
 	} );
 
-	test( 'Escape on an expanded control that is not a select closes the dialog', async ( { page } ) => {
+	test( 'Escape on an expanded control that is not a select closes the dialog', async ( {
+		page,
+	} ) => {
 		await act( page, 'Gamma', 'Delete…' );
 
 		const dialog = page.locator( '.ant-modal-content' );
@@ -629,21 +734,27 @@ test.describe( 'Categories app', () => {
 		await expect( dialog ).toBeHidden();
 	} );
 
-	test( 'an unsaved article order is kept until the user agrees to drop it', async ( { page } ) => {
+	test( 'an unsaved article order is kept until the user agrees to drop it', async ( {
+		page,
+	} ) => {
 		const alpha = await categoryId( page, 'Alpha' );
 
-		await makeArticles( page, alpha, [ 'E2E order guard A', 'E2E order guard B' ] );
+		await makeArticles( page, alpha, [
+			'E2E order guard A',
+			'E2E order guard B',
+		] );
 		await page.reload();
 		await node( page, 'Alpha' ).locator( '.lkb-tree__name' ).click();
 
 		const pane = page.getByRole( 'region', { name: 'Article order' } );
 		const moved = [ 'E2E order guard B', 'E2E order guard A' ];
 
-		await expect.poll( () => paneTitles( page ) ).toEqual( [
-			'E2E order guard A',
-			'E2E order guard B',
-		] );
-		await pane.getByRole( 'button', { name: 'Move “E2E order guard B” up' } ).click();
+		await expect
+			.poll( () => paneTitles( page ) )
+			.toEqual( [ 'E2E order guard A', 'E2E order guard B' ] );
+		await pane
+			.getByRole( 'button', { name: 'Move “E2E order guard B” up' } )
+			.click();
 		expect( await paneTitles( page ) ).toEqual( moved );
 
 		const asked: string[] = [];
@@ -653,7 +764,8 @@ test.describe( 'Categories app', () => {
 			await dialog.dismiss();
 		} );
 
-		const question = 'confirm: The article order has unsaved changes. Discard them?';
+		const question =
+			'confirm: The article order has unsaved changes. Discard them?';
 
 		// Another category, the selected one again, and a merge each ask first.
 		await node( page, 'Beta' ).locator( '.lkb-tree__name' ).click();
@@ -661,7 +773,9 @@ test.describe( 'Categories app', () => {
 		await node( page, 'Alpha' ).locator( '.lkb-tree__name' ).click();
 		await expect.poll( () => asked ).toHaveLength( 2 );
 		await act( page, 'Beta', 'Merge…' );
-		await expect.poll( () => asked ).toEqual( [ question, question, question ] );
+		await expect
+			.poll( () => asked )
+			.toEqual( [ question, question, question ] );
 		await expect( page.locator( '.ant-modal-content' ) ).toHaveCount( 0 );
 
 		await expect( pane ).toContainText( 'Articles in “Alpha”' );
@@ -680,14 +794,20 @@ test.describe( 'Categories app', () => {
 		await expect( pane ).toContainText( 'Articles in “Beta”' );
 	} );
 
-	test( 'a category count links to its articles and the pane names statuses', async ( { page } ) => {
+	test( 'a category count links to its articles and the pane names statuses', async ( {
+		page,
+	} ) => {
 		const alpha = await categoryId( page, 'Alpha' );
 
 		await api(
 			page,
 			'POST',
 			'licensio_articles',
-			{ title: 'E2E order draft', status: 'draft', licensio_categories: [ alpha ] },
+			{
+				title: 'E2E order draft',
+				status: 'draft',
+				licensio_categories: [ alpha ],
+			},
 			'wp/v2'
 		);
 		await page.reload();
@@ -695,7 +815,9 @@ test.describe( 'Categories app', () => {
 
 		const pane = page.getByRole( 'region', { name: 'Article order' } );
 
-		await expect( pane.locator( '.lkb-order__status' ) ).toHaveText( 'Draft' );
+		await expect( pane.locator( '.lkb-order__status' ) ).toHaveText(
+			'Draft'
+		);
 
 		const count = node( page, 'Alpha' ).locator( '.lkb-tree__count' );
 
@@ -704,13 +826,19 @@ test.describe( 'Categories app', () => {
 			new RegExp( `page=licensio-kb-articles&category=${ alpha }$` )
 		);
 		await count.click();
-		await expect( page ).toHaveURL( new RegExp( `page=licensio-kb-articles.*category=${ alpha }` ) );
+		await expect( page ).toHaveURL(
+			new RegExp( `page=licensio-kb-articles.*category=${ alpha }` )
+		);
 		await expect(
-			page.locator( '#licensio-kb-articles .ant-table-row', { hasText: 'E2E order draft' } )
+			page.locator( '#licensio-kb-articles .ant-table-row', {
+				hasText: 'E2E order draft',
+			} )
 		).toBeVisible();
 	} );
 
-	test( 'a dragged article order is saved, survives a reload and orders the archive', async ( { page } ) => {
+	test( 'a dragged article order is saved, survives a reload and orders the archive', async ( {
+		page,
+	} ) => {
 		const alpha = await categoryId( page, 'Alpha' );
 		const [ a, b, c, d ] = await makeArticles( page, alpha, [
 			'E2E order A',
@@ -720,7 +848,9 @@ test.describe( 'Categories app', () => {
 		] );
 
 		// C and A have positions; B and D have none, so they follow by title.
-		await api( page, 'PUT', `categories/${ alpha }/articles/order`, { ids: [ c, a ] } );
+		await api( page, 'PUT', `categories/${ alpha }/articles/order`, {
+			ids: [ c, a ],
+		} );
 
 		await page.reload();
 		await node( page, 'Alpha' ).locator( '.lkb-tree__name' ).click();
@@ -728,16 +858,23 @@ test.describe( 'Categories app', () => {
 		const pane = page.getByRole( 'region', { name: 'Article order' } );
 		const items = pane.locator( '.lkb-order__item' );
 
-		await expect.poll( () => paneTitles( page ) ).toEqual( [
-			'E2E order C',
-			'E2E order A',
-			'E2E order B',
-			'E2E order D',
-		] );
+		await expect
+			.poll( () => paneTitles( page ) )
+			.toEqual( [
+				'E2E order C',
+				'E2E order A',
+				'E2E order B',
+				'E2E order D',
+			] );
 
 		await items.nth( 3 ).dragTo( items.nth( 0 ) );
 
-		const expected = [ 'E2E order D', 'E2E order C', 'E2E order A', 'E2E order B' ];
+		const expected = [
+			'E2E order D',
+			'E2E order C',
+			'E2E order A',
+			'E2E order B',
+		];
 
 		expect( await paneTitles( page ) ).toEqual( expected );
 
@@ -749,7 +886,9 @@ test.describe( 'Categories app', () => {
 
 		await pane.getByRole( 'button', { name: 'Save order' } ).click();
 		await confirmPopconfirm( page );
-		await expect( page.locator( '.ant-message' ) ).toContainText( 'Article order saved.' );
+		await expect( page.locator( '.ant-message' ) ).toContainText(
+			'Article order saved.'
+		);
 		expect( writes ).toHaveLength( 1 );
 		expect( writes[ 0 ].postDataJSON() ).toEqual( { ids: [ d, c, a, b ] } );
 
@@ -770,42 +909,61 @@ test.describe( 'Categories app', () => {
 
 		const archive = (
 			await page
-				.locator( '.licensio-kb-card--article .licensio-kb-card__title' )
+				.locator(
+					'.licensio-kb-card--article .licensio-kb-card__title'
+				)
 				.allTextContents()
 		).map( ( title ) => title.trim() );
 
 		expect( archive ).toEqual( expected );
 	} );
 
-	test( 'saving the first page of a long list renumbers the rest after it', async ( { page } ) => {
+	test( 'saving the first page of a long list renumbers the rest after it', async ( {
+		page,
+	} ) => {
 		test.setTimeout( 240_000 );
 
 		const alpha = await categoryId( page, 'Alpha' );
 		const titles = Array.from(
 			{ length: 207 },
-			( _, index ) => `E2E order ${ String( index + 1 ).padStart( 3, '0' ) }`
+			( _, index ) =>
+				`E2E order ${ String( index + 1 ).padStart( 3, '0' ) }`
 		);
 		const ids = await makeArticles( page, alpha, titles );
 
 		// The first 205 get positions, last made first; the last two have none.
 		const positioned = ids.slice( 0, 205 ).reverse();
 
-		await api( page, 'PUT', `categories/${ alpha }/articles/order`, { ids: positioned } );
+		await api( page, 'PUT', `categories/${ alpha }/articles/order`, {
+			ids: positioned,
+		} );
 
 		await page.reload();
 		await node( page, 'Alpha' ).locator( '.lkb-tree__name' ).click();
 
 		const pane = page.getByRole( 'region', { name: 'Article order' } );
 
-		await expect( pane ).toContainText( 'Only the first 200 of 207 articles are listed.' );
-		await expect.poll( () => paneTitles( page ).then( ( list ) => list.length ) ).toBe( 200 );
+		await expect( pane ).toContainText(
+			'Only the first 200 of 207 articles are listed.'
+		);
+		await expect
+			.poll( () => paneTitles( page ).then( ( list ) => list.length ) )
+			.toBe( 200 );
 
-		await pane.getByRole( 'button', { name: 'Move “E2E order 204” up' } ).click();
+		await pane
+			.getByRole( 'button', { name: 'Move “E2E order 204” up' } )
+			.click();
 		await pane.getByRole( 'button', { name: 'Save order' } ).click();
 		await confirmPopconfirm( page );
-		await expect( page.locator( '.ant-message' ) ).toContainText( 'Article order saved.' );
+		await expect( page.locator( '.ant-message' ) ).toContainText(
+			'Article order saved.'
+		);
 
-		const firstPage = [ positioned[ 1 ], positioned[ 0 ], ...positioned.slice( 2, 200 ) ];
+		const firstPage = [
+			positioned[ 1 ],
+			positioned[ 0 ],
+			...positioned.slice( 2, 200 ),
+		];
 		const one = ( await api(
 			page,
 			'GET',
@@ -840,7 +998,9 @@ test.describe( 'Categories app', () => {
 		] );
 	} );
 
-	test( 'tree rows are sized like a core list table row', async ( { page } ) => {
+	test( 'tree rows are sized like a core list table row', async ( {
+		page,
+	} ) => {
 		const alpha = await categoryId( page, 'Alpha' );
 
 		await makeArticles( page, alpha, [ 'E2E order size' ] );
@@ -852,21 +1012,34 @@ test.describe( 'Categories app', () => {
 
 		await expect( name ).toHaveCSS( 'font-size', '14px' );
 		await expect( name ).toHaveCSS( 'font-weight', '600' );
-		await expect( item.locator( '.lkb-order__name' ) ).toHaveCSS( 'font-size', '14px' );
+		await expect( item.locator( '.lkb-order__name' ) ).toHaveCSS(
+			'font-size',
+			'14px'
+		);
 
 		for ( const width of [ 1280, 390 ] ) {
 			await page.setViewportSize( { width, height: 900 } );
 
-			const row = ( await node( page, 'Alpha' ).boundingBox() )?.height ?? 0;
-			const child = node( page, 'Gamma child' ).locator( '.lkb-tree__name' );
+			const row =
+				( await node( page, 'Alpha' ).boundingBox() )?.height ?? 0;
+			const child = node( page, 'Gamma child' ).locator(
+				'.lkb-tree__name'
+			);
 			const parent = node( page, 'Gamma' ).locator( '.lkb-tree__name' );
 			const indent =
 				( ( await child.boundingBox() )?.x ?? 0 ) -
 				( ( await parent.boundingBox() )?.x ?? 0 );
 
-			expect( row, `row height at ${ width }px` ).toBeGreaterThanOrEqual( 37 );
-			expect( row, `row height at ${ width }px` ).toBeLessThanOrEqual( 56 );
-			expect( indent, `child indent at ${ width }px` ).toBeGreaterThanOrEqual( 20 );
+			expect( row, `row height at ${ width }px` ).toBeGreaterThanOrEqual(
+				37
+			);
+			expect( row, `row height at ${ width }px` ).toBeLessThanOrEqual(
+				56
+			);
+			expect(
+				indent,
+				`child indent at ${ width }px`
+			).toBeGreaterThanOrEqual( 20 );
 			expect(
 				( await item.boundingBox() )?.height ?? 0,
 				`order row height at ${ width }px`

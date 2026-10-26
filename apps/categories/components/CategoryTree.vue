@@ -346,7 +346,7 @@ function onDrop( info: DropInfo ): void {
  *
  * @since 1.0.0
  *
- * @param {CategoryItem} item The category.
+ * @param {CategoryItem} item      The category.
  * @param {number}       direction -1 for up, 1 for down.
  *
  * @return {void}
@@ -421,7 +421,9 @@ function confirmMove(): void {
 	store
 		.saveOrder( { parent: move.parent, ids: move.ids } )
 		.then( () => {
-			message.success( __( 'Category moved.', 'licensio-knowledge-base' ) );
+			message.success(
+				__( 'Category moved.', 'licensio-knowledge-base' )
+			);
 		} )
 		.catch( ( error: unknown ) => {
 			// The server may have applied part of the move, so the tree is
@@ -475,7 +477,9 @@ watch( confirmOpen, onOpenChange );
  */
 function nameTreeInput(): void {
 	document
-		.querySelector( '.lkb-tree__body input[aria-label="for screen reader"]' )
+		.querySelector(
+			'.lkb-tree__body input[aria-label="for screen reader"]'
+		)
 		?.setAttribute(
 			'aria-label',
 			__( 'Category tree', 'licensio-knowledge-base' )
@@ -642,20 +646,29 @@ function onMenu( item: CategoryItem, key: string ): void {
 					block-node
 					@expand="onExpand"
 					@select="onSelect"
-					@active-change="( key: string | number | null ) => ( activeKey = key )"
+					@active-change="
+						( key: string | number | null ) => ( activeKey = key )
+					"
 					@drop="onDrop"
 				>
 					<template #title="node">
 						<span class="lkb-tree__node">
-							<span class="lkb-tree__name">{{ itemOf( node ).name }}</span>
+							<span class="lkb-tree__name">{{
+								itemOf( node ).name
+							}}</span>
 							<a
 								class="lkb-tree__count"
 								draggable="false"
-								:href="`${ articlesUrl }&category=${ itemOf( node ).id }`"
+								:href="`${ articlesUrl }&category=${
+									itemOf( node ).id
+								}`"
 								:aria-label="
 									sprintf(
 										/* translators: %d: number of articles. */
-										__( 'Articles: %d', 'licensio-knowledge-base' ),
+										__(
+											'Articles: %d',
+											'licensio-knowledge-base'
+										),
 										itemOf( node ).count
 									)
 								"
@@ -669,7 +682,8 @@ function onMenu( item: CategoryItem, key: string ): void {
 								:open="menuFor === itemOf( node ).id"
 								overlay-class-name="lkb-node-menu"
 								@open-change="
-									( open: boolean ) => onMenuOpen( itemOf( node ).id, open )
+									( open: boolean ) =>
+										onMenuOpen( itemOf( node ).id, open )
 								"
 							>
 								<a-button
@@ -677,12 +691,17 @@ function onMenu( item: CategoryItem, key: string ): void {
 									size="small"
 									class="lkb-tree__actions"
 									aria-haspopup="menu"
-									:aria-expanded="menuFor === itemOf( node ).id"
+									:aria-expanded="
+										menuFor === itemOf( node ).id
+									"
 									:data-lkb-actions="itemOf( node ).id"
 									:aria-label="
 										sprintf(
 											/* translators: %s: category name. */
-											__( 'Actions for %s', 'licensio-knowledge-base' ),
+											__(
+												'Actions for %s',
+												'licensio-knowledge-base'
+											),
 											itemOf( node ).name
 										)
 									"
@@ -693,40 +712,91 @@ function onMenu( item: CategoryItem, key: string ): void {
 								<template #overlay>
 									<a-menu
 										@click="
-											( { key }: { key: string | number } ) =>
-												onMenu( itemOf( node ), String( key ) )
+											( {
+												key,
+											}: {
+												key: string | number;
+											} ) =>
+												onMenu(
+													itemOf( node ),
+													String( key )
+												)
 										"
 										@keydown="
 											( event: KeyboardEvent ) =>
-												onMenuKey( event, itemOf( node ).id )
+												onMenuKey(
+													event,
+													itemOf( node ).id
+												)
 										"
 									>
 										<a-menu-item key="edit">
-											{{ __( 'Edit', 'licensio-knowledge-base' ) }}
+											{{
+												__(
+													'Edit',
+													'licensio-knowledge-base'
+												)
+											}}
 										</a-menu-item>
 										<a-menu-item key="child">
-											{{ __( 'Add child', 'licensio-knowledge-base' ) }}
+											{{
+												__(
+													'Add child',
+													'licensio-knowledge-base'
+												)
+											}}
 										</a-menu-item>
 										<a-menu-item
 											key="up"
-											:disabled="saving || isAt( itemOf( node ), 'first' )"
+											:disabled="
+												saving ||
+												isAt( itemOf( node ), 'first' )
+											"
 										>
-											{{ __( 'Move up', 'licensio-knowledge-base' ) }}
+											{{
+												__(
+													'Move up',
+													'licensio-knowledge-base'
+												)
+											}}
 										</a-menu-item>
 										<a-menu-item
 											key="down"
-											:disabled="saving || isAt( itemOf( node ), 'last' )"
+											:disabled="
+												saving ||
+												isAt( itemOf( node ), 'last' )
+											"
 										>
-											{{ __( 'Move down', 'licensio-knowledge-base' ) }}
+											{{
+												__(
+													'Move down',
+													'licensio-knowledge-base'
+												)
+											}}
 										</a-menu-item>
 										<a-menu-item key="move">
-											{{ __( 'Move to…', 'licensio-knowledge-base' ) }}
+											{{
+												__(
+													'Move to…',
+													'licensio-knowledge-base'
+												)
+											}}
 										</a-menu-item>
 										<a-menu-item key="merge">
-											{{ __( 'Merge…', 'licensio-knowledge-base' ) }}
+											{{
+												__(
+													'Merge…',
+													'licensio-knowledge-base'
+												)
+											}}
 										</a-menu-item>
 										<a-menu-item key="delete" danger>
-											{{ __( 'Delete…', 'licensio-knowledge-base' ) }}
+											{{
+												__(
+													'Delete…',
+													'licensio-knowledge-base'
+												)
+											}}
 										</a-menu-item>
 									</a-menu>
 								</template>
@@ -746,7 +816,7 @@ function onMenu( item: CategoryItem, key: string ): void {
 
 .lkb-tree__hint {
 	margin: 0 0 8px;
-	color: var(--lkb-ink-muted);
+	color: var( --lkb-ink-muted );
 	font-size: 12px;
 }
 
@@ -762,7 +832,7 @@ function onMenu( item: CategoryItem, key: string ): void {
 }
 
 .lkb-tree__body :deep( .ant-tree-treenode:hover ) {
-	background: var(--lkb-hover);
+	background: var( --lkb-hover );
 }
 
 .lkb-tree__body :deep( .ant-tree-node-content-wrapper ) {
@@ -797,8 +867,8 @@ function onMenu( item: CategoryItem, key: string ): void {
 	min-width: 28px;
 	padding: 0 8px;
 	border-radius: 10px;
-	background: var(--lkb-sunken);
-	color: var(--lkb-ink-muted);
+	background: var( --lkb-sunken );
+	color: var( --lkb-ink-muted );
 	font-size: 12px;
 	text-align: center;
 	text-decoration: none;

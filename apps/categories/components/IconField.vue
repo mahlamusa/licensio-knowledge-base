@@ -56,7 +56,8 @@ const svgPreview = computed( () => {
 		: markup.replace( '<svg', '<svg xmlns="http://www.w3.org/2000/svg"' );
 
 	return (
-		'data:image/svg+xml;charset=utf-8,' + encodeURIComponent( withNamespace )
+		'data:image/svg+xml;charset=utf-8,' +
+		encodeURIComponent( withNamespace )
 	);
 } );
 </script>
@@ -82,7 +83,9 @@ const svgPreview = computed( () => {
 					:placeholder="
 						__( 'Paste SVG markup here', 'licensio-knowledge-base' )
 					"
-					@update:value="( value: string ) => emit( 'update:iconSvg', value )"
+					@update:value="
+						( value: string ) => emit( 'update:iconSvg', value )
+					"
 				/>
 				<img
 					v-if="svgPreview"
@@ -108,7 +111,9 @@ const svgPreview = computed( () => {
 				:label="__( 'Uploaded icon', 'licensio-knowledge-base' )"
 				:title="__( 'Select an icon', 'licensio-knowledge-base' )"
 				@update:id="( value: number ) => emit( 'update:iconId', value )"
-				@update:url="( value: string ) => emit( 'update:iconUrl', value )"
+				@update:url="
+					( value: string ) => emit( 'update:iconUrl', value )
+				"
 			/>
 		</a-form-item>
 
@@ -135,7 +140,9 @@ const svgPreview = computed( () => {
 				id="lkb-category-icon"
 				:value="props.icon"
 				placeholder="dashicons-book-alt"
-				@update:value="( value: string ) => emit( 'update:icon', value )"
+				@update:value="
+					( value: string ) => emit( 'update:icon', value )
+				"
 			/>
 		</a-form-item>
 	</div>
@@ -158,8 +165,8 @@ const svgPreview = computed( () => {
 	width: 48px;
 	height: 48px;
 	padding: 6px;
-	border: 1px solid var(--lkb-border-wp);
+	border: 1px solid var( --lkb-border-wp );
 	border-radius: 6px;
-	background: var(--lkb-sunken);
+	background: var( --lkb-sunken );
 }
 </style>

@@ -19,7 +19,10 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-const root = path.resolve( path.dirname( fileURLToPath( import.meta.url ) ), '..' );
+const root = path.resolve(
+	path.dirname( fileURLToPath( import.meta.url ) ),
+	'..'
+);
 const appsDir = path.join( root, 'apps' );
 
 const hasApps =
@@ -37,9 +40,7 @@ const hasApps =
 	} );
 
 if ( ! hasApps ) {
-	process.stdout.write(
-		'No apps in apps/ yet - skipping the Vite build.\n'
-	);
+	process.stdout.write( 'No apps in apps/ yet - skipping the Vite build.\n' );
 	process.exit( 0 );
 }
 

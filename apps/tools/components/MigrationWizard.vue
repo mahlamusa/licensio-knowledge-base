@@ -65,7 +65,10 @@ const driver = computed( () =>
 	drivers.value.find( ( item ) => item.id === selected.value )
 );
 
-const phases = computed( () => [ ...( driver.value?.phases ?? [] ), 'complete' ] );
+const phases = computed( () => [
+	...( driver.value?.phases ?? [] ),
+	'complete',
+] );
 
 const summaryEntries = computed( () =>
 	Object.entries( summary.value?.counts ?? {} )
@@ -90,7 +93,8 @@ const categoryRows = computed( () => {
 	const depth: Record< number, number > = {};
 
 	return sourceCategories.value.map( ( category ) => {
-		depth[ category.id ] = category.parent > 0 ? ( depth[ category.parent ] ?? 0 ) + 1 : 0;
+		depth[ category.id ] =
+			category.parent > 0 ? ( depth[ category.parent ] ?? 0 ) + 1 : 0;
 
 		return { ...category, depth: depth[ category.id ] };
 	} );
@@ -111,7 +115,10 @@ const targetOptions = computed( () => {
 	}
 
 	const options: Array< { value: number; label: string } > = [
-		{ value: 0, label: __( 'Create a new category', 'licensio-knowledge-base' ) },
+		{
+			value: 0,
+			label: __( 'Create a new category', 'licensio-knowledge-base' ),
+		},
 	];
 	const seen = new Set< number >();
 
@@ -196,7 +203,10 @@ const percent = computed( () => {
 
 	const index = Math.max( 0, phases.value.indexOf( phase.value ) );
 
-	return Math.min( 100, Math.round( ( ( index + 1 ) / phases.value.length ) * 100 ) );
+	return Math.min(
+		100,
+		Math.round( ( ( index + 1 ) / phases.value.length ) * 100 )
+	);
 } );
 
 /**
@@ -250,7 +260,9 @@ async function detect(): Promise< void > {
 		}
 	} catch ( error ) {
 		detectError.value =
-			error instanceof Error ? error.message : __( 'Failed to detect sources.', 'licensio-knowledge-base' );
+			error instanceof Error
+				? error.message
+				: __( 'Failed to detect sources.', 'licensio-knowledge-base' );
 	} finally {
 		booting.value = false;
 	}
@@ -278,11 +290,19 @@ async function toCategories(): Promise< void > {
 		sourceCategories.value = lists.source;
 		targetCategories.value = lists.targets;
 		categoryMap.value = Object.fromEntries(
-			lists.source.map( ( category ) => [ category.id, categoryMap.value[ category.id ] ?? 0 ] )
+			lists.source.map( ( category ) => [
+				category.id,
+				categoryMap.value[ category.id ] ?? 0,
+			] )
 		);
 	} catch ( error ) {
 		runError.value =
-			error instanceof Error ? error.message : __( 'The categories could not be loaded.', 'licensio-knowledge-base' );
+			error instanceof Error
+				? error.message
+				: __(
+						'The categories could not be loaded.',
+						'licensio-knowledge-base'
+				  );
 	} finally {
 		loadingCategories.value = false;
 	}
@@ -322,7 +342,9 @@ async function start( isDryRun: boolean ): Promise< void > {
 		await loop( isDryRun );
 	} catch ( error ) {
 		runError.value =
-			error instanceof Error ? error.message : __( 'The import failed.', 'licensio-knowledge-base' );
+			error instanceof Error
+				? error.message
+				: __( 'The import failed.', 'licensio-knowledge-base' );
 		running.value = false;
 	}
 }
@@ -338,14 +360,22 @@ async function start( isDryRun: boolean ): Promise< void > {
  */
 async function loop( isDryRun: boolean ): Promise< void > {
 	const map = Object.fromEntries(
-		Object.entries( categoryMap.value ).filter( ( [ , target ] ) => target > 0 )
+		Object.entries( categoryMap.value ).filter(
+			( [ , target ] ) => target > 0
+		)
 	);
 
 	// The driver's own loop guard: a site of any sane size finishes well
 	// inside this many batches, and a run that does not has a server-side
 	// problem a client cannot fix.
 	for ( let batch = 0; batch < 100000; batch++ ) {
-		const response = await runBatch( selected.value, isDryRun, BATCH_SIZE, map, importSettings.value );
+		const response = await runBatch(
+			selected.value,
+			isDryRun,
+			BATCH_SIZE,
+			map,
+			importSettings.value
+		);
 
 		phase.value = response.progress.phase;
 		lastBatch.value = response.progress.done;
@@ -367,7 +397,12 @@ onMounted( detect );
 
 <template>
 	<div class="licensio-kb-migration">
-		<a-spin v-if="booting" :tip="__( 'Checking for import sources…', 'licensio-knowledge-base' )">
+		<a-spin
+			v-if="booting"
+			:tip="
+				__( 'Checking for import sources…', 'licensio-knowledge-base' )
+			"
+		>
 			<div class="licensio-kb-migration__spin-body"></div>
 		</a-spin>
 
@@ -394,15 +429,28 @@ onMounted( detect );
 				v-if="0 === drivers.length && 'run' !== step"
 				type="info"
 				show-icon
-				:message="__( 'No import sources detected on this installation. Earlier imports are in the log below.', 'licensio-knowledge-base' )"
+				:message="
+					__(
+						'No import sources detected on this installation. Earlier imports are in the log below.',
+						'licensio-knowledge-base'
+					)
+				"
 			/>
 
 			<template v-else-if="'source' === step">
 				<p class="licensio-kb-migration__lede">
-					{{ __( 'These knowledge base plugins have data available for import:', 'licensio-knowledge-base' ) }}
+					{{
+						__(
+							'These knowledge base plugins have data available for import:',
+							'licensio-knowledge-base'
+						)
+					}}
 				</p>
 
-				<a-radio-group v-model:value="selected" class="licensio-kb-migration__sources">
+				<a-radio-group
+					v-model:value="selected"
+					class="licensio-kb-migration__sources"
+				>
 					<a-card
 						v-for="item in drivers"
 						:key="item.id"
@@ -419,7 +467,12 @@ onMounted( detect );
 							</div>
 						</dl>
 						<p class="licensio-kb-migration__hint">
-							{{ __( 'Totals as stored by the source. Records for deleted articles, and analytics from today, are not imported; the dry run shows the exact numbers.', 'licensio-knowledge-base' ) }}
+							{{
+								__(
+									'Totals as stored by the source. Records for deleted articles, and analytics from today, are not imported; the dry run shows the exact numbers.',
+									'licensio-knowledge-base'
+								)
+							}}
 						</p>
 
 						<a-alert
@@ -427,18 +480,28 @@ onMounted( detect );
 							type="warning"
 							show-icon
 							class="licensio-kb-migration__status"
-							:message="__( 'An import from this source was interrupted. Resume it to carry on from where it stopped; nothing is imported twice.', 'licensio-knowledge-base' )"
+							:message="
+								__(
+									'An import from this source was interrupted. Resume it to carry on from where it stopped; nothing is imported twice.',
+									'licensio-knowledge-base'
+								)
+							"
 						/>
 						<a-alert
 							v-else-if="item.status.finished_at"
 							type="info"
 							show-icon
 							class="licensio-kb-migration__status"
-							:message="sprintf(
-								/* translators: %s: when the last import finished. */
-								__( 'Last imported %s. Importing again adds new content and the analytics recorded since; content already imported is left as it is.', 'licensio-knowledge-base' ),
-								formatTime( item.status.finished_at )
-							)"
+							:message="
+								sprintf(
+									/* translators: %s: when the last import finished. */
+									__(
+										'Last imported %s. Importing again adds new content and the analytics recorded since; content already imported is left as it is.',
+										'licensio-knowledge-base'
+									),
+									formatTime( item.status.finished_at )
+								)
+							"
 						/>
 					</a-card>
 				</a-radio-group>
@@ -446,13 +509,22 @@ onMounted( detect );
 				<div class="licensio-kb-migration__actions">
 					<a-popconfirm
 						v-if="driver?.status.in_progress"
-						:title="__( 'Resume the import from where it stopped?', 'licensio-knowledge-base' )"
-						:ok-text="__( 'Resume import', 'licensio-knowledge-base' )"
+						:title="
+							__(
+								'Resume the import from where it stopped?',
+								'licensio-knowledge-base'
+							)
+						"
+						:ok-text="
+							__( 'Resume import', 'licensio-knowledge-base' )
+						"
 						:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
 						@confirm="start( false )"
 					>
 						<a-button type="primary">
-							{{ __( 'Resume import', 'licensio-knowledge-base' ) }}
+							{{
+								__( 'Resume import', 'licensio-knowledge-base' )
+							}}
 						</a-button>
 					</a-popconfirm>
 					<a-button
@@ -461,53 +533,117 @@ onMounted( detect );
 						:disabled="! selected"
 						@click="toCategories"
 					>
-						{{ __( 'Next: categories', 'licensio-knowledge-base' ) }}
+						{{
+							__( 'Next: categories', 'licensio-knowledge-base' )
+						}}
 					</a-button>
 				</div>
 			</template>
 
 			<template v-else-if="'categories' === step">
 				<p class="licensio-kb-migration__lede">
-					{{ __( 'Choose where each category goes. A new category is created by default; merging files its articles under an existing category and redirects its old address there.', 'licensio-knowledge-base' ) }}
+					{{
+						__(
+							'Choose where each category goes. A new category is created by default; merging files its articles under an existing category and redirects its old address there.',
+							'licensio-knowledge-base'
+						)
+					}}
 				</p>
 
-				<a-alert v-if="runError" type="error" show-icon :message="runError" class="licensio-kb-migration__error" />
+				<a-alert
+					v-if="runError"
+					type="error"
+					show-icon
+					:message="runError"
+					class="licensio-kb-migration__error"
+				/>
 
 				<a-spin :spinning="loadingCategories">
 					<a-empty
 						v-if="! loadingCategories && ! categoryRows.length"
-						:description="__( 'This source has no categories.', 'licensio-knowledge-base' )"
+						:description="
+							__(
+								'This source has no categories.',
+								'licensio-knowledge-base'
+							)
+						"
 					/>
 
 					<table v-else class="licensio-kb-migration__map">
 						<thead>
 							<tr>
-								<th>{{ __( 'Source category', 'licensio-knowledge-base' ) }}</th>
-								<th>{{ __( 'Articles', 'licensio-knowledge-base' ) }}</th>
-								<th>{{ __( 'Import as', 'licensio-knowledge-base' ) }}</th>
+								<th>
+									{{
+										__(
+											'Source category',
+											'licensio-knowledge-base'
+										)
+									}}
+								</th>
+								<th>
+									{{
+										__(
+											'Articles',
+											'licensio-knowledge-base'
+										)
+									}}
+								</th>
+								<th>
+									{{
+										__(
+											'Import as',
+											'licensio-knowledge-base'
+										)
+									}}
+								</th>
 							</tr>
 						</thead>
 						<tbody>
-							<tr v-for="category in categoryRows" :key="category.id">
-								<td :style="{ paddingLeft: 8 + category.depth * 20 + 'px' }">
+							<tr
+								v-for="category in categoryRows"
+								:key="category.id"
+							>
+								<td
+									:style="{
+										paddingLeft:
+											8 + category.depth * 20 + 'px',
+									}"
+								>
 									{{ category.name }}
-									<a-tag v-if="'knowledge_base' === category.type" color="blue">
-										{{ __( 'Knowledge base', 'licensio-knowledge-base' ) }}
+									<a-tag
+										v-if="
+											'knowledge_base' === category.type
+										"
+										color="blue"
+									>
+										{{
+											__(
+												'Knowledge base',
+												'licensio-knowledge-base'
+											)
+										}}
 									</a-tag>
 								</td>
 								<td>{{ category.count }}</td>
 								<td>
 									<a-select
-										v-model:value="categoryMap[ category.id ]"
+										v-model:value="
+											categoryMap[ category.id ]
+										"
 										:options="targetOptions"
 										show-search
 										option-filter-prop="label"
 										class="licensio-kb-migration__target"
-										:aria-label="sprintf(
-											/* translators: %s: the source category's name. */
-											__( 'Import “%s” as', 'licensio-knowledge-base' ),
-											category.name
-										)"
+										:aria-label="
+											sprintf(
+												/* translators: %s: the source category's name. */
+												__(
+													'Import “%s” as',
+													'licensio-knowledge-base'
+												),
+												category.name
+											)
+										"
 									/>
 								</td>
 							</tr>
@@ -517,22 +653,43 @@ onMounted( detect );
 
 				<div class="licensio-kb-migration__options">
 					<a-checkbox v-model:checked="importSettings">
-						{{ __( 'Also copy the matching settings (layout, columns, sidebars, search placeholder, feedback). URL slugs are never changed, and every change is in the log.', 'licensio-knowledge-base' ) }}
+						{{
+							__(
+								'Also copy the matching settings (layout, columns, sidebars, search placeholder, feedback). URL slugs are never changed, and every change is in the log.',
+								'licensio-knowledge-base'
+							)
+						}}
 					</a-checkbox>
 				</div>
 
 				<div class="licensio-kb-migration__actions">
-					<a-button @click="step = 'source'">{{ __( 'Back', 'licensio-knowledge-base' ) }}</a-button>
-					<a-button type="primary" :disabled="loadingCategories" @click="start( true )">
+					<a-button @click="step = 'source'">{{
+						__( 'Back', 'licensio-knowledge-base' )
+					}}</a-button>
+					<a-button
+						type="primary"
+						:disabled="loadingCategories"
+						@click="start( true )"
+					>
 						{{ __( 'Start dry run', 'licensio-knowledge-base' ) }}
 					</a-button>
 					<a-popconfirm
-						:title="__( 'Run the import now, without a dry run first?', 'licensio-knowledge-base' )"
+						:title="
+							__(
+								'Run the import now, without a dry run first?',
+								'licensio-knowledge-base'
+							)
+						"
 						:ok-text="__( 'Run import', 'licensio-knowledge-base' )"
 						:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
 						@confirm="start( false )"
 					>
-						<a-button :disabled="loadingCategories">{{ __( 'Skip the dry run and import', 'licensio-knowledge-base' ) }}</a-button>
+						<a-button :disabled="loadingCategories">{{
+							__(
+								'Skip the dry run and import',
+								'licensio-knowledge-base'
+							)
+						}}</a-button>
 					</a-popconfirm>
 				</div>
 			</template>
@@ -541,7 +698,10 @@ onMounted( detect );
 				<h2 class="licensio-kb-migration__run-title">
 					{{
 						runIsDry
-							? __( 'Verifying import (dry run)', 'licensio-knowledge-base' )
+							? __(
+									'Verifying import (dry run)',
+									'licensio-knowledge-base'
+							  )
 							: __( 'Importing data', 'licensio-knowledge-base' )
 					}}
 				</h2>
@@ -556,7 +716,9 @@ onMounted( detect );
 
 				<a-progress
 					:percent="percent"
-					:status="runError ? 'exception' : summary ? 'success' : 'active'"
+					:status="
+						runError ? 'exception' : summary ? 'success' : 'active'
+					"
 				/>
 
 				<p class="licensio-kb-migration__phase">{{ phaseLabel }}</p>
@@ -564,7 +726,12 @@ onMounted( detect );
 					{{
 						sprintf(
 							/* translators: %d: how many items the latest batch processed. */
-							_n( 'Processed %d item in the latest batch.', 'Processed %d items in the latest batch.', lastBatch, 'licensio-knowledge-base' ),
+							_n(
+								'Processed %d item in the latest batch.',
+								'Processed %d items in the latest batch.',
+								lastBatch,
+								'licensio-knowledge-base'
+							),
 							lastBatch
 						)
 					}}
@@ -576,7 +743,12 @@ onMounted( detect );
 						type="info"
 						show-icon
 						class="licensio-kb-migration__status"
-						:message="__( 'Dry run complete. Nothing was imported; the counts below are what the import would do, and the log shows every item.', 'licensio-knowledge-base' )"
+						:message="
+							__(
+								'Dry run complete. Nothing was imported; the counts below are what the import would do, and the log shows every item.',
+								'licensio-knowledge-base'
+							)
+						"
 					/>
 
 					<a-descriptions
@@ -601,13 +773,23 @@ onMounted( detect );
 					>
 						<h3>{{ humanize( category ) }}</h3>
 						<ul>
-							<li v-for="line in lines" :key="line">{{ line }}</li>
+							<li v-for="line in lines" :key="line">
+								{{ line }}
+							</li>
 						</ul>
 					</section>
 
-					<div v-if="summary.url_map_url" class="licensio-kb-migration__downloads">
+					<div
+						v-if="summary.url_map_url"
+						class="licensio-kb-migration__downloads"
+					>
 						<a-button :href="summary.url_map_url">
-							{{ __( 'Download URL map (CSV)', 'licensio-knowledge-base' ) }}
+							{{
+								__(
+									'Download URL map (CSV)',
+									'licensio-knowledge-base'
+								)
+							}}
 						</a-button>
 					</div>
 				</template>
@@ -615,18 +797,33 @@ onMounted( detect );
 				<div class="licensio-kb-migration__actions">
 					<a-popconfirm
 						v-if="summary && runIsDry"
-						:title="__( 'Run the import now?', 'licensio-knowledge-base' )"
+						:title="
+							__(
+								'Run the import now?',
+								'licensio-knowledge-base'
+							)
+						"
 						:ok-text="__( 'Run import', 'licensio-knowledge-base' )"
 						:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
 						@confirm="start( false )"
 					>
 						<a-button type="primary">
-							{{ __( 'Looks good, run the import', 'licensio-knowledge-base' ) }}
+							{{
+								__(
+									'Looks good, run the import',
+									'licensio-knowledge-base'
+								)
+							}}
 						</a-button>
 					</a-popconfirm>
 					<a-popconfirm
 						v-if="runError"
-						:title="__( 'Resume the import from where it stopped?', 'licensio-knowledge-base' )"
+						:title="
+							__(
+								'Resume the import from where it stopped?',
+								'licensio-knowledge-base'
+							)
+						"
 						:ok-text="__( 'Resume', 'licensio-knowledge-base' )"
 						:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
 						@confirm="start( runIsDry )"
@@ -639,7 +836,12 @@ onMounted( detect );
 						v-if="summary && ! runIsDry && chrome.articlesUrl"
 						:href="chrome.articlesUrl"
 					>
-						{{ __( 'View knowledge base', 'licensio-knowledge-base' ) }}
+						{{
+							__(
+								'View knowledge base',
+								'licensio-knowledge-base'
+							)
+						}}
 					</a-button>
 					<a-button :disabled="running" @click="detect">
 						{{ __( 'Back to sources', 'licensio-knowledge-base' ) }}
@@ -648,8 +850,13 @@ onMounted( detect );
 			</div>
 
 			<section class="licensio-kb-migration__log">
-				<h2 class="licensio-kb-migration__run-title">{{ __( 'Migration log', 'licensio-knowledge-base' ) }}</h2>
-				<MigrationLog :key="summary?.run_id ?? 'log'" :run-id="summary?.run_id" />
+				<h2 class="licensio-kb-migration__run-title">
+					{{ __( 'Migration log', 'licensio-knowledge-base' ) }}
+				</h2>
+				<MigrationLog
+					:key="summary?.run_id ?? 'log'"
+					:run-id="summary?.run_id"
+				/>
 			</section>
 		</template>
 	</div>
