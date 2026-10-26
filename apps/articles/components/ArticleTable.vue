@@ -560,6 +560,17 @@ const expandedKeys = computed( () =>
 	line-height: 1.3em;
 }
 
+/*
+ * The table wraps to the screen rather than scrolling, and the auto layout
+ * would otherwise share the spare width evenly, squeezing long titles into a
+ * narrow column. A floor keeps the title the widest column, as in core.
+ */
+@media ( min-width: 783px ) {
+	.lkb-title {
+		min-width: 200px;
+	}
+}
+
 .lkb-title__link {
 	font-size: 14px;
 	font-weight: 600;
