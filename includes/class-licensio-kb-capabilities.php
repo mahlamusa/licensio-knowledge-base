@@ -105,6 +105,22 @@ class Licensio_KB_Capabilities {
     const VERSION_OPTION = 'licensio_caps_version';
 
     /**
+     * The query argument that tells the article editor new tags were refused.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    const TAGS_REFUSED_ARG = 'licensio_kb_tags_refused';
+
+    /**
+     * Whether this request's classic tag box named tags the user may not create.
+     *
+     * @since 1.0.0
+     * @var bool
+     */
+    protected static $tags_refused = false;
+
+    /**
      * Register the WordPress hooks.
      *
      * The capabilities are granted once per version of the capability set,
@@ -126,7 +142,8 @@ class Licensio_KB_Capabilities {
      *
      * Creating a category or tag is refused for users who cannot manage the
      * knowledge base, whichever route asks, and the block editor is not
-     * offered to create tags for them.
+     * offered to create tags for them. The classic tag box drops the new
+     * names, saves the existing tags, and says so on the article editor.
      *
      * @since 1.0.0 Grants the article capabilities to authors and contributors too, once per capability set, and keeps term creation to managers.
      *
@@ -140,6 +157,10 @@ class Licensio_KB_Capabilities {
         add_filter( 'user_has_cap', array( __CLASS__, 'managers_write_articles' ) );
         add_filter( 'pre_insert_term', array( __CLASS__, 'guard_term_creation' ), 10, 2 );
         add_filter( 'rest_prepare_' . Licensio_KB_Post_Types::POST_TYPE, array( __CLASS__, 'hide_term_creation' ) );
+        add_filter( 'licensio_tag_taxonomy_args', array( __CLASS__, 'filter_tag_box_args' ) );
+        add_filter( 'redirect_post_location', array( __CLASS__, 'flag_refused_tags' ) );
+        add_filter( 'removable_query_args', array( __CLASS__, 'removable_query_args' ) );
+        add_action( 'admin_notices', array( __CLASS__, 'render_refused_tags_notice' ) );
     }
 
     /**
@@ -531,6 +552,120 @@ class Licensio_KB_Capabilities {
         }
 
         return $response;
+    }
+
+    /**
+     * Have the classic tag box sanitize its input with `sanitize_tag_box()`.
+     *
+     * Hooked to `licensio_tag_taxonomy_args`.
+     *
+     * @since 1.0.0
+     *
+     * @param array<string, mixed> $args The tag taxonomy registration arguments.
+     *
+     * @return array<string, mixed> The arguments, with the tag box callback set.
+     */
+    public static function filter_tag_box_args( $args ) {
+        if ( is_array( $args ) ) {
+            $args['meta_box_sanitize_cb'] = array( __CLASS__, 'sanitize_tag_box' );
+        }
+
+        return $args;
+    }
+
+    /**
+     * Turn the classic tag box input into term IDs, dropping names the user may not create.
+     *
+     * Core's own callback keeps an unknown name as a string so it is created
+     * on save. For a user `guard_term_creation()` refuses, that insert fails
+     * and core stops assigning tags at it, so the tags after it were lost
+     * without a word. The names are dropped here instead, every existing tag
+     * is saved, and the article editor shows a notice. Used for the classic
+     * editor and the article list's Quick Edit.
+     *
+     * @since 1.0.0
+     *
+     * @param string       $taxonomy The taxonomy.
+     * @param array|string $terms    The tag box input: term names, comma separated or as a list.
+     *
+     * @return array<int, int|string> The term IDs, and the names a manager may create.
+     */
+    public static function sanitize_tag_box( $taxonomy, $terms ) {
+        $kept = array();
+
+        foreach ( taxonomy_meta_box_sanitize_cb_input( $taxonomy, $terms ) as $term ) {
+            if ( is_string( $term ) && is_wp_error( static::guard_term_creation( $term, $taxonomy ) ) ) {
+                self::$tags_refused = true;
+                continue;
+            }
+
+            $kept[] = $term;
+        }
+
+        return $kept;
+    }
+
+    /**
+     * Carry a refused tag name over the redirect after an article is saved.
+     *
+     * Hooked to `redirect_post_location`.
+     *
+     * @since 1.0.0
+     *
+     * @param string $location The article editor URL the save redirects to.
+     *
+     * @return string The URL, flagged when the tag box named tags the user may not create.
+     */
+    public static function flag_refused_tags( $location ) {
+        return self::$tags_refused ? add_query_arg( self::TAGS_REFUSED_ARG, '1', $location ) : $location;
+    }
+
+    /**
+     * Drop the refused tags flag from the address bar once the notice shows.
+     *
+     * Hooked to `removable_query_args`.
+     *
+     * @since 1.0.0
+     *
+     * @param string[] $args The query arguments core removes.
+     *
+     * @return string[] The arguments, with the refused tags flag.
+     */
+    public static function removable_query_args( $args ) {
+        $args   = (array) $args;
+        $args[] = self::TAGS_REFUSED_ARG;
+
+        return $args;
+    }
+
+    /**
+     * Tell the user on the article editor that new tags were not added.
+     *
+     * Hooked to `admin_notices`.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public static function render_refused_tags_notice() {
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- A display flag set by the save redirect; nothing is changed.
+        if ( empty( $_GET[ self::TAGS_REFUSED_ARG ] ) ) {
+            return;
+        }
+
+        $screen = get_current_screen();
+
+        if ( ! $screen instanceof WP_Screen || 'post' !== $screen->base || Licensio_KB_Post_Types::POST_TYPE !== $screen->post_type ) {
+            return;
+        }
+
+        wp_admin_notice(
+            __( 'New tags were not added: you are not allowed to create tags. The article was saved with its existing tags.', 'licensio-knowledge-base' ),
+            array(
+                'type'        => 'warning',
+                'dismissible' => true,
+            )
+        );
     }
 
     /**

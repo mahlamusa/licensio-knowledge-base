@@ -458,6 +458,10 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
         $this->assertNotFalse( has_filter( 'user_has_cap', array( 'Licensio_KB_Capabilities', 'managers_write_articles' ) ) );
         $this->assertNotFalse( has_filter( 'pre_insert_term', array( 'Licensio_KB_Capabilities', 'guard_term_creation' ) ) );
         $this->assertNotFalse( has_filter( 'rest_prepare_licensio_article', array( 'Licensio_KB_Capabilities', 'hide_term_creation' ) ) );
+        $this->assertNotFalse( has_filter( 'licensio_tag_taxonomy_args', array( 'Licensio_KB_Capabilities', 'filter_tag_box_args' ) ) );
+        $this->assertNotFalse( has_filter( 'redirect_post_location', array( 'Licensio_KB_Capabilities', 'flag_refused_tags' ) ) );
+        $this->assertNotFalse( has_filter( 'removable_query_args', array( 'Licensio_KB_Capabilities', 'removable_query_args' ) ) );
+        $this->assertNotFalse( has_action( 'admin_notices', array( 'Licensio_KB_Capabilities', 'render_refused_tags_notice' ) ) );
     }
 
     /**
@@ -565,6 +569,136 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
         $earlier = new WP_Error( 'earlier', 'Refused before.' );
 
         $this->assertSame( $earlier, $guard::guard_term_creation( $earlier, 'licensio_tag' ) );
+    }
+
+    /**
+     * The classic tag box sanitizes its input with the plugin's callback.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_tag_box_uses_the_plugin_sanitize_callback() {
+        $args = Licensio_KB_Capabilities::filter_tag_box_args( array( 'hierarchical' => false ) );
+
+        $this->assertSame( array( 'Licensio_KB_Capabilities', 'sanitize_tag_box' ), $args['meta_box_sanitize_cb'] );
+        $this->assertFalse( $args['hierarchical'] );
+        $this->assertSame( 'not an array', Licensio_KB_Capabilities::filter_tag_box_args( 'not an array' ) );
+    }
+
+    /**
+     * The classic tag box drops a name a writer may not create and keeps every existing tag.
+     *
+     * Core stopped assigning tags at the first name it could not create, so
+     * the tags after it were lost without a word. The save now flags the
+     * redirect so the article editor can say so.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_tag_box_drops_new_names_for_a_writer_and_flags_the_redirect() {
+        $this->reset_refused_tags();
+
+        Functions\when( 'get_current_user_id' )->justReturn( 7 );
+        Functions\when( 'current_user_can' )->justReturn( false );
+        Functions\expect( 'taxonomy_meta_box_sanitize_cb_input' )
+            ->once()
+            ->with( 'licensio_tag', 'Billing, Brand new, Refunds' )
+            ->andReturn( array( 5, 'Brand new', 6 ) );
+        Functions\when( 'add_query_arg' )->alias(
+            function ( $key, $value, $url ) {
+                return $url . '&' . $key . '=' . $value;
+            }
+        );
+
+        $guard = $this->outside_cli();
+
+        $this->assertSame( array( 5, 6 ), $guard::sanitize_tag_box( 'licensio_tag', 'Billing, Brand new, Refunds' ) );
+        $this->assertSame(
+            'post.php?post=3&action=edit&message=1&licensio_kb_tags_refused=1',
+            Licensio_KB_Capabilities::flag_refused_tags( 'post.php?post=3&action=edit&message=1' )
+        );
+
+        $this->reset_refused_tags();
+    }
+
+    /**
+     * A manager's new tag names are kept, so they are created, and the redirect is not flagged.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_tag_box_keeps_new_names_for_a_manager() {
+        $this->reset_refused_tags();
+
+        Functions\when( 'get_current_user_id' )->justReturn( 7 );
+        Functions\when( 'current_user_can' )->justReturn( true );
+        Functions\when( 'taxonomy_meta_box_sanitize_cb_input' )->justReturn( array( 5, 'Brand new' ) );
+        Functions\expect( 'add_query_arg' )->never();
+
+        $guard = $this->outside_cli();
+
+        $this->assertSame( array( 5, 'Brand new' ), $guard::sanitize_tag_box( 'licensio_tag', 'Billing, Brand new' ) );
+        $this->assertSame( 'post.php?post=3', Licensio_KB_Capabilities::flag_refused_tags( 'post.php?post=3' ) );
+    }
+
+    /**
+     * The article editor shows the refused tags notice only when the save flagged it.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_refused_tags_notice_shows_on_the_article_editor_only() {
+        $screen            = new WP_Screen( '', 'licensio_article' );
+        $screen->base      = 'post';
+        $screen->post_type = 'licensio_article';
+        $notices           = array();
+
+        Functions\when( 'get_current_screen' )->alias(
+            function () use ( &$screen ) {
+                return $screen;
+            }
+        );
+        Functions\when( 'wp_admin_notice' )->alias(
+            function ( $message, $args ) use ( &$notices ) {
+                $notices[] = array( $message, $args['type'] );
+            }
+        );
+
+        Licensio_KB_Capabilities::render_refused_tags_notice();
+        $this->assertSame( array(), $notices, 'No flag, no notice.' );
+
+        $_GET['licensio_kb_tags_refused'] = '1';
+
+        Licensio_KB_Capabilities::render_refused_tags_notice();
+        $this->assertCount( 1, $notices );
+        $this->assertSame( 'warning', $notices[0][1] );
+        $this->assertStringContainsString( 'New tags were not added', $notices[0][0] );
+
+        $screen->post_type = 'post';
+
+        Licensio_KB_Capabilities::render_refused_tags_notice();
+        $this->assertCount( 1, $notices, 'Another post type is not ours.' );
+
+        unset( $_GET['licensio_kb_tags_refused'] );
+
+        $this->assertSame( array( 'message', 'licensio_kb_tags_refused' ), Licensio_KB_Capabilities::removable_query_args( array( 'message' ) ) );
+    }
+
+    /**
+     * Clear the refused tags flag a tag box save leaves for the request.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    private function reset_refused_tags() {
+        $flag = new ReflectionProperty( 'Licensio_KB_Capabilities', 'tags_refused' );
+        $flag->setAccessible( true );
+        $flag->setValue( null, false );
     }
 
     /**
