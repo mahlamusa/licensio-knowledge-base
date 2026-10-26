@@ -4,7 +4,7 @@
  *
  * Lists the page of tags with server-side sort and paging, row selection for
  * the bulk bar, and inline edit of name, slug and description. Edit opens the
- * row's fields in place; Save asks for confirmation first, and the row keeps
+ * row's fields in place; Save sends without asking, and the row keeps
  * the user's input when the server refuses it, as it does a slug another tag
  * already uses. The slug the server settled on (made from the name if the
  * slug was cleared) is shown back once saved.
@@ -28,7 +28,6 @@
 
 import { computed, nextTick, reactive, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
-import ConfirmButton from '../../components/ConfirmButton.vue';
 import { __, sprintf } from '../../components/i18n';
 import { settings } from '../api';
 import { useTagsStore } from '../store';
@@ -235,7 +234,7 @@ function changes( tag: TagItem ): TagFields {
 }
 
 /**
- * Save the open row. Called only after the user confirmed.
+ * Save the open row.
  *
  * @since 1.0.0
  *
@@ -398,22 +397,15 @@ watch(
 						v-if="editingId === record.id"
 						class="lkb-tags__actions"
 					>
-						<ConfirmButton
+						<a-button
 							type="primary"
 							size="small"
-							:title="
-								__(
-									'Save the changes to this tag?',
-									'licensio-knowledge-base'
-								)
-							"
-							:ok-text="__( 'Save', 'licensio-knowledge-base' )"
 							:disabled="! canSave( record as TagItem )"
 							:loading="store.saving"
-							@confirm="save( record as TagItem )"
+							@click="save( record as TagItem )"
 						>
 							{{ __( 'Save', 'licensio-knowledge-base' ) }}
-						</ConfirmButton>
+						</a-button>
 						<a-button size="small" @click="cancelEdit">
 							{{ __( 'Cancel', 'licensio-knowledge-base' ) }}
 						</a-button>

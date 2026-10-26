@@ -346,7 +346,11 @@ const expandedKeys = computed( () =>
 								type="link"
 								size="small"
 								class="lkb-rowactions__button"
-								:disabled="!! record.lock || ! record.edit_url"
+								:disabled="
+									!! record.lock ||
+									! record.edit_url ||
+									store.bulk.running
+								"
 								:aria-expanded="store.quickEditId === record.id"
 								:data-quick-edit="record.id"
 								@click="
@@ -391,7 +395,7 @@ const expandedKeys = computed( () =>
 								type="link"
 								size="small"
 								danger
-								:disabled="!! record.lock"
+								:disabled="!! record.lock || store.bulk.running"
 								:title="confirmTitle( 'trash', {}, 1 )"
 								:ok-text="
 									__(
@@ -407,25 +411,23 @@ const expandedKeys = computed( () =>
 							</ConfirmButton>
 						</template>
 						<template v-else>
-							<ConfirmButton
+							<a-button
 								type="link"
 								size="small"
-								:title="confirmTitle( 'restore', {}, 1 )"
-								:ok-text="
-									__( 'Restore', 'licensio-knowledge-base' )
-								"
-								@confirm="
+								:disabled="store.bulk.running"
+								@click="
 									performAction( 'restore', {}, [
 										record.id,
 									] )
 								"
 							>
 								{{ __( 'Restore', 'licensio-knowledge-base' ) }}
-							</ConfirmButton>
+							</a-button>
 							<ConfirmButton
 								type="link"
 								size="small"
 								danger
+								:disabled="store.bulk.running"
 								:title="confirmTitle( 'delete', {}, 1 )"
 								:ok-text="
 									__(

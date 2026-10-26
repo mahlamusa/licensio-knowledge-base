@@ -28,6 +28,7 @@ import type {
 	SourceDriver,
 	TargetCategory,
 } from '../types';
+import ConfirmButton from '../../components/ConfirmButton.vue';
 import MigrationLog from './MigrationLog.vue';
 import { __, _n, sprintf } from '../../components/i18n';
 
@@ -507,26 +508,13 @@ onMounted( detect );
 				</a-radio-group>
 
 				<div class="licensio-kb-migration__actions">
-					<a-popconfirm
+					<a-button
 						v-if="driver?.status.in_progress"
-						:title="
-							__(
-								'Resume the import from where it stopped?',
-								'licensio-knowledge-base'
-							)
-						"
-						:ok-text="
-							__( 'Resume import', 'licensio-knowledge-base' )
-						"
-						:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
-						@confirm="start( false )"
+						type="primary"
+						@click="start( false )"
 					>
-						<a-button type="primary">
-							{{
-								__( 'Resume import', 'licensio-knowledge-base' )
-							}}
-						</a-button>
-					</a-popconfirm>
+						{{ __( 'Resume import', 'licensio-knowledge-base' ) }}
+					</a-button>
 					<a-button
 						v-else
 						type="primary"
@@ -673,7 +661,8 @@ onMounted( detect );
 					>
 						{{ __( 'Start dry run', 'licensio-knowledge-base' ) }}
 					</a-button>
-					<a-popconfirm
+					<ConfirmButton
+						:disabled="loadingCategories"
 						:title="
 							__(
 								'Run the import now, without a dry run first?',
@@ -681,16 +670,15 @@ onMounted( detect );
 							)
 						"
 						:ok-text="__( 'Run import', 'licensio-knowledge-base' )"
-						:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
 						@confirm="start( false )"
 					>
-						<a-button :disabled="loadingCategories">{{
+						{{
 							__(
 								'Skip the dry run and import',
 								'licensio-knowledge-base'
 							)
-						}}</a-button>
-					</a-popconfirm>
+						}}
+					</ConfirmButton>
 				</div>
 			</template>
 
@@ -795,8 +783,9 @@ onMounted( detect );
 				</template>
 
 				<div class="licensio-kb-migration__actions">
-					<a-popconfirm
+					<ConfirmButton
 						v-if="summary && runIsDry"
+						type="primary"
 						:title="
 							__(
 								'Run the import now?',
@@ -804,34 +793,22 @@ onMounted( detect );
 							)
 						"
 						:ok-text="__( 'Run import', 'licensio-knowledge-base' )"
-						:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
 						@confirm="start( false )"
 					>
-						<a-button type="primary">
-							{{
-								__(
-									'Looks good, run the import',
-									'licensio-knowledge-base'
-								)
-							}}
-						</a-button>
-					</a-popconfirm>
-					<a-popconfirm
-						v-if="runError"
-						:title="
+						{{
 							__(
-								'Resume the import from where it stopped?',
+								'Looks good, run the import',
 								'licensio-knowledge-base'
 							)
-						"
-						:ok-text="__( 'Resume', 'licensio-knowledge-base' )"
-						:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
-						@confirm="start( runIsDry )"
+						}}
+					</ConfirmButton>
+					<a-button
+						v-if="runError"
+						type="primary"
+						@click="start( runIsDry )"
 					>
-						<a-button type="primary">
-							{{ __( 'Resume', 'licensio-knowledge-base' ) }}
-						</a-button>
-					</a-popconfirm>
+						{{ __( 'Resume', 'licensio-knowledge-base' ) }}
+					</a-button>
 					<a-button
 						v-if="summary && ! runIsDry && chrome.articlesUrl"
 						:href="chrome.articlesUrl"

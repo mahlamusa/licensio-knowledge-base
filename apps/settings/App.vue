@@ -4,9 +4,10 @@ import { lkbTheme } from '../styles/theme';
  * The settings screen.
  *
  * A category sidebar on the left, one group per entry, and that group's fields
- * on the right as label-and-control rows. A save is confirmed first and refused
- * whole rather than applied in part, a reset restores the registry defaults, and
- * a guard stops the browser leaving with unsaved edits on the page.
+ * on the right as label-and-control rows. A save runs on click and is refused
+ * whole rather than applied in part; discarding edits and a reset, which
+ * restores the registry defaults, ask first; and a guard stops the browser
+ * leaving with unsaved edits on the page.
  *
  * @since 1.0.0
  */
@@ -347,12 +348,20 @@ onBeforeUnmount( () => {
 				</p>
 
 				<div class="lkb-bar__actions">
-					<a-button
+					<ConfirmButton
+						danger
 						:disabled="! store.dirty || store.saving"
-						@click="store.revert()"
+						:title="
+							__(
+								'Discard your unsaved changes?',
+								'licensio-knowledge-base'
+							)
+						"
+						:ok-text="__( 'Discard', 'licensio-knowledge-base' )"
+						@confirm="store.revert()"
 					>
 						{{ __( 'Discard', 'licensio-knowledge-base' ) }}
-					</a-button>
+					</ConfirmButton>
 
 					<a-button
 						danger
@@ -362,23 +371,14 @@ onBeforeUnmount( () => {
 						{{ __( 'Reset all', 'licensio-knowledge-base' ) }}
 					</a-button>
 
-					<ConfirmButton
+					<a-button
 						type="primary"
 						:disabled="! store.dirty || store.saving"
 						:loading="store.saving"
-						:title="
-							__(
-								'Save these settings?',
-								'licensio-knowledge-base'
-							)
-						"
-						:ok-text="
-							__( 'Save changes', 'licensio-knowledge-base' )
-						"
-						@confirm="store.save()"
+						@click="store.save()"
 					>
 						{{ __( 'Save changes', 'licensio-knowledge-base' ) }}
-					</ConfirmButton>
+					</a-button>
 				</div>
 			</footer>
 

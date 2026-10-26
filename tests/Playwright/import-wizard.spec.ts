@@ -3,10 +3,10 @@
  *
  * Walks the import wizard as far as a dry run and reads the migration log. A
  * dry run writes nothing but its own log rows, so it is safe to repeat. The spec
- * never starts a real import: it only opens and cancels the confirmation of
- * "Looks good, run the import", never clicks "Skip the dry run and import" or
- * "Resume import", and it refuses to continue past a source whose only way
- * forward is "Resume import".
+ * never starts a real import: it only opens and cancels the confirmations of
+ * "Skip the dry run and import" and "Looks good, run the import", never
+ * clicks "Resume import", which runs without a confirmation, and it refuses
+ * to continue past a source whose only way forward is "Resume import".
  *
  * The suite needs a running WordPress with this plugin active, an
  * administrator account and at least one import source with data, so it is
@@ -221,6 +221,19 @@ test.describe( 'Migration wizard', () => {
 				)
 			).toHaveText( 'Create a new category' );
 		}
+
+		// Skipping the dry run starts a real import, so it asks first;
+		// cancelling stays on the categories step.
+		await root
+			.getByRole( 'button', { name: 'Skip the dry run and import' } )
+			.click();
+		await expect( openPopconfirm( page ) ).toContainText(
+			'Run the import now, without a dry run first?'
+		);
+		await cancelPopconfirm( page );
+		await expect(
+			root.getByRole( 'button', { name: 'Start dry run' } )
+		).toBeVisible();
 
 		// The dry run reports what it would do and says it changed nothing.
 		await root.getByRole( 'button', { name: 'Start dry run' } ).click();

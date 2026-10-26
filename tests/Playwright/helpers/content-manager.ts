@@ -97,6 +97,19 @@ export function openPopconfirm( page: Page ): Locator {
 }
 
 /**
+ * Check that no Popconfirm is showing, for an action that runs on click.
+ *
+ * @since 1.0.0
+ *
+ * @param {Page} page The browser page.
+ *
+ * @return {Promise<void>} Resolves once no Popconfirm is visible.
+ */
+export async function expectNoPopconfirm( page: Page ): Promise< void > {
+	await expect( page.locator( '.ant-popconfirm:visible' ) ).toHaveCount( 0 );
+}
+
+/**
  * Answer the open Popconfirm with its confirm button.
  *
  * @since 1.0.0
