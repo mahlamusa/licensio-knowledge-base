@@ -296,7 +296,7 @@ const expandedKeys = computed( () =>
 								type="link"
 								size="small"
 								danger
-								:disabled="!! record.lock"
+								:disabled="!! record.lock || store.bulk.running"
 								:title="confirmTitle( 'trash', {}, 1 )"
 								:ok-text="__( 'Move to trash', 'licensio-knowledge-base' )"
 								@confirm="performAction( 'trash', {}, [ record.id ] )"
@@ -308,6 +308,7 @@ const expandedKeys = computed( () =>
 							<ConfirmButton
 								type="link"
 								size="small"
+								:disabled="store.bulk.running"
 								:title="confirmTitle( 'restore', {}, 1 )"
 								:ok-text="__( 'Restore', 'licensio-knowledge-base' )"
 								@confirm="performAction( 'restore', {}, [ record.id ] )"
@@ -318,6 +319,7 @@ const expandedKeys = computed( () =>
 								type="link"
 								size="small"
 								danger
+								:disabled="store.bulk.running"
 								:title="confirmTitle( 'delete', {}, 1 )"
 								:ok-text="__( 'Delete permanently', 'licensio-knowledge-base' )"
 								@confirm="performAction( 'delete', {}, [ record.id ] )"
