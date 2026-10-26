@@ -14,6 +14,7 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { clearLog, fetchLogEntries, fetchLogRuns } from '../api';
 import type { LogEntry, LogMeta, LogRun, LogTerm } from '../types';
+import ConfirmButton from '../../components/ConfirmButton.vue';
 import { __ } from '../../components/i18n';
 
 const props = defineProps< {
@@ -407,7 +408,7 @@ defineExpose( { reload: loadRuns } );
 					{{ __( 'Download CSV', 'licensio-knowledge-base' ) }}
 				</a-button>
 
-				<a-popconfirm
+				<ConfirmButton
 					:title="
 						__(
 							'Delete this run\'s log entries? The imported content is not affected.',
@@ -415,15 +416,15 @@ defineExpose( { reload: loadRuns } );
 						)
 					"
 					:ok-text="__( 'Delete', 'licensio-knowledge-base' )"
-					:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
 					@confirm="clear( false )"
 				>
-					<a-button>{{
+					{{
 						__( "Delete this run's log", 'licensio-knowledge-base' )
-					}}</a-button>
-				</a-popconfirm>
+					}}
+				</ConfirmButton>
 
-				<a-popconfirm
+				<ConfirmButton
+					danger
 					:title="
 						__(
 							'Clear the whole migration log? The imported content is not affected.',
@@ -431,13 +432,10 @@ defineExpose( { reload: loadRuns } );
 						)
 					"
 					:ok-text="__( 'Clear log', 'licensio-knowledge-base' )"
-					:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
 					@confirm="clear( true )"
 				>
-					<a-button danger>{{
-						__( 'Clear all logs', 'licensio-knowledge-base' )
-					}}</a-button>
-				</a-popconfirm>
+					{{ __( 'Clear all logs', 'licensio-knowledge-base' ) }}
+				</ConfirmButton>
 			</div>
 
 			<a-table
