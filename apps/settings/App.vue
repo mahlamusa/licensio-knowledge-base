@@ -26,10 +26,10 @@ const activeGroup = ref( '' );
 const confirmingReset = ref( false );
 
 const groups = computed( () => store.schema );
-const blocks = computed( () => store.categoryBlocks );
 
-const activeGroupObject = computed( () =>
-	groups.value.find( ( group ) => group.id === activeGroup.value ) ?? null
+const activeGroupObject = computed(
+	() =>
+		groups.value.find( ( group ) => group.id === activeGroup.value ) ?? null
 );
 
 const chrome = config();
@@ -78,7 +78,10 @@ const notice = computed( () => {
 	}
 
 	if ( store.notice === 'reset' ) {
-		return __( 'Every setting is back to its default.', 'licensio-knowledge-base' );
+		return __(
+			'Every setting is back to its default.',
+			'licensio-knowledge-base'
+		);
 	}
 
 	return '';
@@ -194,156 +197,209 @@ onBeforeUnmount( () => {
 
 <template>
 	<a-config-provider :theme="lkbTheme">
-	<div class="lkb-page lkb-settings">
-		<AppHeader :settings-url="chrome.settingsUrl" />
+		<div class="lkb-page lkb-settings">
+			<AppHeader :settings-url="chrome.settingsUrl" />
 
-		<div id="lkb-main" class="lkb-page__body lkb-measure">
-			<div class="lkb-page__head">
-				<h1 class="lkb-page__title">
-					{{ __( 'Settings', 'licensio-knowledge-base' ) }}
-				</h1>
+			<div id="lkb-main" class="lkb-page__body lkb-measure">
+				<div class="lkb-page__head">
+					<h1 class="lkb-page__title">
+						{{ __( 'Settings', 'licensio-knowledge-base' ) }}
+					</h1>
 
-				<a-button
-					v-if="chrome.archiveUrl"
-					size="small"
-					:href="chrome.archiveUrl"
-					target="_blank"
-					rel="noreferrer noopener"
-				>
-					{{ __( 'View documentation', 'licensio-knowledge-base' ) }}
-				</a-button>
-			</div>
-
-		<a-spin :spinning="store.loading || store.saving">
-			<div v-if="store.loaded" class="lkb-settings__layout">
-				<nav class="lkb-nav" :aria-label="__( 'Settings sections', 'licensio-knowledge-base' )">
-					<ul class="lkb-nav__list">
-						<li v-for="group in groups" :key="group.id">
-							<button
-								type="button"
-								class="lkb-nav__item"
-								:class="{
-									'is-active': group.id === activeGroup,
-									'is-dirty': changedIn( group.id ) > 0,
-								}"
-								:aria-current="group.id === activeGroup ? 'page' : undefined"
-								@click="selectGroup( group.id )"
-							>
-								<span class="lkb-nav__icon-wrap">
-									<span
-										class="lkb-nav__icon dashicons"
-										:class="'dashicons-' + group.icon"
-										aria-hidden="true"
-									/>
-								</span>
-								<span class="lkb-nav__label">{{ group.label }}</span>
-							</button>
-						</li>
-					</ul>
-				</nav>
-
-				<div class="lkb-pane">
-					<a-alert
-						v-if="store.error"
-						type="error"
-						show-icon
-						:message="store.error"
-						class="lkb-pane__notice"
-					/>
-
-					<a-alert
-						v-else-if="notice"
-						type="success"
-						show-icon
-						:message="notice"
-						class="lkb-pane__notice"
-					/>
-
-					<AppearancePreview
-						v-if="activeGroupObject?.fields.some( ( field ) => field.preview )"
-						:fields="activeGroupObject.fields"
-						:draft="store.draft"
-					/>
-
-					<section v-if="activeGroupObject" class="lkb-card">
-						<div class="lkb-card__head">
-							<h2 class="lkb-card__title">{{ activeGroupObject.label }}</h2>
-							<p class="lkb-card__description">
-								{{ activeGroupObject.description }}
-							</p>
-						</div>
-
-						<div class="lkb-card__body">
-							<SettingField
-								v-for="field in activeGroupObject.fields"
-								:key="field.key"
-								:field="field"
-								:value="store.draft[ field.key ] ?? null"
-								:error="store.fieldErrors[ field.key ] ?? ''"
-								:changed="store.changedKeys.includes( field.key )"
-								@update="update"
-							/>
-						</div>
-					</section>
+					<a-button
+						v-if="chrome.archiveUrl"
+						size="small"
+						:href="chrome.archiveUrl"
+						target="_blank"
+						rel="noreferrer noopener"
+					>
+						{{
+							__(
+								'View documentation',
+								'licensio-knowledge-base'
+							)
+						}}
+					</a-button>
 				</div>
+
+				<a-spin :spinning="store.loading || store.saving">
+					<div v-if="store.loaded" class="lkb-settings__layout">
+						<nav
+							class="lkb-nav"
+							:aria-label="
+								__(
+									'Settings sections',
+									'licensio-knowledge-base'
+								)
+							"
+						>
+							<ul class="lkb-nav__list">
+								<li v-for="group in groups" :key="group.id">
+									<button
+										type="button"
+										class="lkb-nav__item"
+										:class="{
+											'is-active':
+												group.id === activeGroup,
+											'is-dirty':
+												changedIn( group.id ) > 0,
+										}"
+										:aria-current="
+											group.id === activeGroup
+												? 'page'
+												: undefined
+										"
+										@click="selectGroup( group.id )"
+									>
+										<span class="lkb-nav__icon-wrap">
+											<span
+												class="lkb-nav__icon dashicons"
+												:class="
+													'dashicons-' + group.icon
+												"
+												aria-hidden="true"
+											/>
+										</span>
+										<span class="lkb-nav__label">{{
+											group.label
+										}}</span>
+									</button>
+								</li>
+							</ul>
+						</nav>
+
+						<div class="lkb-pane">
+							<a-alert
+								v-if="store.error"
+								type="error"
+								show-icon
+								:message="store.error"
+								class="lkb-pane__notice"
+							/>
+
+							<a-alert
+								v-else-if="notice"
+								type="success"
+								show-icon
+								:message="notice"
+								class="lkb-pane__notice"
+							/>
+
+							<AppearancePreview
+								v-if="
+									activeGroupObject?.fields.some(
+										( field ) => field.preview
+									)
+								"
+								:fields="activeGroupObject.fields"
+								:draft="store.draft"
+							/>
+
+							<section v-if="activeGroupObject" class="lkb-card">
+								<div class="lkb-card__head">
+									<h2 class="lkb-card__title">
+										{{ activeGroupObject.label }}
+									</h2>
+									<p class="lkb-card__description">
+										{{ activeGroupObject.description }}
+									</p>
+								</div>
+
+								<div class="lkb-card__body">
+									<SettingField
+										v-for="field in activeGroupObject.fields"
+										:key="field.key"
+										:field="field"
+										:value="
+											store.draft[ field.key ] ?? null
+										"
+										:error="
+											store.fieldErrors[ field.key ] ?? ''
+										"
+										:changed="
+											store.changedKeys.includes(
+												field.key
+											)
+										"
+										@update="update"
+									/>
+								</div>
+							</section>
+						</div>
+					</div>
+				</a-spin>
 			</div>
-		</a-spin>
+
+			<footer class="lkb-bar" :class="{ 'is-dirty': store.dirty }">
+				<p class="lkb-bar__status">
+					<template v-if="store.dirty">
+						{{ __( 'Unsaved changes', 'licensio-knowledge-base' ) }}
+						<span class="lkb-bar__count">{{ changedCount }}</span>
+					</template>
+					<template v-else-if="store.loaded">
+						{{
+							__(
+								'All changes saved.',
+								'licensio-knowledge-base'
+							)
+						}}
+					</template>
+				</p>
+
+				<div class="lkb-bar__actions">
+					<a-button
+						:disabled="! store.dirty || store.saving"
+						@click="store.revert()"
+					>
+						{{ __( 'Discard', 'licensio-knowledge-base' ) }}
+					</a-button>
+
+					<a-button
+						danger
+						:disabled="store.saving"
+						@click="confirmingReset = true"
+					>
+						{{ __( 'Reset all', 'licensio-knowledge-base' ) }}
+					</a-button>
+
+					<ConfirmButton
+						type="primary"
+						:disabled="! store.dirty || store.saving"
+						:loading="store.saving"
+						:title="
+							__(
+								'Save these settings?',
+								'licensio-knowledge-base'
+							)
+						"
+						:ok-text="
+							__( 'Save changes', 'licensio-knowledge-base' )
+						"
+						@confirm="store.save()"
+					>
+						{{ __( 'Save changes', 'licensio-knowledge-base' ) }}
+					</ConfirmButton>
+				</div>
+			</footer>
+
+			<a-modal
+				v-model:open="confirmingReset"
+				:title="__( 'Reset every setting?', 'licensio-knowledge-base' )"
+				:ok-text="__( 'Reset everything', 'licensio-knowledge-base' )"
+				:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
+				ok-type="danger"
+				@ok="confirmReset"
+			>
+				<p>
+					{{
+						__(
+							'Every setting goes back to its default. Stored articles, categories and feedback are untouched.',
+							'licensio-knowledge-base'
+						)
+					}}
+				</p>
+			</a-modal>
 		</div>
-
-		<footer class="lkb-bar" :class="{ 'is-dirty': store.dirty }">
-			<p class="lkb-bar__status">
-				<template v-if="store.dirty">
-					{{ __( 'Unsaved changes', 'licensio-knowledge-base' ) }}
-					<span class="lkb-bar__count">{{ changedCount }}</span>
-				</template>
-				<template v-else-if="store.loaded">
-					{{ __( 'All changes saved.', 'licensio-knowledge-base' ) }}
-				</template>
-			</p>
-
-			<div class="lkb-bar__actions">
-				<a-button
-					:disabled="! store.dirty || store.saving"
-					@click="store.revert()"
-				>
-					{{ __( 'Discard', 'licensio-knowledge-base' ) }}
-				</a-button>
-
-				<a-button danger :disabled="store.saving" @click="confirmingReset = true">
-					{{ __( 'Reset all', 'licensio-knowledge-base' ) }}
-				</a-button>
-
-				<ConfirmButton
-					type="primary"
-					:disabled="! store.dirty || store.saving"
-					:loading="store.saving"
-					:title="__( 'Save these settings?', 'licensio-knowledge-base' )"
-					:ok-text="__( 'Save changes', 'licensio-knowledge-base' )"
-					@confirm="store.save()"
-				>
-					{{ __( 'Save changes', 'licensio-knowledge-base' ) }}
-				</ConfirmButton>
-			</div>
-		</footer>
-
-		<a-modal
-			v-model:open="confirmingReset"
-			:title="__( 'Reset every setting?', 'licensio-knowledge-base' )"
-			:ok-text="__( 'Reset everything', 'licensio-knowledge-base' )"
-			:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
-			ok-type="danger"
-			@ok="confirmReset"
-		>
-			<p>
-				{{
-					__(
-						'Every setting goes back to its default. Stored articles, categories and feedback are untouched.',
-						'licensio-knowledge-base'
-					)
-				}}
-			</p>
-		</a-modal>
-	</div>
 	</a-config-provider>
 </template>
 
@@ -367,8 +423,8 @@ onBeforeUnmount( () => {
 
 .lkb-settings__layout {
 	display: grid;
-	grid-template-columns: 200px minmax(0, 1fr);
-	gap: var(--lkb-gap-lg);
+	grid-template-columns: 200px minmax( 0, 1fr );
+	gap: var( --lkb-gap-lg );
 	align-items: start;
 }
 
@@ -378,10 +434,10 @@ onBeforeUnmount( () => {
 	position: sticky;
 	top: 102px;
 	padding: 4px;
-	border: 1px solid var(--lkb-border-wp);
-	border-radius: var(--lkb-radius);
-	background: var(--lkb-surface);
-	box-shadow: var(--lkb-shadow-sm);
+	border: 1px solid var( --lkb-border-wp );
+	border-radius: var( --lkb-radius );
+	background: var( --lkb-surface );
+	box-shadow: var( --lkb-shadow-sm );
 }
 
 .lkb-nav__list {
@@ -402,17 +458,19 @@ onBeforeUnmount( () => {
 	border: 0;
 	border-radius: 6px;
 	background: transparent;
-	color: var(--lkb-ink-wp-secondary);
+	color: var( --lkb-ink-wp-secondary );
 	font-size: 13px;
 	line-height: 1;
 	text-align: left;
 	cursor: pointer;
-	transition: background 0.12s ease, color 0.12s ease;
+	transition:
+		background 0.12s ease,
+		color 0.12s ease;
 }
 
 .lkb-nav__item:hover {
-	background: var(--lkb-hover);
-	color: var(--lkb-ink-wp);
+	background: var( --lkb-hover );
+	color: var( --lkb-ink-wp );
 }
 
 /*
@@ -421,13 +479,13 @@ onBeforeUnmount( () => {
  * down the rail rather than by reading it.
  */
 .lkb-nav__item.is-active {
-	background: var(--lkb-brand-tint);
-	color: var(--lkb-accent);
+	background: var( --lkb-brand-tint );
+	color: var( --lkb-accent );
 	font-weight: 600;
 }
 
 .lkb-nav__item:focus-visible {
-	outline: 2px solid var(--lkb-accent);
+	outline: 2px solid var( --lkb-accent );
 	outline-offset: -2px;
 }
 
@@ -439,11 +497,13 @@ onBeforeUnmount( () => {
 	width: 24px;
 	height: 24px;
 	border-radius: 5px;
-	transition: background 0.12s ease, color 0.12s ease;
+	transition:
+		background 0.12s ease,
+		color 0.12s ease;
 }
 
 .lkb-nav__item.is-active .lkb-nav__icon-wrap {
-	background: var(--lkb-accent);
+	background: var( --lkb-accent );
 	color: #fff;
 }
 
@@ -474,14 +534,14 @@ onBeforeUnmount( () => {
 	height: 6px;
 	margin-left: 6px;
 	border-radius: 50%;
-	background: var(--lkb-error);
+	background: var( --lkb-error );
 	vertical-align: middle;
 }
 
 /* ── Content pane ────────────────────────────────────────── */
 
 .lkb-pane__notice {
-	margin-bottom: var(--lkb-gap);
+	margin-bottom: var( --lkb-gap );
 }
 
 /*
@@ -494,25 +554,25 @@ onBeforeUnmount( () => {
  */
 .lkb-card {
 	overflow: hidden;
-	border: 1px solid var(--lkb-border-wp);
-	border-radius: var(--lkb-radius);
-	background: var(--lkb-surface);
-	box-shadow: var(--lkb-shadow-sm);
+	border: 1px solid var( --lkb-border-wp );
+	border-radius: var( --lkb-radius );
+	background: var( --lkb-surface );
+	box-shadow: var( --lkb-shadow-sm );
 }
 
 .lkb-card + .lkb-card {
-	margin-top: var(--lkb-gap);
+	margin-top: var( --lkb-gap );
 }
 
 .lkb-card__head {
-	padding: var(--lkb-gap) var(--lkb-gap-lg);
-	border-bottom: 1px solid var(--lkb-border-light);
-	background: var(--lkb-sunken);
+	padding: var( --lkb-gap ) var( --lkb-gap-lg );
+	border-bottom: 1px solid var( --lkb-border-light );
+	background: var( --lkb-sunken );
 }
 
 .lkb-card__title {
 	margin: 0;
-	color: var(--lkb-ink-wp);
+	color: var( --lkb-ink-wp );
 	font-size: 13px;
 	font-weight: 700;
 	letter-spacing: 0.04em;
@@ -522,7 +582,7 @@ onBeforeUnmount( () => {
 
 .lkb-card__description {
 	margin: 4px 0 0;
-	color: var(--lkb-ink-wp-muted);
+	color: var( --lkb-ink-wp-muted );
 	font-size: 12.5px;
 	font-weight: 400;
 	letter-spacing: 0;
@@ -531,7 +591,7 @@ onBeforeUnmount( () => {
 }
 
 .lkb-card__body {
-	padding: 4px var(--lkb-gap-lg) 12px;
+	padding: 4px var( --lkb-gap-lg ) 12px;
 }
 
 /*
@@ -550,23 +610,23 @@ onBeforeUnmount( () => {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	gap: var(--lkb-gap);
+	gap: var( --lkb-gap );
 	max-width: 1280px;
 	margin: 0 auto;
-	padding: 12px var(--lkb-gap-lg);
-	background: var(--lkb-surface);
-	border-top: 1px solid var(--lkb-border-wp);
+	padding: 12px var( --lkb-gap-lg );
+	background: var( --lkb-surface );
+	border-top: 1px solid var( --lkb-border-wp );
 	box-shadow: 0 -2px 8px rgba( 0, 0, 0, 0.06 );
 }
 
 .lkb-bar__status {
 	margin: 0;
 	font-size: 13px;
-	color: var(--lkb-ink-muted);
+	color: var( --lkb-ink-muted );
 }
 
 .lkb-bar.is-dirty .lkb-bar__status {
-	color: var(--lkb-ink);
+	color: var( --lkb-ink );
 	font-weight: 600;
 }
 
@@ -576,7 +636,7 @@ onBeforeUnmount( () => {
 	margin-left: 6px;
 	padding: 1px 6px;
 	border-radius: 10px;
-	background: var(--lkb-error);
+	background: var( --lkb-error );
 	color: #fff;
 	font-size: 11px;
 	text-align: center;
@@ -588,9 +648,9 @@ onBeforeUnmount( () => {
 	gap: 8px;
 }
 
-@media (max-width: 782px) {
+@media ( max-width: 782px ) {
 	.lkb-settings__layout {
-		grid-template-columns: minmax(0, 1fr);
+		grid-template-columns: minmax( 0, 1fr );
 	}
 
 	.lkb-nav {

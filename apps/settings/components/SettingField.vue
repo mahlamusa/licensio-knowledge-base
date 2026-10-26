@@ -56,7 +56,10 @@ function update( value: SettingValue ): void {
 </script>
 
 <template>
-	<div class="lkb-field" :class="{ 'is-changed': changed, 'is-invalid': !! error }">
+	<div
+		class="lkb-field"
+		:class="{ 'is-changed': changed, 'is-invalid': !! error }"
+	>
 		<div class="lkb-field__label">
 			<label :for="controlId">{{ field.label }}</label>
 			<span v-if="bounds" class="lkb-field__bounds">{{ bounds }}</span>
@@ -64,68 +67,81 @@ function update( value: SettingValue ): void {
 
 		<div class="lkb-field__control">
 			<div class="lkb-field__input">
-		<a-switch
-			v-if="field.control === 'toggle'"
-			:id="controlId"
-			:checked="value === true"
-			@update:checked="update( $event )"
-		/>
+				<a-switch
+					v-if="field.control === 'toggle'"
+					:id="controlId"
+					:checked="value === true"
+					@update:checked="update( $event )"
+				/>
 
-		<a-input-number
-			v-else-if="field.control === 'number'"
-			:id="controlId"
-			:value="typeof value === 'number' ? value : null"
-			:min="field.min ?? undefined"
-			:max="field.max ?? undefined"
-			:step="1"
-			@update:value="update( $event === null ? null : Number( $event ) )"
-		/>
+				<a-input-number
+					v-else-if="field.control === 'number'"
+					:id="controlId"
+					:value="typeof value === 'number' ? value : null"
+					:min="field.min ?? undefined"
+					:max="field.max ?? undefined"
+					:step="1"
+					@update:value="
+						update( $event === null ? null : Number( $event ) )
+					"
+				/>
 
-		<a-select
-			v-else-if="field.control === 'select'"
-			:id="controlId"
-			:value="String( value ?? '' )"
-			style="min-width: 14rem"
-			@update:value="update( String( $event ) )"
-		>
-			<a-select-option
-				v-for="choice in field.choices"
-				:key="choice.value"
-				:value="choice.value"
-			>
-				{{ choice.label }}
-			</a-select-option>
-		</a-select>
+				<a-select
+					v-else-if="field.control === 'select'"
+					:id="controlId"
+					:value="String( value ?? '' )"
+					style="min-width: 14rem"
+					@update:value="update( String( $event ) )"
+				>
+					<a-select-option
+						v-for="choice in field.choices"
+						:key="choice.value"
+						:value="choice.value"
+					>
+						{{ choice.label }}
+					</a-select-option>
+				</a-select>
 
-		<span v-else-if="field.control === 'color'" class="licensio-kb-settings__color">
-			<input
-				type="color"
-				:value="String( value ?? '#000000' )"
-				:aria-label="field.label"
-				@input="update( ( $event.target as HTMLInputElement ).value )"
-			/>
-			<a-input
-				:id="controlId"
-				:value="String( value ?? '' )"
-				style="max-width: 9rem"
-				@update:value="update( String( $event ) )"
-			/>
-		</span>
+				<span
+					v-else-if="field.control === 'color'"
+					class="licensio-kb-settings__color"
+				>
+					<input
+						type="color"
+						:value="String( value ?? '#000000' )"
+						:aria-label="field.label"
+						@input="
+							update(
+								( $event.target as HTMLInputElement ).value
+							)
+						"
+					/>
+					<a-input
+						:id="controlId"
+						:value="String( value ?? '' )"
+						style="max-width: 9rem"
+						@update:value="update( String( $event ) )"
+					/>
+				</span>
 
-		<a-input
-			v-else
-			:id="controlId"
-			:value="String( value ?? '' )"
-			@update:value="update( String( $event ) )"
-		/>
+				<a-input
+					v-else
+					:id="controlId"
+					:value="String( value ?? '' )"
+					@update:value="update( String( $event ) )"
+				/>
 
-		<span v-if="field.unit" class="licensio-kb-settings__unit">
-			{{ field.unit }}
-		</span>
+				<span v-if="field.unit" class="licensio-kb-settings__unit">
+					{{ field.unit }}
+				</span>
 
-		<span v-if="bounds" class="licensio-kb-settings__bounds">{{ bounds }}</span>
+				<span v-if="bounds" class="licensio-kb-settings__bounds">{{
+					bounds
+				}}</span>
 
-		<span v-if="changed" class="licensio-kb-settings__changed">•</span>
+				<span v-if="changed" class="licensio-kb-settings__changed"
+					>•</span
+				>
 			</div>
 
 			<p v-if="error" class="lkb-field__error">{{ error }}</p>
@@ -143,11 +159,11 @@ function update( value: SettingValue ): void {
  */
 .lkb-field {
 	display: grid;
-	grid-template-columns: 220px minmax(0, 1fr);
+	grid-template-columns: 220px minmax( 0, 1fr );
 	gap: 24px;
 	align-items: start;
 	padding: 18px 0;
-	border-bottom: 1px dashed var(--lkb-line, #e5e7eb);
+	border-bottom: 1px dashed var( --lkb-line, #e5e7eb );
 }
 
 .lkb-field:last-child {
@@ -168,7 +184,7 @@ function update( value: SettingValue ): void {
 	display: block;
 	margin-top: 2px;
 	font-size: 12px;
-	color: var(--lkb-ink-muted);
+	color: var( --lkb-ink-muted );
 	font-variant-numeric: tabular-nums;
 }
 
@@ -194,11 +210,11 @@ function update( value: SettingValue ): void {
 }
 
 .lkb-field__help {
-	color: var(--lkb-ink-muted);
+	color: var( --lkb-ink-muted );
 }
 
 .lkb-field__error {
-	color: var(--lkb-error);
+	color: var( --lkb-error );
 }
 
 /* An edited row is marked, so a change stays visible after scrolling past it. */
@@ -209,17 +225,17 @@ function update( value: SettingValue ): void {
 	height: 6px;
 	margin-left: 6px;
 	border-radius: 50%;
-	background: var(--lkb-accent);
+	background: var( --lkb-accent );
 	vertical-align: middle;
 }
 
 .lkb-field.is-invalid .lkb-field__label label {
-	color: var(--lkb-error);
+	color: var( --lkb-error );
 }
 
-@media (max-width: 782px) {
+@media ( max-width: 782px ) {
 	.lkb-field {
-		grid-template-columns: minmax(0, 1fr);
+		grid-template-columns: minmax( 0, 1fr );
 		gap: 8px;
 	}
 

@@ -14,7 +14,10 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-const root = path.resolve( path.dirname( fileURLToPath( import.meta.url ) ), '..' );
+const root = path.resolve(
+	path.dirname( fileURLToPath( import.meta.url ) ),
+	'..'
+);
 const blocksDir = path.join( root, 'blocks' );
 
 const hasBlocks =
@@ -22,7 +25,9 @@ const hasBlocks =
 	readdirSync( blocksDir ).some( ( entry ) => ! entry.startsWith( '.' ) );
 
 if ( ! hasBlocks ) {
-	process.stdout.write( 'No blocks in blocks/ yet - skipping the wp-scripts build.\n' );
+	process.stdout.write(
+		'No blocks in blocks/ yet - skipping the wp-scripts build.\n'
+	);
 	process.exit( 0 );
 }
 

@@ -40,7 +40,8 @@ let latest = 0;
 const store = useCategoriesStore();
 
 const dirty = computed(
-	() => items.value.map( ( item ) => item.id ).join( ',' ) !==
+	() =>
+		items.value.map( ( item ) => item.id ).join( ',' ) !==
 		loadedIds.value.join( ',' )
 );
 
@@ -228,7 +229,9 @@ async function save(): Promise< void > {
 			items.value.map( ( item ) => item.id )
 		);
 
-		message.success( __( 'Article order saved.', 'licensio-knowledge-base' ) );
+		message.success(
+			__( 'Article order saved.', 'licensio-knowledge-base' )
+		);
 
 		if ( ticket !== latest ) {
 			return;
@@ -293,7 +296,10 @@ async function save(): Promise< void > {
 
 			<p v-if="! error && 0 === items.length" class="lkb-order__hint">
 				{{
-					__( 'This category has no articles.', 'licensio-knowledge-base' )
+					__(
+						'This category has no articles.',
+						'licensio-knowledge-base'
+					)
 				}}
 			</p>
 
@@ -313,7 +319,7 @@ async function save(): Promise< void > {
 
 			<ol v-if="items.length" class="lkb-order__list">
 				<li
-					v-for="( article, index ) in items"
+					v-for="(article, index) in items"
 					:key="article.id"
 					class="lkb-order__item"
 					:class="{ 'is-dragging': dragIndex === index }"
@@ -337,7 +343,10 @@ async function save(): Promise< void > {
 								__( '(no title)', 'licensio-knowledge-base' )
 							}}
 						</span>
-						<a-tag v-if="'publish' !== article.status" class="lkb-order__status">
+						<a-tag
+							v-if="'publish' !== article.status"
+							class="lkb-order__status"
+						>
 							{{ statusLabel( article.status ) }}
 						</a-tag>
 					</span>
@@ -348,7 +357,10 @@ async function save(): Promise< void > {
 							:aria-label="
 								sprintf(
 									/* translators: %s: article title. */
-									__( 'Move “%s” up', 'licensio-knowledge-base' ),
+									__(
+										'Move “%s” up',
+										'licensio-knowledge-base'
+									),
 									article.title
 								)
 							"
@@ -362,7 +374,10 @@ async function save(): Promise< void > {
 							:aria-label="
 								sprintf(
 									/* translators: %s: article title. */
-									__( 'Move “%s” down', 'licensio-knowledge-base' ),
+									__(
+										'Move “%s” down',
+										'licensio-knowledge-base'
+									),
 									article.title
 								)
 							"
@@ -380,7 +395,12 @@ async function save(): Promise< void > {
 				</a-button>
 				<ConfirmButton
 					type="primary"
-					:title="__( 'Save this article order?', 'licensio-knowledge-base' )"
+					:title="
+						__(
+							'Save this article order?',
+							'licensio-knowledge-base'
+						)
+					"
 					:ok-text="__( 'Save order', 'licensio-knowledge-base' )"
 					:loading="saving"
 					@confirm="save"
@@ -399,7 +419,7 @@ async function save(): Promise< void > {
 }
 
 .lkb-order__hint {
-	color: var(--lkb-ink-muted);
+	color: var( --lkb-ink-muted );
 }
 
 .lkb-order__error {
@@ -419,9 +439,9 @@ async function save(): Promise< void > {
 	margin: 0 0 6px;
 	padding: 8px 10px;
 	line-height: 1.5;
-	border: 1px solid var(--lkb-border-wp);
+	border: 1px solid var( --lkb-border-wp );
 	border-radius: 6px;
-	background: var(--lkb-surface);
+	background: var( --lkb-surface );
 	cursor: grab;
 }
 
@@ -430,7 +450,7 @@ async function save(): Promise< void > {
 }
 
 .lkb-order__handle {
-	color: var(--lkb-ink-faint);
+	color: var( --lkb-ink-faint );
 }
 
 .lkb-order__name {

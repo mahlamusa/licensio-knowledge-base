@@ -53,28 +53,76 @@ const inTrash = computed( () => 'trash' === store.query.status );
 const choices = computed( () =>
 	inTrash.value
 		? [
-				{ value: 'restore', label: __( 'Restore', 'licensio-knowledge-base' ) },
-				{ value: 'delete', label: __( 'Delete permanently', 'licensio-knowledge-base' ) },
+				{
+					value: 'restore',
+					label: __( 'Restore', 'licensio-knowledge-base' ),
+				},
+				{
+					value: 'delete',
+					label: __(
+						'Delete permanently',
+						'licensio-knowledge-base'
+					),
+				},
 		  ]
 		: [
-				{ value: 'trash', label: __( 'Move to trash', 'licensio-knowledge-base' ) },
-				{ value: 'status', label: __( 'Change status', 'licensio-knowledge-base' ) },
-				{ value: 'cat_add', label: __( 'Add categories', 'licensio-knowledge-base' ) },
-				{ value: 'cat_remove', label: __( 'Remove categories', 'licensio-knowledge-base' ) },
-				{ value: 'cat_replace', label: __( 'Replace categories', 'licensio-knowledge-base' ) },
-				{ value: 'tag_add', label: __( 'Add tags', 'licensio-knowledge-base' ) },
-				{ value: 'tag_remove', label: __( 'Remove tags', 'licensio-knowledge-base' ) },
-				{ value: 'tag_replace', label: __( 'Replace tags', 'licensio-knowledge-base' ) },
-				{ value: 'author', label: __( 'Change author', 'licensio-knowledge-base' ) },
-				{ value: 'comments_open', label: __( 'Open comments', 'licensio-knowledge-base' ) },
-				{ value: 'comments_close', label: __( 'Close comments', 'licensio-knowledge-base' ) },
+				{
+					value: 'trash',
+					label: __( 'Move to trash', 'licensio-knowledge-base' ),
+				},
+				{
+					value: 'status',
+					label: __( 'Change status', 'licensio-knowledge-base' ),
+				},
+				{
+					value: 'cat_add',
+					label: __( 'Add categories', 'licensio-knowledge-base' ),
+				},
+				{
+					value: 'cat_remove',
+					label: __( 'Remove categories', 'licensio-knowledge-base' ),
+				},
+				{
+					value: 'cat_replace',
+					label: __(
+						'Replace categories',
+						'licensio-knowledge-base'
+					),
+				},
+				{
+					value: 'tag_add',
+					label: __( 'Add tags', 'licensio-knowledge-base' ),
+				},
+				{
+					value: 'tag_remove',
+					label: __( 'Remove tags', 'licensio-knowledge-base' ),
+				},
+				{
+					value: 'tag_replace',
+					label: __( 'Replace tags', 'licensio-knowledge-base' ),
+				},
+				{
+					value: 'author',
+					label: __( 'Change author', 'licensio-knowledge-base' ),
+				},
+				{
+					value: 'comments_open',
+					label: __( 'Open comments', 'licensio-knowledge-base' ),
+				},
+				{
+					value: 'comments_close',
+					label: __( 'Close comments', 'licensio-knowledge-base' ),
+				},
 		  ]
 );
 
 const statusOptions = [
 	{ value: 'publish', label: __( 'Published', 'licensio-knowledge-base' ) },
 	{ value: 'draft', label: __( 'Draft', 'licensio-knowledge-base' ) },
-	{ value: 'pending', label: __( 'Pending review', 'licensio-knowledge-base' ) },
+	{
+		value: 'pending',
+		label: __( 'Pending review', 'licensio-knowledge-base' ),
+	},
 	{ value: 'private', label: __( 'Private', 'licensio-knowledge-base' ) },
 ];
 
@@ -85,7 +133,8 @@ const taxonomy = computed( () =>
 const isTerms = computed(
 	() =>
 		!! choice.value &&
-		( choice.value.startsWith( 'cat_' ) || choice.value.startsWith( 'tag_' ) )
+		( choice.value.startsWith( 'cat_' ) ||
+			choice.value.startsWith( 'tag_' ) )
 );
 
 /**
@@ -109,7 +158,10 @@ const request = computed< { action: BulkAction; args: BulkArgs } | null >(
 			case 'comments_open':
 				return { action: 'comments', args: { comment_status: 'open' } };
 			case 'comments_close':
-				return { action: 'comments', args: { comment_status: 'closed' } };
+				return {
+					action: 'comments',
+					args: { comment_status: 'closed' },
+				};
 			case undefined:
 				return null;
 			default: {
@@ -197,7 +249,12 @@ watch( inTrash, () => {
 				{{
 					sprintf(
 						/* translators: %d: number of selected articles. */
-						_n( '%d selected', '%d selected', count, 'licensio-knowledge-base' ),
+						_n(
+							'%d selected',
+							'%d selected',
+							count,
+							'licensio-knowledge-base'
+						),
 						count
 					)
 				}}
@@ -213,7 +270,12 @@ watch( inTrash, () => {
 				{{
 					sprintf(
 						/* translators: %d: number of matching articles. */
-						_n( 'Select all %d matching', 'Select all %d matching', store.total, 'licensio-knowledge-base' ),
+						_n(
+							'Select all %d matching',
+							'Select all %d matching',
+							store.total,
+							'licensio-knowledge-base'
+						),
 						store.total
 					)
 				}}
@@ -223,8 +285,17 @@ watch( inTrash, () => {
 				{{ __( 'Clear selection', 'licensio-knowledge-base' ) }}
 			</a-button>
 
-			<span v-if="store.truncated" class="lkb-bulk__warning" role="status">
-				{{ __( 'Only the first 10,000 matching articles were selected.', 'licensio-knowledge-base' ) }}
+			<span
+				v-if="store.truncated"
+				class="lkb-bulk__warning"
+				role="status"
+			>
+				{{
+					__(
+						'Only the first 10,000 matching articles were selected.',
+						'licensio-knowledge-base'
+					)
+				}}
 			</span>
 
 			<div class="lkb-bulk__actions">
@@ -237,10 +308,16 @@ watch( inTrash, () => {
 					size="small"
 					class="lkb-bulk__choice"
 					:options="choices"
-					:placeholder="__( 'Bulk action', 'licensio-knowledge-base' )"
+					:placeholder="
+						__( 'Bulk action', 'licensio-knowledge-base' )
+					"
 				/>
 
-				<label v-if="'status' === choice" for="lkb-bulk-status" class="screen-reader-text">
+				<label
+					v-if="'status' === choice"
+					for="lkb-bulk-status"
+					class="screen-reader-text"
+				>
 					{{ __( 'New status', 'licensio-knowledge-base' ) }}
 				</label>
 				<a-select
@@ -260,7 +337,17 @@ watch( inTrash, () => {
 					class="lkb-bulk__arg"
 					:taxonomy="taxonomy"
 					multiple
-					:aria-label="'licensio_tag' === taxonomy ? __( 'Tags for the bulk action', 'licensio-knowledge-base' ) : __( 'Categories for the bulk action', 'licensio-knowledge-base' )"
+					:aria-label="
+						'licensio_tag' === taxonomy
+							? __(
+									'Tags for the bulk action',
+									'licensio-knowledge-base'
+							  )
+							: __(
+									'Categories for the bulk action',
+									'licensio-knowledge-base'
+							  )
+					"
 				/>
 
 				<AuthorSelect
@@ -287,18 +374,23 @@ watch( inTrash, () => {
 		</template>
 
 		<span v-else class="lkb-bulk__hint">
-			{{ __( 'Select articles below to perform bulk actions', 'licensio-knowledge-base' ) }}
+			{{
+				__(
+					'Select articles below to perform bulk actions',
+					'licensio-knowledge-base'
+				)
+			}}
 		</span>
 	</div>
 </template>
 
 <style scoped>
 .lkb-bulk {
-	gap: 8px var(--lkb-gap);
+	gap: 8px var( --lkb-gap );
 }
 
 .lkb-bulk__warning {
-	color: var(--lkb-warning);
+	color: var( --lkb-warning );
 	font-size: 13px;
 }
 

@@ -25,10 +25,9 @@ import { __ } from './i18n';
  * own localised configuration, and a header that reached for a window property
  * would break silently on whichever screen forgot to set it.
  */
-const props = withDefaults(
-	defineProps< { settingsUrl?: string } >(),
-	{ settingsUrl: '' }
-);
+const props = withDefaults( defineProps< { settingsUrl?: string } >(), {
+	settingsUrl: '',
+} );
 
 const hasScrolled = ref( false );
 
@@ -86,13 +85,20 @@ onUnmounted( () => {
 					/>
 				</svg>
 
-				<span class="lkb-header__wordmark">Licensio Knowledge Base</span>
+				<span class="lkb-header__wordmark"
+					>Licensio Knowledge Base</span
+				>
 			</span>
 
 			<div class="lkb-header__actions">
 				<ATooltip
 					v-if="props.settingsUrl"
-					:title="__( 'Knowledge base settings', 'licensio-knowledge-base' )"
+					:title="
+						__(
+							'Knowledge base settings',
+							'licensio-knowledge-base'
+						)
+					"
 					placement="bottom"
 				>
 					<AButton
@@ -100,7 +106,10 @@ onUnmounted( () => {
 						class="lkb-header__btn"
 						:href="props.settingsUrl"
 						:aria-label="
-							__( 'Knowledge base settings', 'licensio-knowledge-base' )
+							__(
+								'Knowledge base settings',
+								'licensio-knowledge-base'
+							)
 						"
 					>
 						<template #icon><SettingOutlined /></template>
@@ -116,14 +125,16 @@ onUnmounted( () => {
 	position: sticky;
 	top: 32px;
 	z-index: 100;
-	background: var(--lkb-surface);
+	background: var( --lkb-surface );
 	border-bottom: 1px solid transparent;
-	transition: box-shadow 0.2s ease, border-color 0.2s ease;
+	transition:
+		box-shadow 0.2s ease,
+		border-color 0.2s ease;
 }
 
 .lkb-header.is-scrolled {
-	border-bottom-color: var(--lkb-border-wp);
-	box-shadow: var(--lkb-shadow-md);
+	border-bottom-color: var( --lkb-border-wp );
+	box-shadow: var( --lkb-shadow-md );
 }
 
 .lkb-header__inner {
@@ -142,7 +153,7 @@ onUnmounted( () => {
 .lkb-header__mark {
 	width: auto;
 	height: 28px;
-	fill: var(--lkb-brand);
+	fill: var( --lkb-brand );
 }
 
 /*
@@ -152,9 +163,14 @@ onUnmounted( () => {
  * admin's own sans, which is what the rest of the screen is set in anyway.
  */
 .lkb-header__wordmark {
-	color: var(--lkb-ink-wp);
-	font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont,
-		'Segoe UI', Roboto, sans-serif;
+	color: var( --lkb-ink-wp );
+	font-family:
+		'Plus Jakarta Sans',
+		-apple-system,
+		BlinkMacSystemFont,
+		'Segoe UI',
+		Roboto,
+		sans-serif;
 	font-size: 21px;
 	font-weight: 700;
 	letter-spacing: -0.02em;
@@ -171,11 +187,11 @@ onUnmounted( () => {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	color: var(--lkb-ink-wp-muted);
+	color: var( --lkb-ink-wp-muted );
 }
 
 .lkb-header__btn:hover {
-	color: var(--lkb-accent);
+	color: var( --lkb-accent );
 }
 
 /*
@@ -189,7 +205,7 @@ onUnmounted( () => {
 	z-index: 999;
 	padding: 8px 16px;
 	border-radius: 0 0 4px 0;
-	background: var(--lkb-ink-wp);
+	background: var( --lkb-ink-wp );
 	color: #fff;
 	font-size: 14px;
 	text-decoration: none;

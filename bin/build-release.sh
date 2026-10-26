@@ -24,10 +24,10 @@
 # into `dist/` and neither the sources nor the build tooling is shipped.
 #
 # Nothing here publishes anywhere. `--dry-run` exists to build and report the
-# artifact contents without writing them into releases/. A real build deletes
-# any zip already sitting in the output directory under this build's names
-# before it starts, so a stale same-version artifact cannot outlive the build
-# that replaces it — or be picked up from releases/ while that build runs.
+# artifact contents without writing them into releases/. A real build replaces
+# any zip already sitting in the output directory under this build's names only
+# once every gate has passed, so a failed build leaves the last good zips where
+# they were.
 #
 # Usage:
 #   bin/build-release.sh [--dry-run] [--skip-build] [--output DIR]
@@ -94,6 +94,7 @@ FORBIDDEN_ROOT_PATHS=(
     'phpstan-bootstrap.php'
     'phpunit.xml'
     'playwright.config.ts'
+    'tsconfig.json'
     'vite.config.mjs'
     '.eslintrc.json'
     '.editorconfig'
@@ -239,28 +240,6 @@ VERSION="$(
         | sed -E "s/.*'LICENSIO_KB_VERSION'[[:space:]]*,[[:space:]]*'([^']*)'.*/\1/"
 )"
 
-# A zip left over from an earlier build of the same version is a stale
-# artifact wearing the current name: everything about it says this version,
-# and nothing about it says it predates the latest commit. It goes the moment
-# a real build of the same version starts, not when the new zip is copied
-# over it — between those two points sits the whole build, which is exactly
-# when somebody reaches into releases/ and grabs the old one. Failing with no
-# zip at all is the honest outcome; a stale one is a leak.
-#
-# A dry run deletes nothing: it is an inspection, and it discards its own
-# artifacts rather than touching the output directory.
-step 'Removing same-version artifacts'
-if [ "$DRY_RUN" -eq 1 ]; then
-    printf 'Dry run: nothing in %s is touched.\n' "$OUTPUT_DIR"
-else
-    for zip_file in "${OUTPUT_DIR}/${SLUG}.zip" "${OUTPUT_DIR}/${SLUG}-pro.zip" "${OUTPUT_DIR}/${SLUG}-wporg.zip"; do
-        if [ -e "$zip_file" ]; then
-            rm -f "$zip_file"
-            printf '  deleted %s\n' "$zip_file"
-        fi
-    done
-fi
-
 step 'Text domains'
 bash "${SCRIPT_DIR}/check-i18n.sh"
 
@@ -302,16 +281,22 @@ make_pot() {
         "$@"
 }
 
-make_pot --exclude='node_modules,vendor,libraries,dist,tests,tools,bin,docs,.github,releases,.tmp,.sandbox'
+# Directories that never ship and can hold copies of the plugin: end-to-end
+# and sandbox sites unpack release zips under .tmp/ and .sandbox/, so without
+# these a stale copy of dist/ would add its strings to the template.
+NOT_SHIPPED='node_modules,vendor,tests,releases,specs,coverage,playwright-report,test-results,.tmp,.sandbox,.claude,.playwright-cli'
+
+make_pot --exclude="${NOT_SHIPPED},libraries,dist,tools,bin,docs,.github"
 
 # A second pass merges in the built JavaScript in dist/. make-pot cannot read
 # the Vue apps' .vue files, and the JSON translation files are keyed by the
 # built file paths, so the app strings have to be referenced from there. It
 # is a separate pass because make-pot excludes match a name at any depth: the
-# tools exclusion above would also drop dist/apps/tools/. vite.config.mjs
-# keeps the built calls recognisable, and the app string check below fails the
-# build if one goes missing.
-make_pot --include='dist' --merge
+# tools exclusion above would also drop dist/apps/tools/. The include matches
+# a dist/ directory at any depth too, so the directories that never ship are
+# excluded again. vite.config.mjs keeps the built calls recognisable, and the
+# app string check below fails the build if one goes missing.
+make_pot --include='dist' --exclude="$NOT_SHIPPED" --merge
 
 printf 'Extracted %s strings.\n' "$( grep -c '^msgid ' "$POT_FILE" )"
 
@@ -463,34 +448,38 @@ done
 # The boundary check ran against the staged directory. Read the zips back so the
 # assertions also cover whatever packaging did to them.
 #
-# The listings are captured before being matched. Piping straight into `grep -q`
-# under `set -o pipefail` reports the pipeline as failed when grep matches and
-# closes the pipe early, which inverts both of these assertions.
-FREE_LISTING="$( unzip -Z1 "${ZIP_DIR}/${SLUG}.zip" )"
-PRO_LISTING="$( unzip -Z1 "${ZIP_DIR}/${SLUG}-pro.zip" )"
-WPORG_LISTING="$( unzip -Z1 "${ZIP_DIR}/${SLUG}-wporg.zip" )"
+# The listings are written to files and grep reads those. Piping a listing into
+# `grep -q` under `set -o pipefail` fails the pipeline whenever grep matches and
+# exits before the writer is done (the writer dies of SIGPIPE), which inverts
+# these assertions at random on a large listing.
+FREE_LISTING="${WORK_DIR}/free.list"
+PRO_LISTING="${WORK_DIR}/pro.list"
+WPORG_LISTING="${WORK_DIR}/wporg.list"
+unzip -Z1 "${ZIP_DIR}/${SLUG}.zip" > "$FREE_LISTING"
+unzip -Z1 "${ZIP_DIR}/${SLUG}-pro.zip" > "$PRO_LISTING"
+unzip -Z1 "${ZIP_DIR}/${SLUG}-wporg.zip" > "$WPORG_LISTING"
 
-if printf '%s\n' "$FREE_LISTING" | grep -q "^${SLUG}/pro/"; then
+if grep -q "^${SLUG}/pro/" "$FREE_LISTING"; then
     abort 'the packaged free zip contains pro/ paths.'
 fi
 
-if printf '%s\n' "$WPORG_LISTING" | grep -q "^${SLUG}/pro/"; then
+if grep -q "^${SLUG}/pro/" "$WPORG_LISTING"; then
     abort 'the packaged wporg zip contains pro/ paths.'
 fi
 
-if ! printf '%s\n' "$WPORG_LISTING" | grep -q "^${SLUG}/licensio-knowledge-base\.php$"; then
+if ! grep -q "^${SLUG}/licensio-knowledge-base\.php$" "$WPORG_LISTING"; then
     abort 'the packaged wporg zip does not contain the plugin bootstrap.'
 fi
 
-if ! printf '%s\n' "$WPORG_LISTING" | grep -q "^${SLUG}/package\.json$"; then
+if ! grep -q "^${SLUG}/package\.json$" "$WPORG_LISTING"; then
     abort 'the packaged wporg zip does not contain its sources.'
 fi
 
-if ! printf '%s\n' "$PRO_LISTING" | grep -q "^${SLUG}/licensio-knowledge-base\.php$"; then
+if ! grep -q "^${SLUG}/licensio-knowledge-base\.php$" "$PRO_LISTING"; then
     abort 'the packaged pro zip does not contain the plugin bootstrap.'
 fi
 
-if ! printf '%s\n' "$FREE_LISTING" | grep -q "^${SLUG}/licensio-knowledge-base\.php$"; then
+if ! grep -q "^${SLUG}/licensio-knowledge-base\.php$" "$FREE_LISTING"; then
     abort 'the packaged free zip does not contain the plugin bootstrap.'
 fi
 
@@ -500,38 +489,21 @@ if [ "$DRY_RUN" -eq 1 ]; then
     exit 0
 fi
 
+# A zip left over from an earlier build of the same version is a stale
+# artifact wearing the current name. It is replaced only here, after every
+# gate has passed: a build that fails leaves the previous zips in place rather
+# than none at all.
 mkdir -p "$OUTPUT_DIR"
-cp -a "${ZIP_DIR}/${SLUG}.zip" "${OUTPUT_DIR}/${SLUG}.zip"
-cp -a "${ZIP_DIR}/${SLUG}-pro.zip" "${OUTPUT_DIR}/${SLUG}-pro.zip"
-cp -a "${ZIP_DIR}/${SLUG}-wporg.zip" "${OUTPUT_DIR}/${SLUG}-wporg.zip"
+for zip_name in "${SLUG}.zip" "${SLUG}-pro.zip" "${SLUG}-wporg.zip"; do
+    if [ -e "${OUTPUT_DIR}/${zip_name}" ]; then
+        rm -f "${OUTPUT_DIR}/${zip_name}"
+        printf '  replaced %s\n' "${OUTPUT_DIR}/${zip_name}"
+    fi
 
-# The repository copy of the template is refreshed only when its strings
-# actually changed. The extractor stamps every run with a generation time -
-# and with its own version - so an unconditional copy leaves the working tree
-# dirty after every build, one header line away from a commit nobody meant to
-# make. Builds are frequent; string changes are not.
-#
-# $1 - The pot to measure.
-#
-# @since 1.0.0
-pot_signature() {
-    grep -v -E '"(POT-Creation-Date|X-Generator):' "$1"
-}
+    cp -a "${ZIP_DIR}/${zip_name}" "${OUTPUT_DIR}/${zip_name}"
+done
 
-REPO_POT="${ROOT}/languages/${SLUG}.pot"
-
-if [ ! -f "$REPO_POT" ] || ! diff -q <( pot_signature "$REPO_POT" ) <( pot_signature "$POT_FILE" ) > /dev/null; then
-    mkdir -p "${ROOT}/languages"
-    cp -a "$POT_FILE" "$REPO_POT"
-    printf 'Version %s built.\n' "$VERSION"
-    printf '  %s/%s.zip\n' "$OUTPUT_DIR" "$SLUG"
-    printf '  %s/%s-pro.zip\n' "$OUTPUT_DIR" "$SLUG"
-    printf '  %s/%s-wporg.zip\n' "$OUTPUT_DIR" "$SLUG"
-    printf '  %s refreshed - commit it with the strings that caused it.\n' "languages/${SLUG}.pot"
-else
-    printf 'Version %s built.\n' "$VERSION"
-    printf '  %s/%s.zip\n' "$OUTPUT_DIR" "$SLUG"
-    printf '  %s/%s-pro.zip\n' "$OUTPUT_DIR" "$SLUG"
-    printf '  %s/%s-wporg.zip\n' "$OUTPUT_DIR" "$SLUG"
-    printf '  languages/%s.pot unchanged; the committed template already matches the sources.\n' "$SLUG"
-fi
+printf 'Version %s built.\n' "$VERSION"
+printf '  %s/%s.zip\n' "$OUTPUT_DIR" "$SLUG"
+printf '  %s/%s-pro.zip\n' "$OUTPUT_DIR" "$SLUG"
+printf '  %s/%s-wporg.zip\n' "$OUTPUT_DIR" "$SLUG"

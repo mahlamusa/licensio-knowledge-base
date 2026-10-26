@@ -138,7 +138,6 @@ export const useTagsStore = defineStore( 'licensioKBTags', {
 	state: (): State => ( {
 		items: [],
 		total: 0,
-		page: 1,
 		perPage: settings().perPage,
 		...readUrl(),
 		selected: [],

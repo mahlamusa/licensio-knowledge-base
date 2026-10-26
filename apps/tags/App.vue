@@ -17,7 +17,15 @@
  * @since 1.0.0
  */
 
-import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
+import {
+	computed,
+	nextTick,
+	onMounted,
+	onUnmounted,
+	reactive,
+	ref,
+	watch,
+} from 'vue';
 import { message } from 'ant-design-vue';
 import { SearchOutlined } from '@ant-design/icons-vue';
 import { lkbTheme } from '../styles/theme';
@@ -56,7 +64,12 @@ const deleteTitle = computed( () =>
 const selectedLabel = computed( () =>
 	sprintf(
 		/* translators: %d: how many tags are selected. */
-		_n( '%d selected', '%d selected', store.selected.length, 'licensio-knowledge-base' ),
+		_n(
+			'%d selected',
+			'%d selected',
+			store.selected.length,
+			'licensio-knowledge-base'
+		),
 		store.selected.length
 	)
 );
@@ -81,7 +94,9 @@ function toggleAdd( open: boolean ): void {
 
 	nextTick( () => {
 		if ( open ) {
-			document.querySelector< HTMLElement >( '.lkb-tags__add input' )?.focus();
+			document
+				.querySelector< HTMLElement >( '.lkb-tags__add input' )
+				?.focus();
 		} else {
 			addButton.value?.$el?.focus();
 		}
@@ -217,22 +232,33 @@ onUnmounted( () => {
 					/>
 					<a-input
 						v-model:value="newTag.slug"
-						:placeholder="__( 'Slug (optional)', 'licensio-knowledge-base' )"
+						:placeholder="
+							__( 'Slug (optional)', 'licensio-knowledge-base' )
+						"
 						:aria-label="__( 'Slug', 'licensio-knowledge-base' )"
 					/>
 					<a-textarea
 						v-model:value="newTag.description"
 						:auto-size="{ minRows: 1, maxRows: 4 }"
 						:placeholder="
-							__( 'Description (optional)', 'licensio-knowledge-base' )
+							__(
+								'Description (optional)',
+								'licensio-knowledge-base'
+							)
 						"
-						:aria-label="__( 'Description', 'licensio-knowledge-base' )"
+						:aria-label="
+							__( 'Description', 'licensio-knowledge-base' )
+						"
 					/>
 					<div class="lkb-tags__add-actions">
 						<ConfirmButton
 							type="primary"
-							:title="__( 'Add this tag?', 'licensio-knowledge-base' )"
-							:ok-text="__( 'Add tag', 'licensio-knowledge-base' )"
+							:title="
+								__( 'Add this tag?', 'licensio-knowledge-base' )
+							"
+							:ok-text="
+								__( 'Add tag', 'licensio-knowledge-base' )
+							"
 							:disabled="'' === newTag.name.trim()"
 							:loading="store.saving"
 							@confirm="addTag"
@@ -249,12 +275,19 @@ onUnmounted( () => {
 					v-if="store.include.length"
 					type="info"
 					show-icon
-					:message="__( 'Showing one tag.', 'licensio-knowledge-base' )"
+					:message="
+						__( 'Showing one tag.', 'licensio-knowledge-base' )
+					"
 					class="lkb-tags__notice"
 				>
 					<template #action>
-						<a-button size="small" @click="store.filter( { include: [] } )">
-							{{ __( 'Show all tags', 'licensio-knowledge-base' ) }}
+						<a-button
+							size="small"
+							@click="store.filter( { include: [] } )"
+						>
+							{{
+								__( 'Show all tags', 'licensio-knowledge-base' )
+							}}
 						</a-button>
 					</template>
 				</a-alert>
@@ -264,12 +297,23 @@ onUnmounted( () => {
 						v-model:value="searchText"
 						class="lkb-tags__search"
 						allow-clear
-						:placeholder="__( 'Search tags', 'licensio-knowledge-base' )"
-						:aria-label="__( 'Search tags', 'licensio-knowledge-base' )"
-						@search="( value: string ) => store.filter( { search: value.trim() } )"
+						:placeholder="
+							__( 'Search tags', 'licensio-knowledge-base' )
+						"
+						:aria-label="
+							__( 'Search tags', 'licensio-knowledge-base' )
+						"
+						@search="
+							( value: string ) =>
+								store.filter( { search: value.trim() } )
+						"
 					>
 						<template #enterButton>
-							<a-button :aria-label="__( 'Search', 'licensio-knowledge-base' )">
+							<a-button
+								:aria-label="
+									__( 'Search', 'licensio-knowledge-base' )
+								"
+							>
 								<template #icon><SearchOutlined /></template>
 							</a-button>
 						</template>
@@ -278,13 +322,21 @@ onUnmounted( () => {
 					<label class="lkb-tags__toggle">
 						<a-switch
 							:checked="store.unused"
-							@change="( checked: unknown ) => store.filter( { unused: Boolean( checked ) } )"
+							@change="
+								( checked: unknown ) =>
+									store.filter( {
+										unused: Boolean( checked ),
+									} )
+							"
 						/>
 						{{ __( 'Unused only', 'licensio-knowledge-base' ) }}
 					</label>
 				</div>
 
-				<div class="lkb-bulk" :class="{ 'is-armed': store.selected.length > 0 }">
+				<div
+					class="lkb-bulk"
+					:class="{ 'is-armed': store.selected.length > 0 }"
+				>
 					<template v-if="store.selected.length">
 						<span class="lkb-bulk__count">{{ selectedLabel }}</span>
 
@@ -293,7 +345,9 @@ onUnmounted( () => {
 								size="small"
 								danger
 								:title="deleteTitle"
-								:ok-text="__( 'Delete', 'licensio-knowledge-base' )"
+								:ok-text="
+									__( 'Delete', 'licensio-knowledge-base' )
+								"
 								:loading="store.saving"
 								@confirm="deleteSelected"
 							>
@@ -304,14 +358,24 @@ onUnmounted( () => {
 								:disabled="store.saving"
 								@click="mergeOpen = true"
 							>
-								{{ __( 'Merge into…', 'licensio-knowledge-base' ) }}
+								{{
+									__(
+										'Merge into…',
+										'licensio-knowledge-base'
+									)
+								}}
 							</a-button>
 							<a-button
 								size="small"
 								:disabled="store.saving"
 								@click="convertOpen = true"
 							>
-								{{ __( 'Convert to category', 'licensio-knowledge-base' ) }}
+								{{
+									__(
+										'Convert to category',
+										'licensio-knowledge-base'
+									)
+								}}
 							</a-button>
 						</div>
 					</template>
@@ -337,7 +401,7 @@ onUnmounted( () => {
 
 <style scoped>
 .lkb-tags__notice {
-	margin-bottom: var(--lkb-gap);
+	margin-bottom: var( --lkb-gap );
 }
 
 .lkb-tags__add {
@@ -345,11 +409,11 @@ onUnmounted( () => {
 	grid-template-columns: minmax( 0, 1fr ) minmax( 0, 1fr ) minmax( 0, 2fr ) auto;
 	gap: 8px;
 	align-items: start;
-	margin-bottom: var(--lkb-gap);
-	padding: var(--lkb-gap);
-	border: 1px solid var(--lkb-border-wp);
-	border-radius: var(--lkb-radius);
-	background: var(--lkb-surface);
+	margin-bottom: var( --lkb-gap );
+	padding: var( --lkb-gap );
+	border: 1px solid var( --lkb-border-wp );
+	border-radius: var( --lkb-radius );
+	background: var( --lkb-surface );
 }
 
 .lkb-tags__add-actions {
@@ -365,7 +429,7 @@ onUnmounted( () => {
 	display: inline-flex;
 	align-items: center;
 	gap: 8px;
-	color: var(--lkb-ink-wp-secondary);
+	color: var( --lkb-ink-wp-secondary );
 	cursor: pointer;
 }
 

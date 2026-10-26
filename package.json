@@ -18,22 +18,27 @@
     "release:github": "bash bin/github-release.sh",
     "version:bump": "bash bin/bump-version.sh",
     "wporg:publish": "bash bin/wp-org-publish.sh",
-    "lint:js": "wp-scripts lint-js apps blocks assets/js --no-error-on-unmatched-pattern",
+    "lint:js": "wp-scripts lint-js apps blocks assets/js tests/Playwright tools playwright.config.ts vite.config.mjs --ext .js,.mjs,.ts,.vue --no-error-on-unmatched-pattern",
+    "typecheck": "vue-tsc --noEmit",
     "test": "playwright test --pass-with-no-tests",
     "test:install": "playwright install --with-deps chromium"
   },
   "devDependencies": {
+    "@ant-design/icons-vue": "7.0.1",
     "@playwright/test": "^1.48.0",
     "@vitejs/plugin-vue": "^5.1.0",
     "@vue/devtools-api": "^8.2.1",
     "@wordpress/scripts": "^30.0.0",
     "ant-design-vue": "^4.2.6",
     "chart.js": "^4.6.1",
+    "eslint-plugin-vue": "9.33.0",
     "pinia": "^4.1.0",
     "terser": "^5.51.2",
     "typescript": "^5.6.0",
     "vite": "^5.4.0",
-    "vue": "^3.5.44"
+    "vue": "^3.5.44",
+    "vue-eslint-parser": "9.4.3",
+    "vue-tsc": "3.3.13"
   },
   "overrides": {
     "esbuild": "0.21.5"

@@ -10,7 +10,8 @@
 
 import { defineConfig, devices } from '@playwright/test';
 
-const baseURL = process.env.LICENSIO_KB_BASE_URL ?? 'http://lisenseserver.local';
+const baseURL =
+	process.env.LICENSIO_KB_BASE_URL ?? 'http://lisenseserver.local';
 
 export default defineConfig( {
 	testDir: './tests/Playwright',
@@ -19,7 +20,9 @@ export default defineConfig( {
 	forbidOnly: !! process.env.CI,
 	retries: process.env.CI ? 2 : 0,
 	workers: process.env.CI ? 1 : undefined,
-	reporter: process.env.CI ? [ [ 'github' ], [ 'html', { open: 'never' } ] ] : [ [ 'list' ] ],
+	reporter: process.env.CI
+		? [ [ 'github' ], [ 'html', { open: 'never' } ] ]
+		: [ [ 'list' ] ],
 	timeout: 30_000,
 	expect: {
 		timeout: 5_000,

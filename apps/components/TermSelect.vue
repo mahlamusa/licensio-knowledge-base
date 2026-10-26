@@ -34,12 +34,7 @@ import { computed, onBeforeUnmount, ref, useAttrs, useId, watch } from 'vue';
 import { Select as ASelect } from 'ant-design-vue';
 import { get } from './rest';
 import { __, sprintf } from './i18n';
-import type {
-	NewTerm,
-	TermItem,
-	TermTaxonomy,
-	TermValue,
-} from './types/terms';
+import type { NewTerm, TermItem, TermTaxonomy, TermValue } from './types/terms';
 
 const props = withDefaults(
 	defineProps< {
@@ -410,11 +405,7 @@ async function loadMissingLabels(): Promise< void > {
 
 	const taxonomy = props.taxonomy;
 
-	for (
-		let start = 0;
-		start < missing.length;
-		start += LABELS_PER_REQUEST
-	) {
+	for ( let start = 0; start < missing.length; start += LABELS_PER_REQUEST ) {
 		const batch = missing.slice( start, start + LABELS_PER_REQUEST );
 
 		try {
@@ -469,7 +460,10 @@ onBeforeUnmount( () => clearTimeout( searchTimer ) );
 		:filter-option="false"
 		:not-found-content="
 			failed
-				? __( 'The terms could not be loaded.', 'licensio-knowledge-base' )
+				? __(
+						'The terms could not be loaded.',
+						'licensio-knowledge-base'
+				  )
 				: __( 'No matches', 'licensio-knowledge-base' )
 		"
 		show-search
