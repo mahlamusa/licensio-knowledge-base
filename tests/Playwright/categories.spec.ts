@@ -7,7 +7,7 @@
  * delete with reassignment, merge, the article order pane against the live
  * order routes (a drag saved and shown on the category archive, and a saved
  * first page of a long list), and the phone-width layout. Every write must wait for its
- * Popconfirm, and a cancelled one must send nothing.
+ * confirmation, and a cancelled one must send nothing.
  *
  * The suite needs a running WordPress with this plugin active and an
  * administrator account, so it is skipped unless `LICENSIO_KB_E2E=1` and the
@@ -17,17 +17,44 @@
  */
 
 import { expect, test, type Page, type Request } from '@playwright/test';
-import {
-	cancelPopconfirm,
-	confirmPopconfirm,
-	openContentManager,
-} from './helpers/content-manager';
+import { answerConfirm, openContentManager } from './helpers/content-manager';
 import { failOnUnresolvedComponents } from './helpers/ant-components';
 import { logIn, password, user } from './helpers/session';
 
 failOnUnresolvedComponents();
 
 const enabled = process.env.LICENSIO_KB_E2E === '1';
+
+/**
+ * Answer the tree's move Popconfirm and wait for it to close.
+ *
+ * A tree move is not a ConfirmButton: it asks in a Popconfirm on the tree.
+ *
+ * @since 1.0.0
+ *
+ * @param {Page}                 page   The browser page.
+ * @param {'confirm' | 'cancel'} answer Which button to press.
+ *
+ * @return {Promise<void>} Resolves once the Popconfirm has closed.
+ */
+async function answerMoveConfirm(
+	page: Page,
+	answer: 'confirm' | 'cancel'
+): Promise< void > {
+	const popconfirm = page
+		.locator( '.ant-popconfirm:not(.ant-popover-hidden)' )
+		.last();
+
+	await expect( popconfirm ).toBeVisible();
+	await popconfirm
+		.locator(
+			'confirm' === answer
+				? '.ant-popconfirm-buttons button.ant-btn-primary'
+				: '.ant-popconfirm-buttons button:not(.ant-btn-primary)'
+		)
+		.click();
+	await expect( popconfirm ).toBeHidden();
+}
 
 interface Category {
 	id: number;
@@ -394,7 +421,7 @@ test.describe( 'Categories app', () => {
 			targetPosition: { x: 60, y: 22 },
 		} );
 
-		await cancelPopconfirm( page );
+		await answerMoveConfirm( page, 'cancel' );
 
 		expect( await topLevel( page ) ).toEqual( [
 			'Alpha',
@@ -411,7 +438,7 @@ test.describe( 'Categories app', () => {
 			targetPosition: { x: 60, y: 22 },
 		} );
 
-		await confirmPopconfirm( page );
+		await answerMoveConfirm( page, 'confirm' );
 		await expect( page.locator( '.ant-message' ) ).toContainText(
 			'Category moved.'
 		);
@@ -442,7 +469,7 @@ test.describe( 'Categories app', () => {
 		const writes = recordWrites( page );
 
 		await act( page, 'Alpha', 'Move down' );
-		await cancelPopconfirm( page );
+		await answerMoveConfirm( page, 'cancel' );
 		expect( writes ).toHaveLength( 0 );
 		expect( await topLevel( page ) ).toEqual( [
 			'Alpha',
@@ -451,7 +478,7 @@ test.describe( 'Categories app', () => {
 		] );
 
 		await act( page, 'Alpha', 'Move down' );
-		await confirmPopconfirm( page );
+		await answerMoveConfirm( page, 'confirm' );
 		await expect
 			.poll( () => topLevel( page ) )
 			.toEqual( [ 'Beta', 'Alpha', 'Gamma' ] );
@@ -548,7 +575,7 @@ test.describe( 'Categories app', () => {
 			);
 
 		await drawer.getByRole( 'button', { name: 'Save' } ).click();
-		await confirmPopconfirm( page );
+		await answerConfirm( page, 'confirm' );
 
 		await expect( node( page, 'Delta & co' ) ).toBeVisible();
 
@@ -619,7 +646,7 @@ test.describe( 'Categories app', () => {
 
 		await drawer.getByLabel( 'Slug' ).fill( 'alpha' );
 		await drawer.getByRole( 'button', { name: 'Save' } ).click();
-		await confirmPopconfirm( page );
+		await answerConfirm( page, 'confirm' );
 
 		await expect(
 			drawer.locator( '.ant-form-item-explain-error' )
@@ -669,7 +696,7 @@ test.describe( 'Categories app', () => {
 			.click();
 
 		await dialog.getByRole( 'button', { name: 'Delete' } ).click();
-		await confirmPopconfirm( page );
+		await answerConfirm( page, 'confirm' );
 
 		await expect( node( page, 'Gamma' ) ).toHaveCount( 0 );
 
@@ -698,7 +725,7 @@ test.describe( 'Categories app', () => {
 			.click();
 
 		await dialog.getByRole( 'button', { name: 'Merge' } ).click();
-		await confirmPopconfirm( page );
+		await answerConfirm( page, 'confirm' );
 
 		await expect( node( page, 'Gamma' ) ).toHaveCount( 0 );
 
@@ -881,11 +908,11 @@ test.describe( 'Categories app', () => {
 		const writes = recordWrites( page );
 
 		await pane.getByRole( 'button', { name: 'Save order' } ).click();
-		await cancelPopconfirm( page );
+		await answerConfirm( page, 'cancel' );
 		expect( writes ).toHaveLength( 0 );
 
 		await pane.getByRole( 'button', { name: 'Save order' } ).click();
-		await confirmPopconfirm( page );
+		await answerConfirm( page, 'confirm' );
 		await expect( page.locator( '.ant-message' ) ).toContainText(
 			'Article order saved.'
 		);
@@ -951,7 +978,7 @@ test.describe( 'Categories app', () => {
 			.getByRole( 'button', { name: 'Move “E2E order Y” up' } )
 			.click();
 		await pane.getByRole( 'button', { name: 'Save order' } ).click();
-		await confirmPopconfirm( page );
+		await answerConfirm( page, 'confirm' );
 
 		await expect( pane.locator( '.lkb-order__error' ) ).toContainText(
 			'The order could not be saved. Try again.'
@@ -997,7 +1024,7 @@ test.describe( 'Categories app', () => {
 			.getByRole( 'button', { name: 'Move “E2E order 204” up' } )
 			.click();
 		await pane.getByRole( 'button', { name: 'Save order' } ).click();
-		await confirmPopconfirm( page );
+		await answerConfirm( page, 'confirm' );
 		await expect( page.locator( '.ant-message' ) ).toContainText(
 			'Article order saved.'
 		);

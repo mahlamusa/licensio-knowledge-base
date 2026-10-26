@@ -303,6 +303,52 @@ test.describe( 'Knowledge base settings', () => {
 		await expect( trigger ).toBeFocused();
 	} );
 
+	test( 'the confirmation does not animate when reduced motion is asked for', async ( {
+		page,
+	} ) => {
+		await page.emulateMedia( { reducedMotion: 'reduce' } );
+		await openSettings( page );
+
+		// Note every zoom or fade class Ant Design adds while the dialog opens.
+		await page.evaluate( () => {
+			const seen: string[] = [];
+
+			( window as unknown as { lkbMotion: string[] } ).lkbMotion = seen;
+			new MutationObserver( ( records ) => {
+				records.forEach( ( record ) => {
+					const nodes =
+						'attributes' === record.type
+							? [ record.target ]
+							: Array.from( record.addedNodes );
+
+					nodes.forEach( ( node ) => {
+						if (
+							node instanceof Element &&
+							/ant-(zoom|fade)-/.test( node.className )
+						) {
+							seen.push( node.className );
+						}
+					} );
+				} );
+			} ).observe( document.body, {
+				subtree: true,
+				childList: true,
+				attributes: true,
+				attributeFilter: [ 'class' ],
+			} );
+		} );
+
+		await page.getByRole( 'button', { name: 'Reset all' } ).click();
+		await expect( confirmDialog( page ) ).toBeVisible();
+		await answerConfirm( page, 'cancel' );
+
+		expect(
+			await page.evaluate(
+				() => ( window as unknown as { lkbMotion: string[] } ).lkbMotion
+			)
+		).toEqual( [] );
+	} );
+
 	test( 'leaving with unsaved changes warns first', async ( { page } ) => {
 		await openSettings( page );
 		await setBrandColour( page, '#0f766e' );
