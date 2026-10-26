@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-26T07:58:02+00:00\n"
+"POT-Creation-Date: 2026-10-26T09:31:30+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.7.1\n"
 "X-Domain: licensio-knowledge-base\n"
@@ -1279,158 +1279,168 @@ msgstr[1] ""
 msgid "Heroic Knowledge Base"
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:281
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:289
 msgid "One status, or all but the trash."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:287
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:295
 msgid "Limit the articles to titles containing this text."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:289
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:297
 msgid "A category ID; its children are included."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:290
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:298
 msgid "A tag ID."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:291
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:299
 msgid "An author user ID."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:292
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:300
 msgid "Published on or after this day, YYYY-MM-DD."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:293
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:301
 msgid "Published on or before this day, YYYY-MM-DD."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:294
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:302
 msgid "Only articles with no category."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:295
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:303
 msgid "Only articles with no tag."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:296
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:304
 msgid "Only articles whose helpful share in the window is below the low rating threshold."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:301
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:309
 msgid "The days the views and rating cover."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:539
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:551
 msgid "Use a date in the form YYYY-MM-DD."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:556
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:568
 msgid "Use a date and time in the form YYYY-MM-DDTHH:MM:SS."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:573
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:586
 msgid "Tags must be a list."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:581
+#. translators: %d: the most tags one article can be given at once.
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:591
+msgid "Choose at most %d tags."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:599
 msgid "Each tag must be a tag ID or a new tag name."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1060
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1078
 msgid "Restore this article before editing it."
 msgstr ""
 
 #. translators: %s: the name of the user editing the article.
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1136
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1154
 msgid "%s is editing this article."
 msgstr ""
 
 #. translators: %s: the name of the user editing the article.
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1136
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1154
 msgid "Someone else"
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1177
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1195
 msgid "You are not allowed to publish this article."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1189
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1207
 msgid "The date is not valid."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1207
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1225
 msgid "A private article cannot also have a password."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1214
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1232
 msgid "You are not allowed to change the author of this article."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1218
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1236
 msgid "That user cannot write articles."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1241
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1259
 msgid "You are not allowed to assign these terms."
 msgstr ""
 
 #. translators: %s: the names of the fields with errors.
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1258
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1276
 msgid "Invalid parameter(s): %s"
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1284
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1302
 msgid "Categories cannot be created here."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1288
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1306
 msgid "You are not allowed to create tags."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1296
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1314
 msgid "One of the tags does not exist."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1297
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1315
 msgid "One of the categories does not exist."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1378
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1396
 msgid "You are not allowed to edit this article."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1404
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1422
 msgid "Send between 1 and 100 article IDs."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1431
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1449
 msgid "Choose a status to set."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1442
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1460
 msgid "Choose a taxonomy, a mode and the terms."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1448
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1466
 msgid "Choose at least one term."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1453
-msgid "One of the terms does not exist."
-msgstr ""
-
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1467
-msgid "Choose a user who can write articles."
+#. translators: %d: the most terms one bulk action can apply.
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1471
+msgid "Choose at most %d terms."
 msgstr ""
 
 #: includes/rest/class-licensio-kb-articles-rest-controller.php:1476
+msgid "One of the terms does not exist."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1490
+msgid "Choose a user who can write articles."
+msgstr ""
+
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1499
 msgid "Choose open or closed."
 msgstr ""
 
-#: includes/rest/class-licensio-kb-articles-rest-controller.php:1661
+#: includes/rest/class-licensio-kb-articles-rest-controller.php:1684
 msgid "No article was found with that ID."
 msgstr ""
 
