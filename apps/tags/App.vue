@@ -10,6 +10,11 @@
  * tags. Adding and saving a tag send at once; delete, merge and convert ask
  * in a confirmation dialog first, and Cancel sends nothing.
  *
+ * Edit, and Quick edit of the tag in the form, ask first when the form has
+ * unsaved changes (see the form's `leave()`). When the tag in the form is
+ * deleted, merged or converted, the form goes back to Add; a search or page
+ * change that only hides it leaves the form alone.
+ *
  * Bulk actions work on the selected rows of the current page, at most 100,
  * so each is a single request.
  *
@@ -25,6 +30,8 @@ import { SearchOutlined } from '@ant-design/icons-vue';
 import { lkbTheme } from '../styles/theme';
 import AppHeader from '../components/AppHeader.vue';
 import ConfirmButton from '../components/ConfirmButton.vue';
+import ConfirmDialog from '../components/ConfirmDialog.vue';
+import { useConfirm } from '../components/confirm';
 import { __, _n, sprintf } from '../components/i18n';
 import { settings } from './api';
 import { useTagsStore } from './store';
@@ -36,6 +43,9 @@ import type { TagItem } from './types';
 
 const store = useTagsStore();
 const chrome = settings();
+const confirm = useConfirm();
+
+const form = ref< InstanceType< typeof TagForm > | null >( null );
 
 const searchText = ref( store.search );
 const editing = ref< TagItem | null >( null );
@@ -118,6 +128,28 @@ function closeEdit( id: number ): void {
 }
 
 /**
+ * Whether Edit or Quick edit may open a tag.
+ *
+ * Edit replaces what the form holds, and Quick edit of the tag in the form
+ * returns the form to Add, so both ask first when the form has unsaved
+ * changes. Quick edit of another tag leaves the form alone.
+ *
+ * @since 1.0.0
+ *
+ * @param {TagItem} tag   The tag to open.
+ * @param {boolean} quick Whether it opens for Quick edit.
+ *
+ * @return {Promise<boolean>} Whether it may open.
+ */
+async function canOpen( tag: TagItem, quick: boolean ): Promise< boolean > {
+	if ( quick && editing.value?.id !== tag.id ) {
+		return true;
+	}
+
+	return ( await form.value?.leave() ) ?? true;
+}
+
+/**
  * Keep one tag open in one place: a Quick edit of the tag in the left form
  * returns the form to Add New Tag.
  *
@@ -165,6 +197,16 @@ async function deleteSelected(): Promise< void > {
 	}
 }
 
+// The tag in the form was deleted, merged or converted: back to Add.
+watch(
+	() => store.removed,
+	( removed ) => {
+		if ( editing.value && removed.includes( editing.value.id ) ) {
+			editing.value = null;
+		}
+	}
+);
+
 // The search box follows the store when back or forward changes the search.
 watch(
 	() => store.search,
@@ -211,9 +253,13 @@ onUnmounted( () => {
 				</a-alert>
 
 				<div class="lkb-terms">
-					<TagForm :tag="editing" @done="closeEdit" />
+					<TagForm ref="form" :tag="editing" @done="closeEdit" />
 
 					<div class="lkb-tags__list">
+						<h2 class="screen-reader-text">
+							{{ __( 'Tags list', 'licensio-knowledge-base' ) }}
+						</h2>
+
 						<a-alert
 							v-if="store.include.length"
 							type="info"
@@ -365,12 +411,21 @@ onUnmounted( () => {
 							</span>
 						</div>
 
-						<TagTable @edit="editTag" @quick-edit="onQuickEdit" />
+						<TagTable
+							:before-open="canOpen"
+							@edit="editTag"
+							@quick-edit="onQuickEdit"
+						/>
 					</div>
 				</div>
 
 				<MergeDialog v-model:open="mergeOpen" />
 				<ConvertDialog v-model:open="convertOpen" />
+				<ConfirmDialog
+					v-bind="confirm.dialog"
+					@ok="confirm.answer( true )"
+					@cancel="confirm.answer( false )"
+				/>
 			</div>
 		</div>
 	</a-config-provider>

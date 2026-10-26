@@ -9,6 +9,10 @@
  * Update, Cancel or Escape return the form to Add. The page decides where
  * focus goes then, through the `done` event.
  *
+ * Cancel and Escape with unsaved changes ask first, in the confirmation
+ * dialog; the page asks the same through `leave()` before it loads another
+ * tag into the form. Nothing is asked when nothing changed.
+ *
  * A server error is shown by the page above the columns, and the form keeps
  * the user's input. Escape on an open control that uses it itself, such as
  * an autocomplete, does not cancel the edit.
@@ -18,6 +22,7 @@
 
 import { computed, nextTick, reactive, watch } from 'vue';
 import { message } from 'ant-design-vue';
+import { useConfirm } from '../../components/confirm';
 import { useEscapeClose } from '../../components/popover-focus';
 import { __, sprintf } from '../../components/i18n';
 import { useTagsStore } from '../store';
@@ -33,6 +38,7 @@ const emit = defineEmits< {
 } >();
 
 const store = useTagsStore();
+const { askDiscard } = useConfirm();
 
 const form = reactive( { name: '', slug: '', description: '' } );
 
@@ -115,15 +121,37 @@ function focusName(): void {
 }
 
 /**
- * Leave the edit without saving.
+ * Whether it is fine to drop what the form holds.
+ *
+ * True at once when nothing changed: an edited tag's fields match the tag,
+ * or a new tag's fields are empty. Otherwise the user is asked.
  *
  * @since 1.0.0
  *
- * @return {void}
+ * @return {Promise<boolean>} Whether the form may be left.
  */
-function cancel(): void {
-	if ( props.tag ) {
-		emit( 'done', props.tag.id );
+function leave(): Promise< boolean > {
+	const changed = props.tag
+		? Object.keys( changes() ).length > 0
+		: '' !== form.name || '' !== form.slug || '' !== form.description;
+
+	return changed ? askDiscard() : Promise.resolve( true );
+}
+
+defineExpose( { leave } );
+
+/**
+ * Leave the edit without saving, once any changes may be dropped.
+ *
+ * @since 1.0.0
+ *
+ * @return {Promise<void>} Resolves once left or kept.
+ */
+async function cancel(): Promise< void > {
+	const tag = props.tag;
+
+	if ( tag && ( await leave() ) ) {
+		emit( 'done', tag.id );
 	}
 }
 

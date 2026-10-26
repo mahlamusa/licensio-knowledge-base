@@ -199,7 +199,7 @@ const expandedKeys = computed( () =>
 </script>
 
 <template>
-	<div class="lkb-tablecard">
+	<div class="lkb-tablecard lkb-tablecard--core">
 		<a-table
 			row-key="id"
 			:columns="columns"

@@ -174,15 +174,17 @@
 }
 
 /*
- * Core's list table cells on the list screens (Articles, Tags): 8px 10px
- * padding, top aligned. Prefixed with the page so they outrank Ant's cells.
+ * Core's list table cells on the list screens that opt in with
+ * `lkb-tablecard--core` (Articles, Tags): 8px 10px padding, top aligned.
+ * Other tables, such as the Feedback inbox, keep Ant's cells. Prefixed with
+ * the page so they outrank Ant's cells.
  */
-.lkb-page .lkb-tablecard .ant-table-thead > tr > th,
-.lkb-page .lkb-tablecard .ant-table-tbody > tr.ant-table-row > td {
+.lkb-page .lkb-tablecard--core .ant-table-thead > tr > th,
+.lkb-page .lkb-tablecard--core .ant-table-tbody > tr.ant-table-row > td {
 	padding: 8px 10px;
 }
 
-.lkb-page .lkb-tablecard .ant-table-tbody > tr.ant-table-row > td {
+.lkb-page .lkb-tablecard--core .ant-table-tbody > tr.ant-table-row > td {
 	vertical-align: top;
 }
 

@@ -12,6 +12,10 @@
  * already uses. The slug the server settled on (made from the name if the
  * slug was cleared) is shown back once saved.
  *
+ * Before Edit or Quick edit opens a tag, the page may ask the user first
+ * (`beforeOpen`), for unsaved changes in its form; nothing opens when the
+ * user keeps them.
+ *
  * Focus follows the row: Quick edit moves it to the Name field, and Cancel,
  * Escape or a save puts it back on the row's Quick edit button.
  *
@@ -38,6 +42,14 @@ import { __, sprintf } from '../../components/i18n';
 import { settings } from '../api';
 import { useTagsStore } from '../store';
 import type { TagFields, TagItem, TagOrder, TagOrderBy } from '../types';
+
+const props = defineProps< {
+	/**
+	 * Asked before Edit (`quick` false) or Quick edit (`quick` true) opens a
+	 * tag; nothing opens when it answers false.
+	 */
+	beforeOpen?: ( tag: TagItem, quick: boolean ) => Promise< boolean >;
+} >();
 
 const emit = defineEmits< {
 	( event: 'edit', tag: TagItem ): void;
@@ -182,15 +194,19 @@ function focusRow( id: number ): void {
 }
 
 /**
- * Open a row's fields for editing (Quick edit).
+ * Open a row's fields for editing (Quick edit), once the page agreed.
  *
  * @since 1.0.0
  *
  * @param {TagItem} tag The row.
  *
- * @return {void}
+ * @return {Promise<void>} Resolves once the row is open or was left closed.
  */
-function startEdit( tag: TagItem ): void {
+async function startEdit( tag: TagItem ): Promise< void > {
+	if ( props.beforeOpen && ! ( await props.beforeOpen( tag, true ) ) ) {
+		return;
+	}
+
 	editingId.value = tag.id;
 	emit( 'quick-edit', tag.id );
 	draft.name = tag.name;
@@ -288,16 +304,20 @@ function canSave( tag: TagItem ): boolean {
 }
 
 /**
- * Hand a tag to the page's left form, closing any Quick edit first so a tag
- * is open in one place only.
+ * Hand a tag to the page's left form, once the page agreed, closing any
+ * Quick edit first so a tag is open in one place only.
  *
  * @since 1.0.0
  *
  * @param {TagItem} tag The tag.
  *
- * @return {void}
+ * @return {Promise<void>} Resolves once handed over or kept back.
  */
-function edit( tag: TagItem ): void {
+async function edit( tag: TagItem ): Promise< void > {
+	if ( props.beforeOpen && ! ( await props.beforeOpen( tag, false ) ) ) {
+		return;
+	}
+
 	editingId.value = null;
 	emit( 'edit', tag );
 }
@@ -330,7 +350,7 @@ watch(
 </script>
 
 <template>
-	<div class="lkb-tablecard" @keydown.esc="cancelEdit">
+	<div class="lkb-tablecard lkb-tablecard--core" @keydown.esc="cancelEdit">
 		<a-table
 			row-key="id"
 			:columns="columns"

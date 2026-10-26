@@ -25,6 +25,7 @@
 import { expect, test, type Page, type Request } from '@playwright/test';
 import {
 	answerConfirm,
+	contentManagerUrl,
 	expectNoConfirmDialog,
 	openContentManager,
 } from './helpers/content-manager';
@@ -794,6 +795,191 @@ test.describe( 'Categories app', () => {
 		).toBe( items.find( ( item ) => 'Beta' === item.name )?.id );
 	} );
 
+	test( 'Update keeps a move made in the tree while the form was open', async ( {
+		page,
+	} ) => {
+		const writes = recordWrites( page );
+		const form = categoryForm( page );
+		const parent = form.locator( '.ant-select-selection-item' );
+
+		await act( page, 'Gamma child', 'Edit' );
+		await expect( parent ).toHaveText( 'Gamma' );
+
+		// Moved to the top level from the tree while the form is open.
+		await act( page, 'Gamma child', 'Move to…' );
+
+		const dialog = page.locator( '.ant-modal-content' );
+
+		await dialog.getByText( 'Top level' ).click();
+		await dialog
+			.getByRole( 'button', { name: 'Move', exact: true } )
+			.click();
+		await expect( page.locator( '.ant-message' ) ).toContainText(
+			'Category moved.'
+		);
+
+		// The form follows the move, and Update does not undo it.
+		await expect( parent ).toHaveCount( 0 );
+		await form.getByLabel( 'Description' ).fill( 'Edited after the move' );
+		await form.getByRole( 'button', { name: 'Update' } ).click();
+		await expect(
+			form.getByRole( 'heading', { name: 'Add New Category' } )
+		).toBeVisible();
+
+		const update = writes.find(
+			( request ) => 'PATCH' === request.method()
+		);
+
+		expect( update?.postDataJSON() ).not.toHaveProperty( 'parent' );
+
+		const items = ( await api( page, 'GET', 'categories' ) ) as Category[];
+
+		expect(
+			items.find( ( item ) => 'Gamma child' === item.name )?.parent
+		).toBe( 0 );
+	} );
+
+	test( 'the form returns to Add when the category in it is deleted', async ( {
+		page,
+	} ) => {
+		const form = categoryForm( page );
+
+		await act( page, 'Alpha', 'Edit' );
+		await expect(
+			form.getByRole( 'heading', { name: 'Edit Category' } )
+		).toBeVisible();
+
+		await act( page, 'Alpha', 'Delete…' );
+		await page
+			.locator( '.ant-modal-content' )
+			.getByRole( 'button', { name: 'Delete' } )
+			.click();
+		await answerConfirm( page, 'confirm' );
+
+		await expect( node( page, 'Alpha' ) ).toHaveCount( 0 );
+		await expect(
+			form.getByRole( 'heading', { name: 'Add New Category' } )
+		).toBeVisible();
+		await expect( form.getByLabel( 'Name' ) ).toHaveValue( '' );
+	} );
+
+	test( 'loading another category or cancelling asks before it drops unsaved changes', async ( {
+		page,
+	} ) => {
+		const writes = recordWrites( page );
+		const form = categoryForm( page );
+		const heading = ( name: string ) =>
+			form.getByRole( 'heading', { name } );
+
+		// Nothing changed: Edit on another category loads it without asking.
+		await act( page, 'Alpha', 'Edit' );
+		await act( page, 'Beta', 'Edit' );
+		await expectNoConfirmDialog( page );
+		await expect( form.getByLabel( 'Name' ) ).toHaveValue( 'Beta' );
+
+		// The category in the form is marked in the tree.
+		await expect(
+			node( page, 'Beta' ).locator( '[aria-current="true"]' )
+		).toHaveCount( 1 );
+		await expect(
+			node( page, 'Alpha' ).locator( '[aria-current="true"]' )
+		).toHaveCount( 0 );
+
+		// A change: Edit on another category asks, and Cancel keeps the input.
+		await form.getByLabel( 'Name' ).fill( 'Beta changed' );
+		await act( page, 'Gamma', 'Edit' );
+		await answerConfirm( page, 'cancel' );
+		await expect( heading( 'Edit Category' ) ).toBeVisible();
+		await expect( form.getByLabel( 'Name' ) ).toHaveValue( 'Beta changed' );
+
+		// The form's own Cancel asks too.
+		await form.getByRole( 'button', { name: 'Cancel' } ).click();
+		await answerConfirm( page, 'cancel' );
+		await expect( form.getByLabel( 'Name' ) ).toHaveValue( 'Beta changed' );
+
+		// Discarding loads the other category.
+		await act( page, 'Gamma', 'Add child' );
+		await answerConfirm( page, 'confirm' );
+		await expect( heading( 'Add New Category' ) ).toBeVisible();
+		await expect( form.locator( '.ant-select-selection-item' ) ).toHaveText(
+			'Gamma'
+		);
+
+		// A typed new category is kept the same way.
+		await form.getByLabel( 'Name' ).fill( 'Draft' );
+		await act( page, 'Alpha', 'Edit' );
+		await answerConfirm( page, 'cancel' );
+		await expect( form.getByLabel( 'Name' ) ).toHaveValue( 'Draft' );
+		await act( page, 'Alpha', 'Edit' );
+		await answerConfirm( page, 'confirm' );
+		await expect( heading( 'Edit Category' ) ).toBeVisible();
+		await expect( form.getByLabel( 'Name' ) ).toHaveValue( 'Alpha' );
+
+		expect( writes ).toHaveLength( 0 );
+	} );
+
+	test( 'Update returns focus to the category that was edited', async ( {
+		page,
+	} ) => {
+		const form = categoryForm( page );
+
+		await act( page, 'Alpha', 'Edit' );
+
+		// A dialog opened and cancelled on another category in between.
+		await act( page, 'Beta', 'Delete…' );
+
+		const dialog = page.locator( '.ant-modal-content' );
+
+		await dialog.getByRole( 'button', { name: 'Cancel' } ).click();
+		await expect( dialog ).toBeHidden();
+
+		await form.getByRole( 'button', { name: 'Update' } ).click();
+		await expect(
+			form.getByRole( 'heading', { name: 'Add New Category' } )
+		).toBeVisible();
+		await expect(
+			page.getByRole( 'button', {
+				name: 'Actions for Alpha',
+				exact: true,
+			} )
+		).toBeFocused();
+	} );
+
+	test( 'a page opened for one category loads it into the form', async ( {
+		page,
+	} ) => {
+		const id = await categoryId( page, 'Beta' );
+		const form = categoryForm( page );
+
+		await page.goto(
+			`${ contentManagerUrl( 'categories' ) }&term=${ id }`
+		);
+
+		await expect(
+			form.getByRole( 'heading', { name: 'Edit Category' } )
+		).toBeVisible();
+		await expect( form.getByLabel( 'Name' ) ).toHaveValue( 'Beta' );
+
+		// The tree has a heading for screen readers.
+		await expect(
+			page.getByRole( 'heading', { name: 'Category tree' } )
+		).toBeAttached();
+	} );
+
+	test( 'the name hint shows only once the Name field was left empty', async ( {
+		page,
+	} ) => {
+		const form = categoryForm( page );
+		const hint = form.getByText( 'Enter a name to save.' );
+
+		await expect( hint ).toHaveCount( 0 );
+		await form.getByLabel( 'Name' ).focus();
+		await page.keyboard.press( 'Tab' );
+		await expect( hint ).toBeVisible();
+		await form.getByLabel( 'Name' ).fill( 'Named' );
+		await expect( hint ).toHaveCount( 0 );
+	} );
+
 	test( 'Escape on an open select closes only the select, not the edit', async ( {
 		page,
 	} ) => {
@@ -814,8 +1000,10 @@ test.describe( 'Categories app', () => {
 		).toBeVisible();
 		await expect( form.getByLabel( 'Name' ) ).toHaveValue( 'Kept name' );
 
-		// A second Escape leaves the edit, sending nothing.
+		// A second Escape leaves the edit once the change is discarded,
+		// sending nothing.
 		await page.keyboard.press( 'Escape' );
+		await answerConfirm( page, 'confirm' );
 		await expect(
 			form.getByRole( 'heading', { name: 'Add New Category' } )
 		).toBeVisible();

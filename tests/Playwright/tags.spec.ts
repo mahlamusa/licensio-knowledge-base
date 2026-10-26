@@ -25,6 +25,7 @@ import { expect, test, type Page } from '@playwright/test';
 import {
 	answerConfirm,
 	confirmDialog,
+	contentManagerUrl,
 	expectNoConfirmDialog,
 	openContentManager,
 } from './helpers/content-manager';
@@ -340,6 +341,7 @@ test( 'Escape leaves the Edit Tag form and closes a Quick edit', async ( {
 	await expect( form.getByLabel( 'Name' ) ).toBeFocused();
 	await form.getByLabel( 'Name' ).fill( 'Changed' );
 	await page.keyboard.press( 'Escape' );
+	await answerConfirm( page, 'confirm' );
 	await expect(
 		form.getByRole( 'heading', { name: 'Add New Tag' } )
 	).toBeVisible();
@@ -808,6 +810,128 @@ test( 'Edit loads a tag into the left form, and Update saves it at once', async 
 	).toHaveText( 'Edited in the form' );
 	expect( writes.length ).toBe( before + 1 );
 
+	await deleteListed( page );
+} );
+
+test( 'the form returns to Add when the tag in it is deleted, not when it is filtered away', async ( {
+	page,
+} ) => {
+	const name = `Gone ${ suffix }`;
+	const form = tagForm( page );
+
+	await logIn( page );
+	await openContentManager( page, 'tags' );
+	await addTag( page, name );
+	await search( page, name );
+	await editButton( page, name ).click();
+
+	// A search that hides the tag leaves the form alone.
+	await search( page, `nothing ${ suffix }` );
+	await expect( page.locator( '.ant-table-row' ) ).toHaveCount( 0 );
+	await expect(
+		form.getByRole( 'heading', { name: 'Edit Tag' } )
+	).toBeVisible();
+	await expect( form.getByLabel( 'Name' ) ).toHaveValue( name );
+
+	// Deleting it returns the form to Add.
+	await search( page, name );
+	await deleteListed( page );
+	await expect(
+		form.getByRole( 'heading', { name: 'Add New Tag' } )
+	).toBeVisible();
+	await expect( form.getByLabel( 'Name' ) ).toHaveValue( '' );
+} );
+
+test( 'loading another tag or cancelling asks before it drops unsaved changes', async ( {
+	page,
+} ) => {
+	const writes = recordWrites( page );
+	const first = `Dirty ${ suffix } one`;
+	const second = `Dirty ${ suffix } two`;
+	const form = tagForm( page );
+	const heading = ( text: string ) =>
+		form.getByRole( 'heading', { name: text } );
+
+	await logIn( page );
+	await openContentManager( page, 'tags' );
+	await addTag( page, first );
+	await addTag( page, second );
+	await search( page, `Dirty ${ suffix }` );
+	await expect( page.locator( '.ant-table-row' ) ).toHaveCount( 2 );
+
+	const before = writes.length;
+
+	// Nothing changed: Edit on another tag loads it without asking.
+	await editButton( page, first ).click();
+	await editButton( page, second ).click();
+	await expectNoConfirmDialog( page );
+	await expect( form.getByLabel( 'Name' ) ).toHaveValue( second );
+
+	// A change: Edit on another tag asks, and Cancel keeps the input.
+	await form.getByLabel( 'Description' ).fill( 'Unsaved' );
+	await editButton( page, first ).click();
+	await answerConfirm( page, 'cancel' );
+	await expect( form.getByLabel( 'Name' ) ).toHaveValue( second );
+	await expect( form.getByLabel( 'Description' ) ).toHaveValue( 'Unsaved' );
+
+	// Quick edit of the tag in the form asks; of another tag it does not.
+	await quickEditButton( page, second ).click();
+	await answerConfirm( page, 'cancel' );
+	await expect( form.getByLabel( 'Description' ) ).toHaveValue( 'Unsaved' );
+	await quickEditButton( page, first ).click();
+	await expectNoConfirmDialog( page );
+	await row( page, first ).getByRole( 'button', { name: 'Cancel' } ).click();
+	await expect( form.getByLabel( 'Description' ) ).toHaveValue( 'Unsaved' );
+
+	// The form's Cancel asks, and discarding returns it to Add.
+	await form.getByRole( 'button', { name: 'Cancel' } ).click();
+	await answerConfirm( page, 'confirm' );
+	await expect( heading( 'Add New Tag' ) ).toBeVisible();
+
+	// A typed new tag is kept the same way.
+	await form.getByLabel( 'Name' ).fill( 'Draft' );
+	await editButton( page, first ).click();
+	await answerConfirm( page, 'cancel' );
+	await expect( form.getByLabel( 'Name' ) ).toHaveValue( 'Draft' );
+	await editButton( page, first ).click();
+	await answerConfirm( page, 'confirm' );
+	await expect( heading( 'Edit Tag' ) ).toBeVisible();
+	await expect( form.getByLabel( 'Name' ) ).toHaveValue( first );
+
+	expect( writes.length ).toBe( before );
+
+	await form.getByRole( 'button', { name: 'Cancel' } ).click();
+	await deleteListed( page );
+} );
+
+test( 'a page opened for one tag loads it into the form', async ( {
+	page,
+} ) => {
+	const name = `Linked ${ suffix }`;
+	const form = tagForm( page );
+
+	await logIn( page );
+	await openContentManager( page, 'tags' );
+
+	// The list has a heading for screen readers.
+	await expect(
+		page.getByRole( 'heading', { name: 'Tags list' } )
+	).toBeAttached();
+
+	await addTag( page, name );
+	await search( page, name );
+
+	const id = await row( page, name ).getAttribute( 'data-row-key' );
+
+	await page.goto( `${ contentManagerUrl( 'tags' ) }&term=${ id }` );
+	await expect(
+		form.getByRole( 'heading', { name: 'Edit Tag' } )
+	).toBeVisible();
+	await expect( form.getByLabel( 'Name' ) ).toHaveValue( name );
+
+	await form.getByRole( 'button', { name: 'Cancel' } ).click();
+	await page.getByRole( 'button', { name: 'Show all tags' } ).click();
+	await search( page, name );
 	await deleteListed( page );
 } );
 

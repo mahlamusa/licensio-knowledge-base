@@ -23,12 +23,21 @@
  * and decides where focus goes. Escape on an open select closes only the
  * select.
  *
+ * The parent is sent on an edit only when the user changed it here, and a
+ * move made in the tree while the form is open is copied into an unchanged
+ * parent field, so Update never moves the category back.
+ *
+ * Cancel and Escape with unsaved changes ask first, in the confirmation
+ * dialog; the page asks the same through `leave()` before it loads another
+ * category into the form. Nothing is asked when nothing changed.
+ *
  * @since 1.0.0
  */
 
-import { computed, reactive, ref } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import TermSelect from '../../components/TermSelect.vue';
+import { useConfirm } from '../../components/confirm';
 import { useEscapeClose } from '../../components/popover-focus';
 import { errorMessage, RestError } from '../../components/rest';
 import { __ } from '../../components/i18n';
@@ -53,6 +62,7 @@ const emit = defineEmits< {
 } >();
 
 const store = useCategoriesStore();
+const { askDiscard } = useConfirm();
 
 const form = reactive( {
 	name: '',
@@ -83,6 +93,15 @@ const FIELDS = [
 /** Whether the user edited a new category's slug by hand. */
 const slugEdited = ref( false );
 
+/** Whether the user has left the Name field, which shows its hint. */
+const nameTouched = ref( false );
+
+/** The parent the form started from, kept in step with tree moves. */
+const baseParent = ref( props.category ? props.category.parent : props.parent );
+
+/** The fields as filled in, to tell whether the user changed any. */
+let snapshot = '';
+
 const saving = ref( false );
 const formError = ref( '' );
 const fieldErrors = ref< Record< string, string > >( {} );
@@ -100,17 +119,87 @@ const exclude = computed( () =>
 const nameMissing = computed( () => '' === form.name.trim() );
 
 /**
- * Leave the edit without saving.
+ * The fields the user can change, apart from the parent, as one string.
  *
  * @since 1.0.0
  *
- * @return {void}
+ * @return {string} The fields, as JSON.
  */
-function cancel(): void {
-	if ( props.category ) {
-		emit( 'done', props.category.id );
+function fieldsOf(): string {
+	return JSON.stringify( [
+		form.name,
+		form.slug,
+		form.description,
+		form.iconSource,
+		form.icon,
+		form.iconId,
+		form.iconInline,
+		form.imageId,
+	] );
+}
+
+/**
+ * Whether the user changed the parent in the form.
+ *
+ * @since 1.0.0
+ *
+ * @return {boolean} True when it differs from the one the form started from.
+ */
+function parentChanged(): boolean {
+	return ( form.parent ?? 0 ) !== baseParent.value;
+}
+
+/**
+ * Whether it is fine to drop what the form holds.
+ *
+ * True at once when nothing changed; otherwise the user is asked.
+ *
+ * @since 1.0.0
+ *
+ * @return {Promise<boolean>} Whether the form may be left.
+ */
+function leave(): Promise< boolean > {
+	if ( fieldsOf() === snapshot && ! parentChanged() ) {
+		return Promise.resolve( true );
+	}
+
+	return askDiscard();
+}
+
+defineExpose( { leave } );
+
+/**
+ * Leave the edit without saving, once any changes may be dropped.
+ *
+ * @since 1.0.0
+ *
+ * @return {Promise<void>} Resolves once left or kept.
+ */
+async function cancel(): Promise< void > {
+	const item = props.category;
+
+	if ( item && ( await leave() ) ) {
+		emit( 'done', item.id );
 	}
 }
+
+// A move made in the tree while the form is open: an unchanged parent field
+// follows it.
+watch(
+	() =>
+		props.category ? store.find( props.category.id )?.parent : undefined,
+	( parent ) => {
+		if ( undefined === parent ) {
+			return;
+		}
+
+		if ( ! parentChanged() ) {
+			form.parent = parent || null;
+		}
+
+		baseParent.value = parent;
+	}
+);
 
 // Escape cancels an edit; on an open select it closes only the select.
 useEscapeClose( () => null !== props.category, '.lkb-category-form', cancel );
@@ -139,6 +228,8 @@ function reset(): void {
 	form.imageUrl = item?.image_url ?? '';
 	formError.value = '';
 	fieldErrors.value = {};
+	nameTouched.value = false;
+	snapshot = fieldsOf();
 }
 
 reset();
@@ -247,12 +338,12 @@ function statusOf( field: string ): 'error' | undefined {
  */
 async function save(): Promise< void > {
 	if ( nameMissing.value ) {
+		nameTouched.value = true;
 		return;
 	}
 
 	const input: CategoryInput = {
 		name: form.name.trim(),
-		parent: form.parent ?? 0,
 		...iconInput(
 			{
 				source: form.iconSource,
@@ -263,6 +354,13 @@ async function save(): Promise< void > {
 			props.category
 		),
 	};
+
+	// A new category is always placed; an existing one is moved only when the
+	// user picked another parent here, so Update never undoes a move made in
+	// the tree while the form was open.
+	if ( ! props.category || parentChanged() ) {
+		input.parent = form.parent ?? 0;
+	}
 
 	// The description is shown and sent exactly as stored. It is sent only
 	// when the user changed it, so a save that only renames a category or
@@ -345,6 +443,7 @@ async function save(): Promise< void > {
 					id="lkb-category-name"
 					:value="form.name"
 					@update:value="onName"
+					@blur="nameTouched = true"
 				/>
 			</a-form-item>
 
@@ -468,7 +567,10 @@ async function save(): Promise< void > {
 					{{ __( 'Cancel', 'licensio-knowledge-base' ) }}
 				</a-button>
 			</div>
-			<p v-if="nameMissing" class="lkb-category-form__hint">
+			<p
+				v-if="nameMissing && nameTouched"
+				class="lkb-category-form__hint"
+			>
 				{{ __( 'Enter a name to save.', 'licensio-knowledge-base' ) }}
 			</p>
 		</a-form>

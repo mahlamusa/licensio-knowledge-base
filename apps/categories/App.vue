@@ -11,6 +11,11 @@
  * delete dialogs, so focus can go back to whatever opened them once they
  * close.
  *
+ * Edit and Add child ask first when the form has unsaved changes (see the
+ * form's `leave()`), in the page's confirmation dialog. When the category in
+ * the form is deleted or merged away, the form goes back to Add. The tree
+ * marks the category the form holds.
+ *
  * `?term={id}` loads that category into the form on load and `?search=`
  * fills the tree filter.
  *
@@ -19,9 +24,11 @@
  * @since 1.0.0
  */
 
-import { nextTick, onMounted, reactive } from 'vue';
+import { nextTick, onMounted, reactive, ref, watch } from 'vue';
 import { lkbTheme } from '../styles/theme';
 import AppHeader from '../components/AppHeader.vue';
+import ConfirmDialog from '../components/ConfirmDialog.vue';
+import { useConfirm } from '../components/confirm';
 import { __ } from '../components/i18n';
 import { settings } from './api';
 import { useCategoriesStore } from './store';
@@ -36,6 +43,9 @@ import MoveDialog from './components/MoveDialog.vue';
 
 const store = useCategoriesStore();
 const chrome = settings();
+const confirm = useConfirm();
+
+const form = ref< InstanceType< typeof CategoryForm > | null >( null );
 
 // What the left form holds. A new key mounts a fresh form, filled once.
 const editor = reactive( {
@@ -80,9 +90,9 @@ function loadForm( category: CategoryItem | null, parent: number ): void {
 /**
  * Return the form to Add New Category after an add, an update or a cancel.
  *
- * After an update or a cancel, focus goes back to the actions button that
- * opened the edit when it is still there; otherwise, and after an add, it
- * stays in the form, on its Name field, ready for the next category.
+ * After an update or a cancel, focus goes back to the actions button of the
+ * category that was edited when it is still there; otherwise, and after an
+ * add, it stays in the form, on its Name field, ready for the next category.
  *
  * @since 1.0.0
  *
@@ -91,10 +101,7 @@ function loadForm( category: CategoryItem | null, parent: number ): void {
  * @return {void}
  */
 function onFormDone( id: number | null ): void {
-	if ( null === id ) {
-		returnTo = null;
-	}
-
+	returnTo = id;
 	editor.category = null;
 	editor.parent = 0;
 	editor.key++;
@@ -104,21 +111,35 @@ function onFormDone( id: number | null ): void {
 /**
  * Run an action the tree handed over.
  *
- * Merge and delete ask first when the article order has unsaved changes.
+ * Merge and delete ask first when the article order has unsaved changes;
+ * Edit and Add child when the form has. When the user keeps the changes,
+ * focus goes back to the category's actions button.
  *
  * @since 1.0.0
  *
  * @param {TreeAction}   action The action.
  * @param {CategoryItem} item   The category it is for.
  *
- * @return {void}
+ * @return {Promise<void>} Resolves once the action has started or was dropped.
  */
-function onAction( action: TreeAction, item: CategoryItem ): void {
+async function onAction(
+	action: TreeAction,
+	item: CategoryItem
+): Promise< void > {
 	// A merge or delete can move articles and reload the order pane.
 	if (
 		( 'merge' === action || 'delete' === action ) &&
 		! store.confirmDiscardOrder()
 	) {
+		return;
+	}
+
+	if (
+		( 'edit' === action || 'child' === action ) &&
+		! ( await ( form.value?.leave() ?? true ) )
+	) {
+		returnTo = item.id;
+		restoreFocus();
 		return;
 	}
 
@@ -171,6 +192,18 @@ function restoreFocus(): void {
 		( actions ?? document.getElementById( 'lkb-category-name' ) )?.focus();
 	} );
 }
+
+// The category in the form was deleted or merged away: back to Add.
+watch(
+	() => editor.category && ! store.find( editor.category.id ),
+	( gone ) => {
+		if ( gone ) {
+			editor.category = null;
+			editor.parent = 0;
+			editor.key++;
+		}
+	}
+);
 
 onMounted( async () => {
 	const params = new URLSearchParams( window.location.search );
@@ -225,6 +258,7 @@ onMounted( async () => {
 				<div class="lkb-terms">
 					<CategoryForm
 						:key="editor.key"
+						ref="form"
 						:category="editor.category"
 						:parent="editor.parent"
 						@done="onFormDone"
@@ -263,14 +297,23 @@ onMounted( async () => {
 						<template v-else-if="store.loaded">
 							<section
 								class="lkb-terms__card"
-								:aria-label="
-									__(
-										'Category tree',
-										'licensio-knowledge-base'
-									)
-								"
+								aria-labelledby="lkb-category-tree-title"
 							>
-								<CategoryTree @action="onAction" />
+								<h2
+									id="lkb-category-tree-title"
+									class="screen-reader-text"
+								>
+									{{
+										__(
+											'Category tree',
+											'licensio-knowledge-base'
+										)
+									}}
+								</h2>
+								<CategoryTree
+									:editing-id="editor.category?.id ?? null"
+									@action="onAction"
+								/>
 							</section>
 
 							<div class="lkb-terms__card">
@@ -300,6 +343,12 @@ onMounted( async () => {
 				:category="dialog.category"
 				@close="closeDialog"
 				@closed="restoreFocus"
+			/>
+
+			<ConfirmDialog
+				v-bind="confirm.dialog"
+				@ok="confirm.answer( true )"
+				@cancel="confirm.answer( false )"
 			/>
 		</div>
 	</a-config-provider>
