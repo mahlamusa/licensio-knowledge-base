@@ -184,12 +184,25 @@ test.describe( 'Knowledge base blocks', () => {
 
 		const body = await created.json();
 
-		await page.goto( body.link );
+		try {
+			await page.goto( body.link );
 
-		for ( const block of BLOCKS ) {
-			// One from the block, one from its shortcode.
-			await expect( page.locator( `.${ block.marker }` ) ).toHaveCount(
-				2
+			for ( const block of BLOCKS ) {
+				// One from the block, one from its shortcode.
+				await expect(
+					page.locator( `.${ block.marker }` )
+				).toHaveCount( 2 );
+			}
+		} finally {
+			// Delete the page again, or every run adds one more to the site and its menus.
+			await request.delete(
+				`/?rest_route=/wp/v2/pages/${ body.id }&force=true`,
+				{
+					headers: {
+						'X-WP-Nonce': nonce,
+						Cookie: cookieHeader,
+					},
+				}
 			);
 		}
 	} );
