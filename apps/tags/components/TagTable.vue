@@ -6,7 +6,8 @@
  * the bulk bar. As on core's tag list, the row actions sit under the name and
  * show on hover or focus (always on touch and narrow screens): Edit hands the
  * tag to the page, which loads it into the left form; Quick edit opens the
- * row's name, slug and description in place. Save
+ * row's name, slug and description in place, with Save and Cancel under
+ * the description, after the fields in tab order. Save
  * sends without asking, and the row keeps
  * the user's input when the server refuses it, as it does a slug another tag
  * already uses. The slug the server settled on (made from the name if the
@@ -39,6 +40,7 @@
 import { computed, nextTick, reactive, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import { __, sprintf } from '../../components/i18n';
+import { changePageKeepingFocus } from '../../components/pager-focus';
 import { settings } from '../api';
 import { useTagsStore } from '../store';
 import type { TagFields, TagItem, TagOrder, TagOrderBy } from '../types';
@@ -59,6 +61,7 @@ const emit = defineEmits< {
 const store = useTagsStore();
 const { articlesUrl } = settings();
 
+const root = ref< HTMLElement | null >( null );
 const editingId = ref< number | null >( null );
 const draft = reactive( { name: '', slug: '', description: '' } );
 
@@ -163,6 +166,8 @@ const columns = computed( () => [
 /**
  * Pass a page or sort change to the store.
  *
+ * A page change made from the pager keeps focus in the pager.
+ *
  * @since 1.0.0
  *
  * @param {Object}  pagination           The table's pagination.
@@ -184,7 +189,9 @@ function onChange(
 	const orderby: TagOrderBy = 'count' === sort?.columnKey ? 'count' : 'name';
 	const order: TagOrder = 'descend' === sort?.order ? 'desc' : 'asc';
 
-	store.view( pagination.current ?? 1, orderby, order );
+	changePageKeepingFocus( root.value, () =>
+		store.view( pagination.current ?? 1, orderby, order )
+	);
 }
 
 /**
@@ -369,7 +376,11 @@ watch(
 </script>
 
 <template>
-	<div class="lkb-tablecard lkb-tablecard--core" @keydown.esc="cancelEdit">
+	<div
+		ref="root"
+		class="lkb-tablecard lkb-tablecard--core"
+		@keydown.esc="cancelEdit"
+	>
 		<a-table
 			row-key="id"
 			:columns="columns"
@@ -406,24 +417,7 @@ watch(
 					/>
 					<strong v-else>{{ record.name }}</strong>
 
-					<div
-						v-if="editingId === record.id"
-						class="lkb-rowactions is-open"
-					>
-						<a-button
-							type="primary"
-							size="small"
-							:disabled="! canSave( record as TagItem )"
-							:loading="store.saving"
-							@click="save( record as TagItem )"
-						>
-							{{ __( 'Save', 'licensio-knowledge-base' ) }}
-						</a-button>
-						<a-button size="small" @click="cancelEdit">
-							{{ __( 'Cancel', 'licensio-knowledge-base' ) }}
-						</a-button>
-					</div>
-					<div v-else class="lkb-rowactions">
+					<div v-if="editingId !== record.id" class="lkb-rowactions">
 						<a-button
 							type="link"
 							size="small"
@@ -486,6 +480,25 @@ watch(
 					<span v-else class="lkb-tags__description">{{
 						descriptions.get( record.id ) || '—'
 					}}</span>
+
+					<!-- After the last field, so Tab reaches every field before Save. -->
+					<div
+						v-if="editingId === record.id"
+						class="lkb-rowactions is-open"
+					>
+						<a-button
+							type="primary"
+							size="small"
+							:disabled="! canSave( record as TagItem )"
+							:loading="store.saving"
+							@click="save( record as TagItem )"
+						>
+							{{ __( 'Save', 'licensio-knowledge-base' ) }}
+						</a-button>
+						<a-button size="small" @click="cancelEdit">
+							{{ __( 'Cancel', 'licensio-knowledge-base' ) }}
+						</a-button>
+					</div>
 				</template>
 
 				<template v-else-if="'count' === column.key">

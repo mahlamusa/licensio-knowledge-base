@@ -14,6 +14,8 @@
  * dropped once confirmed, a deleted category leaves the form, and `?term=`
  * loads a category into it. Creating, saving and moving are not confirmed; deleting, merging
  * and discarding an unsaved order are, and a cancelled one sends nothing.
+ * From the keyboard, each dialog radio group is one tab stop, and the article
+ * order move buttons keep focus when they reach an end of the list.
  *
  * The slug the app makes from a name is also compared with core's
  * `sanitize_title()` on the same site, which needs `LICENSIO_KB_WP_CLI`.
@@ -1163,6 +1165,95 @@ test.describe( 'Categories app', () => {
 
 		await page.keyboard.press( 'Escape' );
 		await expect( dialog ).toBeHidden();
+	} );
+
+	test( 'the Delete and Move dialog radio groups are one tab stop each', async ( {
+		page,
+	} ) => {
+		await act( page, 'Gamma', 'Delete…' );
+
+		const dialog = page.locator( '.ant-modal-content' );
+		const none = dialog.getByRole( 'radio', {
+			name: 'Leave them without this category',
+		} );
+
+		// Tab goes from the checked article choice on to the child choices.
+		await none.focus();
+		await page.keyboard.press( 'Tab' );
+		await expect(
+			dialog.getByRole( 'radio', {
+				name: 'Move to parent (or top level)',
+			} )
+		).toBeFocused();
+		await page.keyboard.press( 'Shift+Tab' );
+		await expect( none ).toBeFocused();
+		await page.keyboard.press( 'ArrowUp' );
+		await expect(
+			dialog.getByRole( 'radio', { name: 'Move to another category' } )
+		).toBeChecked();
+		await page.keyboard.press( 'Escape' );
+		await expect( dialog ).toBeHidden();
+
+		await page.reload();
+		await act( page, 'Gamma child', 'Move to…' );
+
+		const move = page.locator( '.ant-modal-content' );
+		const checked = move.getByRole( 'radio', { checked: true } );
+
+		// Tab from the checked place leaves the group, not stopping on the other.
+		await checked.focus();
+		await page.keyboard.press( 'Tab' );
+		expect(
+			await move
+				.getByRole( 'radio' )
+				.evaluateAll( ( radios ) =>
+					radios.some(
+						( radio ) => radio === radio.ownerDocument.activeElement
+					)
+				)
+		).toBe( false );
+	} );
+
+	test( 'article order move buttons keep focus at the ends of the list', async ( {
+		page,
+	} ) => {
+		const alpha = await categoryId( page, 'Alpha' );
+
+		await makeArticles( page, alpha, [
+			'E2E order A',
+			'E2E order B',
+			'E2E order C',
+		] );
+
+		await page.reload();
+		await node( page, 'Alpha' ).locator( '.lkb-tree__name' ).click();
+
+		const pane = page.getByRole( 'region', { name: 'Article order' } );
+		const down = pane.getByRole( 'button', {
+			name: 'Move “E2E order A” down',
+		} );
+
+		await expect
+			.poll( () => paneTitles( page ) )
+			.toEqual( [ 'E2E order A', 'E2E order B', 'E2E order C' ] );
+
+		// Within the list, focus stays on the pressed button of the moved article.
+		await down.focus();
+		await page.keyboard.press( 'Enter' );
+		await expect
+			.poll( () => paneTitles( page ) )
+			.toEqual( [ 'E2E order B', 'E2E order A', 'E2E order C' ] );
+		await expect( down ).toBeFocused();
+
+		// At the bottom Move down is disabled, so focus moves to Move up.
+		await page.keyboard.press( 'Enter' );
+		await expect
+			.poll( () => paneTitles( page ) )
+			.toEqual( [ 'E2E order B', 'E2E order C', 'E2E order A' ] );
+		await expect( down ).toBeDisabled();
+		await expect(
+			pane.getByRole( 'button', { name: 'Move “E2E order A” up' } )
+		).toBeFocused();
 	} );
 
 	test( 'an unsaved article order is kept until the user agrees to drop it', async ( {

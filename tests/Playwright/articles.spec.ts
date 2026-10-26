@@ -8,7 +8,9 @@
  * replace the history entry while sort and page push one. An out of range page moves
  * back to the last page, a failed load shows no empty state, and a quick
  * edit reloads the list and its counts. A keyboard trash moves focus to the Undo toast, whose
- * countdown waits while it has focus.
+ * countdown waits while it has focus. From the keyboard, Tab stays inside the
+ * Filters and Columns popovers, the period radios are one tab stop, Escape
+ * cancels a quick edit, and the pager keeps focus on its first and last page.
  *
  * Needs a running WordPress with this plugin active, an administrator
  * account and at least one article, so it is skipped unless
@@ -629,6 +631,167 @@ test.describe( 'Articles app', () => {
 			await expect( page.locator( '.lkb-page__title' ) ).toBeFocused();
 		} finally {
 			await articleRequest( page, 'DELETE', '/' + id );
+		}
+	} );
+
+	test( 'Tab stays inside the open Filters and Columns popovers', async ( {
+		page,
+	} ) => {
+		const app = await openContentManager( page, 'articles' );
+		const filtersButton = app.getByRole( 'button', { name: 'Filters' } );
+		const filters = page
+			.locator( '.ant-popover' )
+			.filter( { hasText: 'Clear filters' } );
+
+		await filtersButton.click();
+		await expect(
+			filters.getByLabel( 'Filter by category' )
+		).toBeFocused();
+
+		// Back from the first control goes round to the last, and on to the first again.
+		await page.keyboard.press( 'Shift+Tab' );
+		await expect(
+			filters.getByRole( 'checkbox', { name: 'Needs attention' } )
+		).toBeFocused();
+		await page.keyboard.press( 'Tab' );
+		await expect(
+			filters.getByLabel( 'Filter by category' )
+		).toBeFocused();
+		await page.keyboard.press( 'Escape' );
+		await expect( filtersButton ).toBeFocused();
+
+		const columnsButton = app.getByRole( 'button', {
+			name: 'Columns and rows per page',
+		} );
+		const columns = page
+			.locator( '.ant-popover' )
+			.filter( { hasText: 'Rows per page' } );
+
+		await columnsButton.click();
+		await expect(
+			columns.getByRole( 'checkbox', { name: 'Author' } )
+		).toBeFocused();
+
+		// The rows per page group is one stop, on its checked option.
+		await page.keyboard.press( 'Shift+Tab' );
+		await expect(
+			columns.getByRole( 'radio', { checked: true } )
+		).toBeFocused();
+		await page.keyboard.press( 'Tab' );
+		await expect(
+			columns.getByRole( 'checkbox', { name: 'Author' } )
+		).toBeFocused();
+		await page.keyboard.press( 'Escape' );
+		await expect( columnsButton ).toBeFocused();
+	} );
+
+	test( 'the views and rating period is one tab stop with arrow keys between its options', async ( {
+		page,
+	} ) => {
+		const app = await openContentManager( page, 'articles' );
+
+		await app.getByRole( 'radio', { name: '30 days' } ).focus();
+		await page.keyboard.press( 'ArrowRight' );
+		await expect(
+			app.getByRole( 'radio', { name: '90 days' } )
+		).toBeChecked();
+		await expect( page ).toHaveURL( /window=90/ );
+
+		await page.keyboard.press( 'Tab' );
+		await expect(
+			app.getByRole( 'button', { name: 'Columns and rows per page' } )
+		).toBeFocused();
+		await page.keyboard.press( 'Shift+Tab' );
+		await expect(
+			app.getByRole( 'radio', { name: '90 days' } )
+		).toBeFocused();
+	} );
+
+	test( 'Escape cancels a quick edit and returns focus to its button', async ( {
+		page,
+	} ) => {
+		const app = await openContentManager( page, 'articles' );
+		const writes = recordWrites( page );
+		const rows = app.locator( '.ant-table-row' );
+		const button = rows
+			.first()
+			.getByRole( 'button', { name: 'Quick edit' } );
+		const form = app.locator( '.lkb-quickedit:visible' );
+		const list = page.locator(
+			'.ant-select-dropdown:not(.ant-select-dropdown-hidden)'
+		);
+
+		await button.click();
+		await expect( form.getByLabel( 'Title' ) ).toBeFocused();
+		await form.getByLabel( 'Title' ).fill( 'Not saved' );
+
+		// Escape on the open author list closes only the list.
+		await form.getByLabel( 'Author' ).click();
+		await expect( list ).toBeVisible();
+		await page.keyboard.press( 'Escape' );
+		await expect( list ).toBeHidden();
+		await expect( form ).toBeVisible();
+
+		await form.getByLabel( 'Title' ).focus();
+		await page.keyboard.press( 'Escape' );
+		await expect( form ).toHaveCount( 0 );
+		await expect( button ).toBeFocused();
+
+		// The table keeps the closed form, hidden; Escape still closes the next one.
+		const second = rows
+			.nth( 1 )
+			.getByRole( 'button', { name: 'Quick edit' } );
+
+		await second.click();
+		await expect( form.getByLabel( 'Title' ) ).toBeFocused();
+		await page.keyboard.press( 'Escape' );
+		await expect( form ).toHaveCount( 0 );
+		await expect( second ).toBeFocused();
+		expect( writes ).toHaveLength( 0 );
+	} );
+
+	test( 'the pager keeps focus when the page it moved to disables the pressed control', async ( {
+		page,
+	} ) => {
+		test.skip( ! wpCli, 'Set LICENSIO_KB_WP_CLI to run.' );
+
+		// One more than a page of 20, so the second page is the last.
+		const word = `Pager${ Date.now() }`;
+		const ids = wpEval( `
+			$ids = array();
+			for ( $i = 1; $i <= 21; $i++ ) {
+				$ids[] = wp_insert_post( array( 'post_type' => 'licensio_article', 'post_status' => 'publish', 'post_title' => '${ word } ' . $i ) );
+			}
+			echo implode( ',', $ids );
+		` );
+
+		try {
+			await page.goto(
+				contentManagerUrl( 'articles' ) + `&search=${ word }`
+			);
+
+			const app = page.locator( '#licensio-kb-articles' );
+			const current = app.locator( '.ant-pagination-item-active' );
+
+			await expect( app.locator( '.ant-table-row' ) ).toHaveCount( 20 );
+
+			await app.locator( '.ant-pagination-next' ).focus();
+			await page.keyboard.press( 'Enter' );
+			await expect( app.locator( '.ant-table-row' ) ).toHaveCount( 1 );
+			await expect( current ).toHaveText( '2' );
+			await expect( current ).toBeFocused();
+
+			await app.locator( '.ant-pagination-prev' ).focus();
+			await page.keyboard.press( 'Enter' );
+			await expect( app.locator( '.ant-table-row' ) ).toHaveCount( 20 );
+			await expect( current ).toHaveText( '1' );
+			await expect( current ).toBeFocused();
+		} finally {
+			wpEval( `
+				foreach ( array( ${ ids } ) as $id ) {
+					wp_delete_post( $id, true );
+				}
+			` );
 		}
 	} );
 } );

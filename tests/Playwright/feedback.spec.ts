@@ -3,7 +3,8 @@
  *
  * Checks that a row's status change is saved as soon as it is picked, without
  * a confirmation, and that a bulk mark asks first, sends nothing when
- * cancelled and is saved once confirmed.
+ * cancelled and is saved once confirmed, and that the pager keeps focus on
+ * its first and last page.
  *
  * Seeds one article with two votes through wp-cli and filters the inbox to
  * it, so the spec reads only its own rows. It needs a running WordPress with
@@ -152,5 +153,49 @@ test.describe( 'Feedback inbox', () => {
 		await expect( rows.locator( '.ant-select-selection-item' ) ).toHaveText(
 			[ 'Actioned', 'Actioned' ]
 		);
+	} );
+
+	test( 'the pager keeps focus when the page it moved to disables the pressed control', async ( {
+		page,
+	} ) => {
+		// One more than a page of 20, so the second page is the last.
+		const id = Number(
+			wpEval( `
+				$id = wp_insert_post( array( 'post_type' => 'licensio_article', 'post_status' => 'publish', 'post_title' => 'Feedback pager E2E' ) );
+				$feedback = licensio_kb()->feedback();
+				for ( $i = 1; $i <= 21; $i++ ) {
+					$feedback->record_vote( $id, 1, 'Pager E2E ' . $i, md5( 'feedback-pager-e2e-' . $i ) );
+				}
+				echo $id;
+			` )
+		);
+
+		try {
+			await logIn( page );
+			await page.goto( `${ FEEDBACK_URL }&article_id=${ id }` );
+
+			const rows = page.locator( '.ant-table-row' );
+			const current = page.locator( '.ant-pagination-item-active' );
+
+			await expect( rows ).toHaveCount( 20 );
+
+			await page.locator( '.ant-pagination-next' ).focus();
+			await page.keyboard.press( 'Enter' );
+			await expect( rows ).toHaveCount( 1 );
+			await expect( current ).toHaveText( '2' );
+			await expect( current ).toBeFocused();
+
+			await page.locator( '.ant-pagination-prev' ).focus();
+			await page.keyboard.press( 'Enter' );
+			await expect( rows ).toHaveCount( 20 );
+			await expect( current ).toHaveText( '1' );
+			await expect( current ).toBeFocused();
+		} finally {
+			wpEval( `
+				global $wpdb;
+				$wpdb->delete( Licensio_KB_DB::table_name( 'licensio_feedback' ), array( 'article_id' => ${ id } ) );
+				wp_delete_post( ${ id }, true );
+			` );
+		}
 	} );
 } );

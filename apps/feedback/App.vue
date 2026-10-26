@@ -23,6 +23,7 @@ import { useFeedbackStore } from './store';
 import AppHeader from '../components/AppHeader.vue';
 import ConfirmButton from '../components/ConfirmButton.vue';
 import { __, _n, sprintf } from '../components/i18n';
+import { changePageKeepingFocus } from '../components/pager-focus';
 import type { FeedbackItem, FeedbackStatus } from './types';
 
 const store = useFeedbackStore();
@@ -123,6 +124,7 @@ function isHelpful( item: FeedbackItem ): boolean {
  * app links here with. 0 when it shows every article.
  */
 const articleId = ref( articleFilter() );
+const tableCard = ref< HTMLElement | null >( null );
 
 /** The filtered article's title, once a row of it has loaded. */
 const articleName = computed(
@@ -364,7 +366,7 @@ onMounted( () => {
 					</span>
 				</div>
 
-				<div class="lkb-tablecard">
+				<div ref="tableCard" class="lkb-tablecard">
 					<a-table
 						row-key="id"
 						:columns="columns"
@@ -382,7 +384,9 @@ onMounted( () => {
 							total: store.total,
 							showSizeChanger: false,
 							onChange: ( page: number ) =>
-								store.goToPage( page ),
+								changePageKeepingFocus( tableCard, () =>
+									store.goToPage( page )
+								),
 						}"
 					>
 						<template #emptyText>

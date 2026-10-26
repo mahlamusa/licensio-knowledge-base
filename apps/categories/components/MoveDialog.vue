@@ -8,7 +8,7 @@
  * @since 1.0.0
  */
 
-import { computed, ref, watch } from 'vue';
+import { computed, ref, useId, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import TermSelect from '../../components/TermSelect.vue';
 import { useEscapeClose } from '../../components/popover-focus';
@@ -38,6 +38,10 @@ useEscapeClose(
 );
 
 const store = useCategoriesStore();
+
+// Names its radio group: radios that share a name are one tab stop, with
+// the arrow keys moving between them.
+const whereName = useId();
 
 const where = ref< 'top' | 'under' >( 'top' );
 const parent = ref< number | null >( null );
@@ -141,7 +145,11 @@ async function moveCategory(): Promise< void > {
 
 		<fieldset class="lkb-dialog__group">
 			<legend>{{ __( 'New place', 'licensio-knowledge-base' ) }}</legend>
-			<a-radio-group v-model:value="where" class="lkb-dialog__radios">
+			<a-radio-group
+				v-model:value="where"
+				:name="whereName"
+				class="lkb-dialog__radios"
+			>
 				<a-radio value="top">
 					{{ __( 'Top level', 'licensio-knowledge-base' ) }}
 				</a-radio>

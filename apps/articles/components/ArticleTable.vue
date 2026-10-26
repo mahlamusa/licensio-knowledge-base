@@ -9,14 +9,16 @@
  * hover or keyboard focus, as on core's list screens. Quick edit opens
  * in place under the row. A locked row shows who is editing it and cannot be
  * quick edited. While a bulk action runs the row actions are paused, and
- * hovering them says why.
+ * hovering them says why. A page change from the pager keeps focus in the
+ * pager, on the current page once the control pressed is disabled.
  *
  * @since 1.0.0
  */
 
-import { computed, nextTick } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import { LockOutlined } from '@ant-design/icons-vue';
 import ConfirmButton from '../../components/ConfirmButton.vue';
+import { changePageKeepingFocus } from '../../components/pager-focus';
 import { __, sprintf } from '../../components/i18n';
 import { statusLabel } from '../../components/status';
 import { config } from '../api';
@@ -28,6 +30,7 @@ import type { ArticleColumn, ArticleItem, ArticleOrderBy } from '../types';
 
 const store = useArticlesStore();
 const settings = config();
+const root = ref< HTMLElement | null >( null );
 
 /**
  * The current sort of a column, in Ant's terms.
@@ -156,7 +159,9 @@ function onChange(
 	}
 
 	if ( pagination.current && pagination.current !== store.query.page ) {
-		store.setPage( pagination.current );
+		const current = pagination.current;
+
+		changePageKeepingFocus( root.value, () => store.setPage( current ) );
 	}
 }
 
@@ -200,7 +205,7 @@ const expandedKeys = computed( () =>
 </script>
 
 <template>
-	<div class="lkb-tablecard lkb-tablecard--core">
+	<div ref="root" class="lkb-tablecard lkb-tablecard--core">
 		<a-table
 			row-key="id"
 			:columns="columns"

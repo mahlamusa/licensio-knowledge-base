@@ -15,7 +15,7 @@
  * @since 1.0.0
  */
 
-import { computed } from 'vue';
+import { computed, useId } from 'vue';
 import { __ } from '../../components/i18n';
 import { DASHICONS } from '../dashicons';
 import type { IconSource } from '../icon';
@@ -43,6 +43,10 @@ const emit = defineEmits< {
 	( event: 'update:iconUrl', value: string ): void;
 	( event: 'update:inline', value: string ): void;
 } >();
+
+// Names its radio group: radios that share a name are one tab stop, with
+// the arrow keys moving between them.
+const sourceName = useId();
 
 const DASHICON = /^dashicons-[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const BASE64_IMAGE = /^data:image\/(?:png|jpe?g|gif|webp|svg\+xml);base64,/i;
@@ -138,6 +142,7 @@ const inlinePreview = computed( () => {
 
 		<a-radio-group
 			:value="props.source"
+			:name="sourceName"
 			option-type="button"
 			:options="sources"
 			class="lkb-icon-field__sources"
