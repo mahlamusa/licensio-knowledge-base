@@ -399,9 +399,11 @@ class Licensio_KB_Article_Order {
     /**
      * The positions stored for one category.
      *
-     * One query for the IDs and one for their meta, however many articles
-     * the category holds. Trashed articles are included, so a merge or a
-     * save keeps their place for when they are restored.
+     * One query, however many articles the category holds, and no post meta
+     * cache priming: priming would load every meta row of every positioned
+     * article, which runs out of memory on a category with thousands of
+     * articles. Trashed articles are included, so a merge or a save keeps
+     * their place for when they are restored; auto-drafts are not.
      *
      * @since 1.0.0
      *
@@ -410,35 +412,30 @@ class Licensio_KB_Article_Order {
      * @return array<int, int> Article ID to position, lowest first.
      */
     public static function positions( $term_id ) {
-        $key = self::meta_key( $term_id );
-        $ids = get_posts(
-            array(
-                'post_type'              => Licensio_KB_Post_Types::POST_TYPE,
-                'post_status'            => array( 'any', 'trash' ),
-                'posts_per_page'         => -1,
-                'fields'                 => 'ids',
-                'meta_key'               => $key, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-                'orderby'                => array(
-                    'meta_value_num' => 'ASC',
-                    'ID'             => 'ASC',
-                ),
-                'no_found_rows'          => true,
-                'update_post_term_cache' => false,
-            )
+        global $wpdb;
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                'SELECT pm.post_id, pm.meta_value FROM %i pm INNER JOIN %i p ON p.ID = pm.post_id WHERE pm.meta_key = %s AND p.post_type = %s AND p.post_status <> %s ORDER BY CAST(pm.meta_value AS SIGNED) ASC, pm.post_id ASC',
+                $wpdb->postmeta,
+                $wpdb->posts,
+                self::meta_key( $term_id ),
+                Licensio_KB_Post_Types::POST_TYPE,
+                'auto-draft'
+            ),
+            ARRAY_N
         );
-
-        $ids = array_map( 'intval', is_array( $ids ) ? $ids : array() );
-
-        if ( empty( $ids ) ) {
-            return array();
-        }
-
-        update_meta_cache( 'post', $ids );
 
         $positions = array();
 
-        foreach ( $ids as $id ) {
-            $positions[ $id ] = (int) get_post_meta( $id, $key, true );
+        foreach ( is_array( $rows ) ? $rows : array() as $row ) {
+            $id = (int) $row[0];
+
+            // Every writer keeps one row per key; should a second exist, the first wins.
+            if ( ! isset( $positions[ $id ] ) ) {
+                $positions[ $id ] = (int) $row[1];
+            }
         }
 
         return $positions;

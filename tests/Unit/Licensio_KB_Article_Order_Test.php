@@ -29,7 +29,7 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
     private $meta = array();
 
     /**
-     * Back the meta functions with the in-memory store.
+     * Back the positions query and the meta writes with the in-memory store.
      *
      * @since 1.0.0
      *
@@ -46,28 +46,9 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
             }
         );
 
-        Functions\when( 'get_posts' )->alias(
-            function ( $args ) {
-                $key = $args['meta_key'];
-                $ids = array();
-
-                foreach ( $this->meta as $id => $values ) {
-                    if ( isset( $values[ $key ] ) ) {
-                        $ids[ $id ] = (int) $values[ $key ];
-                    }
-                }
-
-                asort( $ids );
-
-                return array_keys( $ids );
-            }
-        );
-
-        Functions\when( 'update_meta_cache' )->justReturn( array() );
-
-        Functions\when( 'get_post_meta' )->alias(
-            function ( $id, $key ) {
-                return isset( $this->meta[ $id ][ $key ] ) ? $this->meta[ $id ][ $key ] : '';
+        $GLOBALS['wpdb'] = new Licensio_KB_Order_WPDB( // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+            function () {
+                return $this->meta;
             }
         );
 
@@ -94,6 +75,19 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
                 return false;
             }
         );
+    }
+
+    /**
+     * Drop the $wpdb double.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    protected function tearDown(): void {
+        unset( $GLOBALS['wpdb'] );
+
+        parent::tearDown();
     }
 
     /**
@@ -518,6 +512,44 @@ class Licensio_KB_Article_Order_Test extends Licensio_KB_Test_Case {
         unset( $GLOBALS['wpdb'] );
 
         return $clauses;
+    }
+
+    /**
+     * The positions are read in one prepared query, without priming the meta cache.
+     *
+     * Priming loads every meta row of every positioned article, which runs
+     * out of memory on a category with thousands of articles.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_positions_are_read_in_one_query_without_the_meta_cache() {
+        Functions\expect( 'update_meta_cache' )->never();
+        Functions\expect( 'get_posts' )->never();
+        Functions\expect( 'get_post_meta' )->never();
+
+        $this->meta = array(
+            31 => array( 'licensio_order_7' => '20' ),
+            32 => array( 'licensio_order_7' => '10' ),
+            33 => array( 'licensio_order_8' => '5' ),
+            34 => array( 'licensio_order_7' => '20' ),
+        );
+
+        $this->assertSame(
+            array(
+                32 => 10,
+                31 => 20,
+                34 => 20,
+            ),
+            Licensio_KB_Article_Order::positions( 7 )
+        );
+
+        $reads = $GLOBALS['wpdb']->position_reads;
+
+        $this->assertCount( 1, $reads );
+        $this->assertStringContainsString( "FROM `wptests_postmeta` pm INNER JOIN `wptests_posts` p ON p.ID = pm.post_id WHERE pm.meta_key = 'licensio_order_7' AND p.post_type = 'licensio_article' AND p.post_status <> 'auto-draft'", $reads[0] );
+        $this->assertStringContainsString( 'ORDER BY CAST(pm.meta_value AS SIGNED) ASC, pm.post_id ASC', $reads[0] );
     }
 
     /**
