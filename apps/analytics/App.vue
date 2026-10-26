@@ -6,7 +6,8 @@ import { lkbTheme } from '../styles/theme';
  * Four reports over one selectable date range: the headline totals, the search
  * report with its documentation-gap list, the article report, and the feedback
  * summary. The reports show only once something has loaded: when the first
- * load fails there is an error with a Retry, not a page of zeros.
+ * load fails there is an error with a Retry, not a page of zeros, and a range
+ * with nothing recorded says how the numbers arrive.
  *
  * @since 1.0.0
  */
@@ -40,6 +41,21 @@ const trend = computed( () => [
 		points: store.overview?.view_trend ?? [],
 	},
 ] );
+
+/**
+ * Whether the loaded range holds no searches, views or votes at all, so the
+ * page explains its zeros instead of leaving them unexplained.
+ */
+const nothingRecorded = computed( () => {
+	const totals = store.overview?.totals;
+
+	return (
+		!! totals &&
+		0 === totals.total_searches &&
+		0 === totals.total_views &&
+		0 === totals.total_feedback
+	);
+} );
 
 /**
  * A date as `YYYY-MM-DD`, in the browser's local calendar.
@@ -130,6 +146,25 @@ onMounted( () => {
 					:message="
 						__(
 							'Analytics collection is switched off, so nothing new is being recorded.',
+							'licensio-knowledge-base'
+						)
+					"
+					class="licensio-kb-analytics__notice"
+				/>
+
+				<a-alert
+					v-else-if="nothingRecorded"
+					type="info"
+					show-icon
+					:message="
+						__(
+							'Nothing was recorded in this range yet.',
+							'licensio-knowledge-base'
+						)
+					"
+					:description="
+						__(
+							'Searches, article views and Was this helpful? votes are counted as visitors use the knowledge base. Pick a longer range, or check back once it has had visitors.',
 							'licensio-knowledge-base'
 						)
 					"
