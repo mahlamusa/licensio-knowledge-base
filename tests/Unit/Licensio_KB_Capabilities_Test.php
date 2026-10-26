@@ -456,6 +456,7 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
             'A site whose code changed without an activation must receive the capabilities before the menu and REST check them.'
         );
         $this->assertFalse( has_action( 'admin_init', array( 'Licensio_KB_Capabilities', 'add_capabilities' ) ), 'No grant on every admin request.' );
+        $this->assertNotFalse( has_filter( 'user_has_cap', array( 'Licensio_KB_Capabilities', 'managers_write_articles' ) ) );
         $this->assertNotFalse( has_filter( 'pre_insert_term', array( 'Licensio_KB_Capabilities', 'guard_term_creation' ) ) );
         $this->assertNotFalse( has_filter( 'rest_prepare_licensio_article', array( 'Licensio_KB_Capabilities', 'hide_term_creation' ) ) );
     }
@@ -565,6 +566,43 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
         $earlier = new WP_Error( 'earlier', 'Refused before.' );
 
         $this->assertSame( $earlier, $guard::guard_term_creation( $earlier, 'licensio_tag' ) );
+    }
+
+    /**
+     * A user holding the management capability by hand writes every article.
+     *
+     * A role editor grants `manage_licensio_kb` without the article
+     * capabilities; the user still manages articles, while a capability set
+     * on the role, including a denial, is kept.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_hand_granted_manager_holds_every_article_capability() {
+        $manager = Licensio_KB_Capabilities::managers_write_articles(
+            array(
+                'read'                            => true,
+                'manage_licensio_kb'              => true,
+                'delete_others_licensio_articles' => false,
+            )
+        );
+
+        foreach ( Licensio_KB_Capabilities::ARTICLE_CAPABILITIES as $capability ) {
+            $this->assertSame( 'delete_others_licensio_articles' !== $capability, $manager[ $capability ], $capability );
+        }
+
+        $writer = array(
+            'read'                   => true,
+            'edit_licensio_articles' => true,
+        );
+
+        $this->assertSame( $writer, Licensio_KB_Capabilities::managers_write_articles( $writer ), 'A writer gains nothing.' );
+        $this->assertSame(
+            array( 'manage_licensio_kb' => false ),
+            Licensio_KB_Capabilities::managers_write_articles( array( 'manage_licensio_kb' => false ) ),
+            'A denied manager gains nothing.'
+        );
     }
 
     /**

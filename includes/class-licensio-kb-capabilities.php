@@ -121,6 +121,9 @@ class Licensio_KB_Capabilities {
      * plugin changes the capability set and raises `CAPS_VERSION`. Even then
      * an explicit denial is kept.
      *
+     * Anyone holding `manage_licensio_kb`, however it was granted, also holds
+     * every article capability.
+     *
      * Creating a category or tag is refused for users who cannot manage the
      * knowledge base, whichever route asks, and the block editor is not
      * offered to create tags for them.
@@ -134,6 +137,7 @@ class Licensio_KB_Capabilities {
         add_filter( 'licensio_category_taxonomy_args', array( $this, 'filter_taxonomy_args' ) );
         add_filter( 'licensio_tag_taxonomy_args', array( $this, 'filter_taxonomy_args' ) );
         add_action( 'init', array( __CLASS__, 'maybe_add_capabilities' ), 1 );
+        add_filter( 'user_has_cap', array( __CLASS__, 'managers_write_articles' ) );
         add_filter( 'pre_insert_term', array( __CLASS__, 'guard_term_creation' ), 10, 2 );
         add_filter( 'rest_prepare_' . Licensio_KB_Post_Types::POST_TYPE, array( __CLASS__, 'hide_term_creation' ) );
     }
@@ -146,7 +150,9 @@ class Licensio_KB_Capabilities {
      * capabilities core gives them for posts, and nothing to manage.
      *
      * A role that manages the knowledge base, including one added through
-     * the filter, always holds every article capability too.
+     * the filter, always holds every article capability too; a role or user
+     * granted `manage_licensio_kb` by hand gets them through
+     * `managers_write_articles()`.
      *
      * @since 1.0.0 Adds the article capabilities and the author and contributor roles.
      *
@@ -414,6 +420,37 @@ class Licensio_KB_Capabilities {
         $args['capabilities'] = self::taxonomy_capabilities();
 
         return $args;
+    }
+
+    /**
+     * Give a user who manages the knowledge base every article capability.
+     *
+     * Hooked to `user_has_cap`. The readme lets a site grant
+     * `manage_licensio_kb` to any role or user with a role editor, and that
+     * grant never passes through `role_capabilities()`. Without this, such a
+     * manager could manage categories and tags but not open or edit a single
+     * article, and every route that moves articles between terms refused
+     * them. A capability explicitly set on the role or user, including a
+     * denial, is left as it is.
+     *
+     * @since 1.0.0
+     *
+     * @param array<string, bool> $allcaps The user's capabilities.
+     *
+     * @return array<string, bool> The capabilities, with the article ones added for a manager.
+     */
+    public static function managers_write_articles( $allcaps ) {
+        if ( ! is_array( $allcaps ) || empty( $allcaps[ self::CAPABILITY ] ) ) {
+            return $allcaps;
+        }
+
+        foreach ( self::ARTICLE_CAPABILITIES as $capability ) {
+            if ( ! isset( $allcaps[ $capability ] ) ) {
+                $allcaps[ $capability ] = true;
+            }
+        }
+
+        return $allcaps;
     }
 
     /**
