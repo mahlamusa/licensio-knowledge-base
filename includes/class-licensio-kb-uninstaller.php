@@ -14,15 +14,20 @@
  *   import log), the settings (which hold the
  *   article, category and tag slugs, so every permalink survives a delete and
  *   reinstall), the import options (the served redirect map, the resume
- *   cursors and the run reports) and the import URL map files. Deleting
+ *   cursors and the run reports), the category hierarchy cache core keeps
+ *   for the hierarchical category taxonomy, the rate-limit counters and the import URL map
+ *   files. Deleting
  *   support history or the redirects that keep old links alive, on a plugin
  *   delete that may well be an upgrade or a migration, is not recoverable;
  *   keeping it is. Kept options are switched to not autoload, so a site
  *   without the plugin does not load them on every request.
  * - Plugin state - the version markers, the visitor salt, the one-shot flags,
- *   the upgrade lock, the cron events and per-user admin preferences - is always
- *   removed, on every site of the network. A scheduled hook or a user meta row
- *   that outlives the plugin that owns it is pure residue.
+ *   the upgrade lock, the cron events, the knowledge base capability on every
+ *   role that holds it and per-user admin preferences - is always removed, on every site
+ *   of the network. A scheduled hook or a user meta row
+ *   that outlives the plugin that owns it is pure residue. Each site's stored
+ *   rewrite rules are deleted too, so core rebuilds them without the
+ *   knowledge base rules on the next request.
  *
  * Articles, categories and tags are never removed by uninstall.
  *
@@ -64,6 +69,7 @@ class Licensio_KB_Uninstaller {
      */
     const DATA_OPTIONS = array(
         Licensio_KB_Settings::OPTION_NAME,
+        Licensio_KB_Post_Types::TAXONOMY_CATEGORY . '_children',
     );
 
     /**
@@ -134,6 +140,12 @@ class Licensio_KB_Uninstaller {
      * turned on Delete everything on uninstall. Kept data options are switched
      * to not autoload.
      *
+     * The capabilities are removed in both modes, from every role of the site,
+     * including roles that were granted `manage_licensio_kb` by hand: a role
+     * that keeps it after the plugin is gone holds a capability nothing
+     * checks, and a later reinstall grants it afresh anyway. The stored
+     * rewrite rules are deleted in both modes as well.
+     *
      * @since 1.0.0
      *
      * @return void
@@ -160,6 +172,8 @@ class Licensio_KB_Uninstaller {
                 delete_option( $option );
             }
 
+            self::delete_rate_limit_transients();
+
             Licensio_KB_Import_Redirects::delete_directory();
         } else {
             wp_set_option_autoload_values( array_fill_keys( self::data_options(), false ) );
@@ -172,6 +186,15 @@ class Licensio_KB_Uninstaller {
         foreach ( self::CRON_HOOKS as $hook ) {
             wp_clear_scheduled_hook( $hook );
         }
+
+        Licensio_KB_Capabilities::remove_capabilities();
+
+        /*
+         * A network deactivation flushes the rewrite rules on the main site
+         * only, so every other site would keep the knowledge base rules after
+         * the plugin is deleted. Core rebuilds the option on the next request.
+         */
+        delete_option( 'rewrite_rules' );
 
         /*
          * Delete the key for every user. The users table is shared by the
@@ -193,6 +216,33 @@ class Licensio_KB_Uninstaller {
          * @param bool $deleted_data Whether the data was deleted: the tables, the data options and the URL map files.
          */
         do_action( 'licensio_uninstalled', $delete_data );
+    }
+
+    /**
+     * Delete the current site's REST rate-limit counters.
+     *
+     * Each counter is a transient named after a hash, so there is no list of
+     * names to delete one by one; the rows are matched by prefix instead. The
+     * prefix is LIKE-escaped because its underscores would otherwise match any
+     * character. With a persistent object cache the counters live in the cache
+     * rather than the options table, and expire there within their window.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public static function delete_rate_limit_transients() {
+        global $wpdb;
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- A one-off prefix delete on uninstall; there is no API to delete transients by prefix.
+        $wpdb->query(
+            $wpdb->prepare(
+                'DELETE FROM %i WHERE option_name LIKE %s OR option_name LIKE %s',
+                $wpdb->options,
+                $wpdb->esc_like( '_transient_' . Licensio_KB_REST_Controller::RATE_LIMIT_TRANSIENT_PREFIX ) . '%',
+                $wpdb->esc_like( '_transient_timeout_' . Licensio_KB_REST_Controller::RATE_LIMIT_TRANSIENT_PREFIX ) . '%'
+            )
+        );
     }
 
     /**

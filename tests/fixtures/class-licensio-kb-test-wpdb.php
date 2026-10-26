@@ -60,6 +60,14 @@ class Licensio_KB_Test_WPDB {
     public $postmeta = 'wptests_postmeta';
 
     /**
+     * The options table name.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    public $options = 'wptests_options';
+
+    /**
      * The last SQL error, always empty in the double.
      *
      * @since 1.0.0
@@ -298,6 +306,19 @@ class Licensio_KB_Test_WPDB {
      */
     public function show_errors() {
         return true;
+    }
+
+    /**
+     * Escape a string for a LIKE comparison, as `wpdb::esc_like()` does.
+     *
+     * @since 1.0.0
+     *
+     * @param string $text The text.
+     *
+     * @return string The escaped text.
+     */
+    public function esc_like( $text ) {
+        return addcslashes( (string) $text, '_%\\' );
     }
 
     /**
