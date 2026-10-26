@@ -7,9 +7,9 @@
  * `licensio-kb/taxonomy-category.php`.
  *
  * Everything between the theme's header and footer lives in
- * `category-body.php`, which the `[licensio_kb_view view="category"]`
- * shortcode renders too — that is how a block theme serves the same markup a
- * classic theme does, without a second copy of the design to keep in step.
+ * `category-body.php`, which the `licensio-kb/view` block renders too — that is
+ * how a block theme serves the same markup a classic theme does, without a
+ * second copy of the design to keep in step.
  *
  * @package Licensio_KB
  * @since   1.0.0 Redesigned to the page header layout and the sidebar-following column counts.

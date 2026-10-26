@@ -119,6 +119,7 @@ class Licensio_KB_Hero_Test extends Licensio_KB_Test_Case {
      * Point every template conditional at one view.
      *
      * @since 1.0.0
+     * @since 1.0.0 Scopes the search view to the article post type.
      *
      * @param string $view One of `single`, `category`, `tag`, `archive`, `search` or `` for none.
      *
@@ -152,6 +153,13 @@ class Licensio_KB_Hero_Test extends Licensio_KB_Test_Case {
         );
 
         Functions\when( 'is_search' )->justReturn( 'search' === $view );
+
+        // A knowledge base search is one scoped to the article post type.
+        Functions\when( 'get_query_var' )->alias(
+            function ( $name ) use ( $view ) {
+                return 'post_type' === $name && 'search' === $view ? Licensio_KB_Post_Types::POST_TYPE : '';
+            }
+        );
     }
 
     /**
@@ -319,12 +327,14 @@ class Licensio_KB_Hero_Test extends Licensio_KB_Test_Case {
      * Render templates/taxonomy-tag.php against one empty tag.
      *
      * @since 1.0.0
+     * @since 1.0.0 Added the view shortcode path.
      *
-     * @param string $description The term description.
+     * @param string $description   The term description.
+     * @param bool   $via_shortcode Whether to render through the view shortcode a block template uses.
      *
      * @return string The rendered markup.
      */
-    private function render_tag( $description = 'Everything filed under content.' ) {
+    private function render_tag( $description = 'Everything filed under content.', $via_shortcode = false ) {
         $this->stub_conditionals( 'tag' );
 
         $term = new WP_Term(
@@ -341,6 +351,10 @@ class Licensio_KB_Hero_Test extends Licensio_KB_Test_Case {
         Functions\when( 'get_queried_object' )->justReturn( $term );
         Functions\when( 'single_term_title' )->justReturn( 'Content' );
 
+        if ( $via_shortcode ) {
+            return $this->render_view( 'tag' );
+        }
+
         ob_start();
 
         include $this->plugin_template( 'taxonomy-tag' );
@@ -352,13 +366,20 @@ class Licensio_KB_Hero_Test extends Licensio_KB_Test_Case {
      * Render templates/search-results.php against an empty result set.
      *
      * @since 1.0.0
+     * @since 1.0.0 Added the view shortcode path.
+     *
+     * @param bool $via_shortcode Whether to render through the view shortcode a block template uses.
      *
      * @return string The rendered markup.
      */
-    private function render_search() {
+    private function render_search( $via_shortcode = false ) {
         $this->stub_conditionals( 'search' );
 
         Functions\when( 'get_search_query' )->justReturn( 'licence key' );
+
+        if ( $via_shortcode ) {
+            return $this->render_view( 'search' );
+        }
 
         ob_start();
 
@@ -514,6 +535,55 @@ class Licensio_KB_Hero_Test extends Licensio_KB_Test_Case {
                 'post_type'  => Licensio_KB_Post_Types::POST_TYPE,
             )
         );
+    }
+
+    /**
+     * Render a view body through the view shortcode a block template uses.
+     *
+     * @since 1.0.0
+     *
+     * @param string $view The view name the block template passes.
+     *
+     * @return string The rendered markup.
+     */
+    private function render_view( $view ) {
+        Functions\when( 'shortcode_atts' )->alias(
+            function ( $pairs, $atts ) {
+                return array_merge( $pairs, array_intersect_key( (array) $atts, $pairs ) );
+            }
+        );
+
+        // The view shortcode renders for block templates only.
+        Functions\when( 'wp_is_block_theme' )->justReturn( true );
+
+        $templates = new Licensio_KB_Templates( new Licensio_KB_Settings() );
+
+        return $templates->render_view_shortcode( array( 'view' => $view ) );
+    }
+
+    /**
+     * A block theme's tag and search views match the classic templates.
+     *
+     * The block templates render the same body files through the view
+     * shortcode, so the markup between the theme's header and footer is the
+     * same under either kind of theme.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_view_shortcode_renders_the_classic_tag_and_search_markup() {
+        $tag = $this->render_tag( 'Everything filed under content.', true );
+
+        $this->assertSame( $this->render_tag(), $tag );
+        $this->assertStringContainsString( 'class="licensio-kb__hero"', $tag );
+        $this->assertStringContainsString( 'licensio-kb licensio-kb--tag', $tag );
+
+        $search = $this->render_search( true );
+
+        $this->assertSame( $this->render_search(), $search );
+        $this->assertStringContainsString( 'class="licensio-kb__hero"', $search );
+        $this->assertStringContainsString( 'licensio-kb licensio-kb--search', $search );
     }
 
     /**

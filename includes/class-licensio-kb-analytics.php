@@ -254,7 +254,12 @@ class Licensio_KB_Analytics {
      * counted: they saw the password form, not the article. The view is
      * recorded once the right password has been entered.
      *
+     * Nothing is counted during a REST request either. The only article
+     * rendered there is the editor's preview of the knowledge base view
+     * block, which is an editor at work, not a reader.
+     *
      * @since 1.0.0
+     * @since 1.0.0 Skips REST requests.
      *
      * @param WP_Post|int|null $post The article being rendered.
      *
@@ -269,7 +274,7 @@ class Licensio_KB_Analytics {
             $article_id = 0;
         }
 
-        if ( $article_id <= 0 ) {
+        if ( $article_id <= 0 || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
             return false;
         }
 

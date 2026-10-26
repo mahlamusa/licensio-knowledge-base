@@ -245,7 +245,7 @@ class Licensio_KB_Block_Templates_Test extends Licensio_KB_Test_Case {
         $this->assertTrue( $single->has_theme_file );
         $this->assertFalse( $single->is_custom );
         $this->assertSame( 'Single Article', $single->title );
-        $this->assertStringContainsString( 'wp:post-content', $single->content );
+        $this->assertStringContainsString( '<!-- wp:licensio-kb/view {"view":"single"} /-->', $single->content );
     }
 
     /**
@@ -419,7 +419,7 @@ class Licensio_KB_Block_Templates_Test extends Licensio_KB_Test_Case {
 
         $this->assertInstanceOf( 'WP_Block_Template', $template );
         $this->assertSame( 'taxonomy-licensio_category', $template->slug );
-        $this->assertStringContainsString( '[licensio_kb_view view="category"]', $template->content );
+        $this->assertStringContainsString( '<!-- wp:licensio-kb/view {"view":"category"} /-->', $template->content );
     }
 
     /**
@@ -605,7 +605,7 @@ class Licensio_KB_Block_Templates_Test extends Licensio_KB_Test_Case {
         $template = $this->block_templates->build_template( 'single-licensio_article', 'wp_template' );
 
         $this->assertInstanceOf( 'WP_Block_Template', $template );
-        $this->assertStringContainsString( 'wp:post-content', $template->content );
+        $this->assertStringContainsString( '<!-- wp:licensio-kb/view {"view":"single"} /-->', $template->content );
         $this->assertNotSame( 'RESERIALIZED', $template->content );
     }
 
@@ -877,77 +877,62 @@ class Licensio_KB_Block_Templates_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * The redesigned views render the shared body through the view shortcode.
+     * The redesigned views render the shared body through the view block.
      *
-     * The archive and the category template no longer drive their own Query
-     * Loop: they render `[licensio_kb_view]`, which includes the same body
-     * template the classic layer includes, so a block theme and a classic
-     * theme serve the same markup.
+     * Every knowledge base template renders the `licensio-kb/view` block
+     * rather than building its own markup from blocks. The block includes the
+     * same body template the classic layer includes, so a block theme and a
+     * classic theme serve the same markup. For the single article that is
+     * what brings the breadcrumbs, the search field, the table of contents and
+     * the sidebar to a block theme; for the tag and search views, the hero.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_the_redesigned_views_render_the_shared_body_shortcode() {
+    public function test_the_redesigned_views_render_the_shared_body_block() {
         $views = array(
             'archive-licensio_article'   => 'archive',
             'taxonomy-licensio_category' => 'category',
+            'single-licensio_article'    => 'single',
+            'taxonomy-licensio_tag'      => 'tag',
+            'search-licensio_article'    => 'search',
         );
+
+        // Every shipped template is covered, so a new one cannot slip back to blocks unnoticed.
+        $this->assertEqualsCanonicalizing( array_keys( $this->block_templates->templates() ), array_keys( $views ) );
 
         foreach ( $views as $slug => $view ) {
             $template = $this->block_templates->build_template( $slug, 'wp_template' );
 
             $this->assertInstanceOf( 'WP_Block_Template', $template, $slug );
-            $this->assertStringContainsString( '[licensio_kb_view view="' . $view . '"]', $template->content, $slug );
+            $this->assertStringContainsString( '<!-- wp:licensio-kb/view {"view":"' . $view . '"} /-->', $template->content, $slug );
+            $this->assertSame( 1, substr_count( $template->content, '<!-- wp:licensio-kb/view ' ), $slug );
             $this->assertStringNotContainsString( '<!-- wp:query ', $template->content, $slug );
         }
     }
 
     /**
-     * The remaining listing templates drive a Query Loop over the article post type.
+     * No template renders its view through a shortcode.
+     *
+     * WordPress expands the shortcodes in a block template before it renders
+     * the blocks. A shortcode block then runs wpautop over the finished view
+     * markup, and on a single article the shortcode runs before core's own
+     * loop over the main query, so the body loops the article a second time.
+     * The view block renders inside that loop and gets no wpautop.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_the_listing_templates_drive_a_query_loop_over_articles() {
-        $listings = array(
-            'taxonomy-licensio_tag',
-            'search-licensio_article',
-        );
-
-        foreach ( $listings as $slug ) {
+    public function test_no_template_renders_its_view_through_a_shortcode() {
+        foreach ( array_keys( $this->block_templates->templates() ) as $slug ) {
             $template = $this->block_templates->build_template( $slug, 'wp_template' );
 
             $this->assertInstanceOf( 'WP_Block_Template', $template, $slug );
-            $this->assertStringContainsString( '<!-- wp:query ', $template->content, $slug );
-            $this->assertStringContainsString( '"postType":"licensio_article"', $template->content, $slug );
-            $this->assertStringContainsString( '<!-- wp:post-template -->', $template->content, $slug );
-        }
-    }
-
-    /**
-     * The templates that still open with the hero pull in the shared header part.
-     *
-     * The redesigned archive and category views dropped the part along with
-     * the hero band it carried; single, tag and search still open with it.
-     *
-     * @since 1.0.0
-     *
-     * @return void
-     */
-    public function test_every_template_pulls_in_the_shared_header_part() {
-        $with_part = array(
-            'single-' . Licensio_KB_Post_Types::POST_TYPE,
-            'taxonomy-' . Licensio_KB_Post_Types::TAXONOMY_TAG,
-            'search-' . Licensio_KB_Post_Types::POST_TYPE,
-        );
-
-        foreach ( $with_part as $slug ) {
-            $template = $this->block_templates->build_template( $slug, 'wp_template' );
-
-            $this->assertInstanceOf( 'WP_Block_Template', $template, $slug );
-            $this->assertStringContainsString( '"slug":"licensio-kb-header"', $template->content, $slug );
+            $this->assertStringNotContainsString( 'wp:shortcode', $template->content, $slug );
+            $this->assertStringNotContainsString( 'wp:html', $template->content, $slug );
+            $this->assertStringNotContainsString( '[licensio_kb_view', $template->content, $slug );
         }
     }
 }

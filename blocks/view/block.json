@@ -1,0 +1,27 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "licensio-kb/view",
+	"title": "Knowledge Base View",
+	"category": "licensio-kb",
+	"icon": "book",
+	"description": "The knowledge base layout for the page being viewed: the home, a category, a tag, an article or the search results. Used by the knowledge base templates.",
+	"keywords": [ "knowledge base", "template", "article", "layout" ],
+	"textdomain": "licensio-knowledge-base",
+	"supports": {
+		"html": false,
+		"customClassName": false,
+		"reusable": false,
+		"inserter": false
+	},
+	"attributes": {
+		"view": {
+			"type": "string",
+			"enum": [ "archive", "category", "single", "tag", "search" ],
+			"default": "archive"
+		}
+	},
+	"editorScript": "file:./index.js",
+	"style": "licensio-kb-blocks",
+	"editorStyle": [ "licensio-kb-blocks-editor", "licensio-kb-feedback" ]
+}

@@ -4,9 +4,9 @@
  *
  * The content half of the knowledge base archive: the page header, the divided
  * category grid and the sidebar. The classic template wraps it in the theme's
- * header and footer; the `[licensio_kb_view view="archive"]` shortcode renders
- * it inside a block template, so both template paradigms serve the same markup
- * and the same stylesheet. Override from a theme by copying this file to
+ * header and footer; the `licensio-kb/view` block renders it inside a block
+ * template, so both template paradigms serve the same markup and the same
+ * stylesheet. Override from a theme by copying this file to
  * `licensio-kb/archive-body.php`.
  *
  * The archive does not render the main loop. Its job is to point at the

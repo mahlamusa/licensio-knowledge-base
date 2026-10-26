@@ -177,6 +177,26 @@ class Licensio_KB_Analytics_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * A REST request records no view.
+     *
+     * The editor preview of the knowledge base view block renders an article
+     * through the REST block renderer. That is an editor at work, not a reader.
+     *
+     * @runInSeparateProcess
+     * @preserveGlobalState disabled
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_rest_request_records_no_article_view() {
+        define( 'REST_REQUEST', true );
+
+        $this->assertFalse( $this->analytics()->record_article_view( 42 ) );
+        $this->assertCount( 0, $this->wpdb->inserted_rows( 'licensio_article_views' ) );
+    }
+
+    /**
      * No column of any written row contains the request IP address.
      *
      * The whole differentiator in one assertion. It walks every value of every
