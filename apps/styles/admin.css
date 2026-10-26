@@ -288,6 +288,20 @@
 }
 
 /*
+ * A searchable select types into a bare input inside its own box; core's
+ * `input[type=search]` border and blue focus ring would draw a second box
+ * inside it.
+ */
+:is(.lkb-page, .ant-modal-wrap, .ant-popover) input.ant-select-selection-search-input,
+:is(.lkb-page, .ant-modal-wrap, .ant-popover) input.ant-select-selection-search-input:focus {
+	min-height: 0;
+	border: 0;
+	background: transparent;
+	box-shadow: none;
+	outline: 0;
+}
+
+/*
  * Fieldset legends. Ant's reset sizes a legend at 1.5em and its form styles
  * grey it with a rule underneath, so a group heading outranked the dialog
  * title or read like a disabled divider. A legend reads as the label of its
