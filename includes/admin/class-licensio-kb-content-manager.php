@@ -110,14 +110,26 @@ class Licensio_KB_Content_Manager {
     private $settings;
 
     /**
+     * The build asset loader, or null when the build is not checked.
+     *
+     * @since 1.0.0
+     * @var Licensio_KB_Assets|null
+     */
+    private $assets;
+
+    /**
      * Build the content manager.
      *
      * @since 1.0.0
      *
-     * @param Licensio_KB_Settings $settings The settings store.
+     * @param Licensio_KB_Settings    $settings The settings store.
+     * @param Licensio_KB_Assets|null $assets   The build asset loader, whose manifest
+     *                                          says whether the apps were built. Null
+     *                                          skips that check.
      */
-    public function __construct( Licensio_KB_Settings $settings ) {
+    public function __construct( Licensio_KB_Settings $settings, ?Licensio_KB_Assets $assets = null ) {
         $this->settings = $settings;
+        $this->assets   = $assets;
     }
 
     /**
@@ -166,7 +178,10 @@ class Licensio_KB_Content_Manager {
      * Whether the Vue apps replace the core screens on this request.
      *
      * True only when the content manager is active, the classic screens
-     * setting is off, and the `licensio_kb_use_content_manager` filter agrees.
+     * setting is off, the apps can load, and the
+     * `licensio_kb_use_content_manager` filter agrees. Without a build of the
+     * apps (and no dev server) the core screens stay, rather than redirecting
+     * to apps that never finish loading.
      *
      * @since 1.0.0
      *
@@ -181,6 +196,10 @@ class Licensio_KB_Content_Manager {
             return false;
         }
 
+        if ( ! $this->apps_built() ) {
+            return false;
+        }
+
         /**
          * Filter whether the content manager replaces the core screens.
          *
@@ -192,6 +211,32 @@ class Licensio_KB_Content_Manager {
          * @param bool $use_content_manager Whether to use the content manager. Default true.
          */
         return (bool) apply_filters( 'licensio_kb_use_content_manager', true );
+    }
+
+    /**
+     * Whether the Articles, Categories and Tags apps can load.
+     *
+     * True when the build manifest has a file for each app, or when the
+     * Vite dev server serves them.
+     *
+     * @since 1.0.0
+     *
+     * @return bool True when the apps can load, or when no asset loader was given.
+     */
+    private function apps_built() {
+        if ( null === $this->assets ) {
+            return true;
+        }
+
+        foreach ( array( Licensio_KB_Articles_Admin::APP_ENTRY, Licensio_KB_Categories_Admin::APP_ENTRY, Licensio_KB_Tags_Admin::APP_ENTRY ) as $entry ) {
+            $chunk = $this->assets->manifest_entry( $entry );
+
+            if ( empty( $chunk['file'] ) ) {
+                return $this->assets->is_hmr_enabled();
+            }
+        }
+
+        return true;
     }
 
     /**

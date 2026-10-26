@@ -144,6 +144,103 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * An asset loader whose manifest holds the given app entries.
+     *
+     * @since 1.0.0
+     *
+     * @param string[] $built The app entries the manifest has a file for.
+     * @param bool     $hmr   Whether the dev server serves the apps.
+     *
+     * @return Licensio_KB_Assets The asset loader.
+     */
+    private function assets( array $built, $hmr = false ) {
+        return new class( $built, $hmr ) extends Licensio_KB_Assets {
+
+            /**
+             * The app entries the manifest has a file for.
+             *
+             * @since 1.0.0
+             * @var string[]
+             */
+            private $built;
+
+            /**
+             * Whether the dev server serves the apps.
+             *
+             * @since 1.0.0
+             * @var bool
+             */
+            private $hmr;
+
+            /**
+             * Build the double.
+             *
+             * @since 1.0.0
+             *
+             * @param string[] $built The app entries the manifest has a file for.
+             * @param bool     $hmr   Whether the dev server serves the apps.
+             */
+            public function __construct( array $built, $hmr ) {
+                $this->built = $built;
+                $this->hmr   = $hmr;
+            }
+
+            /**
+             * The manifest chunk of an entry.
+             *
+             * @since 1.0.0
+             *
+             * @param string $entry The entry.
+             *
+             * @return array<string, mixed> The chunk, or an empty array when it was not built.
+             */
+            public function manifest_entry( $entry ) {
+                return in_array( $entry, $this->built, true ) ? array( 'file' => 'apps/x.js' ) : array();
+            }
+
+            /**
+             * Whether the dev server serves the apps.
+             *
+             * @since 1.0.0
+             *
+             * @return bool The configured answer.
+             */
+            public function is_hmr_enabled() {
+                return $this->hmr;
+            }
+        };
+    }
+
+    /**
+     * Without a build of every app the core screens stay, unless the dev server serves them.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_missing_app_build_keeps_the_core_screens() {
+        $apps = array( 'apps/articles/index.ts', 'apps/categories/index.ts', 'apps/tags/index.ts' );
+
+        $this->assertTrue( ( new Licensio_KB_Content_Manager( $this->settings(), $this->assets( $apps ) ) )->enabled() );
+        $this->assertFalse( ( new Licensio_KB_Content_Manager( $this->settings(), $this->assets( array() ) ) )->enabled() );
+        $this->assertFalse( ( new Licensio_KB_Content_Manager( $this->settings(), $this->assets( array_slice( $apps, 0, 2 ) ) ) )->enabled() );
+        $this->assertTrue( ( new Licensio_KB_Content_Manager( $this->settings(), $this->assets( array(), true ) ) )->enabled() );
+    }
+
+    /**
+     * Without a build the core menu items stay.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_missing_app_build_keeps_the_core_menu_items() {
+        Functions\expect( 'remove_submenu_page' )->never();
+
+        ( new Licensio_KB_Content_Manager( $this->settings(), $this->assets( array() ) ) )->remove_core_menu_items();
+    }
+
+    /**
      * The REST controllers, the menu removal and the redirects are hooked.
      *
      * Hooked whatever the setting says: the callbacks read the escape hatch

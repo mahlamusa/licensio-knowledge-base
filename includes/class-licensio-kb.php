@@ -259,7 +259,7 @@ final class Licensio_KB {
          * the category delete hook must work for REST and WP-CLI requests too.
          * The content manager stays inert until it is switched on.
          */
-        $this->content_manager = new Licensio_KB_Content_Manager( $this->settings );
+        $this->content_manager = new Licensio_KB_Content_Manager( $this->settings, $this->assets );
         $this->term_operations = new Licensio_KB_Term_Operations();
 
         /*
@@ -665,7 +665,7 @@ final class Licensio_KB {
      */
     public function content_manager() {
         if ( ! $this->content_manager instanceof Licensio_KB_Content_Manager ) {
-            $this->content_manager = new Licensio_KB_Content_Manager( $this->settings() );
+            $this->content_manager = new Licensio_KB_Content_Manager( $this->settings(), $this->assets() );
         }
 
         return $this->content_manager;
