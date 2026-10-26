@@ -218,7 +218,10 @@ test.describe( 'Articles app', () => {
 				hasText: `Entities <b>${ stamp }</b> & more`,
 			} );
 
-			await expect( row, 'The list shows the title as text.' ).toBeVisible();
+			await expect(
+				row,
+				'The list shows the title as text.'
+			).toBeVisible();
 
 			await row.getByRole( 'button', { name: 'Quick edit' } ).click();
 
@@ -244,7 +247,9 @@ test.describe( 'Articles app', () => {
 					'licensio_articles/' +
 					postId;
 				const response = await fetch(
-					base + ( base.includes( '?' ) ? '&' : '?' ) + 'context=edit',
+					base +
+						( base.includes( '?' ) ? '&' : '?' ) +
+						'context=edit',
 					{
 						headers: { 'X-WP-Nonce': config.nonce },
 						credentials: 'same-origin',
