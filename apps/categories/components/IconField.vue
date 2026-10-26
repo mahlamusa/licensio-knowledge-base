@@ -147,7 +147,7 @@ const inlinePreview = computed( () => {
 			:help="inlineError || undefined"
 			:extra="
 				__(
-					'Paste SVG markup, or a Base64 PNG, JPEG, GIF, WebP or SVG image starting with data:image/. SVG is cleaned on save, so the preview after saving shows what was kept. An SVG drawn with currentColor follows the knowledge base colour.',
+					'Paste SVG markup, or a Base64 PNG, JPEG, GIF, WebP or SVG image that starts with data:image/. Unsafe SVG parts are removed when you save.',
 					'licensio-knowledge-base'
 				)
 			"
@@ -230,7 +230,6 @@ const inlinePreview = computed( () => {
 	padding: 0;
 	border: 0;
 }
-
 
 .lkb-icon-field__sources {
 	margin-bottom: 16px;

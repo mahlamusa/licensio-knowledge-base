@@ -163,7 +163,13 @@ async function remove(): Promise< void > {
 <template>
 	<a-modal
 		:open="props.open"
-		:title="__( 'Delete category', 'licensio-knowledge-base' )"
+		:title="
+			sprintf(
+				/* translators: %s: category name. */
+				__( 'Delete “%s”', 'licensio-knowledge-base' ),
+				props.category?.name ?? ''
+			)
+		"
 		wrap-class-name="lkb-delete-dialog"
 		:keyboard="false"
 		@cancel="emit( 'close' )"
