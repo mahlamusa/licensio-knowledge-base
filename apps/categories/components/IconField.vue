@@ -101,7 +101,7 @@ const inlinePreview = computed( () => {
 
 <template>
 	<fieldset class="lkb-icon-field">
-		<legend class="lkb-icon-field__legend">
+		<legend>
 			{{ __( 'Icon', 'licensio-knowledge-base' ) }}
 		</legend>
 
@@ -231,11 +231,6 @@ const inlinePreview = computed( () => {
 	border: 0;
 }
 
-.lkb-icon-field__legend {
-	margin-bottom: 8px;
-	padding: 0;
-	font-size: 14px;
-}
 
 .lkb-icon-field__sources {
 	margin-bottom: 16px;
