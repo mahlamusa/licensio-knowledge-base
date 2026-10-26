@@ -181,10 +181,6 @@ async function moveCategory(): Promise< void > {
 </template>
 
 <style scoped>
-.lkb-dialog__error {
-	margin-bottom: var( --lkb-gap );
-}
-
 .lkb-dialog__group {
 	margin: 0;
 	padding: 0;

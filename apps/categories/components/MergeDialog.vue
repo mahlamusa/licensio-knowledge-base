@@ -266,10 +266,6 @@ async function merge(): Promise< void > {
 </template>
 
 <style scoped>
-.lkb-dialog__error {
-	margin-bottom: var( --lkb-gap );
-}
-
 .lkb-dialog__footer {
 	display: flex;
 	justify-content: flex-end;

@@ -189,9 +189,3 @@ async function merge(): Promise< void > {
 		</template>
 	</a-modal>
 </template>
-
-<style scoped>
-.lkb-dialog__error {
-	margin-bottom: var( --lkb-gap );
-}
-</style>

@@ -544,14 +544,6 @@ onMounted( () => {
 
 /* ── Table ───────────────────────────────────────────────── */
 
-.lkb-tablecard {
-	overflow: hidden;
-	border: 1px solid var( --lkb-border-wp );
-	border-radius: var( --lkb-radius );
-	background: var( --lkb-surface );
-	box-shadow: var( --lkb-shadow-sm );
-}
-
 .licensio-kb-inbox__comment {
 	color: var( --lkb-ink-muted );
 }

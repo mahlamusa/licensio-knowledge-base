@@ -530,14 +530,6 @@ const expandedKeys = computed( () =>
 </template>
 
 <style scoped>
-.lkb-tablecard {
-	overflow: hidden;
-	border: 1px solid var( --lkb-border-wp );
-	border-radius: var( --lkb-radius );
-	background: var( --lkb-surface );
-	box-shadow: var( --lkb-shadow-sm );
-}
-
 /*
  * Core's title cell is 13px with a 1.3em line height, so the 14px title link
  * and the row actions under it sit on 16.9px lines, as on the Posts screen.

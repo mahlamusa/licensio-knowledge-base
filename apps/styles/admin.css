@@ -3,8 +3,10 @@
  *
  * Imported by every admin app so the three screens frame identically. Holds
  * only what is common: the page ground, the content measure, the page title,
- * the boot placeholder, the filter row, bulk bar, cells and row actions of
- * the list screens, and the two-column layout of the term screens.
+ * the boot placeholder, the filter row, bulk bar, table box, cells and row
+ * actions of the list screens, the two-column layout of the term screens,
+ * the dialog error, and the text inputs and fieldset legends kept clear of
+ * wp-admin's own form styles.
  * Anything specific to one screen stays in that screen.
  *
  * The frame the applications mount into is printed by
@@ -223,6 +225,82 @@
 	.lkb-rowactions {
 		opacity: 1;
 	}
+}
+
+/*
+ * The white box round a list screen's table (Articles, Tags, Feedback).
+ */
+.lkb-tablecard {
+	overflow: hidden;
+	border: 1px solid var(--lkb-border-wp);
+	border-radius: var(--lkb-radius);
+	background: var(--lkb-surface);
+	box-shadow: var(--lkb-shadow-sm);
+}
+
+/* A dialog's request error, above its fields. */
+.lkb-dialog__error {
+	margin-bottom: var(--lkb-gap);
+}
+
+/*
+ * Core form styles kept out of Ant Design's text inputs.
+ *
+ * wp-admin's forms.css styles every `input[type=text]` with a grey border, a
+ * 40px minimum height and a blue focus ring, and its selector outranks Ant
+ * Design's `.ant-input`. Text inputs therefore stood 40px tall with a dark
+ * border beside 32px selects and buttons, and an input inside a clearable or
+ * search wrapper grew the wrapper. These rules give the inputs back the look
+ * the theme gives every other control: the shared border, the accent on hover
+ * and focus, and the status colours untouched. They cover the screens and
+ * their dialogs and popovers, which Ant Design renders outside the screen.
+ * Native date and colour inputs are left to core.
+ */
+:is(.lkb-page, .ant-modal-wrap, .ant-popover) input.ant-input {
+	min-height: 0;
+	padding: 5px 11px;
+	border-radius: var(--lkb-radius);
+	background-color: var(--lkb-surface);
+	color: var(--lkb-ink);
+	line-height: 20px;
+	box-shadow: none;
+}
+
+:is(.lkb-page, .ant-modal-wrap, .ant-popover) input.ant-input:not([class*="ant-input-status-"]) {
+	border-color: var(--lkb-border);
+}
+
+:is(.lkb-page, .ant-modal-wrap, .ant-popover) input.ant-input:not([class*="ant-input-status-"]):is(:hover, :focus) {
+	border-color: var(--lkb-accent);
+}
+
+:is(.lkb-page, .ant-modal-wrap, .ant-popover) input.ant-input:focus {
+	outline: 0;
+	box-shadow: 0 0 0 2px color-mix(in srgb, var(--lkb-accent) 15%, transparent);
+}
+
+/* Inside a clearable or search wrapper the wrapper draws the box, not the input. */
+:is(.lkb-page, .ant-modal-wrap, .ant-popover) .ant-input-affix-wrapper > input.ant-input {
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+}
+
+/*
+ * Fieldset legends. Ant's reset sizes a legend at 1.5em and its form styles
+ * grey it with a rule underneath, so a group heading outranked the dialog
+ * title or read like a disabled divider. A legend reads as the label of its
+ * group.
+ */
+:is(.lkb-page, .ant-modal-wrap, .ant-popover) fieldset > legend {
+	margin-bottom: 8px;
+	padding: 0;
+	border: 0;
+	color: var(--lkb-ink);
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1.5;
 }
 
 /*

@@ -500,14 +500,6 @@ watch(
 </template>
 
 <style scoped>
-.lkb-tablecard {
-	overflow: hidden;
-	border: 1px solid var( --lkb-border-wp );
-	border-radius: var( --lkb-radius );
-	background: var( --lkb-surface );
-	box-shadow: var( --lkb-shadow-sm );
-}
-
 /*
  * Ant lets cell text break anywhere, which on a phone splits a slug letter by
  * letter. Slugs break only at their hyphens, and the table scrolls inside

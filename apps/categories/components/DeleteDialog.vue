@@ -309,10 +309,6 @@ async function remove(): Promise< void > {
 </template>
 
 <style scoped>
-.lkb-dialog__error {
-	margin-bottom: var( --lkb-gap );
-}
-
 .lkb-dialog__group {
 	margin: 0 0 var( --lkb-gap );
 	padding: 0;
