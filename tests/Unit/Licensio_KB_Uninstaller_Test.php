@@ -662,6 +662,7 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
             $this->assertSame( array( 'user', 0, 'licensio_kb_article_list_prefs', '', true ), $call );
         }
     }
+
     /**
      * The knowledge base capabilities are removed whatever the data setting says.
      *

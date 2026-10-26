@@ -72,14 +72,6 @@ class Licensio_KB_Uninstaller {
     );
 
     /**
-     * The transient name prefix the REST rate-limit counters are stored under.
-     *
-     * @since 1.0.0
-     * @var string
-     */
-    const RATE_LIMIT_TRANSIENT_PREFIX = 'licensio_rl_';
-
-    /**
      * Every cron hook the plugin schedules, cleared on every site.
      *
      * Deactivation clears them too, but a network deactivation runs only on
@@ -237,8 +229,8 @@ class Licensio_KB_Uninstaller {
             $wpdb->prepare(
                 'DELETE FROM %i WHERE option_name LIKE %s OR option_name LIKE %s',
                 $wpdb->options,
-                $wpdb->esc_like( '_transient_' . self::RATE_LIMIT_TRANSIENT_PREFIX ) . '%',
-                $wpdb->esc_like( '_transient_timeout_' . self::RATE_LIMIT_TRANSIENT_PREFIX ) . '%'
+                $wpdb->esc_like( '_transient_' . Licensio_KB_REST_Controller::RATE_LIMIT_TRANSIENT_PREFIX ) . '%',
+                $wpdb->esc_like( '_transient_timeout_' . Licensio_KB_REST_Controller::RATE_LIMIT_TRANSIENT_PREFIX ) . '%'
             )
         );
     }
