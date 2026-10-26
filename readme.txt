@@ -155,6 +155,10 @@ Administrators and editors. Both are given the `manage_licensio_kb` capability o
 
 Yes, the same way they write posts. Authors create, edit, publish and delete their own articles; contributors write their own drafts and submit them for review. Both can file articles under existing categories and tags, but not create new ones. In Knowledge Base > All Articles they see only their own articles. Categories, Tags, Settings, Tools, Analytics and Feedback stay with administrators and editors. The article capabilities (`edit_licensio_articles`, `publish_licensio_articles` and the rest) can be changed per role with any role editor.
 
+= Can a filter turn the All Articles, Categories and Tags apps back on? =
+
+No. The `licensio_kb_use_content_manager` filter can only switch the apps off. When **Classic screens** is turned on under **Knowledge Base > Settings > General**, the setting wins and the core screens stay, whatever the filter returns.
+
 = Is the plugin translatable? =
 
 Yes. Every string is translatable under the `licensio-knowledge-base` text domain, and a `.pot` file ships in `languages/`.

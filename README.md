@@ -423,7 +423,7 @@ It cannot be a module: module scripts are always deferred and execute after ever
 | `licensio_settings_registry`, `licensio_settings` | filter | Extend or override settings. |
 | `licensio_settings_schema` | filter | The groups and fields the settings screen renders itself from. |
 | `licensio_admin_menu_pages` | filter | Register a page under the Knowledge Base menu. |
-| `licensio_kb_use_content_manager` | filter | Return false to keep the core article list and category and tag screens instead of the All Articles, Categories and Tags apps. The **Classic screens** setting does the same. Either way the core menu items come back, nothing redirects, and the apps stay reachable at `admin.php?page=licensio-kb-{articles,categories,tags}`. |
+| `licensio_kb_use_content_manager` | filter | Return false to keep the core article list and category and tag screens instead of the All Articles, Categories and Tags apps. The **Classic screens** setting does the same, and wins: the filter can only switch the apps off, so returning true never brings them back while that setting is on. Either way the core menu items come back, nothing redirects, and the apps stay reachable at `admin.php?page=licensio-kb-{articles,categories,tags}`. |
 | `licensio_article_post_type_args`, `licensio_category_taxonomy_args`, `licensio_tag_taxonomy_args` | filter | Content model registration arguments. |
 | `licensio_supports_fulltext` | filter | Override the FULLTEXT capability probe. |
 | `licensio_visitor_ip` | filter | Supply the client IP behind a trusted proxy. Hashed immediately, never stored. |

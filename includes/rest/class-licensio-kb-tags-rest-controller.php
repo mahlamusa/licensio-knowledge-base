@@ -857,9 +857,12 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
      * Turn tags into categories.
      *
      * For each tag: the category with the tag's slug is reused if there is
-     * one, wherever it sits in the tree, and is left where it is. Otherwise a
-     * category is created under `parent` with the tag's name, slug and
-     * description. Every article with the tag moves to the category, through
+     * one, wherever it sits in the tree, and is left where it is. Failing
+     * that, the child of `parent` with the tag's name is reused. Both are
+     * intended: a convert never makes a second category with the same slug,
+     * or with the same name under the same parent, and joins the tag's
+     * articles to the existing one instead. Otherwise a category is created
+     * under `parent` with the tag's name, slug and description. Every article with the tag moves to the category, through
      * `Licensio_KB_Term_Operations::move_across_taxonomies()`, then the tag is
      * deleted. A tag that fails is kept as it was, and reported as failed.
      *

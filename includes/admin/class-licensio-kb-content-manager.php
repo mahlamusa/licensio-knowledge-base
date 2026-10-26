@@ -206,6 +206,10 @@ class Licensio_KB_Content_Manager {
          * Return false to keep the core article, category and tag screens.
          * The Vue apps stay reachable by URL either way.
          *
+         * The filter can only switch the apps off. It runs only while the
+         * Classic screens setting is off, so returning true cannot bring the
+         * apps back over that setting: the setting always wins.
+         *
          * @since 1.0.0
          *
          * @param bool $use_content_manager Whether to use the content manager. Default true.
