@@ -30,14 +30,6 @@ class Licensio_KB_Order_WPDB extends Licensio_KB_Test_WPDB {
     private $write;
 
     /**
-     * The values bound by the last prepare() call.
-     *
-     * @since 1.0.0
-     * @var array<int, mixed>
-     */
-    private $bound = array();
-
-    /**
      * The positions statements answered, in order.
      *
      * @since 1.0.0
@@ -84,7 +76,7 @@ class Licensio_KB_Order_WPDB extends Licensio_KB_Test_WPDB {
     }
 
     /**
-     * Interpolate a statement and remember the values bound to it.
+     * Interpolate a statement.
      *
      * Takes the values as arguments or as one array, as `wpdb::prepare()` does.
      *
@@ -100,16 +92,13 @@ class Licensio_KB_Order_WPDB extends Licensio_KB_Test_WPDB {
             $args = $args[0];
         }
 
-        $this->bound = $args;
-
         return parent::prepare( $query, ...$args );
     }
 
     /**
      * The rows of a positions statement, sorted as the server sorts them.
      *
-     * The statement binds the post meta table, the posts table, the meta
-     * key, the post type and the excluded status, in that order. Any other
+     * The meta key is read from the interpolated statement. Any other
      * statement is answered by the parent double.
      *
      * @since 1.0.0
@@ -126,7 +115,9 @@ class Licensio_KB_Order_WPDB extends Licensio_KB_Test_WPDB {
 
         $this->position_reads[] = (string) $query;
 
-        $key  = (string) $this->bound[2];
+        preg_match( "/pm\\.meta_key = '([^']*)'/", (string) $query, $matches );
+
+        $key  = $matches[1];
         $rows = array();
 
         foreach ( call_user_func( $this->meta ) as $id => $values ) {

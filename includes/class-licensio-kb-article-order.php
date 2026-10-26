@@ -561,12 +561,15 @@ class Licensio_KB_Article_Order {
     /**
      * Write order keys in batches.
      *
-     * Writes `INSERT_BATCH` rows per statement. With `$replace`, the
-     * articles' existing rows for the key are deleted first, batch by batch,
-     * inside one transaction that is rolled back if a statement fails, so
-     * the previous order stays whole. Then drops those articles' post meta
-     * cache and bumps the posts cache version once, as `update_post_meta()`
-     * would for each.
+     * Writes `INSERT_BATCH` rows per statement. With `$replace`, each batch's
+     * existing rows for the key are deleted first, and every statement runs
+     * in one transaction that is rolled back if one fails, so a failed save
+     * leaves the previous order whole. The transaction is safe on its own:
+     * the save is not called inside another transaction, and on a table
+     * without transactions (MyISAM) the statements are no-ops and the writes
+     * simply apply as they run. A merge only adds rows, so it needs none.
+     * Then drops the articles' post meta cache and bumps the posts cache
+     * version once, as `update_post_meta()` would for each.
      *
      * @since 1.0.0
      *
@@ -588,35 +591,36 @@ class Licensio_KB_Article_Order {
         }
 
         foreach ( array_chunk( $positions, self::INSERT_BATCH, true ) as $batch ) {
-            $ids    = array_map( 'intval', array_keys( $batch ) );
+            $written = true;
+
+            if ( $replace ) {
+                $ids = array_keys( $batch );
+
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                $written = false !== $wpdb->query(
+                    $wpdb->prepare(
+                        'DELETE FROM %i WHERE meta_key = %s AND post_id IN ( ' . implode( ', ', array_fill( 0, count( $ids ), '%d' ) ) . ' )', // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- One generated %d per article.
+                        array_merge( array( $wpdb->postmeta, $key ), $ids )
+                    )
+                );
+            }
+
             $values = array( $wpdb->postmeta );
 
             foreach ( $batch as $article_id => $position ) {
-                $values[] = (int) $article_id;
+                $values[] = $article_id;
                 $values[] = $key;
                 $values[] = (string) $position;
             }
 
-            $rows = implode( ', ', array_fill( 0, count( $batch ), '( %d, %s, %s )' ) );
-
-            // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- $rows holds only placeholders, one triple per article.
-            $insert = $wpdb->prepare( "INSERT INTO %i ( post_id, meta_key, meta_value ) VALUES {$rows}", $values );
-            // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
-
-            $written = true;
-
-            if ( $replace ) {
-                $delete = $wpdb->prepare(
-                    'DELETE FROM %i WHERE meta_key = %s AND post_id IN ( ' . implode( ', ', array_fill( 0, count( $ids ), '%d' ) ) . ' )',
-                    array_merge( array( $wpdb->postmeta, $key ), $ids )
-                );
-
-                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Prepared above.
-                $written = false !== $wpdb->query( $delete );
-            }
-
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Prepared above.
-            $written = $written && false !== $wpdb->query( $insert );
+            // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- The VALUES list holds only placeholders, one triple per article.
+            $written = $written && false !== $wpdb->query(
+                $wpdb->prepare(
+                    'INSERT INTO %i ( post_id, meta_key, meta_value ) VALUES ' . implode( ', ', array_fill( 0, count( $batch ), '( %d, %s, %s )' ) ),
+                    $values
+                )
+            );
+            // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 
             if ( $replace && ! $written ) {
                 $wpdb->query( 'ROLLBACK' ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
