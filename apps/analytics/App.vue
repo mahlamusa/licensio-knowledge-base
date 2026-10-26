@@ -5,14 +5,15 @@ import { lkbTheme } from '../styles/theme';
  *
  * Four reports over one selectable date range: the headline totals, the search
  * report with its documentation-gap list, the article report, and the feedback
- * summary.
+ * summary. The reports show only once something has loaded: when the first
+ * load fails there is an error with a Retry, not a page of zeros.
  *
  * @since 1.0.0
  */
 
 import { computed, onMounted, ref } from 'vue';
 import { config } from './api';
-import { __ } from '../components/i18n';
+import { __, _n, sprintf } from '../components/i18n';
 import { useAnalyticsStore } from './store';
 import ArticleTable from './components/ArticleTable.vue';
 import SearchTable from './components/SearchTable.vue';
@@ -110,7 +111,17 @@ onMounted( () => {
 					show-icon
 					:message="store.error"
 					class="licensio-kb-analytics__notice"
-				/>
+				>
+					<template #action>
+						<a-button
+							size="small"
+							:loading="store.loading"
+							@click="store.load()"
+						>
+							{{ __( 'Retry', 'licensio-knowledge-base' ) }}
+						</a-button>
+					</template>
+				</a-alert>
 
 				<a-alert
 					v-else-if="store.overview && ! store.collecting"
@@ -142,18 +153,39 @@ onMounted( () => {
 						:key="days"
 						@click="applyPreset( days )"
 					>
-						{{ days }} {{ __( 'days', 'licensio-knowledge-base' ) }}
+						{{
+							sprintf(
+								/* translators: %d: The number of days the preset covers. */
+								_n(
+									'%d day',
+									'%d days',
+									days,
+									'licensio-knowledge-base'
+								),
+								days
+							)
+						}}
 					</a-button>
 					<span class="licensio-kb-analytics__retention">
 						{{
-							__( 'Rows are kept for', 'licensio-knowledge-base' )
+							sprintf(
+								/* translators: %d: How many days analytics rows are kept. */
+								_n(
+									'Rows are kept for %d day.',
+									'Rows are kept for %d days.',
+									settings.retentionDays,
+									'licensio-knowledge-base'
+								),
+								settings.retentionDays
+							)
 						}}
-						{{ settings.retentionDays }}
-						{{ __( 'days.', 'licensio-knowledge-base' ) }}
 					</span>
 				</div>
 
-				<a-spin :spinning="store.loading">
+				<a-spin
+					v-if="store.overview || store.loading"
+					:spinning="store.loading"
+				>
 					<a-row :gutter="16" class="licensio-kb-analytics__cards">
 						<a-col :span="6">
 							<a-card>

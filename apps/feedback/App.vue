@@ -187,7 +187,17 @@ onMounted( () => {
 					show-icon
 					:message="store.error"
 					class="licensio-kb-inbox__error"
-				/>
+				>
+					<template #action>
+						<a-button
+							size="small"
+							:loading="store.loading"
+							@click="store.load()"
+						>
+							{{ __( 'Retry', 'licensio-knowledge-base' ) }}
+						</a-button>
+					</template>
+				</a-alert>
 
 				<a-alert
 					v-if="articleId > 0"

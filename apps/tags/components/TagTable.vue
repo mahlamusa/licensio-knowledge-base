@@ -376,16 +376,20 @@ watch(
 				showSizeChanger: false,
 			}"
 			:locale="{
-				emptyText:
-					store.unused || store.search || store.include.length
-						? __(
-								'No tags match these filters.',
-								'licensio-knowledge-base'
-						  )
-						: __(
-								'No tags yet. Add your first tag above.',
-								'licensio-knowledge-base'
-						  ),
+				emptyText: store.error
+					? __(
+							'The tags could not be loaded.',
+							'licensio-knowledge-base'
+					  )
+					: store.unused || store.search || store.include.length
+					? __(
+							'No tags match these filters.',
+							'licensio-knowledge-base'
+					  )
+					: __(
+							'No tags yet. Add your first tag above.',
+							'licensio-knowledge-base'
+					  ),
 			}"
 			@change="onChange"
 		>
