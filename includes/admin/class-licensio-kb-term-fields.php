@@ -428,6 +428,7 @@ class Licensio_KB_Term_Fields {
             'licensio_order'    => array( Licensio_KB_Term_Meta::META_ORDER, array( 'Licensio_KB_Term_Meta', 'sanitize_order' ) ),
         );
 
+        // Sanitised values by meta key.
         $values = array();
 
         foreach ( $fields as $input => $field ) {
@@ -435,29 +436,27 @@ class Licensio_KB_Term_Fields {
                 continue;
             }
 
-            $raw              = wp_unslash( $_POST[ $input ] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized by the callback below.
-            $values[ $input ] = call_user_func( $field[1], $raw );
+            $raw                 = wp_unslash( $_POST[ $input ] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized by the callback below.
+            $values[ $field[0] ] = call_user_func( $field[1], $raw );
         }
 
         $winner = self::winning_icon( $values );
 
         if ( '' !== $winner ) {
             $cleared = array(
-                'licensio_icon'      => '',
-                'licensio_icon_svg'  => '',
-                'licensio_icon_id'   => 0,
-                'licensio_icon_data' => '',
+                Licensio_KB_Term_Meta::META_ICON      => '',
+                Licensio_KB_Term_Meta::META_ICON_SVG  => '',
+                Licensio_KB_Term_Meta::META_ICON_ID   => 0,
+                Licensio_KB_Term_Meta::META_ICON_DATA => '',
             );
 
             unset( $cleared[ $winner ] );
             $values = array_merge( $values, $cleared );
-
-            $fields['licensio_icon_data'] = array( Licensio_KB_Term_Meta::META_ICON_DATA );
         }
 
-        foreach ( $values as $input => $value ) {
+        foreach ( $values as $meta_key => $value ) {
             // update_term_meta() unslashes the value, and it was unslashed above already.
-            update_term_meta( (int) $term_id, $fields[ $input ][0], wp_slash( $value ) );
+            update_term_meta( (int) $term_id, $meta_key, wp_slash( $value ) );
         }
     }
 
@@ -466,21 +465,15 @@ class Licensio_KB_Term_Fields {
      *
      * @since 1.0.0
      *
-     * @param array<string, mixed> $values The sanitised posted values, by input name.
+     * @param array<string, mixed> $values The sanitised posted values, by meta key.
      *
-     * @return string `licensio_icon_svg`, `licensio_icon_id` or `licensio_icon`, or an empty string when no icon was posted.
+     * @return string The meta key of the inline SVG, uploaded icon or Dashicon, or an empty string when no icon was posted.
      */
     private static function winning_icon( array $values ) {
-        if ( isset( $values['licensio_icon_svg'] ) && '' !== $values['licensio_icon_svg'] ) {
-            return 'licensio_icon_svg';
-        }
-
-        if ( ! empty( $values['licensio_icon_id'] ) ) {
-            return 'licensio_icon_id';
-        }
-
-        if ( isset( $values['licensio_icon'] ) && '' !== $values['licensio_icon'] ) {
-            return 'licensio_icon';
+        foreach ( array( Licensio_KB_Term_Meta::META_ICON_SVG, Licensio_KB_Term_Meta::META_ICON_ID, Licensio_KB_Term_Meta::META_ICON ) as $meta_key ) {
+            if ( ! empty( $values[ $meta_key ] ) ) {
+                return $meta_key;
+            }
         }
 
         return '';

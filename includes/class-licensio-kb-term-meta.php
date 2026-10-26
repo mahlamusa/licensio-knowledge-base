@@ -319,14 +319,9 @@ class Licensio_KB_Term_Meta {
 
         $value = trim( (string) $value );
 
+        // Text that is not Base64 decodes to an empty string, and the sanitiser applies the size cap.
         if ( 1 === preg_match( '#^data:image/svg\+xml;base64,#i', $value ) ) {
-            $bytes = self::decode_base64( substr( $value, strpos( $value, ',' ) + 1 ) );
-
-            if ( '' === $bytes || strlen( $bytes ) > Licensio_KB_SVG_Sanitizer::MAX_LENGTH ) {
-                return '';
-            }
-
-            $value = $bytes;
+            $value = self::decode_base64( substr( $value, strpos( $value, ',' ) + 1 ) );
         }
 
         return Licensio_KB_SVG_Sanitizer::sanitize( $value );

@@ -175,7 +175,7 @@ function replaceAll( text: string, list: string[], by: string ): string {
 export function slugify( name: string ): string {
 	let slug = name
 		.normalize( 'NFD' )
-		.replace( /[̀-ͯ]/g, '' )
+		.replace( /[\u0300-\u036f]/g, '' )
 		.replace( /[^\u0000-\u007f]/g, ( char ) => LETTERS[ char ] ?? char )
 		.normalize( 'NFC' )
 		.replace( /<[^>]*>/g, '' )
