@@ -720,21 +720,20 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * The term hierarchy caches are deleted with the data, and stop autoloading otherwise.
+     * The category hierarchy cache is deleted with the data, and stops autoloading otherwise.
      *
      * Core keeps an autoloaded children map per hierarchical taxonomy. Once the
-     * plugin is gone nothing reads it, but it is loaded on every request.
+     * plugin is gone nothing reads it, but it is loaded on every request. Tags
+     * are not hierarchical, so core never writes a children map for them and
+     * there is nothing to delete.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_the_term_hierarchy_caches_follow_the_data_setting() {
-        $children = array( 'licensio_category_children', 'licensio_tag_children' );
-
-        foreach ( $children as $option ) {
-            $this->assertContains( $option, Licensio_KB_Uninstaller::data_options() );
-        }
+    public function test_the_category_hierarchy_cache_follows_the_data_setting() {
+        $this->assertContains( 'licensio_category_children', Licensio_KB_Uninstaller::data_options() );
+        $this->assertNotContains( 'licensio_tag_children', Licensio_KB_Uninstaller::data_options(), 'Tags are not hierarchical, so core keeps no children map for them.' );
 
         $this->seed_site( false );
         $this->options['licensio_category_children'] = array( 4 => array( 7 ) );
@@ -743,17 +742,13 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
 
         $this->assertArrayHasKey( 'licensio_category_children', $this->options, 'Kept with the data.' );
         $this->assertFalse( $this->autoload_calls[0]['licensio_category_children'] );
-        $this->assertFalse( $this->autoload_calls[0]['licensio_tag_children'] );
 
         $this->seed_site( true );
         $this->options['licensio_category_children'] = array( 4 => array( 7 ) );
-        $this->options['licensio_tag_children']      = array();
 
         Licensio_KB_Uninstaller::uninstall_site();
 
-        foreach ( $children as $option ) {
-            $this->assertArrayNotHasKey( $option, $this->options, $option . ' must not survive Delete everything.' );
-        }
+        $this->assertArrayNotHasKey( 'licensio_category_children', $this->options, 'The cache must not survive Delete everything.' );
     }
 
     /**

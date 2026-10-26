@@ -14,8 +14,8 @@
  *   import log), the settings (which hold the
  *   article, category and tag slugs, so every permalink survives a delete and
  *   reinstall), the import options (the served redirect map, the resume
- *   cursors and the run reports), the term hierarchy caches core keeps for
- *   the plugin taxonomies, the rate-limit counters and the import URL map
+ *   cursors and the run reports), the category hierarchy cache core keeps
+ *   for the hierarchical category taxonomy, the rate-limit counters and the import URL map
  *   files. Deleting
  *   support history or the redirects that keep old links alive, on a plugin
  *   delete that may well be an upgrade or a migration, is not recoverable;
@@ -68,7 +68,6 @@ class Licensio_KB_Uninstaller {
     const DATA_OPTIONS = array(
         Licensio_KB_Settings::OPTION_NAME,
         Licensio_KB_Post_Types::TAXONOMY_CATEGORY . '_children',
-        Licensio_KB_Post_Types::TAXONOMY_TAG . '_children',
     );
 
     /**
