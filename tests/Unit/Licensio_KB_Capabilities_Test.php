@@ -49,6 +49,12 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
                 return isset( $this->roles[ $name ] ) ? $this->roles[ $name ] : null;
             }
         );
+
+        Functions\when( 'wp_roles' )->alias(
+            function () {
+                return (object) array( 'role_objects' => $this->roles );
+            }
+        );
     }
 
     /**
@@ -176,6 +182,37 @@ class Licensio_KB_Capabilities_Test extends Licensio_KB_Test_Case {
         $this->assertFalse( $this->roles['administrator']->has_cap( 'manage_licensio_kb' ) );
         $this->assertFalse( $this->roles['editor']->has_cap( 'manage_licensio_kb' ) );
         $this->assertTrue( $this->roles['administrator']->has_cap( 'manage_options' ) );
+    }
+
+    /**
+     * Removal sweeps every role for the management capability, and nothing else.
+     *
+     * A role granted the capability by hand, or through a filter that has
+     * since been removed, is not in the filtered role list at uninstall time.
+     * An explicit denial is residue as well. Core capabilities, including any
+     * a filter lists, are left on roles the filter does not name.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_removal_sweeps_every_role_for_the_management_capability() {
+        $this->roles['subscriber']->add_cap( 'manage_licensio_kb' );
+        $this->roles['author'] = new WP_Role(
+            'author',
+            array(
+                'edit_posts'         => true,
+                'manage_licensio_kb' => false,
+            )
+        );
+
+        Licensio_KB_Capabilities::remove_capabilities();
+
+        $this->assertArrayNotHasKey( 'manage_licensio_kb', $this->roles['subscriber']->capabilities );
+        $this->assertArrayNotHasKey( 'manage_licensio_kb', $this->roles['author']->capabilities, 'An explicit denial is residue too.' );
+        $this->assertTrue( $this->roles['subscriber']->has_cap( 'read' ) );
+        $this->assertTrue( $this->roles['author']->has_cap( 'edit_posts' ) );
+        $this->assertTrue( $this->roles['editor']->has_cap( 'edit_others_posts' ) );
     }
 
     /**

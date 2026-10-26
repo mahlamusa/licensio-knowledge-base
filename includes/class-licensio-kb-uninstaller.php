@@ -22,8 +22,8 @@
  *   keeping it is. Kept options are switched to not autoload, so a site
  *   without the plugin does not load them on every request.
  * - Plugin state - the version markers, the visitor salt, the one-shot flags,
- *   the upgrade lock, the cron events, the knowledge base capabilities granted
- *   to roles and per-user admin preferences - is always removed, on every site
+ *   the upgrade lock, the cron events, the knowledge base capability on every
+ *   role that holds it and per-user admin preferences - is always removed, on every site
  *   of the network. A scheduled hook or a user meta row
  *   that outlives the plugin that owns it is pure residue.
  *
@@ -138,8 +138,9 @@ class Licensio_KB_Uninstaller {
      * turned on Delete everything on uninstall. Kept data options are switched
      * to not autoload.
      *
-     * The capabilities are removed in both modes: a role that keeps
-     * `manage_licensio_kb` after the plugin is gone holds a capability nothing
+     * The capabilities are removed in both modes, from every role of the site,
+     * including roles that were granted `manage_licensio_kb` by hand: a role
+     * that keeps it after the plugin is gone holds a capability nothing
      * checks, and a later reinstall grants it afresh anyway.
      *
      * @since 1.0.0

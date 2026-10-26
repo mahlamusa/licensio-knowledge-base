@@ -114,7 +114,8 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
      * Per-blog role stores, keyed by blog ID then role name.
      *
      * Roles are stored per site, so each blog gets its own administrator and
-     * editor, both holding the management capability.
+     * editor, both holding the management capability, and a subscriber that
+     * was granted it by hand.
      *
      * @since 1.0.0
      * @var array<int, array<string, WP_Role>>
@@ -200,6 +201,12 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
             }
         );
 
+        Functions\when( 'wp_roles' )->alias(
+            function () {
+                return (object) array( 'role_objects' => $this->site_roles( $this->current_blog ) );
+            }
+        );
+
         Functions\when( 'wp_upload_dir' )->alias(
             function () {
                 return array( 'basedir' => $this->uploads );
@@ -263,6 +270,13 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
                     'editor',
                     array(
                         'edit_others_posts'  => true,
+                        'manage_licensio_kb' => true,
+                    )
+                ),
+                'subscriber'    => new WP_Role(
+                    'subscriber',
+                    array(
+                        'read'               => true,
                         'manage_licensio_kb' => true,
                     )
                 ),
@@ -687,6 +701,8 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
             $this->assertFalse( $roles['editor']->has_cap( 'manage_licensio_kb' ) );
             $this->assertTrue( $roles['administrator']->has_cap( 'manage_options' ), 'Core capabilities must be left alone.' );
             $this->assertTrue( $roles['editor']->has_cap( 'edit_others_posts' ), 'Core capabilities must be left alone.' );
+            $this->assertFalse( $roles['subscriber']->has_cap( 'manage_licensio_kb' ), 'A copy granted by hand must be removed too.' );
+            $this->assertTrue( $roles['subscriber']->has_cap( 'read' ), 'Core capabilities must be left alone.' );
         }
     }
 
@@ -694,7 +710,8 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
      * On multisite every site's roles lose the capabilities.
      *
      * Roles are stored per site, so removing them only on the current site
-     * left every other site's administrators and editors holding them.
+     * left every other site's administrators and editors holding them. The
+     * subscriber holds a copy granted by hand, which every site must lose too.
      *
      * @since 1.0.0
      *
