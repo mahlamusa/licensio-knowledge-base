@@ -3,7 +3,8 @@
  * The bulk action bar.
  *
  * Arms when rows are selected. It offers "Select all N matching" once the
- * whole page is selected and more articles match, then an action chooser,
+ * whole page is selected and more articles match, and says when every
+ * matching article is selected across pages. Then an action chooser,
  * the action's own argument (a status, terms or an author) and an Apply
  * button that asks before anything is sent, naming the action and the count.
  * Replace with no terms chosen removes every category or tag, and its
@@ -138,6 +139,11 @@ const request = computed< { action: BulkAction; args: BulkArgs } | null >(
 
 const count = computed( () => store.selected.length );
 
+/** Whether the selection is every matching article, across pages. */
+const allSelected = computed(
+	() => store.allMatching && count.value === store.total
+);
+
 const pageFullySelected = computed( () => {
 	const selected = new Set( store.selected );
 
@@ -195,11 +201,17 @@ watch( inTrash, () => {
 		<template v-if="count > 0">
 			<span class="lkb-bulk__count">
 				{{
-					sprintf(
-						/* translators: %d: number of selected articles. */
-						_n( '%d selected', '%d selected', count, 'licensio-knowledge-base' ),
-						count
-					)
+					allSelected
+						? sprintf(
+							/* translators: %d: number of matching articles, all of them selected. */
+							_n( 'All %d matching article is selected', 'All %d matching articles are selected', count, 'licensio-knowledge-base' ),
+							count
+						)
+						: sprintf(
+							/* translators: %d: number of selected articles. */
+							_n( '%d selected', '%d selected', count, 'licensio-knowledge-base' ),
+							count
+						)
 				}}
 			</span>
 

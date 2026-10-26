@@ -249,12 +249,24 @@ test.describe( 'Articles bulk actions', () => {
 		} );
 
 		// The locked article's Trash is disabled anyway, so use two others.
-		const trash = app
+		const keys = await app
 			.locator( '.ant-table-tbody .ant-table-row' )
-			.getByRole( 'button', { name: 'Trash', disabled: false } );
-		const second = trash.nth( 1 );
+			.getByRole( 'button', { name: 'Trash', disabled: false } )
+			.evaluateAll( ( buttons ) =>
+				buttons
+					.slice( 0, 2 )
+					.map(
+						( button ) =>
+							button.closest( 'tr' )?.dataset.rowKey ?? ''
+					)
+			);
+		const trashOf = ( key: string ) =>
+			app
+				.locator( `tr[data-row-key="${ key }"]` )
+				.getByRole( 'button', { name: 'Trash' } );
+		const second = trashOf( keys[ 1 ] );
 
-		await trash.first().click();
+		await trashOf( keys[ 0 ] ).click();
 		await confirmPopconfirm( page );
 		await expect(
 			second,
