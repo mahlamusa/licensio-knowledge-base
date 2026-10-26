@@ -489,7 +489,9 @@ watch(
 							</a-button>
 						</div>
 					</div>
-					<strong v-else>{{ record.name }}</strong>
+					<strong v-else class="lkb-tags__name">{{
+						record.name
+					}}</strong>
 
 					<div v-if="editingId !== record.id" class="lkb-rowactions">
 						<a-button
@@ -574,6 +576,21 @@ watch(
 .lkb-tags__slug {
 	overflow-wrap: normal;
 	word-break: normal;
+}
+
+/*
+ * A name that is one long word breaks inside the Name column instead of
+ * widening the table past its card. The row actions under it stay on one
+ * line, so they set the column's narrowest width and a normal word still
+ * fits whole.
+ */
+.lkb-tags__name {
+	overflow-wrap: anywhere;
+}
+
+.lkb-tablecard--core .lkb-rowactions:not( .is-open ) {
+	flex-wrap: nowrap;
+	white-space: nowrap;
 }
 
 .lkb-tags__description {

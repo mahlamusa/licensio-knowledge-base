@@ -13,10 +13,12 @@
  * On a small laptop (1024px) the Articles table leaves out Attachments,
  * Rating, Views and Reading time until the user picks columns, so Categories
  * and Tags have room, and an open Tags Quick edit row keeps its fields
- * readable.
+ * readable. A tag name that is one 40-character word wraps inside the Name
+ * column, so the Tags table does not scroll sideways at 1024px, and on a phone
+ * the name is no wider than its row actions.
  *
  * When wp-cli is available (`LICENSIO_KB_WP_CLI`), a long-titled article,
- * a long tag name and a category for it are added for the run and removed after it, and the admin
+ * a long tag name, a one-word tag name and a category for it are added for the run and removed after it, and the admin
  * user's article columns are reset to the defaults, so the wrapping is
  * checked with long content and the default columns.
  *
@@ -45,6 +47,12 @@ const suffix = Date.now().toString( 36 );
 
 /** A tag whose slug has no hyphen, so it never needs to break. */
 const SHORT_SLUG = `slugcheck${ suffix }`;
+
+/**
+ * A 40-character tag name with no space to wrap at. Its tag gets a short slug,
+ * since a slug never breaks and a long one scrolls the table on purpose.
+ */
+const LONG_WORD = `Unbrokentagname${ suffix }`.padEnd( 40, 'x' );
 
 /** One screen to check, and how to reach it once its URL has loaded. */
 interface Screen {
@@ -157,11 +165,12 @@ test.describe( 'App width', () => {
 			}
 			$long  = term_exists( 'A very long tag name to check that tags wrap', 'licensio_tag' ) ?: wp_insert_term( 'A very long tag name to check that tags wrap', 'licensio_tag' );
 			$short = wp_insert_term( '${ SHORT_SLUG }', 'licensio_tag' );
+			$word  = wp_insert_term( '${ LONG_WORD }', 'licensio_tag', array( 'slug' => 'oneword${ suffix }' ) );
 			$post  = wp_insert_post( array( 'post_type' => 'licensio_article', 'post_status' => 'publish', 'post_title' => 'How to configure automatic license key renewal and handle expired subscriptions across multisite networks', 'post_author' => $admin ? $admin->ID : 0 ) );
 			wp_set_object_terms( $post, array( (int) $long['term_id'] ), 'licensio_tag' );
 			$category = wp_insert_term( 'Width check category ${ suffix }', 'licensio_category' );
 			wp_set_object_terms( $post, array( (int) $category['term_id'] ), 'licensio_category' );
-			echo wp_json_encode( array( 'admin' => $admin ? $admin->ID : 0, 'prefs' => $prefs, 'terms' => array( (int) $long['term_id'], (int) $short['term_id'] ), 'category' => (int) $category['term_id'], 'post' => $post ) );
+			echo wp_json_encode( array( 'admin' => $admin ? $admin->ID : 0, 'prefs' => $prefs, 'terms' => array( (int) $long['term_id'], (int) $short['term_id'], (int) $word['term_id'] ), 'category' => (int) $category['term_id'], 'post' => $post ) );
 		` );
 	} );
 
@@ -206,6 +215,84 @@ test.describe( 'App width', () => {
 			await slug.evaluate( ( el ) => el.getClientRects().length ),
 			'lines the slug takes'
 		).toBe( 1 );
+	} );
+
+	test( 'a one-word tag name wraps inside the Tags table', async ( {
+		page,
+	} ) => {
+		test.skip( ! seeded, 'Set LICENSIO_KB_WP_CLI to run.' );
+
+		for ( const width of [ 1024, 390 ] ) {
+			await page.setViewportSize( { width, height: 900 } );
+			await page.goto( contentManagerUrl( 'tags' ) );
+			await foldAdminMenu( page, false );
+			await page.getByLabel( 'Search tags' ).fill( LONG_WORD );
+			await page.getByLabel( 'Search tags' ).press( 'Enter' );
+
+			const row = page.locator( '.ant-table-row', {
+				hasText: LONG_WORD,
+			} );
+
+			await expect( row.locator( '.lkb-tags__name' ) ).toHaveText(
+				LONG_WORD
+			);
+			await expect( page.locator( '.ant-table-row' ) ).toHaveCount( 1 );
+
+			// A phone has no room for every column, so the table may scroll
+			// inside itself there; the page must not, and the name must be no
+			// wider than the row actions under it.
+			await expect
+				.poll(
+					async () => {
+						const frame = await measureFrame( page );
+
+						return 390 === width
+							? frame.page
+							: frame.page + frame.container + frame.inner;
+					},
+					{ message: `overflow at ${ width }px` }
+				)
+				.toBe( 0 );
+
+			if ( 390 === width ) {
+				const room = await row
+					.locator( '.lkb-rowactions' )
+					.evaluate( ( actions ) => {
+						const buttons = actions.querySelectorAll( '.ant-btn' );
+						const first = buttons[ 0 ].getBoundingClientRect();
+						const last =
+							buttons[
+								buttons.length - 1
+							].getBoundingClientRect();
+						const name = actions.parentElement
+							?.querySelector( '.lkb-tags__name' )
+							?.getBoundingClientRect();
+
+						return {
+							actions: last.right - first.left,
+							name: name?.width ?? Infinity,
+						};
+					} );
+
+				expect(
+					room.name,
+					'name width beside its row actions at 390px'
+				).toBeLessThanOrEqual( Math.ceil( room.actions ) + 1 );
+			}
+
+			const tops = await row
+				.locator( '.lkb-rowactions .ant-btn' )
+				.evaluateAll( ( buttons ) =>
+					buttons.map( ( button ) =>
+						Math.round( button.getBoundingClientRect().top )
+					)
+				);
+
+			expect(
+				new Set( tops ).size,
+				`row action lines at ${ width }px`
+			).toBe( 1 );
+		}
 	} );
 
 	test( 'the app header sticks under the admin bar only while the bar is fixed', async ( {
