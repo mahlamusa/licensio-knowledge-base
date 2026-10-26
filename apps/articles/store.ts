@@ -633,15 +633,11 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 
 			try {
 				for ( const result of results ) {
-					if ( 0 === Object.keys( result.previous ?? {} ).length ) {
+					if ( ! result.token ) {
 						continue;
 					}
 
-					const answer = await revert( {
-						previous: result.previous,
-						snapshot_at: result.snapshot_at,
-						token: result.token,
-					} );
+					const answer = await revert( { token: result.token } );
 
 					reverted.done.push( ...answer.done );
 					reverted.skipped.push( ...answer.skipped );

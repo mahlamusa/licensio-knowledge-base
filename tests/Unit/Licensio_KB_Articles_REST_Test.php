@@ -1188,6 +1188,31 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * The author search matches display names and nicenames, never login names.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_author_search_never_matches_login_names() {
+        $this->controller->get_authors(
+            new WP_REST_Request(
+                array(),
+                '/licensio-kb/v1/authors',
+                array(
+                    'search'   => 'adm',
+                    'include'  => array(),
+                    'page'     => 1,
+                    'per_page' => 20,
+                )
+            )
+        );
+
+        $this->assertSame( '*adm*', WP_User_Query::$last_args['search'] );
+        $this->assertSame( array( 'user_nicename', 'display_name' ), WP_User_Query::$last_args['search_columns'] );
+    }
+
+    /**
      * Only users who may edit others' articles may list the authors.
      *
      * @since 1.0.0

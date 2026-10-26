@@ -52,6 +52,7 @@ class Licensio_KB_Category_Order_REST_Test extends Licensio_KB_Test_Case {
 
         Functions\when( 'rest_authorization_required_code' )->justReturn( 403 );
         Functions\when( 'rest_ensure_response' )->returnArg();
+        Functions\when( 'wp_check_post_lock' )->justReturn( false );
         Functions\when( 'absint' )->alias(
             function ( $value ) {
                 return abs( (int) $value );
@@ -333,6 +334,33 @@ class Licensio_KB_Category_Order_REST_Test extends Licensio_KB_Test_Case {
         $this->assertInstanceOf( 'WP_Error', $result );
         $this->assertSame( 'licensio_kb_cannot_edit', $result->get_error_code() );
         $this->assertSame( 403, $result->get_error_data()['status'] );
+    }
+
+    /**
+     * An article someone else is editing stops the save, and every such article is named.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_save_refuses_articles_being_edited() {
+        $this->stub_category( 5 );
+
+        Functions\when( 'get_posts' )->justReturn( array( 11, 12, 13 ) );
+        Functions\when( 'current_user_can' )->justReturn( true );
+        Functions\when( 'wp_check_post_lock' )->alias(
+            function ( $id ) {
+                return in_array( (int) $id, array( 11, 13 ), true ) ? 9 : false;
+            }
+        );
+        Functions\expect( 'update_post_meta' )->never();
+
+        $result = ( new Licensio_KB_Category_Order_REST_Controller() )->update_order( $this->request( 5, array( 11, 12, 13 ) ) );
+
+        $this->assertInstanceOf( 'WP_Error', $result );
+        $this->assertSame( 'licensio_kb_article_locked', $result->get_error_code() );
+        $this->assertSame( 409, $result->get_error_data()['status'] );
+        $this->assertSame( array( 11, 13 ), $result->get_error_data()['ids'] );
     }
 
     /**

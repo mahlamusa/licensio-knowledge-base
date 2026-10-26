@@ -7,7 +7,8 @@
  * double reads those two shapes back into an action, a term taxonomy ID and
  * the object IDs, and hands them to a callback, so a suite can apply them to
  * its own store and make any one of them fail. Any other statement fails the
- * test.
+ * test. It also answers the edit lock read Licensio_KB_Term_Operations makes
+ * before a move, from `$edit_locks`.
  *
  * @package Licensio_KB
  * @since   1.0.0
@@ -27,6 +28,22 @@ class Licensio_KB_Relationships_WPDB {
      * @var string
      */
     public $term_relationships = 'wptests_term_relationships';
+
+    /**
+     * The post meta table name.
+     *
+     * @since 1.0.0
+     * @var string
+     */
+    public $postmeta = 'wptests_postmeta';
+
+    /**
+     * The `_edit_lock` value of each locked post, by post ID.
+     *
+     * @since 1.0.0
+     * @var array<int, string>
+     */
+    public $edit_locks = array();
 
     /**
      * Applies one write and returns the rows affected, or false to fail it.
@@ -87,5 +104,34 @@ class Licensio_KB_Relationships_WPDB {
         }
 
         throw new UnexpectedValueException( 'Unexpected statement: ' . $query ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- A test failure message, never output to a page.
+    }
+
+    /**
+     * Answer the edit lock read with the locks of the posts it names.
+     *
+     * @since 1.0.0
+     *
+     * @param string $query The statement.
+     *
+     * @return array<int, object> The `post_id` and `meta_value` rows.
+     * @throws UnexpectedValueException When the statement is not the edit lock read.
+     */
+    public function get_results( $query ) {
+        if ( ! preg_match( "/^SELECT post_id, meta_value FROM `[^`]+` WHERE meta_key = '_edit_lock' AND post_id IN \\( ([\\d, ]+) \\)$/", $query, $matches ) ) {
+            throw new UnexpectedValueException( 'Unexpected statement: ' . $query ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- A test failure message, never output to a page.
+        }
+
+        $rows = array();
+
+        foreach ( array_map( 'intval', explode( ', ', $matches[1] ) ) as $post_id ) {
+            if ( isset( $this->edit_locks[ $post_id ] ) ) {
+                $rows[] = (object) array(
+                    'post_id'    => (string) $post_id,
+                    'meta_value' => $this->edit_locks[ $post_id ], // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- A result row, not a query.
+                );
+            }
+        }
+
+        return $rows;
     }
 }

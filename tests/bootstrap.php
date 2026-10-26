@@ -54,6 +54,7 @@ require_once LICENSIO_KB_ABSPATH . 'tests/fixtures/class-wp-term.php';
 require_once LICENSIO_KB_ABSPATH . 'tests/fixtures/class-wp-block-template.php';
 require_once LICENSIO_KB_ABSPATH . 'tests/fixtures/class-wp-role.php';
 require_once LICENSIO_KB_ABSPATH . 'tests/fixtures/class-wp-user.php';
+require_once LICENSIO_KB_ABSPATH . 'tests/fixtures/class-wp-user-query.php';
 require_once LICENSIO_KB_ABSPATH . 'tests/fixtures/class-wp-screen.php';
 require_once LICENSIO_KB_ABSPATH . 'tests/fixtures/class-wp-query.php';
 require_once LICENSIO_KB_ABSPATH . 'tests/fixtures/class-wp-tax-query.php';

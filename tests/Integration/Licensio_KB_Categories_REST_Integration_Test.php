@@ -61,6 +61,15 @@ class Licensio_KB_Categories_REST_Integration_Test extends Licensio_KB_Analytics
         $this->install_content_schemas();
         $this->stub_category_term_api();
 
+        // The article checks a term move makes: an editor, holding no locks.
+        Brain\Monkey\Functions\when( 'get_post_type_object' )->justReturn(
+            (object) array(
+                'cap' => (object) Licensio_KB_Capabilities::post_type_capabilities(),
+            )
+        );
+        Brain\Monkey\Functions\when( 'get_current_user_id' )->justReturn( 1 );
+        Brain\Monkey\Functions\when( 'current_user_can' )->justReturn( true );
+
         $this->ids = $this->make_category_tree(
             array(
                 'Getting started' => array(

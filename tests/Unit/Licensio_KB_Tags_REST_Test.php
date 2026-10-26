@@ -76,10 +76,18 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
     protected function setUp(): void {
         parent::setUp();
 
+        Functions\when( 'get_post_type_object' )->justReturn(
+            (object) array(
+                'cap' => (object) Licensio_KB_Capabilities::post_type_capabilities(),
+            )
+        );
+        Functions\when( 'get_current_user_id' )->justReturn( 1 );
+        Functions\when( '_prime_post_caches' )->justReturn( null );
+
         $this->routes       = array();
         $this->calls        = array();
         $this->denied_terms = array();
-        $this->caps         = array( 'manage_licensio_kb', 'manage_tags', 'edit_tags', 'delete_tags', 'assign_tags', 'edit_categories', 'assign_categories' );
+        $this->caps         = array( 'manage_licensio_kb', 'manage_tags', 'edit_tags', 'delete_tags', 'assign_tags', 'edit_categories', 'assign_categories', 'edit_others_licensio_articles', 'edit_published_licensio_articles', 'edit_private_licensio_articles' );
         $this->terms        = array(
             'licensio_tag'      => array(
                 10 => $this->term( 10, 'Billing', 'licensio_tag', 'About money' ),

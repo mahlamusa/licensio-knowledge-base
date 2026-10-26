@@ -22,8 +22,8 @@
  *   keeping it is. Kept options are switched to not autoload, so a site
  *   without the plugin does not load them on every request.
  * - Plugin state - the version markers, the visitor salt, the one-shot flags,
- *   the upgrade lock, the cron events, the knowledge base capability on every
- *   role that holds it and per-user admin preferences - is always removed, on every site
+ *   the upgrade lock, the cron events, the knowledge base capabilities on every
+ *   role that holds them, the bulk undo snapshots and per-user admin preferences - is always removed, on every site
  *   of the network. A scheduled hook or a user meta row
  *   that outlives the plugin that owns it is pure residue. Each site's stored
  *   rewrite rules are deleted too, so core rebuilds them without the
@@ -187,6 +187,8 @@ class Licensio_KB_Uninstaller {
             wp_clear_scheduled_hook( $hook );
         }
 
+        self::delete_undo_snapshots();
+
         Licensio_KB_Capabilities::remove_capabilities();
 
         /*
@@ -232,6 +234,33 @@ class Licensio_KB_Uninstaller {
      * @return void
      */
     public static function delete_rate_limit_transients() {
+        self::delete_transients_by_prefix( Licensio_KB_REST_Controller::RATE_LIMIT_TRANSIENT_PREFIX );
+    }
+
+    /**
+     * Delete the current site's bulk undo snapshots.
+     *
+     * Always removed, whatever the retention setting: a snapshot is only
+     * usable for 15 minutes, and one may hold an article password.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public static function delete_undo_snapshots() {
+        self::delete_transients_by_prefix( Licensio_KB_Article_Bulk::SNAPSHOT_PREFIX );
+    }
+
+    /**
+     * Delete every transient whose name starts with a prefix.
+     *
+     * @since 1.0.0
+     *
+     * @param string $prefix The transient name prefix.
+     *
+     * @return void
+     */
+    private static function delete_transients_by_prefix( $prefix ) {
         global $wpdb;
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- A one-off prefix delete on uninstall; there is no API to delete transients by prefix.
@@ -239,8 +268,8 @@ class Licensio_KB_Uninstaller {
             $wpdb->prepare(
                 'DELETE FROM %i WHERE option_name LIKE %s OR option_name LIKE %s',
                 $wpdb->options,
-                $wpdb->esc_like( '_transient_' . Licensio_KB_REST_Controller::RATE_LIMIT_TRANSIENT_PREFIX ) . '%',
-                $wpdb->esc_like( '_transient_timeout_' . Licensio_KB_REST_Controller::RATE_LIMIT_TRANSIENT_PREFIX ) . '%'
+                $wpdb->esc_like( '_transient_' . $prefix ) . '%',
+                $wpdb->esc_like( '_transient_timeout_' . $prefix ) . '%'
             )
         );
     }

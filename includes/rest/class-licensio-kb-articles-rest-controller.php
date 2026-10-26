@@ -14,7 +14,7 @@
  *   for "select all matching".
  * - `PATCH articles/{id}`: quick edit. 409 when another user holds the lock.
  * - `POST articles/bulk` and `POST articles/revert`: batched bulk actions and
- *   their undo, through Licensio_KB_Article_Bulk.
+ *   their single-use undo by token, through Licensio_KB_Article_Bulk.
  * - `GET authors`: the users who can edit articles.
  * - `GET` and `PUT preferences`: the current user's columns and page size.
  *
@@ -455,25 +455,19 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
     }
 
     /**
-     * The arguments of `POST articles/revert`.
+     * The arguments of `POST articles/revert`: only the token a bulk answer gave.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Takes only the token.
      *
      * @return array<string, array<string, mixed>> The argument schema.
      */
     public function get_revert_args() {
         return array(
-            'previous'    => array(
-                'type'     => 'object',
-                'required' => true,
-            ),
-            'snapshot_at' => array(
-                'type'     => 'integer',
-                'required' => true,
-            ),
-            'token'       => array(
-                'type'     => 'string',
-                'required' => true,
+            'token' => array(
+                'type'      => 'string',
+                'required'  => true,
+                'minLength' => Licensio_KB_Article_Bulk::TOKEN_LENGTH,
+                'maxLength' => Licensio_KB_Article_Bulk::TOKEN_LENGTH,
             ),
         );
     }
@@ -1497,7 +1491,11 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
     /**
      * Run a bulk action over a batch of articles.
      *
-     * @since 1.0.0
+     * Answers `{ done, skipped, failed, token }`; `token` undoes the batch
+     * once through `POST articles/revert`, and is empty when nothing can be
+     * undone.
+     *
+     * @since 1.0.0 Answers the undo token instead of the snapshot.
      *
      * @param WP_REST_Request $request The request.
      *
@@ -1517,12 +1515,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
             return Licensio_KB_Article_Bulk::invalid( 'ids', __( 'Send between 1 and 100 article IDs.', 'licensio-knowledge-base' ) );
         }
 
-        $result = $this->bulk->run( $ids, $action, $args );
-
-        // An object, even when empty, so the app always reads a map.
-        $result['previous'] = (object) $result['previous'];
-
-        return rest_ensure_response( $result );
+        return rest_ensure_response( $this->bulk->run( $ids, $action, $args ) );
     }
 
     /**
@@ -1601,20 +1594,16 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
     }
 
     /**
-     * Undo a bulk action from its snapshot.
+     * Undo a bulk action, once, from the snapshot its token names.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Takes only the token.
      *
      * @param WP_REST_Request $request The request.
      *
-     * @return WP_REST_Response|WP_Error What happened to each ID, or why the snapshot was refused.
+     * @return WP_REST_Response|WP_Error What happened to each ID, or why the token was refused.
      */
     public function revert_items( $request ) {
-        $result = $this->bulk->revert(
-            (array) $request->get_param( 'previous' ),
-            (int) $request->get_param( 'snapshot_at' ),
-            (string) $request->get_param( 'token' )
-        );
+        $result = $this->bulk->revert( (string) $request->get_param( 'token' ) );
 
         return is_wp_error( $result ) ? $result : rest_ensure_response( $result );
     }
@@ -1622,7 +1611,11 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
     /**
      * The users who can write articles.
      *
-     * @since 1.0.0
+     * The search matches the display name and the nicename only, never the
+     * login name, so the list cannot be used to find out what people sign in
+     * with.
+     *
+     * @since 1.0.0 No longer searches login names.
      *
      * @param WP_REST_Request $request The request.
      *
@@ -1643,7 +1636,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
 
         if ( '' !== $search ) {
             $args['search']         = '*' . $search . '*';
-            $args['search_columns'] = array( 'user_login', 'user_nicename', 'display_name' );
+            $args['search_columns'] = array( 'user_nicename', 'display_name' );
         }
 
         if ( ! empty( $include ) ) {

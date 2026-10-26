@@ -254,17 +254,18 @@ class Licensio_KB_Category_Order_REST_Controller extends Licensio_KB_REST_Contro
      * Save a category's article order.
      *
      * Every ID must be an article filed directly in the category, in any
-     * status except trash, that the current user may edit. The articles are
+     * status except trash, that the current user may edit and that nobody
+     * else has open in the editor. The articles are
      * written as 10, 20, 30… in the order given. Every other article with a
      * position in the category, trashed ones included, is renumbered after
      * them in its previous relative order; articles without a position stay
      * without one.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Refuses articles another user is editing.
      *
      * @param WP_REST_Request $request The request.
      *
-     * @return WP_REST_Response|WP_Error The order as saved, or an error naming the first problem; 500 `licensio_kb_order_not_saved` when the write was rolled back.
+     * @return WP_REST_Response|WP_Error The order as saved, or an error naming the first problem; 409 `licensio_kb_article_locked` naming every article being edited; 500 `licensio_kb_order_not_saved` when the write was rolled back.
      */
     public function update_order( $request ) {
         $term_id = $this->category_id( $request );
@@ -315,6 +316,31 @@ class Licensio_KB_Category_Order_REST_Controller extends Licensio_KB_REST_Contro
                         )
                     );
                 }
+            }
+
+            $locked = array_values(
+                array_filter(
+                    $ids,
+                    function ( $id ) {
+                        return Licensio_KB_Article_Bulk::lock_holder( $id ) > 0;
+                    }
+                )
+            );
+
+            if ( ! empty( $locked ) ) {
+                return new WP_Error(
+                    'licensio_kb_article_locked',
+                    _n(
+                        'Someone is editing one of these articles. Try again when they have finished.',
+                        'Someone is editing some of these articles. Try again when they have finished.',
+                        count( $locked ),
+                        'licensio-knowledge-base'
+                    ),
+                    array(
+                        'status' => 409,
+                        'ids'    => $locked,
+                    )
+                );
             }
         }
 

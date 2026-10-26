@@ -583,4 +583,121 @@ class Licensio_KB_Term_Operations_Test extends Licensio_KB_Test_Case {
             return 'remove' === $action && 20 !== $term_id && in_array( $failing_object, $object_ids, true );
         };
     }
+
+    /**
+     * Stub the capability checks the article check makes.
+     *
+     * @since 1.0.0
+     *
+     * @param string[] $granted The capabilities the user holds.
+     * @param int[]    $editable The articles `edit_post` allows.
+     *
+     * @return void
+     */
+    private function stub_article_caps( array $granted, array $editable ) {
+        Functions\when( 'get_post_type_object' )->justReturn(
+            (object) array(
+                'cap' => (object) Licensio_KB_Capabilities::post_type_capabilities(),
+            )
+        );
+        Functions\when( 'get_current_user_id' )->justReturn( 1 );
+        Functions\when( '_prime_post_caches' )->justReturn( null );
+        Functions\when( 'rest_authorization_required_code' )->justReturn( 403 );
+        Functions\when( 'current_user_can' )->alias(
+            function ( $capability, $id = 0 ) use ( $granted, $editable ) {
+                return 'edit_post' === $capability ? in_array( (int) $id, $editable, true ) : in_array( $capability, $granted, true );
+            }
+        );
+    }
+
+    /**
+     * An editor may move every article that nobody else is editing.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_editor_may_move_free_articles() {
+        $this->stub_article_caps( array( 'edit_others_licensio_articles', 'edit_published_licensio_articles', 'edit_private_licensio_articles' ), array() );
+
+        $this->assertTrue( ( new Licensio_KB_Term_Operations() )->check_articles( array( 10, 11 ), 'licensio_tag' ) );
+    }
+
+    /**
+     * Without the right to edit every article, each one is checked and the ones the user may not edit are named.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_articles_the_user_may_not_edit_stop_the_move() {
+        $this->stub_article_caps( array( 'edit_licensio_articles' ), array( 1, 2 ) );
+
+        $result = ( new Licensio_KB_Term_Operations() )->check_articles( array( 10, 11 ), 'licensio_tag' );
+
+        $this->assertInstanceOf( 'WP_Error', $result );
+        $this->assertSame( 'licensio_kb_articles_forbidden', $result->get_error_code() );
+        $this->assertSame( 403, $result->get_error_data()['status'] );
+        $this->assertSame( array( 3 ), $result->get_error_data()['ids'] );
+
+        $this->assertTrue( ( new Licensio_KB_Term_Operations() )->check_articles( array( 10 ), 'licensio_tag' ) );
+    }
+
+    /**
+     * Articles someone else has open in the editor stop the move; the user's own lock and stale locks do not.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_articles_being_edited_stop_the_move() {
+        $this->stub_article_caps( array( 'edit_others_licensio_articles', 'edit_published_licensio_articles', 'edit_private_licensio_articles' ), array() );
+
+        Functions\when( 'apply_filters' )->returnArg( 2 );
+
+        $GLOBALS['wpdb']->edit_locks = array(
+            1 => time() . ':9',
+            2 => time() . ':1',
+            3 => ( time() - 3600 ) . ':9',
+        );
+
+        $result = ( new Licensio_KB_Term_Operations() )->check_articles( array( 10, 11 ), 'licensio_tag' );
+
+        $this->assertInstanceOf( 'WP_Error', $result );
+        $this->assertSame( 'licensio_kb_articles_locked', $result->get_error_code() );
+        $this->assertSame( 409, $result->get_error_data()['status'] );
+        $this->assertSame( array( 1 ), $result->get_error_data()['ids'] );
+        $this->assertSame( array( 1, 2 ), $this->assignments[10], 'Checking moves nothing.' );
+    }
+
+    /**
+     * A move fires core's relationship hooks for every article it touches.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_move_fires_core_relationship_hooks() {
+        $fired = array();
+
+        Functions\when( 'do_action' )->alias(
+            function ( $hook, ...$args ) use ( &$fired ) {
+                if ( in_array( $hook, array( 'added_term_relationship', 'deleted_term_relationships' ), true ) ) {
+                    $fired[] = array( $hook, $args );
+                }
+            }
+        );
+
+        ( new Licensio_KB_Term_Operations() )->move_assignments( 10, 30, 'licensio_category' );
+
+        $this->assertSame(
+            array(
+                array( 'added_term_relationship', array( 1, 1030, 'licensio_category' ) ),
+                array( 'added_term_relationship', array( 2, 1030, 'licensio_category' ) ),
+                array( 'deleted_term_relationships', array( 1, array( 1010 ), 'licensio_category' ) ),
+                array( 'deleted_term_relationships', array( 2, array( 1010 ), 'licensio_category' ) ),
+            ),
+            $fired
+        );
+    }
 }

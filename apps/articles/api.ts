@@ -175,7 +175,7 @@ export function runBulk( request: BulkRequest ): Promise< BulkResult > {
  *
  * @since 1.0.0
  *
- * @param {RevertRequest} request The batch's snapshots and token.
+ * @param {RevertRequest} request The batch's undo token.
  *
  * @return {Promise<RevertResult>} What was reverted.
  */

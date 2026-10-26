@@ -115,4 +115,41 @@ class Licensio_KB_Uninstaller_Integration_Test extends Licensio_KB_Integration_T
             $left
         );
     }
+
+    /**
+     * Only the undo snapshots and their timeouts are deleted.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_only_the_undo_snapshots_are_deleted() {
+        $rows = array(
+            '_transient_licensio_kb_undo_' . md5( 'a' ) => 'a:0:{}',
+            '_transient_timeout_licensio_kb_undo_' . md5( 'a' ) => '1700000000',
+            '_transient_licensio_kbXundo_' . md5( 'c' ) => 'decoy',
+            '_transient_licensio_rl_' . md5( 'b' )      => 'kept',
+        );
+
+        foreach ( $rows as $name => $value ) {
+            $this->db->query( "INSERT INTO lkbit_options ( option_name, option_value ) VALUES ( '" . $this->db->real_escape_string( $name ) . "', '" . $this->db->real_escape_string( $value ) . "' )" );
+        }
+
+        Licensio_KB_Uninstaller::delete_undo_snapshots();
+
+        $left   = array();
+        $result = $this->db->query( 'SELECT option_name FROM lkbit_options' );
+
+        while ( $row = $result->fetch_row() ) { // phpcs:ignore Generic.CodeAnalysis.AssignmentInCondition.FoundInWhileCondition -- Reading a result set.
+            $left[] = $row[0];
+        }
+
+        $this->assertEqualsCanonicalizing(
+            array(
+                '_transient_licensio_kbXundo_' . md5( 'c' ),
+                '_transient_licensio_rl_' . md5( 'b' ),
+            ),
+            $left
+        );
+    }
 }

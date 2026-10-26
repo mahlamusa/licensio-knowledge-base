@@ -52,9 +52,33 @@ class Licensio_KB_Article_Bulk_Integration_Test extends Licensio_KB_Analytics_DB
         Functions\when( 'get_current_user_id' )->justReturn( 1 );
         Functions\when( 'wp_slash' )->returnArg();
         Functions\when( 'wp_json_encode' )->alias( 'json_encode' );
-        Functions\when( 'wp_hash' )->alias(
-            function ( $data ) {
-                return hash_hmac( 'sha256', $data, 'integration-salt' );
+        Functions\when( 'wp_generate_password' )->alias(
+            function () {
+                return substr( md5( uniqid( '', true ) ), 0, Licensio_KB_Article_Bulk::TOKEN_LENGTH );
+            }
+        );
+
+        // The undo snapshot goes through transients; an in-memory store stands in for them.
+        $transients = array();
+
+        Functions\when( 'set_transient' )->alias(
+            function ( $name, $value ) use ( &$transients ) {
+                $transients[ $name ] = $value;
+
+                return true;
+            }
+        );
+        Functions\when( 'get_transient' )->alias(
+            function ( $name ) use ( &$transients ) {
+                return isset( $transients[ $name ] ) ? $transients[ $name ] : false;
+            }
+        );
+        Functions\when( 'delete_transient' )->alias(
+            function ( $name ) use ( &$transients ) {
+                $found = isset( $transients[ $name ] );
+                unset( $transients[ $name ] );
+
+                return $found;
             }
         );
         Functions\when( 'is_wp_error' )->alias(
@@ -144,9 +168,10 @@ class Licensio_KB_Article_Bulk_Integration_Test extends Licensio_KB_Analytics_DB
         $this->assertSame( array( 'private', '' ), $this->state( $protected ) );
         $this->assertSame( array( 'private', '' ), $this->state( $public ) );
 
-        // The app keeps the answer as JSON and sends the snapshot back as it got it.
-        $answer   = json_decode( (string) wp_json_encode( array_merge( $result, array( 'previous' => (object) $result['previous'] ) ) ), true );
-        $reverted = $bulk->revert( $answer['previous'], $answer['snapshot_at'], $answer['token'] );
+        // The app only ever holds the token.
+        $this->assertStringNotContainsString( 's3cret', (string) wp_json_encode( $result ) );
+
+        $reverted = $bulk->revert( $result['token'] );
 
         $this->assertSame( array( $protected, $public ), $reverted['done'] );
         $this->assertSame( array( 'publish', "it's a s3cret & more" ), $this->state( $protected ) );
@@ -189,7 +214,7 @@ class Licensio_KB_Article_Bulk_Integration_Test extends Licensio_KB_Analytics_DB
             )
         );
 
-        $reverted = $bulk->revert( $result['previous'], $result['snapshot_at'], $result['token'] );
+        $reverted = $bulk->revert( $result['token'] );
 
         $this->assertSame( array( $protected ), $reverted['done'] );
         $this->assertSame( array( array( 'trash', 'kept' ) ), $published );

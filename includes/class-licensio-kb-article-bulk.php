@@ -12,18 +12,18 @@
  * `wp_delete_post()`, `wp_update_post()`, `wp_set_object_terms()`), so the
  * hooks that keep the search index and caches in step still fire.
  *
- * Trash, restore, status and term changes return a snapshot of what each
- * article was before, which `revert()` puts back. The snapshot comes with a
- * token: a keyed hash of the snapshot itself, the time it was taken and the
- * user who took it. Revert accepts only those fields, only with a token that
- * matches that exact snapshot for this user, only in the last 15 minutes, only
- * terms that exist in their taxonomy, and checks every article's permission
- * and lock again. Making a password-protected article private clears its
- * password, so that snapshot holds the password too and revert puts it back
- * in the same write as the status; the snapshot goes only to the user who
- * made the change, who could already edit the article. Author and comment
- * changes are deliberately not undoable: their earlier values are rarely
- * wanted and would widen what revert has to trust.
+ * Trash, restore, status and term changes keep a snapshot of what each
+ * article was before, which `revert()` puts back. The snapshot stays on the
+ * server, in a transient keyed by a random token, and only the token goes to
+ * the browser. Revert takes the token, only from the user who made the
+ * change, only in the next 15 minutes and only once: the transient is deleted
+ * before anything is written, so a second request with the same token finds
+ * nothing. It still checks that the terms exist and every article's
+ * permission and lock again. Making a password-protected article private
+ * clears its password, so that snapshot holds the password too and revert
+ * puts it back in the same write as the status; the password never leaves
+ * the server. Author and comment changes are deliberately not undoable: their
+ * earlier values are rarely wanted.
  *
  * @package Licensio_KB
  * @since   1.0.0
@@ -79,23 +79,20 @@ class Licensio_KB_Article_Bulk {
     const BULK_STATUSES = array( 'publish', 'draft', 'pending', 'private' );
 
     /**
-     * The statuses a snapshot may hold.
+     * The prefix of the transient a snapshot is kept in; the token follows it.
      *
      * @since 1.0.0
-     * @var string[]
+     * @var string
      */
-    const SNAPSHOT_STATUSES = array( 'publish', 'future', 'draft', 'pending', 'private', 'trash' );
+    const SNAPSHOT_PREFIX = 'licensio_kb_undo_';
 
     /**
-     * The fields a snapshot may hold; anything else is refused by revert.
-     *
-     * `password` is held only with `status`, when making an article private
-     * cleared its password.
+     * The length of a snapshot token.
      *
      * @since 1.0.0
-     * @var string[]
+     * @var int
      */
-    const REVERTIBLE_FIELDS = array( 'status', 'terms', 'password' );
+    const TOKEN_LENGTH = 32;
 
     /**
      * The term modes.
@@ -120,27 +117,27 @@ class Licensio_KB_Article_Bulk {
      * Run one bulk action over a batch of articles.
      *
      * The caller has validated the action and its arguments (see the REST
-     * controller's schema); this checks and changes each article.
+     * controller's schema); this checks and changes each article. The earlier
+     * values of an undoable action are kept on the server under the token
+     * returned.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Keeps the snapshot on the server and returns only its token.
      *
      * @param int[]                $ids    The article IDs, at most `MAX_IDS`.
      * @param string               $action One of `ACTIONS`.
      * @param array<string, mixed> $args   The action's arguments.
      *
-     * @return array{done: int[], skipped: array<int, array{id: int, reason: string}>, failed: array<int, array{id: int, message: string}>, previous: array<int, array<string, mixed>>, snapshot_at: int, token: string} What happened to each ID.
+     * @return array{done: int[], skipped: array<int, array{id: int, reason: string}>, failed: array<int, array{id: int, message: string}>, token: string} What happened to each ID, and the token that undoes it, empty when there is nothing to undo.
      */
     public function run( array $ids, $action, array $args ) {
-        $snapshot_at = time();
-        $result      = array(
-            'done'        => array(),
-            'skipped'     => array(),
-            'failed'      => array(),
-            'previous'    => array(),
-            'snapshot_at' => $snapshot_at,
-            'token'       => '',
+        $previous = array();
+        $result   = array(
+            'done'    => array(),
+            'skipped' => array(),
+            'failed'  => array(),
+            'token'   => '',
         );
-        $ids         = self::clean_ids( $ids );
+        $ids      = self::clean_ids( $ids );
 
         // Load the posts and their meta (the edit lock) in two queries, not two per article.
         _prime_post_caches( $ids, false, true );
@@ -173,14 +170,13 @@ class Licensio_KB_Article_Bulk {
             $result['done'][] = $id;
 
             if ( ! empty( $snapshot ) ) {
-                $result['previous'][ $id ] = $snapshot;
+                $previous[ $id ] = $snapshot;
             }
         }
 
         wp_defer_term_counting( false );
 
-        // Minted last, so the token covers the snapshot that goes back.
-        $result['token'] = self::snapshot_token( $snapshot_at, $result['previous'] );
+        $result['token'] = self::store_snapshot( $previous );
 
         return $result;
     }
@@ -370,21 +366,51 @@ class Licensio_KB_Article_Bulk {
     }
 
     /**
-     * Put back the fields a bulk action changed.
+     * Keep a snapshot on the server for the current user.
      *
      * @since 1.0.0
      *
-     * @param array<int|string, mixed> $previous    Article ID to snapshot, from a bulk answer.
-     * @param int                      $snapshot_at When the snapshot was taken, from the same answer.
-     * @param string                   $token       The snapshot token, from the same answer.
+     * @param array<int, array<string, mixed>> $previous Article ID to what it was before.
      *
-     * @return array{done: int[], skipped: array<int, array{id: int, reason: string}>, failed: array<int, array{id: int, message: string}>}|WP_Error What happened to each ID, or an error when the snapshot is refused.
+     * @return string The token that undoes it, or an empty string when there is nothing to keep.
      */
-    public function revert( array $previous, $snapshot_at, $token ) {
-        $valid = self::validate_snapshot( $previous, (int) $snapshot_at, (string) $token );
+    public static function store_snapshot( array $previous ) {
+        if ( empty( $previous ) ) {
+            return '';
+        }
 
-        if ( is_wp_error( $valid ) ) {
-            return $valid;
+        $token = wp_generate_password( self::TOKEN_LENGTH, false, false );
+
+        set_transient(
+            self::SNAPSHOT_PREFIX . $token,
+            array(
+                'user'     => get_current_user_id(),
+                'previous' => $previous,
+            ),
+            self::SNAPSHOT_TTL
+        );
+
+        return $token;
+    }
+
+    /**
+     * Put back the fields a bulk action changed.
+     *
+     * The token's snapshot is claimed by deleting it before anything is
+     * written. Only one request can delete it, so a token undoes at most once
+     * even when two requests race with it.
+     *
+     * @since 1.0.0 Takes only the token; the snapshot is single use and never leaves the server.
+     *
+     * @param string $token The token from the bulk answer.
+     *
+     * @return array{done: int[], skipped: array<int, array{id: int, reason: string}>, failed: array<int, array{id: int, message: string}>}|WP_Error What happened to each ID, or an error when the token is refused.
+     */
+    public function revert( $token ) {
+        $previous = self::claim_snapshot( (string) $token );
+
+        if ( is_wp_error( $previous ) ) {
+            return $previous;
         }
 
         $result = array(
@@ -428,77 +454,47 @@ class Licensio_KB_Article_Bulk {
     }
 
     /**
-     * Check a snapshot before anything is reverted.
+     * Take the snapshot a token names, once.
      *
-     * The snapshot must hold at most `MAX_IDS` articles and only the
-     * revertible fields with well-formed values; a password must be a
-     * non-empty string and come with a status. Its token must match this
-     * exact snapshot, its time and the current user, so a changed snapshot or
-     * one taken by someone else is refused. It must be no more than 15
-     * minutes old, and every term in it must exist in its taxonomy.
+     * Refused when the token is malformed, unknown, expired or already used,
+     * when it belongs to another user (left in place for its owner), or when a
+     * term it would put back no longer exists.
      *
      * @since 1.0.0
      *
-     * @param array<int|string, mixed> $previous    Article ID to snapshot.
-     * @param int                      $snapshot_at When the snapshot was taken.
-     * @param string                   $token       The snapshot token.
+     * @param string $token The token.
      *
-     * @return true|WP_Error True when the snapshot may be reverted.
+     * @return array<int|string, mixed>|WP_Error Article ID to snapshot, or why it was refused.
      */
-    public static function validate_snapshot( array $previous, $snapshot_at, $token ) {
-        if ( empty( $previous ) || count( $previous ) > self::MAX_IDS ) {
-            return self::invalid( 'previous', __( 'Send between 1 and 100 articles to undo.', 'licensio-knowledge-base' ) );
+    public static function claim_snapshot( $token ) {
+        $token  = (string) $token;
+        $gone   = new WP_Error( 'licensio_kb_snapshot_expired', __( 'This change can no longer be undone. It is too old, or it was already undone.', 'licensio-knowledge-base' ), array( 'status' => 400 ) );
+        $stored = ( self::TOKEN_LENGTH === strlen( $token ) && ctype_alnum( $token ) ) ? get_transient( self::SNAPSHOT_PREFIX . $token ) : false;
+
+        if ( ! is_array( $stored ) || ! isset( $stored['user'], $stored['previous'] ) || ! is_array( $stored['previous'] ) ) {
+            return $gone;
         }
 
-        foreach ( $previous as $id => $snapshot ) {
-            if ( (int) $id < 1 || ! is_array( $snapshot ) || empty( $snapshot ) ) {
-                return self::invalid( 'previous', __( 'Each article to undo needs its earlier values.', 'licensio-knowledge-base' ) );
-            }
-
-            $unknown = array_diff( array_keys( $snapshot ), self::REVERTIBLE_FIELDS );
-
-            if ( ! empty( $unknown ) ) {
-                return self::invalid(
-                    'previous',
-                    /* translators: %s: the field names that cannot be undone. */
-                    sprintf( __( 'These fields cannot be undone: %s.', 'licensio-knowledge-base' ), implode( ', ', array_map( 'strval', $unknown ) ) )
-                );
-            }
-
-            if ( isset( $snapshot['status'] ) && ! in_array( $snapshot['status'], self::SNAPSHOT_STATUSES, true ) ) {
-                return self::invalid( 'previous', __( 'A status to undo to is not valid.', 'licensio-knowledge-base' ) );
-            }
-
-            if ( isset( $snapshot['terms'] ) && ! self::valid_terms( $snapshot['terms'] ) ) {
-                return self::invalid( 'previous', __( 'The terms to undo to are not valid.', 'licensio-knowledge-base' ) );
-            }
-
-            if ( array_key_exists( 'password', $snapshot ) && ( ! isset( $snapshot['status'] ) || ! is_string( $snapshot['password'] ) || '' === $snapshot['password'] ) ) {
-                return self::invalid( 'previous', __( 'A password to undo to is not valid.', 'licensio-knowledge-base' ) );
-            }
-        }
-
-        if ( ! hash_equals( self::snapshot_token( (int) $snapshot_at, $previous ), (string) $token ) ) {
+        if ( (int) $stored['user'] !== (int) get_current_user_id() ) {
             return new WP_Error( 'licensio_kb_snapshot_invalid', __( 'This undo is not valid for your account.', 'licensio-knowledge-base' ), array( 'status' => 400 ) );
         }
 
-        $age = time() - (int) $snapshot_at;
-
-        if ( $age < -60 || $age > self::SNAPSHOT_TTL ) {
-            return new WP_Error( 'licensio_kb_snapshot_expired', __( 'This change is too old to undo.', 'licensio-knowledge-base' ), array( 'status' => 400 ) );
-        }
-
-        foreach ( $previous as $snapshot ) {
-            if ( isset( $snapshot['terms'] ) && ! self::terms_exist( $snapshot['terms'] ) ) {
-                return self::invalid( 'previous', __( 'The terms to undo to are not valid.', 'licensio-knowledge-base' ) );
+        foreach ( $stored['previous'] as $snapshot ) {
+            if ( isset( $snapshot['terms'] ) && ! self::terms_exist( (array) $snapshot['terms'] ) ) {
+                return self::invalid( 'token', __( 'The terms to undo to no longer exist.', 'licensio-knowledge-base' ) );
             }
         }
 
-        return true;
+        // Whoever deletes it owns it; a replay or a racing request deletes nothing.
+        if ( ! delete_transient( self::SNAPSHOT_PREFIX . $token ) ) {
+            return $gone;
+        }
+
+        return $stored['previous'];
     }
 
     /**
-     * Whether every term in a well-formed snapshot exists in its taxonomy.
+     * Whether every term in a snapshot exists in its taxonomy.
      *
      * @since 1.0.0
      *
@@ -510,35 +506,6 @@ class Licensio_KB_Article_Bulk {
         foreach ( $terms as $taxonomy => $term_ids ) {
             foreach ( $term_ids as $term_id ) {
                 if ( ! term_exists( (int) $term_id, (string) $taxonomy ) ) {
-                    return false;
-                }
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * Whether a snapshot's terms are a map of known taxonomy to term IDs.
-     *
-     * @since 1.0.0
-     *
-     * @param mixed $terms The snapshot's terms.
-     *
-     * @return bool True when well formed.
-     */
-    private static function valid_terms( $terms ) {
-        if ( ! is_array( $terms ) || empty( $terms ) ) {
-            return false;
-        }
-
-        foreach ( $terms as $taxonomy => $term_ids ) {
-            if ( ! in_array( $taxonomy, self::taxonomies(), true ) || ! is_array( $term_ids ) ) {
-                return false;
-            }
-
-            foreach ( $term_ids as $term_id ) {
-                if ( ! is_int( $term_id ) && ! ( is_string( $term_id ) && ctype_digit( $term_id ) ) ) {
                     return false;
                 }
             }
@@ -813,68 +780,6 @@ class Licensio_KB_Article_Bulk {
         $object = get_taxonomy( $taxonomy );
 
         return is_object( $object ) && isset( $object->cap->$cap ) ? (string) $object->cap->$cap : 'do_not_allow';
-    }
-
-    /**
-     * The token that ties a snapshot to its content, its time and the current user.
-     *
-     * A keyed hash (`wp_hash()` with the nonce salt) over the time, the user
-     * ID and a hash of the snapshot in canonical form, so the same snapshot
-     * gives the same token however its keys and term IDs arrive.
-     *
-     * @since 1.0.0
-     *
-     * @param int                      $snapshot_at When the snapshot was taken, as a Unix time.
-     * @param array<int|string, mixed> $previous    Article ID to its snapshot.
-     *
-     * @return string The token.
-     */
-    public static function snapshot_token( $snapshot_at, array $previous ) {
-        $content = hash( 'sha256', (string) wp_json_encode( self::canonical_snapshot( $previous ) ) );
-
-        return wp_hash( 'licensio_kb_revert|' . (int) $snapshot_at . '|' . get_current_user_id() . '|' . $content, 'nonce' );
-    }
-
-    /**
-     * A snapshot in canonical form: sorted by article ID, field and taxonomy,
-     * with term IDs as sorted integers.
-     *
-     * @since 1.0.0
-     *
-     * @param array<int|string, mixed> $previous Article ID to its snapshot.
-     *
-     * @return array<int, array<int, mixed>> The canonical snapshot, as lists so key order cannot matter.
-     */
-    private static function canonical_snapshot( array $previous ) {
-        $canonical = array();
-
-        foreach ( $previous as $id => $snapshot ) {
-            $fields = array();
-
-            foreach ( (array) $snapshot as $field => $value ) {
-                if ( 'terms' === $field ) {
-                    $terms = array();
-
-                    foreach ( (array) $value as $taxonomy => $term_ids ) {
-                        $term_ids = array_map( 'intval', (array) $term_ids );
-                        sort( $term_ids );
-                        $terms[] = array( (string) $taxonomy, $term_ids );
-                    }
-
-                    sort( $terms );
-                    $value = $terms;
-                }
-
-                $fields[] = array( (string) $field, $value );
-            }
-
-            sort( $fields );
-            $canonical[] = array( (int) $id, $fields );
-        }
-
-        sort( $canonical );
-
-        return $canonical;
     }
 
     /**

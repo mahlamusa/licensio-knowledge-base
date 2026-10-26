@@ -811,21 +811,25 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
      * Merge tags into one.
      *
      * The articles of every source tag gain the target tag, then the sources
-     * are deleted.
+     * are deleted. Nothing moves unless the user may edit every article of the
+     * sources and nobody else has one open in the editor.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Checks each article first.
      *
      * @param WP_REST_Request $request The request.
      *
      * @return WP_REST_Response|WP_Error The result: `moved`, the `deleted` IDs and the updated `target`.
      */
     public function merge( $request ) {
-        $target = absint( $request->get_param( 'target' ) );
-        $result = $this->term_operations->merge_terms(
-            self::ids( $request->get_param( 'sources' ) ),
-            $target,
-            Licensio_KB_Post_Types::TAXONOMY_TAG
-        );
+        $target  = absint( $request->get_param( 'target' ) );
+        $sources = self::ids( $request->get_param( 'sources' ) );
+        $checked = $this->term_operations->check_articles( $sources, Licensio_KB_Post_Types::TAXONOMY_TAG );
+
+        if ( is_wp_error( $checked ) ) {
+            return $checked;
+        }
+
+        $result = $this->term_operations->merge_terms( $sources, $target, Licensio_KB_Post_Types::TAXONOMY_TAG );
 
         if ( is_wp_error( $result ) ) {
             return $result;
@@ -906,9 +910,11 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
      *
      * If the articles cannot all be given the category, or the tag cannot be
      * deleted, the articles lose the category again and a category created
-     * here is deleted, so the tag is left as it was.
+     * here is deleted, so the tag is left as it was. A tag with an article the
+     * user may not edit, or that someone else has open in the editor, is kept
+     * as it was and reported.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Checks each article first.
      *
      * @param int $id        The tag ID.
      * @param int $parent_id The parent for a new category, or 0 for the top level.
@@ -920,6 +926,12 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
 
         if ( ! $tag instanceof WP_Term ) {
             return new WP_Error( 'licensio_kb_invalid_term', __( 'The tag does not exist.', 'licensio-knowledge-base' ) );
+        }
+
+        $checked = $this->term_operations->check_articles( array( $id ), Licensio_KB_Post_Types::TAXONOMY_TAG );
+
+        if ( is_wp_error( $checked ) ) {
+            return $checked;
         }
 
         $category = get_term_by( 'slug', $tag->slug, Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
