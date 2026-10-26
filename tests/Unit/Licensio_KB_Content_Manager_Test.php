@@ -215,11 +215,14 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
      * Without a build of every app the core screens stay, unless the dev server serves them.
      *
      * @since 1.0.0
+     * @since 1.0.0 Checks the shared list of the content manager apps.
      *
      * @return void
      */
     public function test_a_missing_app_build_keeps_the_core_screens() {
         $apps = array( 'apps/articles/index.ts', 'apps/categories/index.ts', 'apps/tags/index.ts' );
+
+        $this->assertSame( $apps, Licensio_KB_Content_Manager::content_entries() );
 
         $this->assertTrue( ( new Licensio_KB_Content_Manager( $this->settings(), $this->assets( $apps ) ) )->enabled() );
         $this->assertFalse( ( new Licensio_KB_Content_Manager( $this->settings(), $this->assets( array() ) ) )->enabled() );

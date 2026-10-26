@@ -221,6 +221,7 @@ class Licensio_KB_Content_Manager {
      *
      * @since 1.0.0
      * @since 1.0.0 Asks the asset loader whether the apps can load.
+     * @since 1.0.0 Reads the apps from content_entries().
      *
      * @return bool True when the apps can load, or when no asset loader was given.
      */
@@ -229,7 +230,25 @@ class Licensio_KB_Content_Manager {
             return true;
         }
 
-        return $this->assets->apps_can_load( array( Licensio_KB_Articles_Admin::APP_ENTRY, Licensio_KB_Categories_Admin::APP_ENTRY, Licensio_KB_Tags_Admin::APP_ENTRY ) );
+        return $this->assets->apps_can_load( self::content_entries() );
+    }
+
+    /**
+     * The Vite entries of the Articles, Categories and Tags apps.
+     *
+     * The apps that replace the core screens. Without all three built the
+     * core screens stay. The build notice reads the same list to say so.
+     *
+     * @since 1.0.0
+     *
+     * @return string[] Source paths relative to the plugin root.
+     */
+    public static function content_entries() {
+        return array(
+            Licensio_KB_Articles_Admin::APP_ENTRY,
+            Licensio_KB_Categories_Admin::APP_ENTRY,
+            Licensio_KB_Tags_Admin::APP_ENTRY,
+        );
     }
 
     /**

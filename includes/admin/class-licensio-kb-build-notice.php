@@ -68,18 +68,19 @@ class Licensio_KB_Build_Notice {
      * The Vite entries of every admin app.
      *
      * @since 1.0.0
+     * @since 1.0.0 Starts from the content manager's own list of its apps.
      *
      * @return string[] Source paths relative to the plugin root.
      */
     public static function app_entries() {
-        return array(
-            Licensio_KB_Articles_Admin::APP_ENTRY,
-            Licensio_KB_Categories_Admin::APP_ENTRY,
-            Licensio_KB_Tags_Admin::APP_ENTRY,
-            Licensio_KB_Feedback_Admin::APP_ENTRY,
-            Licensio_KB_Analytics_Admin::APP_ENTRY,
-            Licensio_KB_Settings_Admin::APP_ENTRY,
-            Licensio_KB_Tools_Admin::APP_ENTRY,
+        return array_merge(
+            Licensio_KB_Content_Manager::content_entries(),
+            array(
+                Licensio_KB_Feedback_Admin::APP_ENTRY,
+                Licensio_KB_Analytics_Admin::APP_ENTRY,
+                Licensio_KB_Settings_Admin::APP_ENTRY,
+                Licensio_KB_Tools_Admin::APP_ENTRY,
+            )
         );
     }
 
@@ -119,7 +120,12 @@ class Licensio_KB_Build_Notice {
     /**
      * Print the notice when the build is missing on a knowledge base screen.
      *
+     * The first sentence holds whichever apps are missing. The sentence about
+     * the classic screens is added only when one of the Articles, Categories
+     * or Tags apps is missing, because only then do those screens fall back.
+     *
      * @since 1.0.0
+     * @since 1.0.0 Mentions the classic screens only when they are in use.
      *
      * @return void
      */
@@ -136,9 +142,15 @@ class Licensio_KB_Build_Notice {
             return;
         }
 
+        $problem = esc_html__( 'Licensio Knowledge Base cannot load some of its admin apps because their built files are missing from the plugin’s dist folder.', 'licensio-knowledge-base' );
+
+        if ( ! $this->assets->apps_can_load( Licensio_KB_Content_Manager::content_entries() ) ) {
+            $problem .= ' ' . esc_html__( 'Until they are restored, the Articles, Categories and Tags screens use the classic WordPress screens.', 'licensio-knowledge-base' );
+        }
+
         printf(
             '<div class="notice notice-error licensio-kb-build-notice"><p>%1$s</p><p>%2$s</p></div>',
-            esc_html__( 'Licensio Knowledge Base cannot load its admin apps because their built files are missing from the plugin’s dist folder. Until they are restored, the Articles, Categories and Tags screens use the classic WordPress screens and the other Knowledge Base screens do not load.', 'licensio-knowledge-base' ),
+            $problem, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Both sentences are escaped above.
             sprintf(
                 /* translators: 1: the npm ci command, 2: the npm run build command. */
                 esc_html__( 'To fix this, reinstall the plugin from its release zip, or run %1$s and then %2$s in the plugin folder.', 'licensio-knowledge-base' ),

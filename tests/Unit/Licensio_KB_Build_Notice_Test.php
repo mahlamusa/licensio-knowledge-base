@@ -182,6 +182,7 @@ class Licensio_KB_Build_Notice_Test extends Licensio_KB_Test_Case {
 
         $this->assertStringContainsString( 'notice-error', $html );
         $this->assertStringContainsString( 'built files are missing', $html );
+        $this->assertStringContainsString( 'use the classic WordPress screens', $html );
         $this->assertStringContainsString( 'release zip', $html );
         $this->assertStringContainsString( '<code>npm run build</code>', $html );
     }
@@ -189,14 +190,35 @@ class Licensio_KB_Build_Notice_Test extends Licensio_KB_Test_Case {
     /**
      * One missing app is enough to show the notice.
      *
+     * Settings is not one of the content manager apps, so the Articles,
+     * Categories and Tags apps still load and the notice must not say they
+     * fell back to the classic screens.
+     *
      * @since 1.0.0
+     * @since 1.0.0 Checks the classic screens are not mentioned.
      *
      * @return void
      */
     public function test_one_missing_app_shows_the_notice() {
         $built = array_diff( Licensio_KB_Build_Notice::app_entries(), array( Licensio_KB_Settings_Admin::APP_ENTRY ) );
+        $html  = $this->render( $this->assets( $built ), $this->settings_page() );
 
-        $this->assertStringContainsString( 'licensio-kb-build-notice', $this->render( $this->assets( $built ), $this->settings_page() ) );
+        $this->assertStringContainsString( 'licensio-kb-build-notice', $html );
+        $this->assertStringContainsString( 'built files are missing', $html );
+        $this->assertStringNotContainsString( 'classic WordPress screens', $html );
+    }
+
+    /**
+     * A missing content manager app says the classic screens are in use.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_missing_content_app_mentions_the_classic_screens() {
+        $built = array_diff( Licensio_KB_Build_Notice::app_entries(), array( Licensio_KB_Articles_Admin::APP_ENTRY ) );
+
+        $this->assertStringContainsString( 'use the classic WordPress screens', $this->render( $this->assets( $built ), $this->settings_page() ) );
     }
 
     /**
@@ -307,6 +329,7 @@ class Licensio_KB_Build_Notice_Test extends Licensio_KB_Test_Case {
         $entries = Licensio_KB_Build_Notice::app_entries();
 
         $this->assertCount( 7, array_unique( $entries ) );
+        $this->assertSame( Licensio_KB_Content_Manager::content_entries(), array_slice( $entries, 0, 3 ) );
         $this->assertContains( Licensio_KB_Feedback_Admin::APP_ENTRY, $entries );
         $this->assertContains( Licensio_KB_Analytics_Admin::APP_ENTRY, $entries );
     }
