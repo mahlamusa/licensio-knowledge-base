@@ -14,6 +14,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { indexChunk, indexStart, indexStatus } from '../api';
 import type { IndexStatus } from '../types';
+import ConfirmButton from '../../components/ConfirmButton.vue';
 import { __ } from '../../components/i18n';
 
 /** Pause between chunks, so the progress can be read as it moves. */
@@ -126,8 +127,7 @@ async function rebuild(): Promise< void > {
 }
 
 /**
- * Resume a rebuild that a previous session left part-way through, once the
- * user confirmed.
+ * Resume a rebuild that a previous session left part-way through.
  *
  * @since 1.0.0
  *
@@ -209,7 +209,9 @@ onMounted( load );
 			</p>
 
 			<div class="licensio-kb-search-index__actions">
-				<a-popconfirm
+				<ConfirmButton
+					type="primary"
+					:disabled="running"
 					:title="
 						__(
 							'Empty the index and re-index every article?',
@@ -217,30 +219,14 @@ onMounted( load );
 						)
 					"
 					:ok-text="__( 'Rebuild', 'licensio-knowledge-base' )"
-					:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
 					@confirm="rebuild"
 				>
-					<a-button type="primary" :disabled="running">
-						{{ __( 'Rebuild index', 'licensio-knowledge-base' ) }}
-					</a-button>
-				</a-popconfirm>
+					{{ __( 'Rebuild index', 'licensio-knowledge-base' ) }}
+				</ConfirmButton>
 
-				<a-popconfirm
-					v-if="rebuilding"
-					:title="
-						__(
-							'Resume the rebuild from where it stopped?',
-							'licensio-knowledge-base'
-						)
-					"
-					:ok-text="__( 'Resume rebuild', 'licensio-knowledge-base' )"
-					:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
-					@confirm="resume"
-				>
-					<a-button :disabled="running">
-						{{ __( 'Resume rebuild', 'licensio-knowledge-base' ) }}
-					</a-button>
-				</a-popconfirm>
+				<a-button v-if="rebuilding" :disabled="running" @click="resume">
+					{{ __( 'Resume rebuild', 'licensio-knowledge-base' ) }}
+				</a-button>
 			</div>
 		</template>
 	</div>
