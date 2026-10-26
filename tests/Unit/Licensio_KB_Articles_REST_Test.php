@@ -621,6 +621,50 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * Quick edit categories and tags, and bulk terms, are capped at 100.
+     *
+     * Without a cap one request could create any number of new tags.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_term_lists_are_capped() {
+        $args = $this->routes['/articles/(?P<id>[\d]+)'][0]['args'];
+
+        $this->assertSame( 100, $args['categories']['maxItems'] );
+        $this->assertSame( 100, $args['tags']['maxItems'] );
+
+        $names = array_fill( 0, 100, array( 'name' => 'New' ) );
+
+        $this->assertTrue( Licensio_KB_Articles_REST_Controller::validate_tag_values( $names ) );
+
+        $names[] = array( 'name' => 'One too many' );
+
+        $this->assertInstanceOf( 'WP_Error', Licensio_KB_Articles_REST_Controller::validate_tag_values( $names ) );
+
+        $this->terms['licensio_category'] = range( 1, 101 );
+
+        $bulk = function ( $count ) {
+            return $this->controller->bulk_action_args(
+                'terms',
+                array(
+                    'taxonomy' => 'licensio_category',
+                    'mode'     => 'add',
+                    'term_ids' => range( 1, $count ),
+                )
+            );
+        };
+
+        $this->assertSame( range( 1, 100 ), $bulk( 100 )['term_ids'] );
+
+        $result = $bulk( 101 );
+
+        $this->assertInstanceOf( 'WP_Error', $result );
+        $this->assertSame( 400, $result->get_error_data()['status'] );
+    }
+
+    /**
      * Each bulk action's arguments are checked before anything runs.
      *
      * @since 1.0.0
