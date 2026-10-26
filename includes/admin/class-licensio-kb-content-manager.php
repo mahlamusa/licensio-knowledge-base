@@ -142,6 +142,7 @@ class Licensio_KB_Content_Manager {
      * filter must be read at request time, not while plugins are loading.
      *
      * @since 1.0.0
+     * @since 1.0.0 Sends a refused app page bookmark to its classic screen.
      *
      * @return void
      */
@@ -157,6 +158,7 @@ class Licensio_KB_Content_Manager {
         add_action( 'load-edit.php', array( $this, 'maybe_redirect' ) );
         add_action( 'load-edit-tags.php', array( $this, 'maybe_redirect' ) );
         add_action( 'load-term.php', array( $this, 'maybe_redirect' ) );
+        add_action( 'admin_page_access_denied', array( $this, 'maybe_redirect_to_classic' ) );
     }
 
     /**
@@ -498,6 +500,70 @@ class Licensio_KB_Content_Manager {
 
         wp_safe_redirect( $target );
         exit;
+    }
+
+    /**
+     * Send a refused app page request to the matching classic screen.
+     *
+     * While the content manager is enabled the apps sit under the article
+     * menu, at `edit.php?post_type=licensio_article&page={slug}`, and that is
+     * the address people bookmark. While it is off, because the classic
+     * screens setting is on, the filter says so or the apps were not built,
+     * the apps are hidden pages and core refuses that address with "Sorry,
+     * you are not allowed to access this page". The classic screen is where
+     * the content is managed then, and where the build notice explains a
+     * missing build, so the request goes there instead.
+     *
+     * Hooked to `admin_page_access_denied`, which core fires just before it
+     * refuses the page.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function maybe_redirect_to_classic() {
+        global $pagenow, $plugin_page;
+
+        if ( $this->enabled() ) {
+            return;
+        }
+
+        $target = self::classic_url( is_string( $pagenow ) ? $pagenow : '', is_string( $plugin_page ) ? $plugin_page : '' );
+
+        if ( '' === $target ) {
+            return;
+        }
+
+        wp_safe_redirect( $target );
+        exit;
+    }
+
+    /**
+     * The classic screen URL for an app page reached through the article menu.
+     *
+     * Only the address the app menu items use, `edit.php` with an app's page
+     * slug, is mapped. The app's own query arguments are not carried over.
+     *
+     * @since 1.0.0
+     *
+     * @param string $screen      The admin file being loaded, e.g. `edit.php`.
+     * @param string $plugin_page The requested page slug.
+     *
+     * @return string The absolute classic screen URL, or an empty string when the request is not an app page.
+     */
+    public static function classic_url( $screen, $plugin_page ) {
+        if ( 'edit.php' !== $screen ) {
+            return '';
+        }
+
+        $post_type = Licensio_KB_Post_Types::POST_TYPE;
+        $screens   = array(
+            self::ARTICLES_SLUG   => 'edit.php?post_type=' . $post_type,
+            self::CATEGORIES_SLUG => 'edit-tags.php?taxonomy=' . Licensio_KB_Post_Types::TAXONOMY_CATEGORY . '&post_type=' . $post_type,
+            self::TAGS_SLUG       => 'edit-tags.php?taxonomy=' . Licensio_KB_Post_Types::TAXONOMY_TAG . '&post_type=' . $post_type,
+        );
+
+        return isset( $screens[ $plugin_page ] ) ? admin_url( $screens[ $plugin_page ] ) : '';
     }
 
     /**
