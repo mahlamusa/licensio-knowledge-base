@@ -552,7 +552,11 @@ class Licensio_KB_Categories_REST_Integration_Test extends Licensio_KB_Analytics
         $this->fire_placement_hooks();
         $this->live_update_term_meta( $this->ids['Requirements'], 'licensio_order', '30' );
 
-        /** @var Licensio_KB_Term_Operations&Mockery\MockInterface $operations */
+        /**
+         * The term operations, mocked.
+         *
+         * @var Licensio_KB_Term_Operations&Mockery\MockInterface $operations
+         */
         $operations = Mockery::mock( Licensio_KB_Term_Operations::class )->makePartial();
         $operations->shouldReceive( 'merge_terms' )->andReturn( new WP_Error( 'licensio_kb_merge_failed', 'Nope.' ) );
 
