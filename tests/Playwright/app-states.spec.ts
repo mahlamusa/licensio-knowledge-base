@@ -18,7 +18,7 @@
  */
 
 import { expect, test, type Page } from '@playwright/test';
-import { logIn, password, user } from './helpers/session';
+import { openDashboard, password, user } from './helpers/session';
 
 const enabled = process.env.LICENSIO_KB_E2E === '1';
 
@@ -67,7 +67,7 @@ test.describe( 'App load failures and empty screens', () => {
 	);
 
 	test.beforeEach( async ( { page } ) => {
-		await logIn( page );
+		await openDashboard( page );
 	} );
 
 	test( 'Settings hides its save bar until a failed load is retried', async ( {

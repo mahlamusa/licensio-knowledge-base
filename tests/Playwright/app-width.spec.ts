@@ -32,7 +32,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { contentManagerUrl } from './helpers/content-manager';
 import { foldAdminMenu, measureFrame } from './helpers/layout';
-import { logIn, password, user } from './helpers/session';
+import { openDashboard, password, user } from './helpers/session';
 import { wpCli, wpEval } from './helpers/wp-cli';
 
 const enabled = process.env.LICENSIO_KB_E2E === '1';
@@ -193,7 +193,7 @@ test.describe( 'App width', () => {
 	} );
 
 	test.beforeEach( async ( { page } ) => {
-		await logIn( page );
+		await openDashboard( page );
 	} );
 
 	test( 'a short tag slug stays on one line on a phone', async ( {

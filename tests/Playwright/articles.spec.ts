@@ -30,7 +30,7 @@ import {
 import { failOnUnresolvedComponents } from './helpers/ant-components';
 import { switchOffWelcomeGuides } from './helpers/editor';
 import { measureFrame } from './helpers/layout';
-import { logIn, password, user } from './helpers/session';
+import { openDashboard, password, user } from './helpers/session';
 import { wpCli, wpEval } from './helpers/wp-cli';
 
 failOnUnresolvedComponents();
@@ -125,7 +125,7 @@ test.describe( 'Articles app', () => {
 	);
 
 	test.beforeEach( async ( { page } ) => {
-		await logIn( page );
+		await openDashboard( page );
 	} );
 
 	test( 'loads with the header and status pills', async ( { page } ) => {

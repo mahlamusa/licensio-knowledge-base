@@ -3,12 +3,14 @@
  *
  * End-to-end specs live in `tests/Playwright/`. The base URL comes from
  * `LICENSIO_KB_BASE_URL` so the same suite runs against a local LocalWP site,
- * a Playground instance or CI.
+ * a Playground instance or CI. The `setup` project signs in once per user
+ * before the specs run (see tests/Playwright/auth.setup.ts).
  *
  * @since 1.0.0
  */
 
 import { defineConfig, devices } from '@playwright/test';
+import { ADMIN_SESSION } from './tests/Playwright/helpers/session';
 
 /** Specs that switch a site-wide setting; see the `site-wide` project. */
 const SITE_WIDE = '**/classic-screens.spec.ts';
@@ -37,10 +39,22 @@ export default defineConfig( {
 		video: 'retain-on-failure',
 	},
 	projects: [
+		// Signs in once per user and saves the sessions the other projects
+		// start from, so parallel workers never sign in as the same user at
+		// once. A run with --no-deps reuses the sessions of the last run.
+		{
+			name: 'setup',
+			testMatch: '**/auth.setup.ts',
+			use: { ...devices[ 'Desktop Chrome' ] },
+		},
 		{
 			name: 'chromium',
 			testIgnore: SITE_WIDE,
-			use: { ...devices[ 'Desktop Chrome' ] },
+			dependencies: [ 'setup' ],
+			use: {
+				...devices[ 'Desktop Chrome' ],
+				storageState: ADMIN_SESSION,
+			},
 		},
 		// Specs that switch a site-wide setting the others rely on. They run
 		// after every other spec, so no worker meets the setting half-way.
@@ -49,7 +63,10 @@ export default defineConfig( {
 			name: 'site-wide',
 			testMatch: SITE_WIDE,
 			dependencies: [ 'chromium' ],
-			use: { ...devices[ 'Desktop Chrome' ] },
+			use: {
+				...devices[ 'Desktop Chrome' ],
+				storageState: ADMIN_SESSION,
+			},
 		},
 	],
 	outputDir: './test-results',

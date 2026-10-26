@@ -21,7 +21,7 @@ import {
 	confirmDialog,
 	expectNoConfirmDialog,
 } from './helpers/content-manager';
-import { logIn, password, user } from './helpers/session';
+import { openDashboard, password, user } from './helpers/session';
 import { wpCli, wpEval } from './helpers/wp-cli';
 
 const enabled = process.env.LICENSIO_KB_E2E === '1';
@@ -112,7 +112,7 @@ test.describe( 'Feedback inbox', () => {
 	test( 'a status change saves on pick and a bulk mark asks first', async ( {
 		page,
 	} ) => {
-		await logIn( page );
+		await openDashboard( page );
 
 		const writes = recordWrites( page );
 
@@ -171,7 +171,7 @@ test.describe( 'Feedback inbox', () => {
 		);
 
 		try {
-			await logIn( page );
+			await openDashboard( page );
 			await page.goto( `${ FEEDBACK_URL }&article_id=${ id }` );
 
 			const rows = page.locator( '.ant-table-row' );

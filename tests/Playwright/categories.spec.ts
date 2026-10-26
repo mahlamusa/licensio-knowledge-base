@@ -36,7 +36,7 @@ import {
 	openContentManager,
 } from './helpers/content-manager';
 import { failOnUnresolvedComponents } from './helpers/ant-components';
-import { logIn, password, user } from './helpers/session';
+import { openDashboard, password, user } from './helpers/session';
 import { wpCli, wpEval } from './helpers/wp-cli';
 import { slugify } from '../../apps/categories/slug';
 
@@ -403,7 +403,7 @@ test.describe( 'Categories app', () => {
 	);
 
 	test.beforeEach( async ( { page } ) => {
-		await logIn( page );
+		await openDashboard( page );
 		await openContentManager( page, 'categories' );
 		await clearArticles( page );
 		await clearCategories( page );

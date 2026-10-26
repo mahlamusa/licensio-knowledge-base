@@ -19,7 +19,7 @@
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { switchOffWelcomeGuides } from './helpers/editor';
-import { logIn, password, user } from './helpers/session';
+import { openDashboard, password, user } from './helpers/session';
 
 const enabled = process.env.LICENSIO_KB_E2E === '1';
 
@@ -105,7 +105,7 @@ test.describe( 'Knowledge base blocks', () => {
 	);
 
 	test.beforeEach( async ( { page } ) => {
-		await logIn( page );
+		await openDashboard( page );
 	} );
 
 	for ( const block of BLOCKS ) {

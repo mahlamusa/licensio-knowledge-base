@@ -30,7 +30,7 @@ import {
 	contentManagerUrl,
 } from './helpers/content-manager';
 import { failOnUnresolvedComponents } from './helpers/ant-components';
-import { logIn, password, user } from './helpers/session';
+import { openDashboard, password, user } from './helpers/session';
 import { wpCli, wpEval } from './helpers/wp-cli';
 
 failOnUnresolvedComponents();
@@ -169,7 +169,7 @@ test.describe( 'Articles bulk actions', () => {
 	} );
 
 	test.beforeEach( async ( { page } ) => {
-		await logIn( page );
+		await openDashboard( page );
 	} );
 
 	test( 'Cancel on the bulk confirmation sends no request', async ( {

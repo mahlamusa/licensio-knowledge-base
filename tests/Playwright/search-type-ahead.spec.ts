@@ -19,6 +19,7 @@
  */
 
 import { expect, test, Page } from '@playwright/test';
+import { SIGNED_OUT } from './helpers/session';
 
 const enabled = !! process.env.LICENSIO_KB_E2E;
 const path = process.env.LICENSIO_KB_E2E_PATH ?? '/';
@@ -49,6 +50,9 @@ async function openSearch( page: Page ) {
 }
 
 test.describe( 'knowledge base search type-ahead', () => {
+	// A visitor's view: none of the saved sessions.
+	test.use( { storageState: SIGNED_OUT } );
+
 	test.skip( ! enabled, 'Set LICENSIO_KB_E2E to run against a live site.' );
 
 	test( 'suggestions appear as the visitor types', async ( { page } ) => {

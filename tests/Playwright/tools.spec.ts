@@ -21,7 +21,7 @@ import {
 	confirmDialog,
 	expectNoConfirmDialog,
 } from './helpers/content-manager';
-import { logIn, password, user } from './helpers/session';
+import { openDashboard, password, user } from './helpers/session';
 
 const enabled = process.env.LICENSIO_KB_E2E === '1';
 
@@ -36,7 +36,7 @@ test.skip(
 test( 'the recount report reads as one sentence for a single article', async ( {
 	page,
 } ) => {
-	await logIn( page );
+	await openDashboard( page );
 
 	// The recount runs for real; its answer is rewritten to one article.
 	await page.route( /admin-ajax\.php/, async ( route ) => {
@@ -106,7 +106,7 @@ test( 'the recount report reads as one sentence for a single article', async ( {
 test( 'resuming an index rebuild runs on click and a rebuild asks first', async ( {
 	page,
 } ) => {
-	await logIn( page );
+	await openDashboard( page );
 
 	const chunks: string[] = [];
 	const starts: string[] = [];

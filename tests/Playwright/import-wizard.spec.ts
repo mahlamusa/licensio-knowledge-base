@@ -22,7 +22,7 @@
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { answerConfirm, confirmDialog } from './helpers/content-manager';
-import { logIn, password, user } from './helpers/session';
+import { openDashboard, password, user } from './helpers/session';
 
 const enabled = process.env.LICENSIO_KB_E2E === '1';
 
@@ -171,7 +171,7 @@ test.describe( 'Migration wizard', () => {
 	);
 
 	test.beforeEach( async ( { page } ) => {
-		await logIn( page );
+		await openDashboard( page );
 	} );
 
 	test( 'a dry run walks the wizard and lands in the log', async ( {

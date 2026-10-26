@@ -18,7 +18,7 @@
 import { expect, test } from '@playwright/test';
 import { failOnUnresolvedComponents } from './helpers/ant-components';
 import { pathOf } from './helpers/content-manager';
-import { logIn, password, user } from './helpers/session';
+import { openDashboard, password, user } from './helpers/session';
 
 failOnUnresolvedComponents();
 
@@ -34,7 +34,7 @@ const APP = '/wp-admin/admin.php?page=';
 
 test.describe( 'Content manager switch-on', () => {
 	test.beforeEach( async ( { page } ) => {
-		await logIn( page );
+		await openDashboard( page );
 	} );
 
 	test( 'core list and term screens redirect to the apps', async ( {

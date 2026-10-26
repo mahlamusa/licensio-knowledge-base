@@ -25,6 +25,7 @@
 
 import { expect, test, type Page } from '@playwright/test';
 import { wpCli, wpEval } from './helpers/wp-cli';
+import { SIGNED_OUT } from './helpers/session';
 
 const enabled = process.env.LICENSIO_KB_E2E === '1';
 
@@ -76,6 +77,9 @@ async function expectOneMainAndHeading( page: Page ): Promise< void > {
 }
 
 test.describe( 'Knowledge base views on a block theme', () => {
+	// A visitor's view: none of the saved sessions.
+	test.use( { storageState: SIGNED_OUT } );
+
 	test.describe.configure( { mode: 'serial' } );
 
 	test.skip(

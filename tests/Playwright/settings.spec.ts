@@ -21,7 +21,7 @@ import {
 	confirmDialog,
 	expectNoConfirmDialog,
 } from './helpers/content-manager';
-import { logIn, password, user } from './helpers/session';
+import { openDashboard, password, user } from './helpers/session';
 
 const enabled = process.env.LICENSIO_KB_E2E === '1';
 
@@ -107,7 +107,7 @@ test.describe( 'Knowledge base settings', () => {
 	);
 
 	test.beforeEach( async ( { page } ) => {
-		await logIn( page );
+		await openDashboard( page );
 	} );
 
 	test.afterEach( async ( { page } ) => {

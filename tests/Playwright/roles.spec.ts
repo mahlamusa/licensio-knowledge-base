@@ -7,27 +7,31 @@
  * nor any management screen or route. Editors keep full access.
  *
  * Users `lkb_e2e_author`, `lkb_e2e_contributor` and `lkb_e2e_editor` are
- * created (or their password reset) through wp-cli, so the suite needs
+ * created (or their password reset) through wp-cli by the setup project,
+ * which also saves a session for each, so the suite needs
  * `LICENSIO_KB_WP_CLI` as well as `LICENSIO_KB_E2E=1`. The articles it makes
  * are deleted afterwards.
  *
  * @since 1.0.0
  */
 
+import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { openContentManager } from './helpers/content-manager';
 import { switchOffWelcomeGuides } from './helpers/editor';
+import {
+	ROLES,
+	SIGNED_OUT,
+	openDashboard,
+	sessionFile,
+	type Role,
+} from './helpers/session';
 import { wpCli, wpEval } from './helpers/wp-cli';
 
 const enabled = process.env.LICENSIO_KB_E2E === '1' && '' !== wpCli;
 
-/** The password every test user gets. */
-const PASSWORD = 'lkb-e2e-Roles-2026';
-
 /** Makes this run's titles unique. */
 const suffix = Date.now().toString( 36 );
-
-type Role = 'author' | 'contributor' | 'editor';
 
 /** User ID by role, filled before the tests. */
 const users: Record< Role, number > = {
@@ -65,9 +69,13 @@ function makeArticle( name: string, author: number, status: string ): void {
 }
 
 /**
- * Log in as one of the test users.
+ * Switch to one of the test users.
+ *
+ * Swaps the page's cookies for the session the setup project saved for the
+ * user, rather than signing in again.
  *
  * @since 1.0.0
+ * @since 1.0.0 Uses the saved session instead of the login form.
  *
  * @param {Page} page The page.
  * @param {Role} role The user's role.
@@ -75,12 +83,11 @@ function makeArticle( name: string, author: number, status: string ): void {
  * @return {Promise<void>} Resolves once the admin bar shows.
  */
 async function logInAs( page: Page, role: Role ): Promise< void > {
+	const saved = JSON.parse( readFileSync( sessionFile( role ), 'utf8' ) );
+
 	await page.context().clearCookies();
-	await page.goto( '/wp-login.php' );
-	await page.fill( '#user_login', `lkb_e2e_${ role }` );
-	await page.fill( '#user_pass', PASSWORD );
-	await page.click( '#wp-submit' );
-	await expect( page.locator( '#wpadminbar' ) ).toBeVisible();
+	await page.context().addCookies( saved.cookies );
+	await openDashboard( page );
 }
 
 /**
@@ -295,17 +302,18 @@ test.describe( 'Article writers by role', () => {
 
 	test.describe.configure( { mode: 'serial' } );
 
+	// Each test switches to a test user's saved session itself.
+	test.use( { storageState: SIGNED_OUT } );
+
 	test.beforeAll( () => {
+		// The setup project created the users; their passwords are not reset
+		// here, since that would sign out the sessions it saved.
 		const ids = JSON.parse(
 			wpEval( `
 				$ids = array();
-				foreach ( array( 'author', 'contributor', 'editor' ) as $role ) {
-					$login = 'lkb_e2e_' . $role;
-					$user  = get_user_by( 'login', $login );
-					$id    = $user ? $user->ID : wp_insert_user( array( 'user_login' => $login, 'user_pass' => '${ PASSWORD }', 'user_email' => $login . '@example.test', 'role' => $role, 'display_name' => 'E2E ' . $role ) );
-					wp_set_password( '${ PASSWORD }', $id );
-					( new WP_User( $id ) )->set_role( $role );
-					$ids[ $role ] = (int) $id;
+				foreach ( array( '${ ROLES.join( "', '" ) }' ) as $role ) {
+					$user         = get_user_by( 'login', 'lkb_e2e_' . $role );
+					$ids[ $role ] = $user ? (int) $user->ID : 0;
 				}
 				echo wp_json_encode( $ids );
 			` )
