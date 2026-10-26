@@ -15,8 +15,9 @@
  * @since 1.0.0
  */
 
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { failOnUnresolvedComponents } from './helpers/ant-components';
+import { pathOf } from './helpers/content-manager';
 import { logIn, password, user } from './helpers/session';
 
 failOnUnresolvedComponents();
@@ -30,21 +31,6 @@ test.skip(
 
 /** The app URL the redirects land on. */
 const APP = '/wp-admin/admin.php?page=';
-
-/**
- * The path and query of the page's URL.
- *
- * @since 1.0.0
- *
- * @param {Page} page The browser page.
- *
- * @return {string} The path and query.
- */
-function pathOf( page: Page ): string {
-	const url = new URL( page.url() );
-
-	return url.pathname + url.search;
-}
 
 test.describe( 'Content manager switch-on', () => {
 	test.beforeEach( async ( { page } ) => {
