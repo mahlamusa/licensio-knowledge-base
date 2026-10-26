@@ -489,6 +489,78 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * A page past the end of a filtered list is empty but still reports the real total.
+     *
+     * WP_Query skips counting when the page is empty, so the matches are
+     * counted again from the first page, with the same filters.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_filtered_page_past_the_end_still_reports_the_total() {
+        Functions\when( 'wp_count_posts' )->justReturn( (object) array( 'draft' => '3' ) );
+
+        $empty              = new WP_Query();
+        $count              = new WP_Query();
+        $count->found_posts = 3;
+
+        $controller = new Licensio_KB_Articles_REST_Controller_Double( $empty, $count );
+        $result     = $controller->get_items(
+            new WP_REST_Request(
+                array(),
+                '/licensio-kb/v1/articles',
+                array(
+                    'status'   => 'draft',
+                    'category' => 3,
+                    'page'     => 99,
+                    'per_page' => 2,
+                )
+            )
+        );
+
+        $this->assertCount( 2, $controller->calls );
+        $this->assertSame( 99, $controller->calls[0]['paged'] );
+        $this->assertSame(
+            array_merge(
+                $controller->calls[0],
+                array(
+                    'fields'         => 'ids',
+                    'posts_per_page' => 1,
+                    'paged'          => 1,
+                )
+            ),
+            $controller->calls[1],
+            'The recount keeps every filter of the page query.'
+        );
+        $this->assertSame( array( 'draft' ), $controller->calls[1]['post_status'] );
+        $this->assertSame( array( 3 ), $controller->calls[1]['tax_query'][0]['terms'] );
+        $this->assertSame( array(), $result['items'] );
+        $this->assertSame( 3, $result['total'] );
+        $this->assertSame( 2, $result['pages'] );
+    }
+
+    /**
+     * A page inside the list takes its total from the page query alone.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_empty_first_page_is_not_counted_again() {
+        Functions\when( 'wp_count_posts' )->justReturn( (object) array() );
+
+        $controller = new Licensio_KB_Articles_REST_Controller_Double( new WP_Query() );
+        $result     = $controller->get_items(
+            new WP_REST_Request( array(), '/licensio-kb/v1/articles', array( 'status' => 'draft' ) )
+        );
+
+        $this->assertCount( 1, $controller->calls );
+        $this->assertSame( 0, $result['total'] );
+        $this->assertSame( 0, $result['pages'] );
+    }
+
+    /**
      * The status counts come from wp_count_posts(), "All" without the trash.
      *
      * @since 1.0.0
@@ -958,5 +1030,57 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
         );
         $this->assertSame( 99, ( new Licensio_KB_Article_Metrics( 150, 0 ) )->threshold() );
         $this->assertSame( 1, ( new Licensio_KB_Article_Metrics( 150, 0 ) )->min_votes() );
+    }
+}
+
+/**
+ * The articles controller with its post query replaced.
+ *
+ * @since 1.0.0
+ */
+class Licensio_KB_Articles_REST_Controller_Double extends Licensio_KB_Articles_REST_Controller {
+
+    /**
+     * The queries the controller gets back, in turn; the last one repeats.
+     *
+     * @since 1.0.0
+     * @var WP_Query[]
+     */
+    private $results;
+
+    /**
+     * The arguments of every query, in order.
+     *
+     * @since 1.0.0
+     * @var array<int, array<string, mixed>>
+     */
+    public $calls = array();
+
+    /**
+     * Constructor.
+     *
+     * @since 1.0.0
+     *
+     * @param WP_Query ...$results The queries to answer with, in turn.
+     */
+    public function __construct( WP_Query ...$results ) {
+        parent::__construct( new Licensio_KB_Article_Metrics( 50, 5 ), new Licensio_KB_Article_Bulk() );
+
+        $this->results = $results;
+    }
+
+    /**
+     * Record the arguments and answer the next prepared query.
+     *
+     * @since 1.0.0
+     *
+     * @param array<string, mixed> $args The query arguments.
+     *
+     * @return WP_Query The prepared query.
+     */
+    protected function run_query( array $args ) {
+        $this->calls[] = $args;
+
+        return $this->results[ min( count( $this->calls ), count( $this->results ) ) - 1 ];
     }
 }

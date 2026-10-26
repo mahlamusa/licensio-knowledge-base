@@ -771,13 +771,16 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
     /**
      * Run an article query with the metrics joins attached.
      *
+     * Protected so a test can stand in for WP_Query, which needs a loaded
+     * WordPress.
+     *
      * @since 1.0.0
      *
      * @param array<string, mixed> $args The query arguments.
      *
      * @return WP_Query The finished query.
      */
-    private function run_query( array $args ) {
+    protected function run_query( array $args ) {
         $filter = array( $this->metrics, 'filter_clauses' );
 
         add_filter( 'posts_clauses', $filter, 10, 2 );
