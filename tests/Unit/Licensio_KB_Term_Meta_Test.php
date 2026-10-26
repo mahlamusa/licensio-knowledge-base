@@ -505,6 +505,19 @@ class Licensio_KB_Term_Meta_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * Drop the database stand-in a placement test installed.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    protected function tearDown(): void {
+        unset( $GLOBALS['wpdb'] );
+
+        parent::tearDown();
+    }
+
+    /**
      * Stub a category tree for the placement hooks: term ID to parent.
      *
      * @since 1.0.0
@@ -524,19 +537,80 @@ class Licensio_KB_Term_Meta_Test extends Licensio_KB_Test_Case {
                 ) : null;
             }
         );
-        Functions\when( 'get_terms' )->alias(
-            function ( $args ) use ( &$parents ) {
-                $ids = array();
+        // The one query next_order() makes: the highest order among a parent's children but one.
+        $GLOBALS['wpdb'] = new class( $parents, $this->meta ) { // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+            /**
+             * The term taxonomy table.
+             *
+             * @var string
+             */
+            public $term_taxonomy = 'wp_term_taxonomy';
 
-                foreach ( $parents as $id => $parent ) {
-                    if ( $parent === $args['parent'] ) {
-                        $ids[] = $id;
+            /**
+             * The term meta table.
+             *
+             * @var string
+             */
+            public $termmeta = 'wp_termmeta';
+
+            /**
+             * Term ID to parent ID, shared with the test.
+             *
+             * @var array<int, int>
+             */
+            private $parents;
+
+            /**
+             * The stored term meta, shared with the test.
+             *
+             * @var array<string, mixed>
+             */
+            private $meta;
+
+            /**
+             * Share the test's tree and meta.
+             *
+             * @param array<int, int>      $parents Term ID to parent ID.
+             * @param array<string, mixed> $meta    The stored term meta.
+             */
+            public function __construct( array &$parents, array &$meta ) {
+                $this->parents = &$parents;
+                $this->meta    = &$meta;
+            }
+
+            /**
+             * Keep the values for get_var().
+             *
+             * @param string $query The query.
+             * @param mixed  ...$args The values.
+             *
+             * @return array<int, mixed> The values.
+             */
+            public function prepare( $query, ...$args ) {
+                return $args;
+            }
+
+            /**
+             * The highest order among the parent's other children.
+             *
+             * @param array<int, mixed> $args The prepared values.
+             *
+             * @return string|null The highest order, or null when none has one.
+             */
+            public function get_var( $args ) {
+                $highest = null;
+
+                foreach ( $this->parents as $id => $parent ) {
+                    $key = $id . '|' . $args[2];
+
+                    if ( $parent === (int) $args[4] && $id !== (int) $args[5] && isset( $this->meta[ $key ] ) ) {
+                        $highest = max( (int) $highest, (int) $this->meta[ $key ] );
                     }
                 }
 
-                return $ids;
+                return null === $highest ? null : (string) $highest;
             }
-        );
+        };
         Functions\when( 'update_term_meta' )->alias(
             function ( $term_id, $key, $value ) {
                 $this->meta[ $term_id . '|' . $key ] = $value;

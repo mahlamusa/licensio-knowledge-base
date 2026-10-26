@@ -1346,6 +1346,49 @@ class Licensio_KB_Heroic_Import_Content_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * An imported category is not placed at the end of its level.
+     *
+     * Core fires `created_licensio_category` inside `wp_insert_term()`, which
+     * would number imported categories in creation order. A category without
+     * a source order keeps none, so it still sorts by name.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_imported_category_is_not_placed() {
+        $term_meta = new Licensio_KB_Term_Meta();
+
+        Brain\Monkey\Functions\when( 'wp_insert_term' )->alias(
+            function () use ( $term_meta ) {
+                $term_meta->place_new_category( 501 );
+
+                return array( 'term_id' => 501 );
+            }
+        );
+
+        $source = $this->source(
+            array(
+                'terms' => array(
+                    Licensio_KB_Heroic_Import_Schema::TAXONOMY_CATEGORY => array(
+                        array(
+                            'term_id' => 8,
+                            'name'    => 'Renewals',
+                            'slug'    => 'renewals',
+                            'parent'  => 0,
+                        ),
+                    ),
+                ),
+            )
+        );
+
+        $this->migrator( $source )->migrate_terms();
+
+        $this->assertSame( 1, $this->report->get( 'terms_created' ) );
+        $this->assertArrayNotHasKey( Licensio_KB_Term_Meta::META_ORDER, isset( $this->term_meta[501] ) ? $this->term_meta[501] : array() );
+    }
+
+    /**
      * An existing term with the same name is adopted rather than failing the run.
      *
      * @since 1.0.0

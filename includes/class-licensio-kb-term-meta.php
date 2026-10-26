@@ -41,8 +41,9 @@
  * no manual order, by any route (the Categories app, REST, the classic term
  * screen or an importer), it gets the next order after its siblings. A
  * category moved under another parent without being given an order in the
- * same save is appended to its new siblings the same way. An importer that
- * carries the source's order writes it afterwards, so that order wins.
+ * same save is appended to its new siblings the same way. An order save, a
+ * rollback and an importer pause placement: they set the order themselves,
+ * or keep the one the category had.
  *
  * The term description is deliberately not duplicated here. Core already gives
  * every term a description, edits it on both term forms and exposes it in
@@ -188,6 +189,14 @@ class Licensio_KB_Term_Meta {
     private $before_edit = array();
 
     /**
+     * How many callers have placement paused; placement runs at 0.
+     *
+     * @since 1.0.0
+     * @var int
+     */
+    private static $placement_paused = 0;
+
+    /**
      * Register the WordPress hooks.
      *
      * Meta is registered on `init` at priority 7 — after the taxonomies are
@@ -214,7 +223,8 @@ class Licensio_KB_Term_Meta {
      * Give a new category without a manual order the next order among its siblings.
      *
      * Hooked to `created_licensio_category`. An order of 0 is no order: the
-     * classic term screen posts 0 for an empty Order field.
+     * classic term screen posts 0 for an empty Order field. Nothing is placed
+     * while placement is paused, see `without_placement()`.
      *
      * @since 1.0.0
      *
@@ -225,7 +235,7 @@ class Licensio_KB_Term_Meta {
     public function place_new_category( $term_id ) {
         $term_id = (int) $term_id;
 
-        if ( self::get_order( $term_id ) > 0 ) {
+        if ( self::$placement_paused > 0 || self::get_order( $term_id ) > 0 ) {
             return;
         }
 
@@ -267,7 +277,8 @@ class Licensio_KB_Term_Meta {
      * Append a category moved under another parent to its new siblings.
      *
      * Hooked to `edited_licensio_category`. Left alone when the parent did
-     * not change, or when the same save chose an order itself.
+     * not change, when the same save chose an order itself, or while
+     * placement is paused.
      *
      * @since 1.0.0
      *
@@ -283,9 +294,14 @@ class Licensio_KB_Term_Meta {
         }
 
         $before = $this->before_edit[ $term_id ];
-        $term   = get_term( $term_id, Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
 
         unset( $this->before_edit[ $term_id ] );
+
+        if ( self::$placement_paused > 0 ) {
+            return;
+        }
+
+        $term = get_term( $term_id, Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
 
         if ( ! $term instanceof WP_Term || (int) $term->parent === $before['parent'] || self::get_order( $term_id ) !== $before['order'] ) {
             return;
@@ -295,34 +311,62 @@ class Licensio_KB_Term_Meta {
     }
 
     /**
-     * The order that puts a category after every sibling.
+     * Run a callback without placing the categories it creates or moves.
+     *
+     * For writers that set the order themselves or must not change it: an
+     * order save, which writes every position after it moves categories; a
+     * rollback, which puts categories back as they were; and an importer,
+     * whose categories keep the source's order, or none, so they sort by name
+     * as before.
      *
      * @since 1.0.0
+     *
+     * @param callable $callback The work to run.
+     *
+     * @return mixed What the callback returns.
+     */
+    public static function without_placement( callable $callback ) {
+        ++self::$placement_paused;
+
+        try {
+            return $callback();
+        } finally {
+            --self::$placement_paused;
+        }
+    }
+
+    /**
+     * The order that puts a category after every sibling.
+     *
+     * One query for the highest sibling order, rather than reading every
+     * sibling and its meta: placement runs on every new category, so a run of
+     * creates under one parent would otherwise cost the square of their
+     * number.
+     *
+     * @since 1.0.0 Reads the highest sibling order in one query.
      *
      * @param int $parent_id The parent, 0 for the top level.
      * @param int $term_id   The category being placed, left out of its siblings.
      *
      * @return int The highest sibling order plus one step.
      */
-    public static function next_order( $parent_id, $term_id ) {
-        $siblings = get_terms(
-            array(
-                'taxonomy'               => Licensio_KB_Post_Types::TAXONOMY_CATEGORY,
-                'parent'                 => (int) $parent_id,
-                'hide_empty'             => false,
-                'fields'                 => 'ids',
-                'update_term_meta_cache' => true,
+    private static function next_order( $parent_id, $term_id ) {
+        global $wpdb;
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $highest = $wpdb->get_var(
+            $wpdb->prepare(
+                'SELECT MAX(CAST(tm.meta_value AS SIGNED)) FROM %i tt INNER JOIN %i tm ON tm.term_id = tt.term_id AND tm.meta_key = %s WHERE tt.taxonomy = %s AND tt.parent = %d AND tt.term_id <> %d',
+                $wpdb->term_taxonomy,
+                $wpdb->termmeta,
+                self::META_ORDER,
+                Licensio_KB_Post_Types::TAXONOMY_CATEGORY,
+                (int) $parent_id,
+                (int) $term_id
             )
         );
-        $highest  = 0;
 
-        foreach ( is_array( $siblings ) ? $siblings : array() as $sibling ) {
-            if ( (int) $sibling !== (int) $term_id ) {
-                $highest = max( $highest, self::get_order( (int) $sibling ) );
-            }
-        }
-
-        return $highest + self::ORDER_STEP;
+        return max( 0, (int) $highest ) + self::ORDER_STEP;
     }
 
     /**

@@ -187,7 +187,7 @@ class Licensio_KB_Import_Content {
     /**
      * Import one source term.
      *
-     * @since 1.0.0 Slashes the name and arguments so backslashes survive.
+     * @since 1.0.0 Slashes the name and arguments so backslashes survive, and leaves new categories unplaced.
      *
      * @param array<string, mixed> $row  The source term row.
      * @param string               $from The source taxonomy the row was read for.
@@ -266,17 +266,26 @@ class Licensio_KB_Import_Content {
             return 0;
         }
 
-        // wp_insert_term() unslashes its input, so the raw source values are slashed first.
-        $result = wp_insert_term(
-            wp_slash( '' !== $name ? $name : $slug ),
-            $to,
-            wp_slash(
-                array(
-                    'slug'        => $slug,
-                    'description' => isset( $row['description'] ) ? (string) $row['description'] : '',
-                    'parent'      => $target_parent,
-                )
-            )
+        /*
+         * wp_insert_term() unslashes its input, so the raw source values are
+         * slashed first. Placement is paused: an imported category keeps the
+         * source's order, written with its meta below, or has none and sorts
+         * by name, rather than being numbered in creation order.
+         */
+        $result = Licensio_KB_Term_Meta::without_placement(
+            static function () use ( $name, $slug, $row, $to, $target_parent ) {
+                return wp_insert_term(
+                    wp_slash( '' !== $name ? $name : $slug ),
+                    $to,
+                    wp_slash(
+                        array(
+                            'slug'        => $slug,
+                            'description' => isset( $row['description'] ) ? (string) $row['description'] : '',
+                            'parent'      => $target_parent,
+                        )
+                    )
+                );
+            }
         );
 
         $status = Licensio_KB_Import_Log::STATUS_CREATED;

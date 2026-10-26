@@ -103,6 +103,14 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
     private $operations;
 
     /**
+     * Each category's stored order before `reparent()` moved it, for a rollback.
+     *
+     * @since 1.0.0
+     * @var array<int, string>
+     */
+    private $orders_before = array();
+
+    /**
      * Build the controller.
      *
      * @since 1.0.0
@@ -1037,7 +1045,12 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
                 return $parents[ $id ] !== $parent;
             }
         );
-        $moved   = $this->reparent( $movers, $parent, $parents );
+        // Every position is written below, so the moves are not placed first.
+        $moved = Licensio_KB_Term_Meta::without_placement(
+            function () use ( $movers, $parent, $parents ) {
+                return $this->reparent( $movers, $parent, $parents );
+            }
+        );
 
         if ( is_wp_error( $moved ) ) {
             return $moved;
@@ -1239,9 +1252,10 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      * Move categories under a new parent.
      *
      * If one move fails, the categories already moved are put back under
-     * their old parents, so a failed request leaves the tree as it was.
+     * their old parents, so a failed request leaves the tree as it was. Each
+     * category's order is noted first, for `restore_parents()`.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Notes each category's order before moving it.
      *
      * @param int[]           $ids       The categories to move.
      * @param int             $parent_id The new parent, 0 for the top level.
@@ -1253,6 +1267,8 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
         $moved = array();
 
         foreach ( $ids as $id ) {
+            $this->orders_before[ (int) $id ] = (string) get_term_meta( (int) $id, Licensio_KB_Term_Meta::META_ORDER, true );
+
             $result = wp_update_term( $id, Licensio_KB_Post_Types::TAXONOMY_CATEGORY, array( 'parent' => $parent_id ) );
 
             if ( is_wp_error( $result ) ) {
@@ -1268,12 +1284,15 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
     }
 
     /**
-     * Put categories back under the parents they had before a move.
+     * Put categories back under the parents they had before a move, in their old place.
      *
      * Best effort: a category that cannot be put back is skipped, since the
-     * caller is already reporting the error that made it undo.
+     * caller is already reporting the error that made it undo. The move
+     * placed each category after its new siblings, so its order from before
+     * the move is written back when it changed, and placement is paused so
+     * moving back does not place it again.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Puts back each category's order too.
      *
      * @param int[]           $ids     The categories that were moved.
      * @param array<int, int> $parents Every category ID to its parent ID before the move.
@@ -1281,9 +1300,25 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      * @return void
      */
     private function restore_parents( array $ids, array $parents ) {
-        foreach ( $ids as $id ) {
-            wp_update_term( $id, Licensio_KB_Post_Types::TAXONOMY_CATEGORY, array( 'parent' => $parents[ $id ] ) );
-        }
+        Licensio_KB_Term_Meta::without_placement(
+            function () use ( $ids, $parents ) {
+                foreach ( $ids as $id ) {
+                    wp_update_term( $id, Licensio_KB_Post_Types::TAXONOMY_CATEGORY, array( 'parent' => $parents[ $id ] ) );
+
+                    $order = isset( $this->orders_before[ $id ] ) ? $this->orders_before[ $id ] : '';
+
+                    if ( (string) get_term_meta( $id, Licensio_KB_Term_Meta::META_ORDER, true ) === $order ) {
+                        continue;
+                    }
+
+                    if ( '' === $order ) {
+                        delete_term_meta( $id, Licensio_KB_Term_Meta::META_ORDER );
+                    } else {
+                        update_term_meta( $id, Licensio_KB_Term_Meta::META_ORDER, $order );
+                    }
+                }
+            }
+        );
     }
 
     /**

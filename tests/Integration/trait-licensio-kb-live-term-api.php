@@ -85,6 +85,7 @@ trait Licensio_KB_Live_Term_API {
         Functions\when( 'clean_object_term_cache' )->justReturn( null );
         Functions\when( 'get_term_meta' )->alias( array( $this, 'live_get_term_meta' ) );
         Functions\when( 'update_term_meta' )->alias( array( $this, 'live_update_term_meta' ) );
+        Functions\when( 'delete_term_meta' )->alias( array( $this, 'live_delete_term_meta' ) );
     }
 
     /**
@@ -636,6 +637,22 @@ trait Licensio_KB_Live_Term_API {
     public function live_update_term_meta( $term_id, $key, $value ) {
         $this->live_query( 'DELETE FROM ' . $this->table( 'termmeta' ) . ' WHERE term_id = ' . (int) $term_id . ' AND meta_key = ' . $this->live_quote( $key ) );
         $this->live_query( 'INSERT INTO ' . $this->table( 'termmeta' ) . ' (term_id, meta_key, meta_value) VALUES (' . (int) $term_id . ', ' . $this->live_quote( $key ) . ', ' . $this->live_quote( stripslashes( (string) $value ) ) . ')' );
+
+        return true;
+    }
+
+    /**
+     * Stand-in for `delete_term_meta()`.
+     *
+     * @since 1.0.0
+     *
+     * @param int    $term_id The term ID.
+     * @param string $key     The meta key.
+     *
+     * @return bool True.
+     */
+    public function live_delete_term_meta( $term_id, $key ) {
+        $this->live_query( 'DELETE FROM ' . $this->table( 'termmeta' ) . ' WHERE term_id = ' . (int) $term_id . ' AND meta_key = ' . $this->live_quote( $key ) );
 
         return true;
     }
