@@ -25,7 +25,9 @@
  *   the upgrade lock, the cron events, the knowledge base capability on every
  *   role that holds it and per-user admin preferences - is always removed, on every site
  *   of the network. A scheduled hook or a user meta row
- *   that outlives the plugin that owns it is pure residue.
+ *   that outlives the plugin that owns it is pure residue. Each site's stored
+ *   rewrite rules are deleted too, so core rebuilds them without the
+ *   knowledge base rules on the next request.
  *
  * Articles, categories and tags are never removed by uninstall.
  *
@@ -141,7 +143,8 @@ class Licensio_KB_Uninstaller {
      * The capabilities are removed in both modes, from every role of the site,
      * including roles that were granted `manage_licensio_kb` by hand: a role
      * that keeps it after the plugin is gone holds a capability nothing
-     * checks, and a later reinstall grants it afresh anyway.
+     * checks, and a later reinstall grants it afresh anyway. The stored
+     * rewrite rules are deleted in both modes as well.
      *
      * @since 1.0.0
      *
@@ -185,6 +188,13 @@ class Licensio_KB_Uninstaller {
         }
 
         Licensio_KB_Capabilities::remove_capabilities();
+
+        /*
+         * A network deactivation flushes the rewrite rules on the main site
+         * only, so every other site would keep the knowledge base rules after
+         * the plugin is deleted. Core rebuilds the option on the next request.
+         */
+        delete_option( 'rewrite_rules' );
 
         /*
          * Delete the key for every user. The users table is shared by the

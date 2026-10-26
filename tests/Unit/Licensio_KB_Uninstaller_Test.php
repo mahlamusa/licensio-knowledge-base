@@ -320,6 +320,7 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
             'licensio_version'                         => '1.0.0',
             'licensio_db_version'                      => '1.0.0',
             'licensio_unrelated_key'                   => 'left alone',
+            'rewrite_rules'                            => array( 'help/([^/]+)/?$' => 'index.php?licensio_article=$matches[1]' ),
             Licensio_KB_Search_Index::BUILT_OPTION     => '1.0.0',
             Licensio_KB_Lifecycle::UPGRADE_LOCK_OPTION => 1700000000,
             Licensio_KB_Import_State::option_for( 'heroic' ) => array( 'phase' => 'articles' ),
@@ -766,6 +767,56 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
         Licensio_KB_Uninstaller::uninstall_site();
 
         $this->assertArrayNotHasKey( 'licensio_category_children', $this->options, 'The cache must not survive Delete everything.' );
+    }
+
+    /**
+     * The stored rewrite rules are deleted in both modes.
+     *
+     * A network deactivation flushes the rules on the main site only, so a
+     * subsite kept the knowledge base rules after the plugin was deleted.
+     * Core rebuilds the option on the next request.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_rewrite_rules_are_deleted_in_both_modes() {
+        foreach ( array( false, true ) as $delete_data ) {
+            $this->seed_site( $delete_data );
+
+            Licensio_KB_Uninstaller::uninstall_site();
+
+            $this->assertArrayNotHasKey( 'rewrite_rules', $this->options );
+        }
+    }
+
+    /**
+     * On multisite every site's stored rewrite rules are deleted.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_rewrite_rules_are_deleted_on_every_site_of_a_network() {
+        Functions\when( 'is_multisite' )->justReturn( true );
+        Functions\when( 'get_sites' )->justReturn( array( 1, 2 ) );
+
+        foreach ( array( 1, 2 ) as $blog_id ) {
+            $this->blogs[ $blog_id ] = array(
+                'licensio_settings' => array( 'delete_data_on_uninstall' => 2 === $blog_id ),
+                'rewrite_rules'     => array( 'help/?$' => 'index.php?post_type=licensio_article' ),
+            );
+        }
+
+        Licensio_KB_Uninstaller::run();
+
+        foreach ( array( 1, 2 ) as $blog_id ) {
+            $this->assertArrayNotHasKey(
+                'rewrite_rules',
+                $this->blogs[ $blog_id ],
+                sprintf( 'Site %d kept the knowledge base rewrite rules.', $blog_id )
+            );
+        }
     }
 
     /**
