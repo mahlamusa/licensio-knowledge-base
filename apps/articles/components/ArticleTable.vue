@@ -630,9 +630,9 @@ const expandedKeys = computed( () =>
 }
 
 /*
- * A long term name (a tag such as woocommerce) may break inside the word
- * when the column is at its narrowest, rather than push the table past the
- * screen on a small laptop.
+ * A long term name (a tag such as internationalisation) may break inside
+ * the word when the column is at its narrowest, rather than push the table
+ * past the screen on a small laptop.
  */
 .lkb-termlist {
 	overflow-wrap: anywhere;
