@@ -39,7 +39,6 @@ const FALLBACK_CONFIG: ArticlesConfig = {
 	newUrl: '',
 	feedbackUrl: '',
 	can: {
-		manage: true,
 		editOthers: true,
 		publish: true,
 		createTags: true,

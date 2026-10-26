@@ -53,6 +53,7 @@ class Licensio_KB_Category_Order_REST_Test extends Licensio_KB_Test_Case {
         Functions\when( 'rest_authorization_required_code' )->justReturn( 403 );
         Functions\when( 'rest_ensure_response' )->returnArg();
         Functions\when( 'wp_check_post_lock' )->justReturn( false );
+        Functions\when( '_prime_post_caches' )->justReturn( null );
         Functions\when( 'absint' )->alias(
             function ( $value ) {
                 return abs( (int) $value );

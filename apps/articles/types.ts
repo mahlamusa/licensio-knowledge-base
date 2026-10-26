@@ -275,8 +275,6 @@ export interface ListPreferences {
  * What the current user may do, as the page localises it.
  */
 export interface ArticlesCan {
-	/** Manage the knowledge base: Settings, Feedback and the other screens. */
-	manage: boolean;
 	/** Edit other people's articles, and so choose an author. */
 	editOthers: boolean;
 	/** Publish, schedule and make articles private. */
@@ -295,7 +293,7 @@ export interface ArticlesConfig {
 	settingsUrl: string;
 	/** `post-new.php?post_type=licensio_article`. */
 	newUrl: string;
-	/** The Feedback inbox URL; append `&article_id={id}`. Empty without `can.manage`. */
+	/** The Feedback inbox URL; append `&article_id={id}`. Empty for users who cannot manage the knowledge base. */
 	feedbackUrl: string;
 	/** What the current user may do. */
 	can: ArticlesCan;

@@ -103,28 +103,6 @@ let latestLoad = 0;
 let latestSelect = 0;
 
 /**
- * The columns shown at the current width.
- *
- * Until the user picks their columns, the less used defaults are left out
- * on medium screens.
- *
- * @since 1.0.0
- *
- * @param {State} state The store state.
- *
- * @return {ArticleColumn[]} The columns.
- */
-function visibleColumns( state: State ): ArticleColumn[] {
-	const { columns, columns_chosen: chosen } = state.preferences;
-
-	if ( chosen || ! medium.value ) {
-		return columns;
-	}
-
-	return columns.filter( ( column ) => ! MEDIUM_HIDDEN.includes( column ) );
-}
-
-/**
  * An empty bulk run.
  *
  * @since 1.0.0
@@ -240,24 +218,35 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 		/**
 		 * Whether a column is shown.
 		 *
-		 * @param {State} state The store state.
-		 *
 		 * @return {(column: ArticleColumn) => boolean} The check.
 		 */
-		shows( state ): ( column: ArticleColumn ) => boolean {
-			return ( column ) => visibleColumns( state ).includes( column );
+		shows(): ( column: ArticleColumn ) => boolean {
+			const visible = this.visibleColumns;
+
+			return ( column ) => visible.includes( column );
 		},
 
 		/**
 		 * The columns shown at the current width, which the Columns picker
 		 * shows ticked.
 		 *
+		 * Until the user picks their columns, the less used defaults are left
+		 * out on medium screens.
+		 *
 		 * @param {State} state The store state.
 		 *
 		 * @return {ArticleColumn[]} The columns.
 		 */
 		visibleColumns( state ): ArticleColumn[] {
-			return visibleColumns( state );
+			const { columns, columns_chosen: chosen } = state.preferences;
+
+			if ( chosen || ! medium.value ) {
+				return columns;
+			}
+
+			return columns.filter(
+				( column ) => ! MEDIUM_HIDDEN.includes( column )
+			);
 		},
 
 		/**
@@ -269,8 +258,7 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 		 */
 		trimmed( state ): boolean {
 			return (
-				visibleColumns( state ).length <
-				state.preferences.columns.length
+				this.visibleColumns.length < state.preferences.columns.length
 			);
 		},
 	},
@@ -694,15 +682,15 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 		},
 
 		/**
-		 * Undo the batches of a bulk run.
+		 * Undo the batches of a bulk run, or an editor trash, by their tokens.
 		 *
 		 * @since 1.0.0
 		 *
-		 * @param {BulkResult[]} results The batches to undo.
+		 * @param {string[]} tokens The undo token of each batch; empty ones are passed over.
 		 *
 		 * @return {Promise<RevertResult>} What was put back, skipped or failed, over every batch.
 		 */
-		async undo( results: BulkResult[] ): Promise< RevertResult > {
+		async undo( tokens: string[] ): Promise< RevertResult > {
 			const reverted: RevertResult = {
 				done: [],
 				skipped: [],
@@ -710,12 +698,12 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 			};
 
 			try {
-				for ( const result of results ) {
-					if ( ! result.token ) {
+				for ( const token of tokens ) {
+					if ( ! token ) {
 						continue;
 					}
 
-					const answer = await revert( { token: result.token } );
+					const answer = await revert( { token } );
 
 					reverted.done.push( ...answer.done );
 					reverted.skipped.push( ...answer.skipped );

@@ -39,6 +39,7 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
     protected function setUp(): void {
         parent::setUp();
 
+        Functions\when( '_prime_post_caches' )->justReturn( null );
         Functions\when( 'admin_url' )->alias(
             function ( $path = '' ) {
                 return 'https://example.test/wp-admin/' . ltrim( (string) $path, '/' );

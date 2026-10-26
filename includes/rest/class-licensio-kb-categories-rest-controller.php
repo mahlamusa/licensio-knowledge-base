@@ -75,10 +75,10 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
     /**
      * The gap between two siblings' `licensio_order` values.
      *
-     * @since 1.0.0
+     * @since 1.0.0 Shares the step new categories are placed with.
      * @var int
      */
-    const ORDER_STEP = 10;
+    const ORDER_STEP = Licensio_KB_Term_Meta::ORDER_STEP;
 
     /**
      * The request fields that are stored as term meta, and their meta keys.
@@ -1477,34 +1477,6 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
         }
 
         return $parents;
-    }
-
-    /**
-     * Every descendant of a category.
-     *
-     * @since 1.0.0
-     *
-     * @param int             $id      The category.
-     * @param array<int, int> $parents Every category ID to its parent ID.
-     *
-     * @return int[] The descendant IDs, nearest first.
-     */
-    public static function descendants_of( $id, array $parents ) {
-        $found = array();
-        $queue = array( (int) $id );
-
-        while ( ! empty( $queue ) ) {
-            $current = array_shift( $queue );
-
-            foreach ( $parents as $child => $parent_id ) {
-                if ( $parent_id === $current && ! in_array( $child, $found, true ) && $child !== (int) $id ) {
-                    $found[] = $child;
-                    $queue[] = $child;
-                }
-            }
-        }
-
-        return $found;
     }
 
     /**

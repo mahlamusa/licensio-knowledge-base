@@ -910,30 +910,6 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * Descendants are found at every depth, nearest first, never the category itself.
-     *
-     * @since 1.0.0
-     *
-     * @return void
-     */
-    public function test_descendants_are_found_at_every_depth() {
-        $this->assertSame( array( 2, 3 ), Licensio_KB_Categories_REST_Controller::descendants_of( 1, $this->parents() ) );
-        $this->assertSame( array( 5 ), Licensio_KB_Categories_REST_Controller::descendants_of( 4, $this->parents() ) );
-        $this->assertSame( array(), Licensio_KB_Categories_REST_Controller::descendants_of( 3, $this->parents() ) );
-        $this->assertSame(
-            array( 2 ),
-            Licensio_KB_Categories_REST_Controller::descendants_of(
-                1,
-                array(
-                    1 => 2,
-                    2 => 1,
-                )
-            ),
-            'Stored loops do not hang the walk.'
-        );
-    }
-
-    /**
      * A move under the category itself or a descendant is a cycle.
      *
      * @since 1.0.0

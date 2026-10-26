@@ -305,6 +305,9 @@ class Licensio_KB_Category_Order_REST_Controller extends Licensio_KB_REST_Contro
                 );
             }
 
+            // The capability and edit lock checks read each article and its meta.
+            _prime_post_caches( $ids, false, true );
+
             foreach ( $ids as $id ) {
                 if ( ! current_user_can( 'edit_post', $id ) ) {
                     return new WP_Error(

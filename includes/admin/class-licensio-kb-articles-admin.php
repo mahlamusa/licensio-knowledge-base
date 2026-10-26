@@ -189,8 +189,9 @@ class Licensio_KB_Articles_Admin {
      * `can` tells the app what the current user may do, so it hides what they
      * cannot use: the author picker and filter without `editOthers`, publishing
      * and private visibility without `publish`, creating tags without
-     * `createTags`, and the Settings and Feedback links without `manage`. The
-     * server checks every write again whatever the app shows.
+     * `createTags`. The Settings and Feedback links are left empty for users
+     * who cannot manage the knowledge base, and the app hides an empty link.
+     * The server checks every write again whatever the app shows.
      *
      * @since 1.0.0 Adds `can`, and leaves the Settings and Feedback links empty for users who cannot open them.
      *
@@ -207,8 +208,7 @@ class Licensio_KB_Articles_Admin {
             'newUrl'      => admin_url( 'post-new.php?post_type=' . Licensio_KB_Post_Types::POST_TYPE ),
             'feedbackUrl' => $manage ? admin_url( 'edit.php?post_type=' . Licensio_KB_Post_Types::POST_TYPE . '&page=' . Licensio_KB_Feedback_Admin::PAGE_SLUG ) : '',
             'can'         => array(
-                'manage'     => $manage,
-                'editOthers' => current_user_can( Licensio_KB_Article_Bulk::type_cap( 'edit_others_posts' ) ),
+                'editOthers' => Licensio_KB_Articles_REST_Controller::sees_others(),
                 'publish'    => current_user_can( Licensio_KB_Article_Bulk::type_cap( 'publish_posts' ) ),
                 'createTags' => current_user_can( Licensio_KB_Article_Bulk::taxonomy_cap( Licensio_KB_Post_Types::TAXONOMY_TAG, 'edit_terms' ) ),
             ),

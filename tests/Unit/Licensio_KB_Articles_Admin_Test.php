@@ -461,7 +461,6 @@ class Licensio_KB_Articles_Admin_Test extends Licensio_KB_Test_Case {
 
         $this->assertSame(
             array(
-                'manage'     => false,
                 'editOthers' => false,
                 'publish'    => true,
                 'createTags' => false,

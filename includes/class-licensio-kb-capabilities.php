@@ -136,7 +136,7 @@ class Licensio_KB_Capabilities {
      * @return array<string, string[]> Role name to the capabilities granted to it.
      */
     public static function role_capabilities() {
-        $all     = array_merge( array( self::CAPABILITY ), array_values( self::ARTICLE_CAPABILITIES ) );
+        $all     = self::own_capabilities();
         $article = static function ( array $names ) {
             return array_values( array_intersect_key( self::ARTICLE_CAPABILITIES, array_flip( $names ) ) );
         };
@@ -176,6 +176,17 @@ class Licensio_KB_Capabilities {
         }
 
         return $roles;
+    }
+
+    /**
+     * The plugin's own capabilities: the management one and every article one.
+     *
+     * @since 1.0.0
+     *
+     * @return string[] The capability names.
+     */
+    private static function own_capabilities() {
+        return array_merge( array( self::CAPABILITY ), array_values( self::ARTICLE_CAPABILITIES ) );
     }
 
     /**
@@ -242,14 +253,12 @@ class Licensio_KB_Capabilities {
             }
         }
 
-        $own = array_merge( array( self::CAPABILITY ), array_values( self::ARTICLE_CAPABILITIES ) );
-
         foreach ( wp_roles()->role_objects as $role ) {
             if ( ! $role instanceof WP_Role ) {
                 continue;
             }
 
-            foreach ( $own as $capability ) {
+            foreach ( self::own_capabilities() as $capability ) {
                 if ( isset( $role->capabilities[ $capability ] ) ) {
                     $role->remove_cap( $capability );
                 }

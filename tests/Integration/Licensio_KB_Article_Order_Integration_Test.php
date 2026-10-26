@@ -56,6 +56,7 @@ class Licensio_KB_Article_Order_Integration_Test extends Licensio_KB_Analytics_D
         Brain\Monkey\Functions\when( 'rest_authorization_required_code' )->justReturn( 403 );
         Brain\Monkey\Functions\when( 'current_user_can' )->justReturn( true );
         Brain\Monkey\Functions\when( 'wp_check_post_lock' )->justReturn( false );
+        Brain\Monkey\Functions\when( '_prime_post_caches' )->justReturn( null );
         Brain\Monkey\Functions\when( 'wp_cache_delete_multiple' )->justReturn( array() );
         Brain\Monkey\Functions\when( 'wp_cache_set_posts_last_changed' )->justReturn( null );
 

@@ -14,7 +14,7 @@ import { __, _n, sprintf } from '../components/i18n';
 import { errorMessage } from '../components/rest';
 import { showUndoToast } from './components/UndoToast';
 import { BATCH_SIZE, useArticlesStore as articlesStore } from './store';
-import type { BulkAction, BulkArgs, BulkResult, SkipReason } from './types';
+import type { BulkAction, BulkArgs, SkipReason } from './types';
 
 /** The actions that can be undone. Author and comments are left out on purpose. */
 const UNDOABLE: BulkAction[] = [ 'trash', 'restore', 'status', 'terms' ];
@@ -339,10 +339,10 @@ export async function performAction(
 		return;
 	}
 
-	const results = run.results;
+	const tokens = run.results.map( ( { token } ) => token );
 
 	afterProgressCloses( () =>
-		showUndoToast( text, () => void undoAndReport( results ) )
+		showUndoToast( text, () => void undoAndReport( tokens ) )
 	);
 }
 
@@ -351,15 +351,15 @@ export async function performAction(
  *
  * @since 1.0.0
  *
- * @param {BulkResult[]} results The batches, each with its undo token.
+ * @param {string[]} tokens The undo token of each batch.
  *
  * @return {Promise<void>} Resolves once reported.
  */
-async function undoAndReport( results: BulkResult[] ): Promise< void > {
+async function undoAndReport( tokens: string[] ): Promise< void > {
 	const store = articlesStore();
 
 	try {
-		const reverted = await store.undo( results );
+		const reverted = await store.undo( tokens );
 		const count = reverted.done.length;
 
 		if ( count > 0 ) {
@@ -448,9 +448,6 @@ export function offerEditorTrashUndo(): void {
 
 	showUndoToast(
 		doneText( 'trash', count ),
-		() =>
-			void undoAndReport( [
-				{ token, done: [], skipped: [], failed: [] },
-			] )
+		() => void undoAndReport( [ token ] )
 	);
 }

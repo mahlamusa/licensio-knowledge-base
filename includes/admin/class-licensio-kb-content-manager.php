@@ -740,6 +740,8 @@ class Licensio_KB_Content_Manager {
         $ids      = array_slice( Licensio_KB_Article_Bulk::clean_ids( explode( ',', (string) $ids ) ), 0, Licensio_KB_Article_Bulk::MAX_IDS );
         $previous = array();
 
+        _prime_post_caches( $ids, false, true );
+
         foreach ( $ids as $id ) {
             $post = get_post( $id );
 
