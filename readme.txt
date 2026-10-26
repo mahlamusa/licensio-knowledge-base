@@ -125,6 +125,8 @@ Yes. Copy any file from the plugin's `templates/` directory into a `licensio-kb/
 
 This works for block themes too. The five block templates (Single Article, Article Archive, Article Category, Article Tag and Article Search Results) each render the knowledge base layout as one Knowledge Base View block, which outputs the same `*-body.php` file the classic templates use. The Site Editor shows a live preview of that layout, filled with your newest article or a category or tag that has articles. You can still change the header and footer template parts, add blocks before or after the knowledge base layout, or reset a template to the plugin's copy. To change the layout itself, copy the matching body file (`archive-body.php`, `category-body.php`, `single-body.php`, `tag-body.php` or `search-body.php`) into `licensio-kb/` in your theme, or use the plugin's `licensio_` actions and filters.
 
+A template you customise in the Site Editor is saved as your own copy and keeps the layout it was saved with. If you customised Single Article, Article Tag or Article Search Results before the knowledge base layout moved into the Knowledge Base View block, reset that template in the Site Editor to get the current layout.
+
 = Can I change the /docs/ address? =
 
 Yes. Under **Knowledge Base > Settings > Slugs and permalinks** you can set the article, category and tag bases, and choose whether category URLs include their parent categories.
@@ -221,7 +223,7 @@ Included as PHP source in `libraries/`:
 * Knowledge base home with a help topics grid, category pages listing every article, and a sidebar with a table of contents, categories, tags, Popular Articles and a Need Support card.
 * Dedicated search index with FULLTEXT relevance ranking, a portable fallback driver, a REST search endpoint, front-end type-ahead and a WP-CLI reindex command.
 * Classic PHP templates and Site Editor block templates, both overridable, sharing one hook contract.
-* Five dynamic blocks, each also registered as a shortcode from the same render callback.
+* Five dynamic content blocks, each also registered as a shortcode from the same render callback, and a Knowledge Base View block that renders the knowledge base layout in the block templates.
 * Article voting, comment feedback and an admin feedback inbox.
 * All Articles, Categories and Tags admin screens with filters, quick edit, confirmed and undoable bulk actions, a drag-and-drop category tree, per-category article order, and tag merge and convert, with a setting and a filter to keep the classic WordPress screens.
 * Privacy-safe search and view analytics with a reporting dashboard, retention cleanup and personal-data export and erase support.
