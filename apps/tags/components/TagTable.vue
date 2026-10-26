@@ -3,8 +3,10 @@
  * The tag table.
  *
  * Lists the page of tags with server-side sort and paging, row selection for
- * the bulk bar. Edit hands the tag to the page, which loads it into the left
- * form; Quick edit opens the row's name, slug and description in place. Save
+ * the bulk bar. As on core's tag list, the row actions sit under the name and
+ * show on hover or focus (always on touch and narrow screens): Edit hands the
+ * tag to the page, which loads it into the left form; Quick edit opens the
+ * row's name, slug and description in place. Save
  * sends without asking, and the row keeps
  * the user's input when the server refuses it, as it does a slug another tag
  * already uses. The slug the server settled on (made from the name if the
@@ -124,11 +126,6 @@ const columns = computed( () => [
 		sorter: true,
 		sortOrder: sortOrder( 'count' ),
 		sortDirections: [ 'descend', 'ascend', 'descend' ],
-	},
-	{
-		title: __( 'Actions', 'licensio-knowledge-base' ),
-		key: 'actions',
-		width: 200,
 	},
 ] );
 
@@ -380,6 +377,64 @@ watch(
 						:aria-label="__( 'Name', 'licensio-knowledge-base' )"
 					/>
 					<strong v-else>{{ record.name }}</strong>
+
+					<div
+						v-if="editingId === record.id"
+						class="lkb-rowactions is-open"
+					>
+						<a-button
+							type="primary"
+							size="small"
+							:disabled="! canSave( record as TagItem )"
+							:loading="store.saving"
+							@click="save( record as TagItem )"
+						>
+							{{ __( 'Save', 'licensio-knowledge-base' ) }}
+						</a-button>
+						<a-button size="small" @click="cancelEdit">
+							{{ __( 'Cancel', 'licensio-knowledge-base' ) }}
+						</a-button>
+					</div>
+					<div v-else class="lkb-rowactions">
+						<a-button
+							type="link"
+							size="small"
+							data-lkb-edit
+							:disabled="null !== editingId"
+							:aria-label="
+								sprintf(
+									/* translators: %s: the tag's name. */
+									__(
+										'Edit “%s”',
+										'licensio-knowledge-base'
+									),
+									record.name
+								)
+							"
+							@click="edit( record as TagItem )"
+						>
+							{{ __( 'Edit', 'licensio-knowledge-base' ) }}
+						</a-button>
+						<a-button
+							type="link"
+							size="small"
+							data-lkb-quick
+							:disabled="null !== editingId"
+							:aria-label="
+								sprintf(
+									/* translators: %s: the tag's name. */
+									__(
+										'Quick edit “%s”',
+										'licensio-knowledge-base'
+									),
+									record.name
+								)
+							"
+							@click="startEdit( record as TagItem )"
+						>
+							{{ __( 'Quick edit', 'licensio-knowledge-base' ) }}
+						</a-button>
+					</div>
 				</template>
 
 				<template v-else-if="'slug' === column.key">
@@ -419,64 +474,6 @@ watch(
 						{{ record.count }}
 					</a>
 				</template>
-
-				<template v-else-if="'actions' === column.key">
-					<div
-						v-if="editingId === record.id"
-						class="lkb-tags__actions"
-					>
-						<a-button
-							type="primary"
-							size="small"
-							:disabled="! canSave( record as TagItem )"
-							:loading="store.saving"
-							@click="save( record as TagItem )"
-						>
-							{{ __( 'Save', 'licensio-knowledge-base' ) }}
-						</a-button>
-						<a-button size="small" @click="cancelEdit">
-							{{ __( 'Cancel', 'licensio-knowledge-base' ) }}
-						</a-button>
-					</div>
-					<div v-else class="lkb-tags__actions">
-						<a-button
-							size="small"
-							data-lkb-edit
-							:disabled="null !== editingId"
-							:aria-label="
-								sprintf(
-									/* translators: %s: the tag's name. */
-									__(
-										'Edit “%s”',
-										'licensio-knowledge-base'
-									),
-									record.name
-								)
-							"
-							@click="edit( record as TagItem )"
-						>
-							{{ __( 'Edit', 'licensio-knowledge-base' ) }}
-						</a-button>
-						<a-button
-							size="small"
-							data-lkb-quick
-							:disabled="null !== editingId"
-							:aria-label="
-								sprintf(
-									/* translators: %s: the tag's name. */
-									__(
-										'Quick edit “%s”',
-										'licensio-knowledge-base'
-									),
-									record.name
-								)
-							"
-							@click="startEdit( record as TagItem )"
-						>
-							{{ __( 'Quick edit', 'licensio-knowledge-base' ) }}
-						</a-button>
-					</div>
-				</template>
 			</template>
 		</a-table>
 	</div>
@@ -505,9 +502,59 @@ watch(
 	color: var( --lkb-ink-muted );
 }
 
-.lkb-tags__actions {
+/*
+ * Core's list table cells, as on the Articles screen: 8px 10px padding, top
+ * aligned, so the table fits the list column beside the form.
+ */
+.lkb-tablecard :deep( .ant-table-thead > tr > th ),
+.lkb-tablecard :deep( .ant-table-tbody > tr.ant-table-row > td ) {
+	padding: 8px 10px;
+}
+
+.lkb-tablecard :deep( .ant-table-tbody > tr.ant-table-row > td ) {
+	vertical-align: top;
+}
+
+/*
+ * The row actions under the name, as on core's list screens and the Articles
+ * screen: shown when the row is hovered or focus is inside them, and always
+ * on touch and narrow screens. They are only made transparent, so they stay
+ * in the layout and the accessibility tree, and Tab still reaches them.
+ */
+.lkb-rowactions {
 	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0 10px;
+	padding-top: 2px;
+	font-size: 13px;
+	line-height: 1.3em;
+	opacity: 0;
+}
+
+.lkb-rowactions :deep( .ant-btn-link ) {
+	height: auto;
+	padding: 0;
+	border: 0;
+	font-size: 13px;
+	line-height: inherit;
+}
+
+.lkb-rowactions.is-open {
 	gap: 8px;
+	padding-top: 8px;
+}
+
+.ant-table-row:hover .lkb-rowactions,
+.lkb-rowactions:focus-within,
+.lkb-rowactions.is-open {
+	opacity: 1;
+}
+
+@media ( hover: none ), ( max-width: 782px ) {
+	.lkb-rowactions {
+		opacity: 1;
+	}
 }
 
 :deep( .ant-table-tbody > tr.ant-table-row-selected > td ) {
