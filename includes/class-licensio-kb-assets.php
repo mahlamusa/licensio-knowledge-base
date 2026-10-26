@@ -347,6 +347,7 @@ class Licensio_KB_Assets {
      * `wp-i18n` also gets the translations of the shared chunks it imports.
      *
      * @since 1.0.0
+     * @since 1.0.0 Dev server URLs carry no version query, which Vite rejects.
      *
      * @param string   $handle Script handle to register the entry under.
      * @param string   $entry  Source path relative to the plugin root, e.g. `apps/settings/index.ts`.
@@ -361,8 +362,9 @@ class Licensio_KB_Assets {
             $this->module_handles[] = 'licensio-kb-vite-client';
             $this->module_handles[] = $handle;
 
-            wp_enqueue_script( 'licensio-kb-vite-client', $this->dev_server_url() . '/@vite/client', array(), LICENSIO_KB_VERSION, true );
-            wp_enqueue_script( $handle, $this->dev_server_url() . '/' . ltrim( $entry, '/' ), $deps, LICENSIO_KB_VERSION, true );
+            // No version: Vite answers a `?ver=` query on these URLs with a 500.
+            wp_enqueue_script( 'licensio-kb-vite-client', $this->dev_server_url() . '/@vite/client', array(), null, true ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
+            wp_enqueue_script( $handle, $this->dev_server_url() . '/' . ltrim( $entry, '/' ), $deps, null, true ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
 
             return true;
         }
@@ -545,7 +547,13 @@ class Licensio_KB_Assets {
     /**
      * Mark this plugin's Vite scripts as ES modules.
      *
+     * The markup also carries the handle's inline scripts, translations
+     * included, so only the opening `<script>` tag with a `src` attribute is
+     * changed. A translation that happens to contain ` type=` or ` src=` is
+     * left alone and cannot stop the module type being added.
+     *
      * @since 1.0.0
+     * @since 1.0.0 Only the opening tag with a `src` attribute is changed.
      *
      * @param string $tag    The script tag markup.
      * @param string $handle The script handle.
@@ -557,10 +565,19 @@ class Licensio_KB_Assets {
             return $tag;
         }
 
-        if ( false !== strpos( $tag, ' type=' ) ) {
-            return str_replace( array( " type='text/javascript'", ' type="text/javascript"' ), ' type="module"', $tag );
-        }
+        return (string) preg_replace_callback(
+            '/<script\b[^>]*\ssrc=[^>]*>/i',
+            static function ( $matches ) {
+                $open = $matches[0];
 
-        return str_replace( ' src=', ' type="module" src=', $tag );
+                if ( preg_match( '/\stype=/i', $open ) ) {
+                    return (string) preg_replace( '/\stype=([\'"]?)[^\s>\'"]*\1/i', ' type="module"', $open, 1 );
+                }
+
+                return (string) preg_replace( '/^<script\b/i', '<script type="module"', $open );
+            },
+            $tag,
+            1
+        );
     }
 }
