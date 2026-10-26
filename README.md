@@ -87,7 +87,7 @@ All three run the production Vite and `wp-scripts` builds first. The free and pr
 
 The staged tree is assembled from an **allowlist** (`SHIP_PATHS` in the script), not by pruning a copy of the repository. An exclude list ships whatever it has not heard of yet; an allowlist fails in the safe direction. Nothing under `tools/` or `tests/`, no sources, no `node_modules` and no dev config reaches the free or pro zip, and a second assertion re-checks that after staging. The wporg zip is allowed exactly the source paths listed above and nothing else from the forbidden list; `tools/migrate-heroic/` stays out of it.
 
-`bin/build-release.sh` requires `php`, `zip`, `unzip`, `npm` and WP-CLI. WP-CLI is used only to generate `languages/licensio-knowledge-base.pot`; if it is not on `PATH` the script downloads `wp-cli.phar` into `.tmp/`, or you can point `WP_CLI_BIN` at your own.
+`bin/build-release.sh` requires `php`, `zip`, `unzip`, `npm` and WP-CLI. WP-CLI is used only to generate `languages/licensio-knowledge-base.pot` inside the zips (the template is not committed); if it is not on `PATH` the script downloads `wp-cli.phar` into `.tmp/`, or you can point `WP_CLI_BIN` at your own.
 
 ### Publishing a release
 
@@ -127,7 +127,7 @@ uninstall.php                removes plugin state; data only when opted in
 readme.txt                   the wordpress.org listing        (#11)
 includes/                    class-licensio-kb-*.php and the function files
 libraries/                   Strauss-prefixed vendor code (committed)
-languages/                   licensio-knowledge-base.pot, regenerated on release
+languages/                   licensio-knowledge-base.pot, generated into the zips only (gitignored)
 bin/                         Strauss wrapper, the release build and its gates (#11); never shipped
 templates/                   classic PHP templates          (#5)
 block-templates/             block theme templates          (#6)
