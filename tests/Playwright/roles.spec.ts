@@ -39,6 +39,9 @@ const users: Record< Role, number > = {
 /** The articles the suite made, by name. */
 const articles: Record< string, { id: number; title: string } > = {};
 
+/** An existing category the writers may file articles under. */
+let category = 0;
+
 /**
  * Create an article through wp-cli.
  *
@@ -83,12 +86,12 @@ async function logInAs( page: Page, role: Role ): Promise< void > {
 /**
  * Call a plugin REST route with the Articles app's nonce.
  *
- * @since 1.0.0
- *
- * @param {Page}   page   The page, on the Articles app.
  * A route starting with `/` is taken from the REST root instead, such as
  * `/wp/v2/licensio_tags`.
  *
+ * @since 1.0.0
+ *
+ * @param {Page}   page   The page, on the Articles app.
  * @param {string} method The HTTP method.
  * @param {string} route  The route under `licensio-kb/v1`, or from the REST root.
  * @param {Object} body   The JSON body, for writes.
@@ -217,6 +220,73 @@ function statusOf( title: string ): string {
 	);
 }
 
+/**
+ * How many articles of each status a user wrote, through wp-cli.
+ *
+ * @since 1.0.0
+ *
+ * @param {number} author The user.
+ *
+ * @return {Record<string, number>} Status to count.
+ */
+function ownCounts( author: number ): Record< string, number > {
+	return JSON.parse(
+		wpEval(
+			`$counts = array(); foreach ( get_posts( array( 'post_type' => 'licensio_article', 'post_status' => array_keys( get_post_stati() ), 'author' => ${ author }, 'posts_per_page' => -1 ) ) as $post ) { $counts[ $post->post_status ] = ( isset( $counts[ $post->post_status ] ) ? $counts[ $post->post_status ] : 0 ) + 1; } echo wp_json_encode( (object) $counts );`
+		)
+	) as Record< string, number >;
+}
+
+/**
+ * The management screens and routes stay closed to article writers.
+ *
+ * @since 1.0.0
+ *
+ * @param {Page} page The page, on the Articles app.
+ *
+ * @return {Promise<void>} Resolves once checked; leaves the Articles app.
+ */
+async function expectManagementClosed( page: Page ): Promise< void > {
+	expect( await callRoute( page, 'GET', 'feedback' ) ).toBe( 403 );
+	expect( await callRoute( page, 'GET', 'analytics/overview' ) ).toBe( 403 );
+
+	for ( const slug of [
+		'licensio-kb-tools',
+		'licensio-kb-analytics',
+		'licensio-kb-feedback',
+	] ) {
+		const response = await page.goto(
+			`/wp-admin/admin.php?page=${ slug }`
+		);
+
+		expect( response?.status(), slug ).toBe( 403 );
+	}
+}
+
+/**
+ * The status pills count only the user's own articles.
+ *
+ * @since 1.0.0
+ *
+ * @param {Page}   page   The page, on the Articles app.
+ * @param {number} author The user.
+ *
+ * @return {Promise<void>} Resolves once checked.
+ */
+async function expectOwnPillCounts(
+	page: Page,
+	author: number
+): Promise< void > {
+	const counts = ownCounts( author );
+	const pills = page.getByRole( 'group', { name: 'Filter by status' } );
+
+	await expect( pills ).toContainText(
+		`Published (${ counts.publish ?? 0 })`
+	);
+	await expect( pills ).toContainText( `Drafts (${ counts.draft ?? 0 })` );
+	await expect( pills ).toContainText( `Trash (${ counts.trash ?? 0 })` );
+}
+
 test.describe( 'Article writers by role', () => {
 	test.skip(
 		! enabled,
@@ -245,12 +315,19 @@ test.describe( 'Article writers by role', () => {
 
 		makeArticle( 'author own', users.author, 'publish' );
 		makeArticle( 'contributor own', users.contributor, 'draft' );
+		makeArticle( 'contributor published', users.contributor, 'publish' );
 		makeArticle( 'someone else', 1, 'publish' );
+
+		category = Number(
+			wpEval(
+				`$term = wp_insert_term( 'Roles category ${ suffix }', 'licensio_category' ); echo is_wp_error( $term ) ? 0 : $term['term_id'];`
+			)
+		);
 	} );
 
 	test.afterAll( () => {
 		wpEval( `
-			foreach ( get_posts( array( 'post_type' => 'licensio_article', 'post_status' => 'any', 'posts_per_page' => -1, 's' => '${ suffix }', 'fields' => 'ids' ) ) as $id ) {
+			foreach ( get_posts( array( 'post_type' => 'licensio_article', 'post_status' => array_keys( get_post_stati() ), 'posts_per_page' => -1, 's' => '${ suffix }', 'fields' => 'ids' ) ) as $id ) {
 				wp_delete_post( $id, true );
 			}
 			foreach ( array( 'licensio_tag', 'licensio_category' ) as $taxonomy ) {
@@ -283,6 +360,8 @@ test.describe( 'Article writers by role', () => {
 		await expect(
 			await searchRow( page, articles[ 'someone else' ].title )
 		).toHaveCount( 0 );
+
+		await expectOwnPillCounts( page, users.author );
 
 		const row = await searchRow( page, articles[ 'author own' ].title );
 
@@ -340,6 +419,33 @@ test.describe( 'Article writers by role', () => {
 			} )
 		).toBe( 403 );
 
+		// Filing an own article under an existing category.
+		expect(
+			await callRoute(
+				page,
+				'PATCH',
+				`articles/${ articles[ 'author own' ].id }`,
+				{ categories: [ category ] }
+			)
+		).toBe( 200 );
+		expect(
+			wpEval(
+				`echo has_term( ${ category }, 'licensio_category', ${ articles[ 'author own' ].id } ) ? 'yes' : 'no';`
+			)
+		).toBe( 'yes' );
+
+		// An author trashes their own published article.
+		expect(
+			await callRoute( page, 'POST', 'articles/bulk', {
+				ids: [ articles[ 'author own' ].id ],
+				action: 'trash',
+				args: {},
+			} )
+		).toBe( 200 );
+		expect( statusOf( articles[ 'author own' ].title ) ).toBe( 'trash' );
+
+		await expectManagementClosed( page );
+
 		const categories = await page.goto(
 			'/wp-admin/admin.php?page=licensio-kb-categories'
 		);
@@ -382,6 +488,44 @@ test.describe( 'Article writers by role', () => {
 		await expect(
 			await searchRow( page, articles[ 'someone else' ].title )
 		).toHaveCount( 0 );
+
+		await expectOwnPillCounts( page, users.contributor );
+
+		// A published article of their own cannot be trashed.
+		const published = await searchRow(
+			page,
+			articles[ 'contributor published' ].title
+		);
+
+		await expect( published ).toBeVisible();
+		await expect(
+			published.getByRole( 'button', { name: 'Trash' } )
+		).toHaveCount( 0 );
+		expect(
+			await callRoute( page, 'POST', 'articles/bulk', {
+				ids: [ articles[ 'contributor published' ].id ],
+				action: 'trash',
+				args: {},
+			} )
+		).toBe( 200 );
+		expect( statusOf( articles[ 'contributor published' ].title ) ).toBe(
+			'publish'
+		);
+
+		// Filing an own draft under an existing category.
+		expect(
+			await callRoute(
+				page,
+				'PATCH',
+				`articles/${ articles[ 'contributor own' ].id }`,
+				{ categories: [ category ] }
+			)
+		).toBe( 200 );
+		expect(
+			wpEval(
+				`echo has_term( ${ category }, 'licensio_category', ${ articles[ 'contributor own' ].id } ) ? 'yes' : 'no';`
+			)
+		).toBe( 'yes' );
 
 		const row = await searchRow(
 			page,
@@ -453,6 +597,8 @@ test.describe( 'Article writers by role', () => {
 				name: `Roles contributor category ${ suffix }`,
 			} )
 		).toBe( 403 );
+
+		await expectManagementClosed( page );
 
 		// A draft from the block editor lands in the app.
 		const title = `Roles contributor new ${ suffix }`;
