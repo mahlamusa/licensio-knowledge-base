@@ -11,6 +11,9 @@
  * layout. Creating, saving and moving are not confirmed; deleting, merging
  * and discarding an unsaved order are, and a cancelled one sends nothing.
  *
+ * The slug the app makes from a name is also compared with core's
+ * `sanitize_title()` on the same site, which needs `LICENSIO_KB_WP_CLI`.
+ *
  * The suite needs a running WordPress with this plugin active and an
  * administrator account, so it is skipped unless `LICENSIO_KB_E2E=1` and the
  * two credential variables are present.
@@ -26,6 +29,8 @@ import {
 } from './helpers/content-manager';
 import { failOnUnresolvedComponents } from './helpers/ant-components';
 import { logIn, password, user } from './helpers/session';
+import { wpCli, wpEval } from './helpers/wp-cli';
+import { slugify } from '../../apps/categories/slug';
 
 failOnUnresolvedComponents();
 
@@ -1107,7 +1112,6 @@ test.describe( 'Categories app', () => {
 			.getByRole( 'button', { name: 'Move “E2E order Y” up' } )
 			.click();
 		await pane.getByRole( 'button', { name: 'Save order' } ).click();
-		await confirmPopconfirm( page );
 
 		await expect( pane.locator( '.lkb-order__error' ) ).toContainText(
 			'The order could not be saved. Try again.'
@@ -1267,5 +1271,46 @@ test.describe( 'Categories app', () => {
 		);
 
 		expect( overflow ).toBeLessThanOrEqual( 0 );
+	} );
+} );
+
+test.describe( 'Category slug from a name', () => {
+	test.skip(
+		! enabled || ! wpCli,
+		'Needs LICENSIO_KB_E2E=1 and LICENSIO_KB_WP_CLI.'
+	);
+
+	test( 'matches what core sanitize_title makes on the server', () => {
+		const names = [
+			'Café crème',
+			'Getting started: quick guide',
+			'Hello & World / 2?',
+			'“Smart” quotes — and dashes…',
+			'<b>Bold</b> text',
+			'Настройки',
+			'Ёлка',
+			'Ελληνικά άλφα',
+			'Straße',
+			'Ĳsselmeer',
+			'1ª 2º',
+			'Tiếng Việt',
+			'Đồ ăn',
+			'Șțș ǎ ǜ',
+			'Ə ǝ ɑ € £',
+			'Ǹ ẃ ḱ',
+			'x\u0301y',
+			'3 × 4',
+			'日本語 😀',
+			'ü'.repeat( 120 ),
+		];
+		const core = JSON.parse(
+			wpEval(
+				`echo wp_json_encode( array_map( 'sanitize_title', json_decode( base64_decode( '${ Buffer.from(
+					JSON.stringify( names )
+				).toString( 'base64' ) }' ), true ) ) );`
+			)
+		) as string[];
+
+		expect( names.map( slugify ) ).toEqual( core );
 	} );
 } );
