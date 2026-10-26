@@ -10,7 +10,8 @@
  * its error inside the dialog and clears it on a retry, and that focus lands on the page title
  * once a bulk delete takes the Delete button away. Edit loads a tag into the
  * left form as Edit Tag; Update, Cancel and Escape return it to Add New Tag,
- * and Escape closes a Quick edit, sending nothing. Unsaved changes in the
+ * and Escape closes a Quick edit, sending nothing. Quick edit tabs through
+ * its fields before Save and Cancel. Unsaved changes in the
  * form are only dropped once confirmed, a deleted tag leaves the form, and
  * `?term=` loads a tag into it. The form and the list sit
  * side by side on a desktop and stack, form first, on a phone. The category
@@ -360,6 +361,54 @@ test( 'Escape leaves the Edit Tag form and closes a Quick edit', async ( {
 	await page.keyboard.press( 'Escape' );
 	await expect( quickEditButton( page, name ) ).toBeFocused();
 	await expect( row( page, name ) ).toContainText( name );
+	expect( writes.length ).toBe( before );
+
+	// Clean up.
+	await row( page, name ).locator( '.ant-checkbox-input' ).check();
+	await page
+		.locator( '.lkb-bulk' )
+		.getByRole( 'button', { name: 'Delete' } )
+		.click();
+	await answerConfirm( page, 'confirm' );
+	await expect( page.locator( '.ant-table-row' ) ).toHaveCount( 0 );
+} );
+
+test( 'Quick edit tabs through every field before Save and Cancel', async ( {
+	page,
+} ) => {
+	const writes = recordWrites( page );
+	const name = `Tab order ${ suffix }`;
+
+	await logIn( page );
+	await openContentManager( page, 'tags' );
+	await addTag( page, name );
+	await search( page, name );
+
+	const before = writes.length;
+
+	await quickEditButton( page, name ).click();
+
+	const open = page
+		.locator( '.ant-table-row' )
+		.filter( { has: page.locator( 'textarea' ) } );
+	const nameField = open.getByLabel( 'Name', { exact: true } );
+
+	await expect( nameField ).toBeFocused();
+	// A change, so Save is enabled and takes its place in the tab order.
+	await nameField.fill( `${ name } changed` );
+
+	for ( const next of [
+		open.getByLabel( 'Slug' ),
+		open.getByLabel( 'Description' ),
+		open.getByRole( 'button', { name: 'Save' } ),
+		open.getByRole( 'button', { name: 'Cancel' } ),
+	] ) {
+		await page.keyboard.press( 'Tab' );
+		await expect( next ).toBeFocused();
+	}
+
+	await page.keyboard.press( 'Enter' );
+	await expect( quickEditButton( page, name ) ).toBeFocused();
 	expect( writes.length ).toBe( before );
 
 	// Clean up.
