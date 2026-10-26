@@ -91,9 +91,11 @@ const formEl = ref< HTMLFormElement | null >( null );
 const uid = useId();
 
 // Escape cancels; the table puts focus back on the row's Quick edit button.
+// The table keeps a closed form in the page, hidden, so the form is found by
+// its article.
 useEscapeClose(
-	() => ! saving.value,
-	'.lkb-quickedit',
+	() => store.quickEditId === props.item.id && ! saving.value,
+	`.lkb-quickedit[data-article="${ props.item.id }"]`,
 	() => emit( 'close' )
 );
 
@@ -309,7 +311,12 @@ function statusOf( field: string ): 'error' | undefined {
 </script>
 
 <template>
-	<form ref="formEl" class="lkb-quickedit" @submit.prevent>
+	<form
+		ref="formEl"
+		class="lkb-quickedit"
+		:data-article="props.item.id"
+		@submit.prevent
+	>
 		<a-alert
 			v-if="error"
 			type="error"
