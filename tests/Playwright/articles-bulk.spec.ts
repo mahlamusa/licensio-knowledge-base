@@ -26,8 +26,11 @@ import {
 	confirmPopconfirm,
 	contentManagerUrl,
 } from './helpers/content-manager';
+import { failOnUnresolvedComponents } from './helpers/ant-components';
 import { logIn, password, user } from './helpers/session';
 import { wpCli, wpEval } from './helpers/wp-cli';
+
+failOnUnresolvedComponents();
 
 const enabled = process.env.LICENSIO_KB_E2E === '1';
 

@@ -4,9 +4,10 @@
 #
 # A CI step that cannot fail is worse than no step at all: it turns an unchecked
 # assumption into a false assurance. The release gates (the three in this
-# directory and tools/check-app-strings.mjs) are all pattern matching over a
-# tree, which is exactly the kind of thing that goes quietly green - a renamed
-# directory, a pattern that stops compiling, a `find` that walks nothing.
+# directory, tools/check-app-strings.mjs and tools/check-ant-components.mjs)
+# are all pattern matching over a tree, which is exactly the kind of thing that
+# goes quietly green - a renamed directory, a pattern that stops compiling, a
+# `find` that walks nothing.
 #
 # So every gate is exercised here against fixtures, in both directions:
 #
@@ -383,6 +384,44 @@ assert_green 'a template with every app string passes, comments are not calls' \
 assert_red 'a template missing an app plural form fails' \
     'apps/demo/App.vue:6  %d tags' \
     node "${ROOT}/tools/check-app-strings.mjs" "${APP_STRINGS_DIR}/no-plural.pot" "${APP_STRINGS_DIR}/apps"
+
+printf '\ntools/check-ant-components.mjs\n'
+
+ANT_DIR="${WORK_DIR}/ant-components"
+mkdir -p "${ANT_DIR}/apps/demo" "${ANT_DIR}/apps/legacy"
+
+cat > "${ANT_DIR}/apps/demo/index.ts" <<'TS'
+import { Button, Form } from 'ant-design-vue';
+TS
+
+cat > "${ANT_DIR}/apps/demo/App.vue" <<'VUE'
+<template>
+	<a-form><a-form-item><a-button /></a-form-item></a-form>
+</template>
+VUE
+
+cat > "${ANT_DIR}/apps/legacy/index.ts" <<'TS'
+import Antd from 'ant-design-vue';
+TS
+
+cat > "${ANT_DIR}/apps/legacy/App.vue" <<'VUE'
+<template><a-tooltip /></template>
+VUE
+
+assert_green 'registered tags and plugin sub-components pass, default Antd apps are skipped' \
+    node "${ROOT}/tools/check-ant-components.mjs" "${ANT_DIR}/apps"
+
+printf '<template><a-tooltip /></template>\n' > "${ANT_DIR}/apps/demo/Extra.vue"
+
+assert_red 'a tag the entry does not register fails' \
+    'demo/Extra.vue  <a-tooltip>' \
+    node "${ROOT}/tools/check-ant-components.mjs" "${ANT_DIR}/apps"
+
+rm -r "${ANT_DIR}/apps/demo"
+
+assert_red 'no app with named imports fails rather than passing vacuously' \
+    'imports named Ant Design components' \
+    node "${ROOT}/tools/check-ant-components.mjs" "${ANT_DIR}/apps"
 
 printf '\n%s passed, %s failed.\n' "$passed" "$failed"
 
