@@ -216,7 +216,7 @@ async function writeNewArticle( page: Page, title: string ): Promise< void > {
  */
 function statusOf( title: string ): string {
 	return wpEval(
-		`$found = get_posts( array( 'post_type' => 'licensio_article', 'post_status' => 'any', 'title' => '${ title }', 'fields' => 'ids' ) ); echo $found ? get_post_status( $found[0] ) : '';`
+		`$found = get_posts( array( 'post_type' => 'licensio_article', 'post_status' => array_keys( get_post_stati() ), 'title' => '${ title }', 'fields' => 'ids' ) ); echo $found ? get_post_status( $found[0] ) : '';`
 	);
 }
 
