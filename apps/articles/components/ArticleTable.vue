@@ -407,22 +407,18 @@ const expandedKeys = computed( () =>
 							</ConfirmButton>
 						</template>
 						<template v-else>
-							<ConfirmButton
+							<a-button
 								type="link"
 								size="small"
 								:disabled="store.bulk.running"
-								:title="confirmTitle( 'restore', {}, 1 )"
-								:ok-text="
-									__( 'Restore', 'licensio-knowledge-base' )
-								"
-								@confirm="
+								@click="
 									performAction( 'restore', {}, [
 										record.id,
 									] )
 								"
 							>
 								{{ __( 'Restore', 'licensio-knowledge-base' ) }}
-							</ConfirmButton>
+							</a-button>
 							<ConfirmButton
 								type="link"
 								size="small"

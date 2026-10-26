@@ -3,8 +3,8 @@
  * The quick edit form, expanded in place under a row.
  *
  * Title, slug, status, publish date, visibility, categories, tags (new tags
- * can be typed in), author and comments. Save asks first and sends only the
- * fields that changed. A field error from the server shows under its field
+ * can be typed in), author and comments. Save sends only the fields that
+ * changed, without asking first. A field error from the server shows under its field
  * and the form keeps what was typed. A row another user has locked answers
  * 409, which is shown and puts the lock on the row.
  *
@@ -12,7 +12,6 @@
  */
 
 import { computed, onMounted, reactive, ref } from 'vue';
-import ConfirmButton from '../../components/ConfirmButton.vue';
 import TermSelect from '../../components/TermSelect.vue';
 import { errorMessage, RestError } from '../../components/rest';
 import { __, sprintf } from '../../components/i18n';
@@ -191,7 +190,7 @@ const passwordMissing = computed(
 );
 
 /**
- * Send the changes. Runs only after the Popconfirm is confirmed.
+ * Send the changes.
  *
  * Once saved, the list and its status counts are loaded again, and the form
  * closes when the article has left the page.
@@ -447,25 +446,14 @@ function statusOf( field: string ): 'error' | undefined {
 			<a-button :disabled="saving" @click="emit( 'close' )">
 				{{ __( 'Cancel', 'licensio-knowledge-base' ) }}
 			</a-button>
-			<ConfirmButton
+			<a-button
 				type="primary"
-				:title="
-					/* translators: %s: article title. */ sprintf(
-						__(
-							'Save the changes to “%s”?',
-							'licensio-knowledge-base'
-						),
-						props.item.title ||
-							__( '(no title)', 'licensio-knowledge-base' )
-					)
-				"
-				:ok-text="__( 'Save', 'licensio-knowledge-base' )"
 				:loading="saving"
 				:disabled="passwordMissing || !! props.item.lock"
-				@confirm="save"
+				@click="save"
 			>
 				{{ __( 'Save', 'licensio-knowledge-base' ) }}
-			</ConfirmButton>
+			</a-button>
 		</div>
 	</form>
 </template>

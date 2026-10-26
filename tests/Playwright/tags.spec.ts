@@ -1,8 +1,8 @@
 /**
  * The Tags app, end to end.
  *
- * Adds tags through the app, then checks that every change (add, save,
- * merge, convert and delete) waits for its Popconfirm and that Cancel sends
+ * Adds tags through the app, then checks that add and save send at once,
+ * that merge, convert and delete wait for their Popconfirm and Cancel sends
  * nothing, that an edit to a slug another tag uses is refused with a message
  * and keeps the input, and that merge and convert to
  * category work on the selected tags, that a failed merge or convert shows
@@ -23,6 +23,7 @@ import {
 	cancelPopconfirm,
 	confirmPopconfirm,
 	openContentManager,
+	openPopconfirm,
 } from './helpers/content-manager';
 import { failOnUnresolvedComponents } from './helpers/ant-components';
 import { logIn, password, user } from './helpers/session';
@@ -137,7 +138,6 @@ async function addTag( page: Page, name: string ): Promise< void > {
 
 	await form.getByLabel( 'Name' ).fill( name );
 	await form.getByRole( 'button', { name: 'Add tag' } ).click();
-	await confirmPopconfirm( page );
 	await expect( page.locator( '.lkb-tags__add' ) ).toBeHidden();
 }
 
@@ -170,7 +170,7 @@ function row( page: Page, name: string ) {
 	return page.locator( '.ant-table-row', { hasText: name } );
 }
 
-test( 'tags are edited, merged and converted only after confirmation', async ( {
+test( 'tags are added and edited at once, merged and converted only after confirmation', async ( {
 	page,
 } ) => {
 	const writes = recordWrites( page );
@@ -181,16 +181,14 @@ test( 'tags are edited, merged and converted only after confirmation', async ( {
 	await logIn( page );
 	await openContentManager( page, 'tags' );
 
-	// Cancel on Add sends nothing.
+	// Cancel on the Add tag form sends nothing.
 	await page.getByRole( 'button', { name: 'Add tag' } ).click();
 
 	const form = page.locator( '.lkb-tags__add' );
 
 	await form.getByLabel( 'Name' ).fill( alpha );
-	await cancelSendsNothing( page, writes, () =>
-		form.getByRole( 'button', { name: 'Add tag' } ).click()
-	);
 	await form.getByRole( 'button', { name: 'Cancel' } ).click();
+	expect( writes ).toHaveLength( 0 );
 
 	for ( const name of [ alpha, beta, gamma ] ) {
 		await addTag( page, name );
@@ -199,8 +197,7 @@ test( 'tags are edited, merged and converted only after confirmation', async ( {
 	await search( page, suffix );
 	await expect( page.locator( '.ant-table-row' ) ).toHaveCount( 3 );
 
-	// A slug another tag uses is refused with a message, and Cancel sends nothing.
-	const before = writes.length;
+	// Save sends at once; a slug another tag uses is refused with a message.
 	const editing = row( page, gamma );
 
 	await editing.getByRole( 'button', { name: 'Edit' } ).click();
@@ -209,11 +206,7 @@ test( 'tags are edited, merged and converted only after confirmation', async ( {
 
 	await slug.fill( `alpha-${ suffix }` );
 	await page.getByRole( 'button', { name: 'Save' } ).first().click();
-	await cancelPopconfirm( page );
-	expect( writes.length ).toBe( before );
-
-	await page.getByRole( 'button', { name: 'Save' } ).first().click();
-	await confirmPopconfirm( page );
+	await expect( openPopconfirm( page ) ).toHaveCount( 0 );
 	await expect(
 		page.getByText(
 			`Another tag already uses the slug “alpha-${ suffix }”. Choose a different slug.`
@@ -365,7 +358,6 @@ test( 'a description shows as plain text and is edited as stored', async ( {
 	await form.getByLabel( 'Name' ).fill( name );
 	await form.getByLabel( 'Description' ).fill( stored );
 	await form.getByRole( 'button', { name: 'Add tag' } ).click();
-	await confirmPopconfirm( page );
 	await search( page, name );
 
 	await expect(
@@ -488,7 +480,6 @@ test( 'a slow save leaves the row the user opened next alone', async ( {
 	await row( page, first ).getByRole( 'button', { name: 'Edit' } ).click();
 	await openName.fill( `${ first } renamed` );
 	await page.getByRole( 'button', { name: 'Save' } ).first().click();
-	await confirmPopconfirm( page );
 
 	// While the save is held, cancel it and open the other tag.
 	await page

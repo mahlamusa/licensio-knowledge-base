@@ -4,9 +4,9 @@
  *
  * Lists the knowledge base tags with search, an Unused filter, sort and
  * paging; adds a tag; edits name, slug and description inline; and deletes,
- * merges or converts the selected tags from the bulk bar. Every change asks
- * for confirmation in a Popconfirm before anything is sent, and Cancel sends
- * nothing.
+ * merges or converts the selected tags from the bulk bar. Adding and saving
+ * a tag send at once; delete, merge and convert ask in a Popconfirm first,
+ * and Cancel sends nothing.
  *
  * Bulk actions work on the selected rows of the current page, at most 100,
  * so each is a single request.
@@ -104,7 +104,7 @@ function toggleAdd( open: boolean ): void {
 }
 
 /**
- * Add the tag. Called only after the user confirmed.
+ * Add the tag.
  *
  * @since 1.0.0
  *
@@ -251,20 +251,14 @@ onUnmounted( () => {
 						"
 					/>
 					<div class="lkb-tags__add-actions">
-						<ConfirmButton
+						<a-button
 							type="primary"
-							:title="
-								__( 'Add this tag?', 'licensio-knowledge-base' )
-							"
-							:ok-text="
-								__( 'Add tag', 'licensio-knowledge-base' )
-							"
 							:disabled="'' === newTag.name.trim()"
 							:loading="store.saving"
-							@confirm="addTag"
+							@click="addTag"
 						>
 							{{ __( 'Add tag', 'licensio-knowledge-base' ) }}
-						</ConfirmButton>
+						</a-button>
 						<a-button @click="toggleAdd( false )">
 							{{ __( 'Cancel', 'licensio-knowledge-base' ) }}
 						</a-button>
