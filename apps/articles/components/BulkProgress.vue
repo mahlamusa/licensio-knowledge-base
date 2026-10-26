@@ -138,7 +138,14 @@ function nameOf( id: number ): string {
 			</h3>
 			<ul class="lkb-bulkprogress__list">
 				<li v-for="entry in store.bulk.skipped" :key="'s' + entry.id">
-					{{ nameOf( entry.id ) }} — {{ reasonLabel( entry.reason ) }}
+					{{
+						sprintf(
+							/* translators: 1: article title, 2: why it was skipped. */
+							__( '%1$s — %2$s', 'licensio-knowledge-base' ),
+							nameOf( entry.id ),
+							reasonLabel( entry.reason )
+						)
+					}}
 				</li>
 			</ul>
 		</template>
@@ -149,7 +156,14 @@ function nameOf( id: number ): string {
 			</h3>
 			<ul class="lkb-bulkprogress__list">
 				<li v-for="entry in store.bulk.failed" :key="'f' + entry.id">
-					{{ nameOf( entry.id ) }} — {{ entry.message }}
+					{{
+						sprintf(
+							/* translators: 1: article title, 2: why it failed. */
+							__( '%1$s — %2$s', 'licensio-knowledge-base' ),
+							nameOf( entry.id ),
+							entry.message
+						)
+					}}
 				</li>
 			</ul>
 		</template>

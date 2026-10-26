@@ -13,6 +13,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { maintenanceStatus, pruneAnalytics, recountScores } from '../api';
 import type { MaintenanceStatus } from '../types';
+import ConfirmButton from '../../components/ConfirmButton.vue';
 import { __, _n, sprintf } from '../../components/i18n';
 
 /** A backlog bigger than this many sweeps is a job for WP-CLI, not a browser. */
@@ -61,7 +62,7 @@ async function load(): Promise< void > {
 }
 
 /**
- * Recompute every article's usefulness score, once the user confirmed.
+ * Recompute every article's usefulness score.
  *
  * @since 1.0.0
  *
@@ -185,25 +186,14 @@ onMounted( load );
 					</div>
 				</dl>
 
-				<a-popconfirm
-					:title="
-						__(
-							'Recount the score of every article?',
-							'licensio-knowledge-base'
-						)
-					"
-					:ok-text="__( 'Recount scores', 'licensio-knowledge-base' )"
-					:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
-					@confirm="recount"
+				<a-button
+					type="primary"
+					:loading="recounting"
+					:disabled="recounting || pruning"
+					@click="recount"
 				>
-					<a-button
-						type="primary"
-						:loading="recounting"
-						:disabled="recounting || pruning"
-					>
-						{{ __( 'Recount scores', 'licensio-knowledge-base' ) }}
-					</a-button>
-				</a-popconfirm>
+					{{ __( 'Recount scores', 'licensio-knowledge-base' ) }}
+				</a-button>
 
 				<p v-if="recounted" class="licensio-kb-data-maintenance__done">
 					{{
@@ -280,7 +270,11 @@ onMounted( load );
 					</div>
 				</dl>
 
-				<a-popconfirm
+				<ConfirmButton
+					type="primary"
+					danger
+					:loading="pruning"
+					:disabled="recounting || pruning"
 					:title="
 						__(
 							'Permanently delete the expired rows?',
@@ -288,23 +282,10 @@ onMounted( load );
 						)
 					"
 					:ok-text="__( 'Delete', 'licensio-knowledge-base' )"
-					:cancel-text="__( 'Cancel', 'licensio-knowledge-base' )"
 					@confirm="prune"
 				>
-					<a-button
-						type="primary"
-						danger
-						:loading="pruning"
-						:disabled="recounting || pruning"
-					>
-						{{
-							__(
-								'Delete expired rows',
-								'licensio-knowledge-base'
-							)
-						}}
-					</a-button>
-				</a-popconfirm>
+					{{ __( 'Delete expired rows', 'licensio-knowledge-base' ) }}
+				</ConfirmButton>
 
 				<template
 					v-if="

@@ -1,9 +1,9 @@
 /**
  * The Feedback inbox, end to end.
  *
- * Checks that a row's status change and a bulk mark each ask in a Popconfirm
- * first, that Cancel or Escape sends nothing and puts the row's status back, and that
- * a confirmed change is saved.
+ * Checks that a row's status change is saved as soon as it is picked, without
+ * a confirmation, and that a bulk mark asks first, sends nothing when
+ * cancelled and is saved once confirmed.
  *
  * Seeds one article with two votes through wp-cli and filters the inbox to
  * it, so the spec reads only its own rows. It needs a running WordPress with
@@ -18,6 +18,7 @@ import { expect, test, type Page } from '@playwright/test';
 import {
 	cancelPopconfirm,
 	confirmPopconfirm,
+	expectNoPopconfirm,
 	openPopconfirm,
 } from './helpers/content-manager';
 import { logIn, password, user } from './helpers/session';
@@ -108,7 +109,7 @@ test.describe( 'Feedback inbox', () => {
 		` );
 	} );
 
-	test( 'a status change and a bulk mark are sent only once confirmed', async ( {
+	test( 'a status change saves on pick and a bulk mark asks first', async ( {
 		page,
 	} ) => {
 		await logIn( page );
@@ -123,26 +124,13 @@ test.describe( 'Feedback inbox', () => {
 
 		await expect( rows ).toHaveCount( 2 );
 
+		// A single row's status is an update, so it is saved on pick.
 		await pickStatus( page, 'First E2E comment', 'Reviewed' );
-		await expect( openPopconfirm( page ) ).toContainText(
-			'Change the status of this feedback?'
-		);
-		await cancelPopconfirm( page );
-		await expect( status ).toHaveText( 'New' );
-		expect( writes ).toHaveLength( 0 );
-
-		// Escape closes it the same way: nothing sent, the status put back.
-		await pickStatus( page, 'First E2E comment', 'Reviewed' );
-		await expect( openPopconfirm( page ) ).toBeVisible();
-		await page.keyboard.press( 'Escape' );
-		await expect( openPopconfirm( page ) ).toBeHidden();
-		await expect( status ).toHaveText( 'New' );
-		expect( writes ).toHaveLength( 0 );
-
-		await pickStatus( page, 'First E2E comment', 'Reviewed' );
-		await confirmPopconfirm( page );
 		await expect.poll( () => writes.length ).toBe( 1 );
 		await expect( status ).toHaveText( 'Reviewed' );
+		await expectNoPopconfirm( page );
+
+		// A bulk mark asks first, and Cancel sends nothing.
 
 		await page.locator( '.ant-table-thead .ant-checkbox-input' ).check();
 		await page.getByRole( 'button', { name: 'Mark actioned' } ).click();

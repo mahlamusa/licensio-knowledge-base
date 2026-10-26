@@ -3,8 +3,9 @@
  *
  * Proves the acceptance criteria for #10 that only a real WordPress can answer:
  * a brand colour changed on the settings screen reaches the front end without a
- * cache flush, unsaved edits warn before the browser leaves, and reset puts
- * every value back.
+ * cache flush, a save runs without a confirmation, discarding edits asks
+ * first, unsaved edits warn before the browser leaves, and reset puts every
+ * value back.
  *
  * The suite needs a running WordPress with this plugin active and an
  * administrator account, so it is skipped unless `LICENSIO_KB_E2E=1` and the
@@ -15,7 +16,12 @@
  */
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { confirmPopconfirm } from './helpers/content-manager';
+import {
+	cancelPopconfirm,
+	confirmPopconfirm,
+	expectNoPopconfirm,
+	openPopconfirm,
+} from './helpers/content-manager';
 import { logIn, password, user } from './helpers/session';
 
 const enabled = process.env.LICENSIO_KB_E2E === '1';
@@ -133,9 +139,10 @@ test.describe( 'Knowledge base settings', () => {
 			page.locator( '.licensio-kb-settings__preview' )
 		).toHaveCSS( '--licensio-kb-brand', BRAND );
 
+		// A save is an update, so it runs on click without a confirmation.
 		await page.getByRole( 'button', { name: 'Save changes' } ).click();
-		await confirmPopconfirm( page );
 		await expect( page.getByText( 'Settings saved.' ) ).toBeVisible();
+		await expectNoPopconfirm( page );
 
 		// No permalink save, no cache flush: straight to the archive.
 		await page.goto( '/?post_type=licensio_article' );
@@ -143,6 +150,27 @@ test.describe( 'Knowledge base settings', () => {
 		const root = page.locator( '.licensio-kb' ).first();
 
 		await expect( root ).toHaveCSS( '--licensio-kb-brand', BRAND );
+	} );
+
+	test( 'discarding unsaved changes asks first', async ( { page } ) => {
+		await openSettings( page );
+		await setBrandColour( page, '#0f766e' );
+
+		// Cancel keeps the edit.
+		await page.getByRole( 'button', { name: 'Discard' } ).click();
+		await expect( openPopconfirm( page ) ).toContainText(
+			'Discard your unsaved changes?'
+		);
+		await cancelPopconfirm( page );
+		await expect( brandField( page ) ).toHaveValue( '#0f766e' );
+
+		// Confirming puts the stored value back.
+		await page.getByRole( 'button', { name: 'Discard' } ).click();
+		await confirmPopconfirm( page );
+		await expect( brandField( page ) ).not.toHaveValue( '#0f766e' );
+		await expect( page.locator( '.lkb-bar__status' ) ).toContainText(
+			'All changes saved.'
+		);
 	} );
 
 	test( 'leaving with unsaved changes warns first', async ( { page } ) => {
@@ -184,7 +212,6 @@ test.describe( 'Knowledge base settings', () => {
 		await setBrandColour( page, 'not-a-colour' );
 
 		await page.getByRole( 'button', { name: 'Save changes' } ).click();
-		await confirmPopconfirm( page );
 
 		await expect(
 			page.getByText( 'One or more settings are invalid' )

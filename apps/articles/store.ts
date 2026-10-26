@@ -67,6 +67,8 @@ interface State {
 	error: string;
 	selected: number[];
 	allMatching: boolean;
+	/** Every ID "Select all matching" fetched, so a re-ticked row is known. */
+	matching: number[];
 	truncated: boolean;
 	selecting: boolean;
 	preferences: ListPreferences;
@@ -118,6 +120,7 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 			error: '',
 			selected: [],
 			allMatching: false,
+			matching: [],
 			truncated: false,
 			selecting: false,
 			preferences: {
@@ -449,8 +452,9 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 		 * Replace the selection from the table's checkboxes.
 		 *
 		 * After "Select all matching", unticking rows keeps the rest of the
-		 * matching selection across pages. Anything else is a selection of
-		 * rows on this page.
+		 * matching selection across pages, and ticking them again gives the
+		 * whole selection back. Anything else is a selection of rows on this
+		 * page.
 		 *
 		 * @since 1.0.0
 		 *
@@ -462,9 +466,9 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 			latestSelect++;
 
 			if ( this.allMatching && ids.length > 0 ) {
-				const current = new Set( this.selected );
+				const matching = new Set( this.matching );
 
-				if ( ids.every( ( id ) => current.has( id ) ) ) {
+				if ( ids.every( ( id ) => matching.has( id ) ) ) {
 					this.selected = ids;
 					return;
 				}
@@ -500,6 +504,7 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 				}
 
 				this.selected = result.ids;
+				this.matching = result.ids;
 				this.allMatching = true;
 				this.truncated = result.truncated;
 			} catch ( error ) {
@@ -525,6 +530,7 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 			this.selecting = false;
 			this.selected = [];
 			this.allMatching = false;
+			this.matching = [];
 			this.truncated = false;
 		},
 
@@ -550,7 +556,9 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 		 *
 		 * Batches run one after another. The first batch the server refuses
 		 * stops the run; what was done so far stays done and is reported.
-		 * Reloads the list and clears the selection afterwards.
+		 * Reloads the list and clears the selection afterwards. Each run
+		 * gets its own state object, so its answer and Undo never mix with
+		 * another run's.
 		 *
 		 * @since 1.0.0
 		 *
@@ -574,6 +582,9 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 				total: ids.length,
 			};
 
+			// The store's reactive copy, so the progress modal follows it.
+			const run = this.bulk;
+
 			for ( let start = 0; start < ids.length; start += BATCH_SIZE ) {
 				const batch = ids.slice( start, start + BATCH_SIZE );
 
@@ -584,24 +595,24 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 						args,
 					} );
 
-					this.bulk.done.push( ...result.done );
-					this.bulk.skipped.push( ...result.skipped );
-					this.bulk.failed.push( ...result.failed );
-					this.bulk.results.push( result );
-					this.bulk.processed += batch.length;
+					run.done.push( ...result.done );
+					run.skipped.push( ...result.skipped );
+					run.failed.push( ...result.failed );
+					run.results.push( result );
+					run.processed += batch.length;
 				} catch ( error ) {
-					this.bulk.error = errorMessage( error );
+					run.error = errorMessage( error );
 					break;
 				}
 			}
 
-			this.bulk.running = false;
+			run.running = false;
 			this.clearSelection();
 			this.quickEditId = 0;
 
 			await this.load();
 
-			return this.bulk;
+			return run;
 		},
 
 		/**
