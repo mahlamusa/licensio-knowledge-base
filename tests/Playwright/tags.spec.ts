@@ -880,7 +880,10 @@ test( 'loading another tag or cancelling asks before it drops unsaved changes', 
 	await expect( form.getByLabel( 'Description' ) ).toHaveValue( 'Unsaved' );
 	await quickEditButton( page, first ).click();
 	await expectNoConfirmDialog( page );
-	await row( page, first ).getByRole( 'button', { name: 'Cancel' } ).click();
+	await page
+		.locator( '.ant-table-row' )
+		.getByRole( 'button', { name: 'Cancel' } )
+		.click();
 	await expect( form.getByLabel( 'Description' ) ).toHaveValue( 'Unsaved' );
 
 	// The form's Cancel asks, and discarding returns it to Add.

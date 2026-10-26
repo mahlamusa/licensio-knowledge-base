@@ -376,12 +376,14 @@ async function act(
 	name: string,
 	action: string
 ): Promise< void > {
+	// A menu opened before has finished closing, so only this one is matched.
+	await expect( page.locator( '.ant-dropdown:visible' ) ).toHaveCount( 0 );
 	await page
 		.getByRole( 'button', { name: `Actions for ${ name }`, exact: true } )
 		.click();
 	await page
 		.locator(
-			'.ant-dropdown:not(.ant-dropdown-hidden) .ant-dropdown-menu-item'
+			'.ant-dropdown:not(.ant-dropdown-hidden):visible .ant-dropdown-menu-item'
 		)
 		.filter( { hasText: action } )
 		.click();
