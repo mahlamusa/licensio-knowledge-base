@@ -11,7 +11,8 @@
 	"supports": {
 		"html": false,
 		"customClassName": false,
-		"reusable": false
+		"reusable": false,
+		"inserter": false
 	},
 	"attributes": {
 		"view": {

@@ -776,6 +776,45 @@ class Licensio_KB_Blocks_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * The view block is kept out of the inserter outside the Site Editor.
+     *
+     * A view placed in a post or page renders nothing on the front end, so
+     * only the Site Editor, where templates are built, offers it.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_the_view_block_is_offered_in_the_site_editor_only() {
+        $block    = new Licensio_KB_View_Block();
+        $path     = LICENSIO_KB_ABSPATH . 'blocks/view/block.json';
+        $metadata = json_decode( (string) file_get_contents( $path ), true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+
+        $this->assertFalse( $metadata['supports']['inserter'], 'The block is out of the inserter by default.' );
+
+        Functions\when( 'is_admin' )->justReturn( true );
+
+        foreach ( array( 'post.php', 'post-new.php', 'widgets.php', 'customize.php' ) as $screen ) {
+            $GLOBALS['pagenow'] = $screen; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- The test picks the admin screen.
+
+            $this->assertFalse( $block->offer_in_site_editor( $metadata )['supports']['inserter'], $screen );
+        }
+
+        $GLOBALS['pagenow'] = 'site-editor.php'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- The test picks the admin screen.
+
+        $this->assertTrue( $block->offer_in_site_editor( $metadata )['supports']['inserter'] );
+
+        $other = array(
+            'name'     => 'licensio-kb/faq',
+            'supports' => array(),
+        );
+
+        $this->assertSame( $other, $block->offer_in_site_editor( $other ), 'Other blocks are left alone.' );
+
+        unset( $GLOBALS['pagenow'] );
+    }
+
+    /**
      * The view block's editor preview can load the feedback form styles.
      *
      * The Single Article preview renders the feedback form, and the widget

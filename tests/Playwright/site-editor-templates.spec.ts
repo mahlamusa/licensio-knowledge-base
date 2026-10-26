@@ -15,6 +15,7 @@
  *
  * @since 1.0.0
  * @since 1.0.0 Covers the view block preview and finds cards by searching.
+ * @since 1.0.0 Checks the Site Editor offers the view block in its inserter.
  */
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
@@ -160,6 +161,26 @@ test.describe( 'Knowledge base block templates in the Site Editor', () => {
 				'licensio_kb_view'
 			);
 		}
+
+		// The Site Editor offers the view block in its inserter, so a view
+		// removed from a template can be put back.
+		const inserter = await page.evaluate(
+			() =>
+				(
+					window as Window & {
+						wp?: {
+							blocks?: {
+								getBlockType: ( name: string ) => {
+									supports?: { inserter?: boolean };
+								};
+							};
+						};
+					}
+				 ).wp?.blocks?.getBlockType( 'licensio-kb/view' )?.supports
+					?.inserter
+		);
+
+		expect( inserter ).toBe( true );
 	} );
 
 	test( 'the shared header part is listed', async ( { page } ) => {

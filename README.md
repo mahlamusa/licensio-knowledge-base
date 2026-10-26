@@ -328,7 +328,8 @@ layout. The block renders inside the loop core runs around a singular block
 template, so on a single article `single-body.php` renders the article core
 has already set up rather than opening a second loop. In the Site Editor the
 block previews against the newest published article, or a category or tag
-that has articles. The `[licensio_kb_view view="…"]` shortcode renders the same
+that has articles. Only the Site Editor offers the block in its inserter: in a
+post or page it would render nothing. The `[licensio_kb_view view="…"]` shortcode renders the same
 bodies from template level for a template you build yourself; it renders
 nothing inside post content, inside a loop, or on a request that is not its
 view.

@@ -138,7 +138,12 @@ class Licensio_KB_View_Block extends Licensio_KB_Block {
      * renders from template level only, while this block renders inside
      * core's loop, so the two entry points cannot share one callback.
      *
+     * The block's metadata keeps it out of the inserter, because a view
+     * placed in a post or page renders nothing there. The Site Editor, where
+     * templates are built, offers it again; see `offer_in_site_editor()`.
+     *
      * @since 1.0.0
+     * @since 1.0.0 Offers the block in the inserter of the Site Editor only.
      *
      * @return void
      */
@@ -149,12 +154,40 @@ class Licensio_KB_View_Block extends Licensio_KB_Block {
             return;
         }
 
+        add_filter( 'block_type_metadata', array( $this, 'offer_in_site_editor' ) );
+
         register_block_type(
             $metadata,
             array(
                 'render_callback' => array( $this, 'render' ),
             )
         );
+    }
+
+    /**
+     * Offer the block in the inserter while the Site Editor is open.
+     *
+     * The view block only renders in a template, so it is kept out of the
+     * inserter everywhere else: the post editor, the widget screens and the
+     * Customizer. The editors read the block's settings from the server when
+     * the screen loads, so the inserter follows the screen being loaded.
+     *
+     * @since 1.0.0
+     *
+     * @param array<string, mixed> $metadata The block metadata read from `block.json`.
+     *
+     * @return array<string, mixed> The metadata, with the inserter on in the Site Editor.
+     */
+    public function offer_in_site_editor( $metadata ) {
+        if ( ! is_array( $metadata ) || ! isset( $metadata['name'] ) || static::block_name() !== $metadata['name'] ) {
+            return $metadata;
+        }
+
+        if ( is_admin() && isset( $GLOBALS['pagenow'] ) && 'site-editor.php' === $GLOBALS['pagenow'] ) {
+            $metadata['supports']['inserter'] = true;
+        }
+
+        return $metadata;
     }
 
     /**
