@@ -9,12 +9,13 @@
  * hover or keyboard focus, as on core's list screens. Quick edit opens
  * in place under the row. A locked row shows who is editing it and cannot be
  * quick edited. While a bulk action runs the row actions are paused, and
- * hovering them says why.
+ * hovering them says why. A page change from the pager keeps focus in the
+ * pager, on the current page once the control pressed is disabled.
  *
  * @since 1.0.0
  */
 
-import { computed, nextTick } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import { LockOutlined } from '@ant-design/icons-vue';
 import ConfirmButton from '../../components/ConfirmButton.vue';
 import { __, sprintf } from '../../components/i18n';
@@ -28,6 +29,7 @@ import type { ArticleColumn, ArticleItem, ArticleOrderBy } from '../types';
 
 const store = useArticlesStore();
 const settings = config();
+const root = ref< HTMLElement | null >( null );
 
 /**
  * The current sort of a column, in Ant's terms.
@@ -156,8 +158,45 @@ function onChange(
 	}
 
 	if ( pagination.current && pagination.current !== store.query.page ) {
+		const pager = root.value?.querySelector( '.ant-pagination' );
+		// The pager lives in this table; there is no other node to ask for its document.
+		// eslint-disable-next-line @wordpress/no-global-active-element
+		const fromPager = !! pager?.contains( document.activeElement );
+
 		store.setPage( pagination.current );
+
+		if ( fromPager ) {
+			nextTick( keepPagerFocus );
+		}
 	}
+}
+
+/**
+ * Keep focus in the pager after a page change made from it.
+ *
+ * Next page is disabled on the last page and Previous page on the first,
+ * and focus on a disabled one falls back to the page. It moves to the
+ * current page instead.
+ *
+ * @since 1.0.0
+ *
+ * @return {void}
+ */
+function keepPagerFocus(): void {
+	const pager = root.value?.querySelector( '.ant-pagination' );
+	// eslint-disable-next-line @wordpress/no-global-active-element
+	const active = document.activeElement;
+
+	if (
+		pager?.contains( active ) &&
+		! active?.closest( '[aria-disabled="true"]' )
+	) {
+		return;
+	}
+
+	pager
+		?.querySelector< HTMLElement >( '.ant-pagination-item-active' )
+		?.focus();
 }
 
 /**
@@ -200,7 +239,7 @@ const expandedKeys = computed( () =>
 </script>
 
 <template>
-	<div class="lkb-tablecard lkb-tablecard--core">
+	<div ref="root" class="lkb-tablecard lkb-tablecard--core">
 		<a-table
 			row-key="id"
 			:columns="columns"

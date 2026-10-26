@@ -13,7 +13,14 @@
  * @since 1.0.0
  */
 
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import {
+	computed,
+	onBeforeUnmount,
+	onMounted,
+	ref,
+	useId,
+	watch,
+} from 'vue';
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons-vue';
 import type { RadioChangeEvent } from 'ant-design-vue';
 import { lkbTheme } from '../styles/theme';
@@ -32,6 +39,10 @@ const store = useArticlesStore();
 const settings = config();
 
 const SEARCH_DELAY = 350;
+
+// Names its radio group: radios that share a name are one tab stop, with
+// the arrow keys moving between them.
+const windowName = useId();
 
 const search = ref( '' );
 let searchTimer: ReturnType< typeof setTimeout > | undefined;
@@ -205,6 +216,7 @@ onBeforeUnmount( () => clearTimeout( searchTimer ) );
 
 						<a-radio-group
 							:value="store.query.window"
+							:name="windowName"
 							option-type="button"
 							:options="windows"
 							:aria-label="

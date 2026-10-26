@@ -14,7 +14,7 @@
  * @since 1.0.0
  */
 
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, useId } from 'vue';
 import {
 	config,
 	detectSources,
@@ -47,6 +47,10 @@ const booting = ref( true );
 const drivers = ref< SourceDriver[] >( [] );
 const detectError = ref( '' );
 const selected = ref( '' );
+
+// Names its radio group: radios that share a name are one tab stop, with
+// the arrow keys moving between them.
+const sourceName = useId();
 const step = ref< Step >( 'source' );
 
 const loadingCategories = ref( false );
@@ -450,6 +454,7 @@ onMounted( detect );
 
 				<a-radio-group
 					v-model:value="selected"
+					:name="sourceName"
 					class="licensio-kb-migration__sources"
 				>
 					<a-card

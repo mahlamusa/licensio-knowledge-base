@@ -9,6 +9,7 @@
  * @since 1.0.0
  */
 
+import { useId } from 'vue';
 import { SettingOutlined } from '@ant-design/icons-vue';
 import type { RadioChangeEvent } from 'ant-design-vue';
 import { __ } from '../../components/i18n';
@@ -18,6 +19,10 @@ import type { ArticleColumn, PerPage } from '../types';
 
 const store = useArticlesStore();
 const { open, overlayClass, setOpen } = usePopoverFocus();
+
+// Names its radio group: radios that share a name are one tab stop, with
+// the arrow keys moving between them.
+const perPageName = useId();
 
 const columns: Array< { value: ArticleColumn; label: string } > = [
 	{ value: 'author', label: __( 'Author', 'licensio-knowledge-base' ) },
@@ -74,6 +79,7 @@ const perPageOptions: PerPage[] = [ 20, 50, 100 ];
 				</legend>
 				<a-radio-group
 					:value="store.preferences.per_page"
+					:name="perPageName"
 					option-type="button"
 					size="small"
 					:options="

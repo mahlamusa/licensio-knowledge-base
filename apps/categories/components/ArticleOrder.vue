@@ -3,7 +3,8 @@
  * The article order pane for the selected category.
  *
  * Articles can be dragged, or moved with the Move up and Move down buttons
- * from the keyboard. Nothing is sent until the user clicks "Save order";
+ * from the keyboard. Focus follows the moved article, and moves to its other
+ * button when the one pressed is disabled at the top or bottom of the list. Nothing is sent until the user clicks "Save order";
  * Reset, after a confirmation since it throws the changes away, puts the
  * loaded order back. While the order is unsaved, choosing
  * another category asks first (see the store's `confirmDiscardOrder()`) and
@@ -41,6 +42,7 @@ const total = ref( 0 );
 const loading = ref( false );
 const saving = ref( false );
 const heading = ref< HTMLElement | null >( null );
+const list = ref< HTMLOListElement | null >( null );
 const error = ref( '' );
 const dragIndex = ref< number | null >( null );
 
@@ -158,6 +160,38 @@ function move( from: number, to: number ): void {
 
 	next.splice( to, 0, moved );
 	items.value = next;
+}
+
+/**
+ * Move an article one place with its Move up or Move down button.
+ *
+ * Focus stays on the same button of the moved article. When that button is
+ * disabled, at the top or the bottom of the list, it moves to the other one,
+ * so it does not fall back to the page.
+ *
+ * @since 1.0.0
+ *
+ * @param {number} index     The article's position now.
+ * @param {number} direction -1 to move it up, 1 to move it down.
+ *
+ * @return {void}
+ */
+function moveByButton( index: number, direction: -1 | 1 ): void {
+	const to = index + direction;
+
+	move( index, to );
+
+	nextTick( () => {
+		const buttons = Array.from(
+			list.value?.children[ to ]?.querySelectorAll< HTMLButtonElement >(
+				'.lkb-order__buttons button'
+			) ?? []
+		);
+		const pressed = buttons[ -1 === direction ? 0 : 1 ];
+		const other = buttons[ -1 === direction ? 1 : 0 ];
+
+		( pressed && ! pressed.disabled ? pressed : other )?.focus();
+	} );
 }
 
 /**
@@ -330,7 +364,7 @@ async function save(): Promise< void > {
 				}}
 			</p>
 
-			<ol v-if="items.length" class="lkb-order__list">
+			<ol v-if="items.length" ref="list" class="lkb-order__list">
 				<li
 					v-for="(article, index) in items"
 					:key="article.id"
@@ -377,7 +411,7 @@ async function save(): Promise< void > {
 									article.title
 								)
 							"
-							@click="move( index, index - 1 )"
+							@click="moveByButton( index, -1 )"
 						>
 							↑
 						</a-button>
@@ -394,7 +428,7 @@ async function save(): Promise< void > {
 									article.title
 								)
 							"
-							@click="move( index, index + 1 )"
+							@click="moveByButton( index, 1 )"
 						>
 							↓
 						</a-button>

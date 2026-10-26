@@ -10,7 +10,7 @@
  * @since 1.0.0
  */
 
-import { computed, ref, watch } from 'vue';
+import { computed, ref, useId, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import ConfirmButton from '../../components/ConfirmButton.vue';
 import TermSelect from '../../components/TermSelect.vue';
@@ -45,6 +45,10 @@ useEscapeClose(
 );
 
 const store = useCategoriesStore();
+
+// Names its radio groups: radios that share a name are one tab stop, with
+// the arrow keys moving between them.
+const uid = useId();
 
 const articleChoice = ref< 'parent' | 'other' | 'none' >( 'none' );
 const articleTarget = ref< number | null >( null );
@@ -194,6 +198,7 @@ async function remove(): Promise< void > {
 			</legend>
 			<a-radio-group
 				v-model:value="articleChoice"
+				:name="`${ uid }-articles`"
 				class="lkb-dialog__radios"
 			>
 				<a-radio v-if="hasParent" value="parent">
@@ -250,6 +255,7 @@ async function remove(): Promise< void > {
 			</legend>
 			<a-radio-group
 				v-model:value="childChoice"
+				:name="`${ uid }-children`"
 				class="lkb-dialog__radios"
 			>
 				<a-radio value="parent">

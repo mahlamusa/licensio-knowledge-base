@@ -6,6 +6,9 @@
  * on Escape. Bound to
  * the overlay, this moves focus to the first control in it when it opens,
  * and closes it on Escape from anywhere, putting focus back where it was.
+ * Tab and Shift+Tab stay inside the open overlay, going round from its last
+ * control to its first and back, instead of leaving it open behind focus
+ * that moved on to the page.
  * Escape on an open select or date picker inside the overlay closes that
  * select or picker first.
  *
@@ -34,6 +37,44 @@ import type { Ref } from 'vue';
 /** What a keyboard user can tab to. */
 const FOCUSABLE =
 	'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+/**
+ * The controls in an overlay that Tab stops on, in order.
+ *
+ * Only shown controls count, and of a named radio group only the one Tab
+ * stops on: the checked radio, or the first while none is checked.
+ *
+ * @since 1.0.0
+ *
+ * @param {HTMLElement} root The overlay.
+ *
+ * @return {HTMLElement[]} The controls.
+ */
+function tabStops( root: HTMLElement ): HTMLElement[] {
+	return Array.from(
+		root.querySelectorAll< HTMLElement >( FOCUSABLE )
+	).filter( ( element ) => {
+		if ( 0 === element.getClientRects().length ) {
+			return false;
+		}
+
+		if (
+			! ( element instanceof HTMLInputElement ) ||
+			'radio' !== element.type ||
+			! element.name
+		) {
+			return true;
+		}
+
+		const group = Array.from(
+			root.querySelectorAll< HTMLInputElement >( 'input[type="radio"]' )
+		).filter( ( radio ) => radio.name === element.name );
+
+		return group.some( ( radio ) => radio.checked )
+			? element.checked
+			: group[ 0 ] === element;
+	} );
+}
 
 /**
  * Whether a key press belongs to a date picker whose calendar is open.
@@ -102,7 +143,8 @@ function ownsEscape( target: EventTarget | null ): boolean {
  * confirmation dialog opened from inside is rendered outside it and stops
  * the key itself, so it also closes alone.
  *
- * Consumed by the Categories and Tags dialogs and their add and edit forms.
+ * Consumed by the Categories and Tags dialogs and their add and edit forms,
+ * and the Articles quick edit form.
  *
  * @since 1.0.0
  *
@@ -190,7 +232,50 @@ export function usePopoverFocus(): {
 	let returnTo: HTMLElement | null = null;
 
 	/**
-	 * Close the overlay on Escape and put focus back.
+	 * Keep Tab inside the overlay.
+	 *
+	 * From its last control Tab goes to its first, and from its first
+	 * Shift+Tab goes to its last. Tab between the two is left to the browser.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param {KeyboardEvent} event The Tab key press.
+	 *
+	 * @return {void}
+	 */
+	function wrapTab( event: KeyboardEvent ): void {
+		const root = document.querySelector< HTMLElement >(
+			`.${ overlayClass }`
+		);
+
+		if (
+			! root ||
+			! ( event.target instanceof Node ) ||
+			! root.contains( event.target )
+		) {
+			return;
+		}
+
+		const stops = tabStops( root );
+
+		if ( 0 === stops.length ) {
+			return;
+		}
+
+		const first = stops[ 0 ];
+		const last = stops[ stops.length - 1 ];
+
+		if ( event.shiftKey && event.target === first ) {
+			event.preventDefault();
+			last.focus();
+		} else if ( ! event.shiftKey && event.target === last ) {
+			event.preventDefault();
+			first.focus();
+		}
+	}
+
+	/**
+	 * Close the overlay on Escape and put focus back, and keep Tab inside it.
 	 *
 	 * @since 1.0.0
 	 *
@@ -199,6 +284,11 @@ export function usePopoverFocus(): {
 	 * @return {void}
 	 */
 	function onKeydown( event: KeyboardEvent ): void {
+		if ( 'Tab' === event.key ) {
+			wrapTab( event );
+			return;
+		}
+
 		if ( 'Escape' !== event.key ) {
 			return;
 		}

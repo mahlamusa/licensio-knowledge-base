@@ -7,13 +7,23 @@
  * changed, without asking first, and is disabled while a bulk run is going.
  * A field error from the server shows under its field and the form keeps
  * what was typed. A row another user has locked answers
- * 409, which is shown and puts the lock on the row.
+ * 409, which is shown and puts the lock on the row. Escape cancels, as
+ * Cancel does, except while a save is under way or on an open select or
+ * date picker, which closes only that.
  *
  * @since 1.0.0
  */
 
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
+import {
+	computed,
+	onBeforeUnmount,
+	onMounted,
+	reactive,
+	ref,
+	useId,
+} from 'vue';
 import TermSelect from '../../components/TermSelect.vue';
+import { useEscapeClose } from '../../components/popover-focus';
 import { errorMessage, RestError } from '../../components/rest';
 import { __, sprintf } from '../../components/i18n';
 import { updateArticle } from '../api';
@@ -75,6 +85,17 @@ const error = ref( '' );
 const saving = ref( false );
 const savedSlug = ref( '' );
 const formEl = ref< HTMLFormElement | null >( null );
+
+// Names its radio groups: radios that share a name are one tab stop, with
+// the arrow keys moving between them.
+const uid = useId();
+
+// Escape cancels; the table puts focus back on the row's Quick edit button.
+useEscapeClose(
+	() => ! saving.value,
+	'.lkb-quickedit',
+	() => emit( 'close' )
+);
 
 // Move focus into the form as it opens, so keyboard users land on the title.
 onMounted(
@@ -371,7 +392,10 @@ function statusOf( field: string ): 'error' | undefined {
 				:validate-status="statusOf( 'password' )"
 				:help="errors.password"
 			>
-				<a-radio-group v-model:value="form.visibility">
+				<a-radio-group
+					v-model:value="form.visibility"
+					:name="`${ uid }-visibility`"
+				>
 					<a-radio value="public">
 						{{ __( 'Public', 'licensio-knowledge-base' ) }}
 					</a-radio>
@@ -451,7 +475,10 @@ function statusOf( field: string ): 'error' | undefined {
 				:validate-status="statusOf( 'comment_status' )"
 				:help="errors.comment_status"
 			>
-				<a-radio-group v-model:value="form.comment_status">
+				<a-radio-group
+					v-model:value="form.comment_status"
+					:name="`${ uid }-comments`"
+				>
 					<a-radio value="open">
 						{{ __( 'Open', 'licensio-knowledge-base' ) }}
 					</a-radio>
