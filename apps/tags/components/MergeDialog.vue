@@ -162,7 +162,9 @@ async function merge(): Promise< void > {
 			v-model="target"
 			taxonomy="licensio_tag"
 			:exclude="store.selected"
-			:placeholder="__( 'Search for the tag to keep…', 'licensio-knowledge-base' )"
+			:placeholder="
+				__( 'Search for the tag to keep…', 'licensio-knowledge-base' )
+			"
 			:aria-label="__( 'Tag to merge into', 'licensio-knowledge-base' )"
 			style="width: 100%"
 		/>
@@ -188,6 +190,6 @@ async function merge(): Promise< void > {
 
 <style scoped>
 .lkb-dialog__error {
-	margin-bottom: var(--lkb-gap);
+	margin-bottom: var( --lkb-gap );
 }
 </style>

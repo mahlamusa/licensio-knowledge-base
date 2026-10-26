@@ -1,9 +1,12 @@
 /**
  * Fail when a Vue app uses an Ant Design tag its entry does not register.
  *
- * Apps that import named components from `ant-design-vue` in their `index.ts`
- * register only those, so a template tag left off the list renders as an
- * unknown element instead of throwing. The end-to-end specs catch that only
+ * Apps that import named components from `ant-design-vue` in their entry
+ * (`index.ts` or `index.js`) register only those they pass to `app.use()`,
+ * directly or through an array walked with `forEach`, so a template tag left
+ * off that list renders as an unknown element instead of throwing. What is
+ * read is the components handed to `use`, not the import list: an import that
+ * never reaches `use` registers nothing. The end-to-end specs catch that only
  * for markup a test happens to render; this reads every template instead.
  *
  * Each imported component's own `install` is run against a stand-in app, so a
@@ -76,13 +79,16 @@ const problems = [];
 let checked = 0;
 
 for ( const app of readdirSync( appsDir ) ) {
-	const entry = join( appsDir, app, 'index.ts' );
+	const entry = [ 'index.ts', 'index.js' ]
+		.map( ( name ) => join( appsDir, app, name ) )
+		.find( ( file ) => existsSync( file ) );
 
-	if ( ! existsSync( entry ) ) {
+	if ( ! entry ) {
 		continue;
 	}
 
-	const named = readFileSync( entry, 'utf8' ).match(
+	const code = readFileSync( entry, 'utf8' );
+	const named = code.match(
 		/import\s*\{([^}]*)\}\s*from\s*['"]ant-design-vue['"]/
 	);
 
@@ -92,10 +98,35 @@ for ( const app of readdirSync( appsDir ) ) {
 
 	checked++;
 
-	const registered = registeredBy(
+	// Local name => exported name, so `Button as AButton` resolves.
+	const imported = new Map(
 		named[ 1 ]
 			.split( ',' )
-			.map( ( name ) => name.split( ' as ' )[ 0 ].trim() )
+			.map( ( name ) =>
+				name.split( ' as ' ).map( ( part ) => part.trim() )
+			)
+			.filter( ( [ name ] ) => name )
+			.map( ( [ name, local ] ) => [ local ?? name, name ] )
+	);
+
+	// `app.use( Button )` and `[ Button, Form ].forEach( ( c ) => app.use( c ) )`.
+	const used = [
+		...[ ...code.matchAll( /\.use\(\s*(\w+)\s*\)/g ) ].map(
+			( m ) => m[ 1 ]
+		),
+		...[
+			...code.matchAll(
+				/\[([^\]]*)\]\s*\.forEach\(\s*\(?\s*(\w+)\s*\)?\s*=>\s*\{?\s*\w+\.use\(\s*\2\s*\)/g
+			),
+		].flatMap( ( m ) =>
+			m[ 1 ].split( ',' ).map( ( name ) => name.trim() )
+		),
+	];
+
+	const registered = registeredBy(
+		used
+			.filter( ( name ) => imported.has( name ) )
+			.map( ( name ) => imported.get( name ) )
 	);
 
 	for ( const file of vueFiles( join( appsDir, app ) ) ) {

@@ -7,6 +7,11 @@
 /build/
 /releases/
 
+# The translation template is generated into the release zips by
+# bin/build-release.sh. Its line references and hashed dist/ file names change
+# on every branch, so a committed copy only ever causes merge conflicts.
+/languages/*.pot
+
 # Test fixtures written into templates/ and block-templates/ by the template
 # suite. Removed in tearDown; ignored here so an aborted run cannot leave one
 # staged.

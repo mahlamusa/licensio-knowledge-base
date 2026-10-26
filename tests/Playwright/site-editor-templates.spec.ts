@@ -65,19 +65,30 @@ test.describe( 'Knowledge base block templates in the Site Editor', () => {
 			'Article Tag',
 			'Article Search Results',
 		] ) {
-			await expect( templateCard( page, title ) ).toBeVisible();
+			await expect( templateCard( page, title ) ).toBeVisible( {
+				timeout: 20_000,
+			} );
 		}
 	} );
 
 	test( 'the shared header part is listed', async ( { page } ) => {
-		await page.goto( '/wp-admin/site-editor.php?postType=wp_template_part' );
+		await page.goto(
+			'/wp-admin/site-editor.php?postType=wp_template_part'
+		);
 
-		await expect( page.getByText( 'Knowledge Base Header', { exact: true } ) ).toBeVisible( {
+		await expect(
+			page.getByText( 'Knowledge Base Header', { exact: true } )
+		).toBeVisible( {
 			timeout: 20_000,
 		} );
 	} );
 
-	test( 'a template can be customised, saved and reset', async ( { page } ) => {
+	test( 'a template can be customised, saved and reset', async ( {
+		page,
+	} ) => {
+		// Two cold Site Editor loads and two saves do not fit the default test budget.
+		test.slow();
+
 		await openTemplateList( page );
 
 		await templateCard( page, 'Single Article' ).click();
@@ -93,7 +104,10 @@ test.describe( 'Knowledge base block templates in the Site Editor', () => {
 		await page.keyboard.press( 'Enter' );
 		await page.keyboard.type( MARKER );
 
-		await page.getByRole( 'button', { name: 'Save', exact: true } ).first().click();
+		await page
+			.getByRole( 'button', { name: 'Save', exact: true } )
+			.first()
+			.click();
 
 		// With more than one changed entity the editor asks which to save first.
 		const saved = page
@@ -103,16 +117,17 @@ test.describe( 'Knowledge base block templates in the Site Editor', () => {
 			.locator( '.entities-saved-states__panel' )
 			.getByRole( 'button', { name: 'Save', exact: true } );
 
-		await expect( saved.or( panelSave ).first() ).toBeVisible( { timeout: 20_000 } );
+		await expect( saved.or( panelSave ).first() ).toBeVisible( {
+			timeout: 20_000,
+		} );
 
 		if ( await panelSave.isVisible() ) {
 			await panelSave.click();
 		}
 
-		await expect( page.locator( '.components-snackbar' ).first() ).toContainText(
-			/updated|saved/i,
-			{ timeout: 20_000 }
-		);
+		await expect(
+			page.locator( '.components-snackbar' ).first()
+		).toContainText( /updated|saved/i, { timeout: 20_000 } );
 
 		// The saved customisation is what the front end now renders.
 		const article = await page.evaluate( async () => {
@@ -122,10 +137,15 @@ test.describe( 'Knowledge base block templates in the Site Editor', () => {
 			);
 			const items = await response.json();
 
-			return Array.isArray( items ) && items.length > 0 ? items[ 0 ].link : '';
+			return Array.isArray( items ) && items.length > 0
+				? items[ 0 ].link
+				: '';
 		} );
 
-		test.skip( '' === article, 'The site has no published knowledge base article to render.' );
+		test.skip(
+			'' === article,
+			'The site has no published knowledge base article to render.'
+		);
 
 		await page.goto( article );
 		await expect( page.getByText( MARKER ).first() ).toBeVisible();
@@ -139,10 +159,9 @@ test.describe( 'Knowledge base block templates in the Site Editor', () => {
 			.click();
 		await page.getByRole( 'menuitem', { name: /Reset/ } ).click();
 		await page.getByRole( 'button', { name: 'Reset' } ).click();
-		await expect( page.locator( '.components-snackbar' ).first() ).toContainText(
-			/reset/i,
-			{ timeout: 20_000 }
-		);
+		await expect(
+			page.locator( '.components-snackbar' ).first()
+		).toContainText( /reset/i, { timeout: 20_000 } );
 
 		await page.goto( article );
 		await expect( page.getByText( MARKER ) ).toHaveCount( 0 );

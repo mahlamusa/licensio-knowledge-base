@@ -82,6 +82,56 @@ class Licensio_KB_Assets_Hmr_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * Dev server scripts are enqueued without a version.
+     *
+     * WordPress appends `?ver=` to any script with a version, and the Vite dev
+     * server answers that query with a 500, so no app would load in dev mode.
+     * A real listener stands in for the dev server so the probe succeeds.
+     *
+     * @runInSeparateProcess
+     * @preserveGlobalState disabled
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_dev_server_scripts_carry_no_version() {
+        define( 'HMR_DEV', 'licensio-kb' );
+
+        $server = stream_socket_server( 'tcp://127.0.0.1:0' );
+        $this->assertNotFalse( $server );
+
+        $address = (string) stream_socket_get_name( $server, false );
+        $port    = substr( $address, strrpos( $address, ':' ) + 1 );
+
+        Functions\when( 'wp_get_environment_type' )->justReturn( 'local' );
+        Filters\expectApplied( 'licensio_dev_server_host' )->andReturn( '127.0.0.1' );
+        Filters\expectApplied( 'licensio_dev_server_port' )->andReturn( $port );
+
+        $versions = array();
+
+        Functions\when( 'wp_enqueue_script' )->alias(
+            function ( $handle, $src = '', $deps = array(), $ver = false ) use ( &$versions ) {
+                $versions[ $handle ] = $ver;
+            }
+        );
+
+        $assets = new Licensio_KB_Assets();
+
+        $this->assertTrue( $assets->enqueue_app( 'licensio-analytics', 'apps/analytics/index.ts' ) );
+
+        fclose( $server ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+
+        $this->assertSame(
+            array(
+                'licensio-kb-vite-client' => null,
+                'licensio-analytics'      => null,
+            ),
+            $versions
+        );
+    }
+
+    /**
      * A constant naming a different plugin does not enable HMR here.
      *
      * @runInSeparateProcess

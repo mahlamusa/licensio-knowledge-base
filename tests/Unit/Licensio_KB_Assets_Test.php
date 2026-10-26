@@ -443,6 +443,51 @@ class Licensio_KB_Assets_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * An inline translation containing ` type=` cannot stop the module type.
+     *
+     * The filtered markup carries the handle's inline scripts before its own
+     * tag. Only the opening tag with a `src` attribute may change, so the
+     * translation text comes back exactly as it went in.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_inline_translation_with_type_does_not_block_the_module_type() {
+        $assets = new Licensio_KB_Assets();
+        $assets->enqueue_app( 'licensio-analytics', 'apps/analytics/index.ts' );
+
+        $inline = '<script id="licensio-analytics-js-before">wp.i18n.setLocaleData( { "Pick a type=": [ "Choose a src= type=" ] } );</script>';
+        $tag    = $inline . "\n" . '<script src="https://example.test/app.js" id="licensio-analytics-js"></script>'; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript
+
+        $filtered = $assets->add_module_type( $tag, 'licensio-analytics' );
+
+        $this->assertSame(
+            $inline . "\n" . '<script type="module" src="https://example.test/app.js" id="licensio-analytics-js"></script>', // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript
+            $filtered
+        );
+    }
+
+    /**
+     * A `text/javascript` type on the source tag becomes `module`.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_text_javascript_type_becomes_module() {
+        $assets = new Licensio_KB_Assets();
+        $assets->enqueue_app( 'licensio-analytics', 'apps/analytics/index.ts' );
+
+        $tag = "<script type='text/javascript' src='https://example.test/app.js' id='licensio-analytics-js'></script>"; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript
+
+        $this->assertSame(
+            "<script type=\"module\" src='https://example.test/app.js' id='licensio-analytics-js'></script>", // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript
+            $assets->add_module_type( $tag, 'licensio-analytics' )
+        );
+    }
+
+    /**
      * dist_url() builds a URL under the build output directory.
      *
      * @since 1.0.0

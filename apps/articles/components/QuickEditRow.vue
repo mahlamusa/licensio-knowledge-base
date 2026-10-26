@@ -76,13 +76,21 @@ const savedSlug = ref( '' );
 const formEl = ref< HTMLFormElement | null >( null );
 
 // Move focus into the form as it opens, so keyboard users land on the title.
-onMounted( () => formEl.value?.querySelector< HTMLInputElement >( 'input' )?.focus() );
+onMounted(
+	() => formEl.value?.querySelector< HTMLInputElement >( 'input' )?.focus()
+);
 
 const statusOptions = computed( () => {
 	const options = [
-		{ value: 'publish', label: __( 'Published', 'licensio-knowledge-base' ) },
+		{
+			value: 'publish',
+			label: __( 'Published', 'licensio-knowledge-base' ),
+		},
 		{ value: 'draft', label: __( 'Draft', 'licensio-knowledge-base' ) },
-		{ value: 'pending', label: __( 'Pending review', 'licensio-knowledge-base' ) },
+		{
+			value: 'pending',
+			label: __( 'Pending review', 'licensio-knowledge-base' ),
+		},
 	];
 
 	if ( 'future' === start.status ) {
@@ -138,8 +146,7 @@ function changes(): QuickEditPayload {
 		payload.date = form.date;
 	}
 
-	const nextStatus =
-		'private' === form.visibility ? 'private' : form.status;
+	const nextStatus = 'private' === form.visibility ? 'private' : form.status;
 	const startStatus =
 		'private' === start.visibility ? 'private' : start.status;
 
@@ -275,7 +282,15 @@ function statusOf( field: string ): 'error' | undefined {
 			v-if="savedSlug"
 			type="success"
 			show-icon
-			:message="/* translators: %s: the new slug. */ sprintf( __( 'Saved. The slug is now “%s”.', 'licensio-knowledge-base' ), savedSlug )"
+			:message="
+				/* translators: %s: the new slug. */ sprintf(
+					__(
+						'Saved. The slug is now “%s”.',
+						'licensio-knowledge-base'
+					),
+					savedSlug
+				)
+			"
 			class="lkb-quickedit__alert"
 		/>
 
@@ -285,7 +300,10 @@ function statusOf( field: string ): 'error' | undefined {
 				:validate-status="statusOf( 'title' )"
 				:help="errors.title"
 			>
-				<a-input v-model:value="form.title" :aria-label="__( 'Title', 'licensio-knowledge-base' )" />
+				<a-input
+					v-model:value="form.title"
+					:aria-label="__( 'Title', 'licensio-knowledge-base' )"
+				/>
 			</a-form-item>
 
 			<a-form-item
@@ -293,7 +311,10 @@ function statusOf( field: string ): 'error' | undefined {
 				:validate-status="statusOf( 'slug' )"
 				:help="errors.slug"
 			>
-				<a-input v-model:value="form.slug" :aria-label="__( 'Slug', 'licensio-knowledge-base' )" />
+				<a-input
+					v-model:value="form.slug"
+					:aria-label="__( 'Slug', 'licensio-knowledge-base' )"
+				/>
 			</a-form-item>
 
 			<a-form-item
@@ -320,7 +341,9 @@ function statusOf( field: string ): 'error' | undefined {
 					value-format="YYYY-MM-DDTHH:mm:ss"
 					format="YYYY-MM-DD HH:mm"
 					:allow-clear="false"
-					:aria-label="__( 'Publish date', 'licensio-knowledge-base' )"
+					:aria-label="
+						__( 'Publish date', 'licensio-knowledge-base' )
+					"
 				/>
 			</a-form-item>
 
@@ -337,14 +360,26 @@ function statusOf( field: string ): 'error' | undefined {
 						{{ __( 'Private', 'licensio-knowledge-base' ) }}
 					</a-radio>
 					<a-radio value="password">
-						{{ __( 'Password protected', 'licensio-knowledge-base' ) }}
+						{{
+							__(
+								'Password protected',
+								'licensio-knowledge-base'
+							)
+						}}
 					</a-radio>
 				</a-radio-group>
 				<a-input-password
 					v-if="'password' === form.visibility"
 					v-model:value="form.password"
 					class="lkb-quickedit__password"
-					:placeholder="props.item.has_password ? __( 'Leave empty to keep the current password', 'licensio-knowledge-base' ) : __( 'Password', 'licensio-knowledge-base' )"
+					:placeholder="
+						props.item.has_password
+							? __(
+									'Leave empty to keep the current password',
+									'licensio-knowledge-base'
+							  )
+							: __( 'Password', 'licensio-knowledge-base' )
+					"
 					:aria-label="__( 'Password', 'licensio-knowledge-base' )"
 				/>
 			</a-form-item>
@@ -356,7 +391,11 @@ function statusOf( field: string ): 'error' | undefined {
 			>
 				<AuthorSelect
 					v-model="form.author"
-					:known-name="form.author === props.item.author.id ? props.item.author.name : ''"
+					:known-name="
+						form.author === props.item.author.id
+							? props.item.author.name
+							: ''
+					"
 					:aria-label="__( 'Author', 'licensio-knowledge-base' )"
 				/>
 			</a-form-item>
@@ -410,7 +449,16 @@ function statusOf( field: string ): 'error' | undefined {
 			</a-button>
 			<ConfirmButton
 				type="primary"
-				:title="/* translators: %s: article title. */ sprintf( __( 'Save the changes to “%s”?', 'licensio-knowledge-base' ), props.item.title || __( '(no title)', 'licensio-knowledge-base' ) )"
+				:title="
+					/* translators: %s: article title. */ sprintf(
+						__(
+							'Save the changes to “%s”?',
+							'licensio-knowledge-base'
+						),
+						props.item.title ||
+							__( '(no title)', 'licensio-knowledge-base' )
+					)
+				"
 				:ok-text="__( 'Save', 'licensio-knowledge-base' )"
 				:loading="saving"
 				:disabled="passwordMissing || !! props.item.lock"
@@ -433,8 +481,8 @@ function statusOf( field: string ): 'error' | undefined {
 
 .lkb-quickedit__grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-	gap: 0 var(--lkb-gap);
+	grid-template-columns: repeat( auto-fill, minmax( 240px, 1fr ) );
+	gap: 0 var( --lkb-gap );
 }
 
 .lkb-quickedit__grid :deep( .ant-form-item ) {

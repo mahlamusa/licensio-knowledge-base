@@ -185,6 +185,6 @@ async function convert(): Promise< void > {
 
 <style scoped>
 .lkb-dialog__error {
-	margin-bottom: var(--lkb-gap);
+	margin-bottom: var( --lkb-gap );
 }
 </style>

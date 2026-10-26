@@ -86,7 +86,9 @@ assert_red() {
         return
     fi
 
-    if printf '%s\n' "$output" | grep -qF "$expected"; then
+    # A substring test rather than a pipe into grep -q, which can lose the
+    # writer to SIGPIPE under pipefail and report a match as a miss.
+    if [[ "$output" == *"$expected"* ]]; then
         ok "$name"
     else
         bad "$name - failed, but not for the expected reason (wanted: ${expected})."
@@ -356,6 +358,8 @@ cat > "${APP_STRINGS_DIR}/apps/demo/App.vue" <<'VUE'
  */
 const title = __( 'Tag saved', 'licensio-knowledge-base' );
 const count = _n( '%d tag', '%d tags', 2, 'licensio-knowledge-base' );
+const verb = _x( 'Post', 'verb', 'licensio-knowledge-base' );
+const items = _nx( '%d item', '%d items', 2, 'cart', 'licensio-knowledge-base' );
 </script>
 <template>
 	<!-- __( 'Only an example in markup', 'licensio-knowledge-base' ) -->
@@ -363,20 +367,51 @@ const count = _n( '%d tag', '%d tags', 2, 'licensio-knowledge-base' );
 </template>
 VUE
 
+# Every app string, referenced from the built bundle. "Post" also has a PHP
+# entry without a context, which must not stand in for the app's "verb" one.
 cat > "${APP_STRINGS_DIR}/complete.pot" <<'POT'
+msgid ""
+msgstr ""
+"Project-Id-Version: Licensio Knowledge Base\n"
+
+#: dist/apps/demo/index.a1b2c3d4.js:1
 msgid "Tag saved"
 msgstr ""
 
+#: dist/apps/demo/index.a1b2c3d4.js:1
 msgid "%d tag"
 msgid_plural "%d tags"
 msgstr[0] ""
 msgstr[1] ""
 
+#: includes/class-licensio-kb-demo.php:9
+msgid "Post"
+msgstr ""
+
+#: dist/apps/demo/index.a1b2c3d4.js:1
+msgctxt "verb"
+msgid "Post"
+msgstr ""
+
+#: dist/apps/demo/index.a1b2c3d4.js:1
+msgctxt "cart"
+msgid "%d item"
+msgid_plural "%d items"
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/class-licensio-kb-demo.php:12
+#: dist/apps/demo/index.a1b2c3d4.js:1
 msgid "It's here"
 msgstr ""
 POT
 
 grep -v '%d tags' "${APP_STRINGS_DIR}/complete.pot" > "${APP_STRINGS_DIR}/no-plural.pot"
+sed 's|^#: dist/apps/demo/index.a1b2c3d4.js:1$|#: includes/class-licensio-kb-demo.php:3|' \
+    "${APP_STRINGS_DIR}/complete.pot" > "${APP_STRINGS_DIR}/php-only.pot"
+grep -v '^msgctxt "verb"$' "${APP_STRINGS_DIR}/complete.pot" > "${APP_STRINGS_DIR}/no-context.pot"
+sed 's|^msgctxt "cart"$|msgctxt "basket"|' \
+    "${APP_STRINGS_DIR}/complete.pot" > "${APP_STRINGS_DIR}/wrong-context.pot"
 
 assert_green 'a template with every app string passes, comments are not calls' \
     node "${ROOT}/tools/check-app-strings.mjs" "${APP_STRINGS_DIR}/complete.pot" "${APP_STRINGS_DIR}/apps"
@@ -385,14 +420,39 @@ assert_red 'a template missing an app plural form fails' \
     'apps/demo/App.vue:6  %d tags' \
     node "${ROOT}/tools/check-app-strings.mjs" "${APP_STRINGS_DIR}/no-plural.pot" "${APP_STRINGS_DIR}/apps"
 
+assert_red 'a string referenced only from PHP does not count for the app' \
+    'apps/demo/App.vue:5  Tag saved' \
+    node "${ROOT}/tools/check-app-strings.mjs" "${APP_STRINGS_DIR}/php-only.pot" "${APP_STRINGS_DIR}/apps"
+
+assert_red 'an _x string without its context fails' \
+    'apps/demo/App.vue:7  Post (context: verb)' \
+    node "${ROOT}/tools/check-app-strings.mjs" "${APP_STRINGS_DIR}/no-context.pot" "${APP_STRINGS_DIR}/apps"
+
+assert_red 'an _nx string under another context fails' \
+    'apps/demo/App.vue:8  %d item (context: cart)' \
+    node "${ROOT}/tools/check-app-strings.mjs" "${APP_STRINGS_DIR}/wrong-context.pot" "${APP_STRINGS_DIR}/apps"
+
 printf '\ntools/check-ant-components.mjs\n'
 
 ANT_DIR="${WORK_DIR}/ant-components"
-mkdir -p "${ANT_DIR}/apps/demo" "${ANT_DIR}/apps/legacy"
+mkdir -p "${ANT_DIR}/apps/demo" "${ANT_DIR}/apps/legacy" "${ANT_DIR}/apps/plain"
 
 cat > "${ANT_DIR}/apps/demo/index.ts" <<'TS'
-import { Button, Form } from 'ant-design-vue';
+import { Button, Form, Tooltip } from 'ant-design-vue';
+const app = createApp( App );
+[ Button, Form ].forEach( ( component ) => {
+	app.use( component );
+} );
 TS
+
+cat > "${ANT_DIR}/apps/plain/index.js" <<'JS'
+import { Button as AntButton } from 'ant-design-vue';
+createApp( App ).use( AntButton ).mount( '#app' );
+JS
+
+cat > "${ANT_DIR}/apps/plain/App.vue" <<'VUE'
+<template><a-button /></template>
+VUE
 
 cat > "${ANT_DIR}/apps/demo/App.vue" <<'VUE'
 <template>
@@ -411,9 +471,17 @@ VUE
 assert_green 'registered tags and plugin sub-components pass, default Antd apps are skipped' \
     node "${ROOT}/tools/check-ant-components.mjs" "${ANT_DIR}/apps"
 
+printf '<template><a-button /><a-tooltip /></template>\n' > "${ANT_DIR}/apps/plain/App.vue"
+
+assert_red 'an index.js entry is read, and its unregistered tag fails' \
+    'plain/App.vue  <a-tooltip>' \
+    node "${ROOT}/tools/check-ant-components.mjs" "${ANT_DIR}/apps"
+
+rm -r "${ANT_DIR}/apps/plain"
+
 printf '<template><a-tooltip /></template>\n' > "${ANT_DIR}/apps/demo/Extra.vue"
 
-assert_red 'a tag the entry does not register fails' \
+assert_red 'a component imported but never passed to app.use does not count' \
     'demo/Extra.vue  <a-tooltip>' \
     node "${ROOT}/tools/check-ant-components.mjs" "${ANT_DIR}/apps"
 

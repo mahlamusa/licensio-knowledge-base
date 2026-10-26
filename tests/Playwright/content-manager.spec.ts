@@ -51,28 +51,38 @@ test.describe( 'Content manager switch-on', () => {
 		await logIn( page );
 	} );
 
-	test( 'core list and term screens redirect to the apps', async ( { page } ) => {
+	test( 'core list and term screens redirect to the apps', async ( {
+		page,
+	} ) => {
 		await page.goto(
 			'/wp-admin/edit.php?post_type=licensio_article&post_status=draft&s=reset'
 		);
 		expect( pathOf( page ) ).toBe(
 			`${ APP }licensio-kb-articles&status=draft&search=reset`
 		);
-		await expect( page.locator( '#licensio-kb-articles .lkb-page' ) ).toBeVisible();
+		await expect(
+			page.locator( '#licensio-kb-articles .lkb-page' )
+		).toBeVisible();
 
 		await page.goto(
 			'/wp-admin/edit-tags.php?taxonomy=licensio_category&post_type=licensio_article'
 		);
 		expect( pathOf( page ) ).toBe( `${ APP }licensio-kb-categories` );
 
-		await page.goto( '/wp-admin/edit-tags.php?taxonomy=licensio_tag&s=faq' );
+		await page.goto(
+			'/wp-admin/edit-tags.php?taxonomy=licensio_tag&s=faq'
+		);
 		expect( pathOf( page ) ).toBe( `${ APP }licensio-kb-tags&search=faq` );
 
-		await page.goto( '/wp-admin/term.php?taxonomy=licensio_tag&tag_ID=999999' );
+		await page.goto(
+			'/wp-admin/term.php?taxonomy=licensio_tag&tag_ID=999999'
+		);
 		expect( pathOf( page ) ).toBe( `${ APP }licensio-kb-tags&term=999999` );
 	} );
 
-	test( 'the editor and other post types stay on core', async ( { page } ) => {
+	test( 'the editor and other post types stay on core', async ( {
+		page,
+	} ) => {
 		await page.goto( '/wp-admin/post-new.php?post_type=licensio_article' );
 		expect( pathOf( page ) ).toBe(
 			'/wp-admin/post-new.php?post_type=licensio_article'
@@ -82,13 +92,19 @@ test.describe( 'Content manager switch-on', () => {
 		expect( pathOf( page ) ).toBe( '/wp-admin/edit.php?post_type=page' );
 
 		await page.goto( '/wp-admin/edit-tags.php?taxonomy=category' );
-		expect( pathOf( page ) ).toBe( '/wp-admin/edit-tags.php?taxonomy=category' );
+		expect( pathOf( page ) ).toBe(
+			'/wp-admin/edit-tags.php?taxonomy=category'
+		);
 	} );
 
-	test( 'the apps replace the core menu items, in core order', async ( { page } ) => {
+	test( 'the apps replace the core menu items, in core order', async ( {
+		page,
+	} ) => {
 		await page.goto( '/wp-admin/edit-tags.php?taxonomy=licensio_tag' );
 
-		const items = page.locator( '#menu-posts-licensio_article .wp-submenu li a' );
+		const items = page.locator(
+			'#menu-posts-licensio_article .wp-submenu li a'
+		);
 
 		await expect( items.nth( 0 ) ).toHaveText( 'All Articles' );
 		await expect( items.nth( 0 ) ).toHaveAttribute(
@@ -99,7 +115,9 @@ test.describe( 'Content manager switch-on', () => {
 		await expect( items.nth( 2 ) ).toHaveText( 'Categories' );
 		await expect( items.nth( 3 ) ).toHaveText( 'Tags' );
 		await expect(
-			page.locator( '#menu-posts-licensio_article .wp-submenu li.current a' )
+			page.locator(
+				'#menu-posts-licensio_article .wp-submenu li.current a'
+			)
 		).toHaveText( 'Tags' );
 
 		// The Knowledge Base menu link itself opens All Articles, marked current.
@@ -109,18 +127,26 @@ test.describe( 'Content manager switch-on', () => {
 		await top.click();
 		await expect( page ).toHaveURL( /page=licensio-kb-articles/ );
 		await expect(
-			page.locator( '#menu-posts-licensio_article .wp-submenu li.current a' )
+			page.locator(
+				'#menu-posts-licensio_article .wp-submenu li.current a'
+			)
 		).toHaveText( 'All Articles' );
 	} );
 
-	test( 'a popover opened from the keyboard takes and returns focus', async ( { page } ) => {
+	test( 'a popover opened from the keyboard takes and returns focus', async ( {
+		page,
+	} ) => {
 		await page.goto( `${ APP }licensio-kb-articles` );
 
-		const filters = page.locator( 'button', { hasText: /^\s*Filters\s*$/ } );
+		const filters = page.locator( 'button', {
+			hasText: /^\s*Filters\s*$/,
+		} );
 
 		await filters.focus();
 		await page.keyboard.press( 'Enter' );
-		await expect( page.getByRole( 'combobox', { name: 'Filter by category' } ) ).toBeFocused();
+		await expect(
+			page.getByRole( 'combobox', { name: 'Filter by category' } )
+		).toBeFocused();
 
 		await page.keyboard.press( 'Escape' );
 		await expect( filters ).toBeFocused();

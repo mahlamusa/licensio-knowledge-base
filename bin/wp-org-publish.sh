@@ -121,9 +121,9 @@ grep -qE "^= ${VERSION//./\\.} =" readme.txt || abort "readme.txt has no '= ${VE
 step 'Release build'
 bash "${SCRIPT_DIR}/build-release.sh"
 
-# build-release.sh refreshes languages/*.pot only when the strings changed,
-# so a dirty tree here means the committed template is stale.
-[ -z "$( git status --porcelain )" ] || abort 'the build changed tracked files (listed by git status). Commit the refreshed translation template first.'
+# build-release.sh writes no tracked file (the translation template goes into
+# the zips only), so a dirty tree here means something unexpected changed.
+[ -z "$( git status --porcelain )" ] || abort 'the build changed tracked files (listed by git status). Find out why first.'
 
 WPORG_ZIP="${ROOT}/releases/${SLUG}-wporg.zip"
 FREE_ZIP="${ROOT}/releases/${SLUG}.zip"

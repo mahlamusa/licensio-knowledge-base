@@ -72,7 +72,10 @@ function plainText( html: string ): string {
 const descriptions = computed(
 	() =>
 		new Map(
-			store.items.map( ( tag ) => [ tag.id, plainText( tag.description ) ] )
+			store.items.map( ( tag ) => [
+				tag.id,
+				plainText( tag.description ),
+			] )
 		)
 );
 
@@ -126,9 +129,10 @@ const columns = computed( () => [
  *
  * @since 1.0.0
  *
- * @param {Object} pagination The table's pagination.
- * @param {unknown} filters   The table's filters, unused.
- * @param {Object} sorter     The table's sorter.
+ * @param {Object}  pagination           The table's pagination.
+ * @param {number}  [pagination.current] The page now shown.
+ * @param {unknown} filters              The table's filters, unused.
+ * @param {Object}  sorter               The table's sorter.
  *
  * @return {void}
  */
@@ -158,7 +162,8 @@ function onChange(
  */
 function focusRow( id: number ): void {
 	nextTick( () => {
-		const target = editingId.value === id ? 'input:not([type="checkbox"])' : 'button';
+		const target =
+			editingId.value === id ? 'input:not([type="checkbox"])' : 'button';
 
 		document
 			.querySelector< HTMLElement >(
@@ -270,9 +275,7 @@ async function save( tag: TagItem ): Promise< void > {
  * @return {boolean} True when it has a name and a change.
  */
 function canSave( tag: TagItem ): boolean {
-	return (
-		'' !== draft.name.trim() && Object.keys( changes( tag ) ).length > 0
-	);
+	return '' !== draft.name.trim() && Object.keys( changes( tag ) ).length > 0;
 }
 
 // When the open row leaves the list (paged, filtered, deleted, merged or
@@ -312,10 +315,14 @@ watch(
 			:scroll="{ x: 760 }"
 			:row-selection="{
 				selectedRowKeys: store.selected,
-				onChange: ( keys: unknown[] ) => ( store.selected = keys as number[] ),
+				onChange: ( keys: unknown[] ) =>
+					( store.selected = keys as number[] ),
 				getCheckboxProps: ( record: TagItem ) => ( {
 					/* translators: %s: the tag's name. */
-					'aria-label': sprintf( __( 'Select “%s”', 'licensio-knowledge-base' ), record.name ),
+					'aria-label': sprintf(
+						__( 'Select “%s”', 'licensio-knowledge-base' ),
+						record.name
+					),
 				} ),
 			}"
 			:pagination="{
@@ -325,9 +332,16 @@ watch(
 				showSizeChanger: false,
 			}"
 			:locale="{
-				emptyText: store.unused || store.search || store.include.length
-					? __( 'No tags match these filters.', 'licensio-knowledge-base' )
-					: __( 'No tags yet. Add your first tag above.', 'licensio-knowledge-base' ),
+				emptyText:
+					store.unused || store.search || store.include.length
+						? __(
+								'No tags match these filters.',
+								'licensio-knowledge-base'
+						  )
+						: __(
+								'No tags yet. Add your first tag above.',
+								'licensio-knowledge-base'
+						  ),
 			}"
 			@change="onChange"
 		>
@@ -355,7 +369,9 @@ watch(
 						v-if="editingId === record.id"
 						v-model:value="draft.description"
 						:auto-size="{ minRows: 1, maxRows: 4 }"
-						:aria-label="__( 'Description', 'licensio-knowledge-base' )"
+						:aria-label="
+							__( 'Description', 'licensio-knowledge-base' )
+						"
 					/>
 					<span v-else class="lkb-tags__description">{{
 						descriptions.get( record.id ) || '—'
@@ -378,12 +394,18 @@ watch(
 				</template>
 
 				<template v-else-if="'actions' === column.key">
-					<div v-if="editingId === record.id" class="lkb-tags__actions">
+					<div
+						v-if="editingId === record.id"
+						class="lkb-tags__actions"
+					>
 						<ConfirmButton
 							type="primary"
 							size="small"
 							:title="
-								__( 'Save the changes to this tag?', 'licensio-knowledge-base' )
+								__(
+									'Save the changes to this tag?',
+									'licensio-knowledge-base'
+								)
 							"
 							:ok-text="__( 'Save', 'licensio-knowledge-base' )"
 							:disabled="! canSave( record as TagItem )"
@@ -420,14 +442,14 @@ watch(
 <style scoped>
 .lkb-tablecard {
 	overflow: hidden;
-	border: 1px solid var(--lkb-border-wp);
-	border-radius: var(--lkb-radius);
-	background: var(--lkb-surface);
-	box-shadow: var(--lkb-shadow-sm);
+	border: 1px solid var( --lkb-border-wp );
+	border-radius: var( --lkb-radius );
+	background: var( --lkb-surface );
+	box-shadow: var( --lkb-shadow-sm );
 }
 
 .lkb-tags__description {
-	color: var(--lkb-ink-muted);
+	color: var( --lkb-ink-muted );
 }
 
 .lkb-tags__actions {
@@ -436,6 +458,6 @@ watch(
 }
 
 :deep( .ant-table-tbody > tr.ant-table-row-selected > td ) {
-	background: var(--lkb-brand-tint);
+	background: var( --lkb-brand-tint );
 }
 </style>

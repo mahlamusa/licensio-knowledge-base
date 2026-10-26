@@ -22,7 +22,7 @@
  *         :ok-text="__( 'Move to trash', 'licensio-knowledge-base' )"
  *         danger
  *         :loading="saving"
- *         @confirm="trash"
+ *         v-on:confirm="trash"
  *     >
  *         {{ __( 'Trash', 'licensio-knowledge-base' ) }}
  *     </ConfirmButton>

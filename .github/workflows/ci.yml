@@ -132,6 +132,9 @@ jobs:
       - name: Lint (ESLint / wp-scripts)
         run: npm run lint:js
 
+      - name: Type-check (vue-tsc)
+        run: npm run typecheck
+
       - name: Build the admin apps and blocks
         run: npm run build
 

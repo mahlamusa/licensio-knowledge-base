@@ -37,7 +37,9 @@ const missing = process.env.LICENSIO_KB_E2E_MISSING ?? 'zzqqxxnotathing';
 async function openSearch( page: Page ) {
 	await page.goto( path );
 
-	const combobox = page.locator( '[data-licensio-kb-search] [role="combobox"]' ).first();
+	const combobox = page
+		.locator( '[data-licensio-kb-search] [role="combobox"]' )
+		.first();
 	await expect( combobox ).toBeVisible();
 
 	const listboxId = await combobox.getAttribute( 'aria-controls' );
@@ -56,7 +58,9 @@ test.describe( 'knowledge base search type-ahead', () => {
 
 		await combobox.fill( term );
 
-		await expect( listbox.locator( '[role="option"]' ).first() ).toBeVisible();
+		await expect(
+			listbox.locator( '[role="option"]' ).first()
+		).toBeVisible();
 		await expect( combobox ).toHaveAttribute( 'aria-expanded', 'true' );
 	} );
 
@@ -66,14 +70,25 @@ test.describe( 'knowledge base search type-ahead', () => {
 		const { combobox, listbox } = await openSearch( page );
 
 		await combobox.fill( term );
-		await expect( listbox.locator( '[role="option"]' ).first() ).toBeVisible();
+		await expect(
+			listbox.locator( '[role="option"]' ).first()
+		).toBeVisible();
 
-		await expect( combobox ).not.toHaveAttribute( 'aria-activedescendant', /./ );
+		await expect( combobox ).not.toHaveAttribute(
+			'aria-activedescendant',
+			/./
+		);
 
 		await combobox.press( 'ArrowDown' );
 
-		const first = await listbox.locator( '[role="option"]' ).first().getAttribute( 'id' );
-		await expect( combobox ).toHaveAttribute( 'aria-activedescendant', first! );
+		const first = await listbox
+			.locator( '[role="option"]' )
+			.first()
+			.getAttribute( 'id' );
+		await expect( combobox ).toHaveAttribute(
+			'aria-activedescendant',
+			first!
+		);
 		await expect(
 			listbox.locator( '[role="option"]' ).first()
 		).toHaveAttribute( 'aria-selected', 'true' );
@@ -88,10 +103,16 @@ test.describe( 'knowledge base search type-ahead', () => {
 				.nth( 1 )
 				.getAttribute( 'id' );
 
-			await expect( combobox ).toHaveAttribute( 'aria-activedescendant', second! );
+			await expect( combobox ).toHaveAttribute(
+				'aria-activedescendant',
+				second!
+			);
 
 			await combobox.press( 'ArrowUp' );
-			await expect( combobox ).toHaveAttribute( 'aria-activedescendant', first! );
+			await expect( combobox ).toHaveAttribute(
+				'aria-activedescendant',
+				first!
+			);
 		}
 	} );
 
@@ -101,20 +122,29 @@ test.describe( 'knowledge base search type-ahead', () => {
 		const { combobox, listbox } = await openSearch( page );
 
 		await combobox.fill( term );
-		await expect( listbox.locator( '[role="option"]' ).first() ).toBeVisible();
+		await expect(
+			listbox.locator( '[role="option"]' ).first()
+		).toBeVisible();
 
 		await combobox.press( 'Escape' );
 
 		await expect( combobox ).toHaveAttribute( 'aria-expanded', 'false' );
-		await expect( combobox ).not.toHaveAttribute( 'aria-activedescendant', /./ );
+		await expect( combobox ).not.toHaveAttribute(
+			'aria-activedescendant',
+			/./
+		);
 		await expect( listbox ).toBeHidden();
 	} );
 
-	test( 'Enter on a selected option opens that article', async ( { page } ) => {
+	test( 'Enter on a selected option opens that article', async ( {
+		page,
+	} ) => {
 		const { combobox, listbox } = await openSearch( page );
 
 		await combobox.fill( term );
-		await expect( listbox.locator( '[role="option"]' ).first() ).toBeVisible();
+		await expect(
+			listbox.locator( '[role="option"]' ).first()
+		).toBeVisible();
 
 		const destination = await listbox
 			.locator( '[role="option"]' )
@@ -135,7 +165,9 @@ test.describe( 'knowledge base search type-ahead', () => {
 		const { combobox, listbox } = await openSearch( page );
 
 		await combobox.fill( term );
-		await expect( listbox.locator( '[role="option"]' ).first() ).toBeVisible();
+		await expect(
+			listbox.locator( '[role="option"]' ).first()
+		).toBeVisible();
 
 		await combobox.press( 'Enter' );
 
@@ -152,12 +184,17 @@ test.describe( 'knowledge base search type-ahead', () => {
 
 		await combobox.fill( missing );
 
-		await expect( listbox.locator( '.licensio-kb-search__empty' ) ).toBeVisible();
+		await expect(
+			listbox.locator( '.licensio-kb-search__empty' )
+		).toBeVisible();
 		await expect( listbox.locator( '[role="option"]' ) ).toHaveCount( 0 );
 
 		// The empty state is not selectable, so arrowing must not pick it.
 		await combobox.press( 'ArrowDown' );
-		await expect( combobox ).not.toHaveAttribute( 'aria-activedescendant', /./ );
+		await expect( combobox ).not.toHaveAttribute(
+			'aria-activedescendant',
+			/./
+		);
 	} );
 
 	test( 'typing quickly leaves only the last request standing', async ( {
@@ -174,7 +211,9 @@ test.describe( 'knowledge base search type-ahead', () => {
 		const { combobox, listbox } = await openSearch( page );
 
 		await combobox.pressSequentially( term, { delay: 30 } );
-		await expect( listbox.locator( '[role="option"]' ).first() ).toBeVisible();
+		await expect(
+			listbox.locator( '[role="option"]' ).first()
+		).toBeVisible();
 
 		/*
 		 * A 250 ms debounce over keystrokes 30 ms apart must not produce one

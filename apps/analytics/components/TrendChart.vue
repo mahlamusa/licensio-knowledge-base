@@ -15,9 +15,9 @@ import type { TrendPoint } from '../types';
 
 Chart.register( ...registerables );
 
-const props = defineProps<{
+const props = defineProps< {
 	series: Array< { label: string; color: string; points: TrendPoint[] } >;
-}>();
+} >();
 
 const canvas = ref< HTMLCanvasElement | null >( null );
 let chart: Chart | null = null;

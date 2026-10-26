@@ -15,6 +15,7 @@
 
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons-vue';
+import type { RadioChangeEvent } from 'ant-design-vue';
 import { lkbTheme } from '../styles/theme';
 import AppHeader from '../components/AppHeader.vue';
 import { __, sprintf } from '../components/i18n';
@@ -46,7 +47,7 @@ const pills = computed( () =>
 			[ 'future', __( 'Scheduled', 'licensio-knowledge-base' ) ],
 			[ 'trash', __( 'Trash', 'licensio-knowledge-base' ) ],
 		] as Array< [ StatusFilter, string ] >
-	).map( ( [ value, label ] ) => ( {
+	 ).map( ( [ value, label ] ) => ( {
 		value,
 		label,
 		count: store.counts[ value ] ?? 0,
@@ -107,7 +108,9 @@ onBeforeUnmount( () => clearTimeout( searchTimer ) );
 						{{ __( 'Articles', 'licensio-knowledge-base' ) }}
 					</h1>
 					<a-button type="primary" :href="settings.newUrl">
-						<template #icon><PlusOutlined aria-hidden="true" /></template>
+						<template #icon
+							><PlusOutlined aria-hidden="true"
+						/></template>
 						{{ __( 'New article', 'licensio-knowledge-base' ) }}
 					</a-button>
 				</div>
@@ -130,21 +133,28 @@ onBeforeUnmount( () => clearTimeout( searchTimer ) );
 					<div
 						class="lkb-pills"
 						role="group"
-						:aria-label="__( 'Filter by status', 'licensio-knowledge-base' )"
+						:aria-label="
+							__( 'Filter by status', 'licensio-knowledge-base' )
+						"
 					>
 						<button
 							v-for="pill in pills"
 							:key="pill.value"
 							type="button"
 							class="lkb-pill"
-							:class="{ 'is-active': store.query.status === pill.value }"
+							:class="{
+								'is-active': store.query.status === pill.value,
+							}"
 							:aria-pressed="store.query.status === pill.value"
 							@click="store.setFilters( { status: pill.value } )"
 						>
 							{{
 								sprintf(
 									/* translators: 1: status name, 2: number of articles with that status. */
-									__( '%1$s (%2$d)', 'licensio-knowledge-base' ),
+									__(
+										'%1$s (%2$d)',
+										'licensio-knowledge-base'
+									),
 									pill.label,
 									pill.count
 								)
@@ -157,14 +167,36 @@ onBeforeUnmount( () => clearTimeout( searchTimer ) );
 							:value="search"
 							class="lkb-toolbar__search"
 							allow-clear
-							:placeholder="__( 'Search titles', 'licensio-knowledge-base' )"
-							:aria-label="__( 'Search articles by title', 'licensio-knowledge-base' )"
-							@change="( event: Event ) => onSearch( ( event.target as HTMLInputElement ).value )"
+							:placeholder="
+								__( 'Search titles', 'licensio-knowledge-base' )
+							"
+							:aria-label="
+								__(
+									'Search articles by title',
+									'licensio-knowledge-base'
+								)
+							"
+							@change="
+								( event: Event ) =>
+									onSearch(
+										( event.target as HTMLInputElement )
+											.value
+									)
+							"
 							@search="onSearch"
 						>
 							<template #enterButton>
-								<a-button :aria-label="__( 'Search', 'licensio-knowledge-base' )">
-									<template #icon><SearchOutlined /></template>
+								<a-button
+									:aria-label="
+										__(
+											'Search',
+											'licensio-knowledge-base'
+										)
+									"
+								>
+									<template #icon
+										><SearchOutlined
+									/></template>
 								</a-button>
 							</template>
 						</a-input-search>
@@ -175,8 +207,20 @@ onBeforeUnmount( () => clearTimeout( searchTimer ) );
 							:value="store.query.window"
 							option-type="button"
 							:options="windows"
-							:aria-label="__( 'Views and rating period', 'licensio-knowledge-base' )"
-							@change="( event ) => store.setFilters( { window: Number( event.target.value ) as MetricsWindow } )"
+							:aria-label="
+								__(
+									'Views and rating period',
+									'licensio-knowledge-base'
+								)
+							"
+							@change="
+								( event: RadioChangeEvent ) =>
+									store.setFilters( {
+										window: Number(
+											event.target.value
+										) as MetricsWindow,
+									} )
+							"
 						/>
 
 						<ColumnPicker />
@@ -185,7 +229,11 @@ onBeforeUnmount( () => clearTimeout( searchTimer ) );
 
 				<BulkBar />
 
-				<a-skeleton v-if="! store.loaded && store.loading" active :paragraph="{ rows: 8 }" />
+				<a-skeleton
+					v-if="! store.loaded && store.loading"
+					active
+					:paragraph="{ rows: 8 }"
+				/>
 				<ArticleTable v-else />
 
 				<BulkProgress />
@@ -196,7 +244,7 @@ onBeforeUnmount( () => clearTimeout( searchTimer ) );
 
 <style scoped>
 .licensio-kb-articles__error {
-	margin-bottom: var(--lkb-gap);
+	margin-bottom: var( --lkb-gap );
 }
 
 .lkb-toolbar {
@@ -219,10 +267,10 @@ onBeforeUnmount( () => clearTimeout( searchTimer ) );
 	display: inline-flex;
 	flex-wrap: wrap;
 	padding: 3px;
-	border: 1px solid var(--lkb-border-wp);
-	border-radius: var(--lkb-radius);
-	background: var(--lkb-surface);
-	box-shadow: var(--lkb-shadow-sm);
+	border: 1px solid var( --lkb-border-wp );
+	border-radius: var( --lkb-radius );
+	background: var( --lkb-surface );
+	box-shadow: var( --lkb-shadow-sm );
 }
 
 .lkb-pill {
@@ -233,27 +281,29 @@ onBeforeUnmount( () => clearTimeout( searchTimer ) );
 	border: 0;
 	border-radius: 6px;
 	background: transparent;
-	color: var(--lkb-ink-wp-secondary);
+	color: var( --lkb-ink-wp-secondary );
 	font-size: 13px;
 	line-height: 1;
 	white-space: nowrap;
 	cursor: pointer;
-	transition: background 0.12s ease, color 0.12s ease;
+	transition:
+		background 0.12s ease,
+		color 0.12s ease;
 }
 
 .lkb-pill:hover {
-	background: var(--lkb-hover);
-	color: var(--lkb-ink-wp);
+	background: var( --lkb-hover );
+	color: var( --lkb-ink-wp );
 }
 
 .lkb-pill.is-active {
-	background: var(--lkb-brand-tint);
-	color: var(--lkb-accent);
+	background: var( --lkb-brand-tint );
+	color: var( --lkb-accent );
 	font-weight: 600;
 }
 
 .lkb-pill:focus-visible {
-	outline: 2px solid var(--lkb-accent);
+	outline: 2px solid var( --lkb-accent );
 	outline-offset: -2px;
 }
 </style>
