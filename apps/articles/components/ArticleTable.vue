@@ -382,11 +382,28 @@ const expandedKeys = computed( () =>
 	box-shadow: var(--lkb-shadow-sm);
 }
 
+.lkb-tablecard :deep( .ant-table-thead > tr > th ),
+.lkb-tablecard :deep( .ant-table-tbody > tr.ant-table-row > td ) {
+	padding: 8px 10px;
+}
+
+.lkb-tablecard :deep( .ant-table-tbody > tr.ant-table-row > td ) {
+	vertical-align: top;
+}
+
+/*
+ * Core's title cell is 13px with a 1.3em line height, so the 14px title link
+ * and the row actions under it sit on 16.9px lines, as on the Posts screen.
+ * The gap under the title is core's 0.2em of its 14px title.
+ */
 .lkb-title {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
 	gap: 6px;
+	margin-bottom: 2.8px;
+	font-size: 13px;
+	line-height: 1.3em;
 }
 
 .lkb-title__link {
@@ -411,14 +428,17 @@ const expandedKeys = computed( () =>
 	flex-wrap: wrap;
 	align-items: center;
 	gap: 0 10px;
-	margin-top: 4px;
-	font-size: 12px;
+	padding-top: 2px;
+	font-size: 13px;
+	line-height: 1.3em;
 }
 
 .lkb-rowactions :deep( .ant-btn-link ) {
 	height: auto;
 	padding: 0;
-	font-size: 12px;
+	border: 0;
+	font-size: 13px;
+	line-height: inherit;
 }
 
 /*
