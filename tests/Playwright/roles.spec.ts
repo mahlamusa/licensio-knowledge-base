@@ -9,10 +9,11 @@
  * Users `lkb_e2e_author`, `lkb_e2e_contributor` and `lkb_e2e_editor` are
  * created (or their password reset) through wp-cli by the setup project,
  * which also saves a session for each, so the suite needs
- * `LICENSIO_KB_WP_CLI` as well as `LICENSIO_KB_E2E=1`. The articles it makes
- * are deleted afterwards.
+ * `LICENSIO_KB_WP_CLI` and the admin credentials as well as
+ * `LICENSIO_KB_E2E=1`. The articles it makes are deleted afterwards.
  *
  * @since 1.0.0
+ * @since 1.0.0 Skips without the admin credentials, as setup then makes no role users.
  */
 
 import { readFileSync } from 'node:fs';
@@ -23,12 +24,18 @@ import {
 	ROLES,
 	SIGNED_OUT,
 	openDashboard,
+	password,
 	sessionFile,
+	user,
 	type Role,
 } from './helpers/session';
 import { wpCli, wpEval } from './helpers/wp-cli';
 
-const enabled = process.env.LICENSIO_KB_E2E === '1' && '' !== wpCli;
+const enabled =
+	process.env.LICENSIO_KB_E2E === '1' &&
+	'' !== wpCli &&
+	!! user &&
+	!! password;
 
 /** Makes this run's titles unique. */
 const suffix = Date.now().toString( 36 );
@@ -297,7 +304,7 @@ async function expectOwnPillCounts(
 test.describe( 'Article writers by role', () => {
 	test.skip(
 		! enabled,
-		'Set LICENSIO_KB_E2E=1 and LICENSIO_KB_WP_CLI to run.'
+		'Set LICENSIO_KB_E2E=1, LICENSIO_KB_WP_CLI and the admin credentials to run.'
 	);
 
 	test.describe.configure( { mode: 'serial' } );
