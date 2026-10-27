@@ -23,8 +23,13 @@
  * `deleted_term_relationships` ( $object_id, array( $tt_id ), $taxonomy ).
  * `set_object_terms` is not fired, since no object's whole term list is set.
  * `licensio_kb_term_assignments_changed` ( int[] $object_ids, string
- * $taxonomy ) also fires, once per taxonomy for every move, merge, removal or undo, so
- * the search index can refresh the articles that changed.
+ * $taxonomy ) also fires, once per taxonomy for every move, merge, removal or
+ * undo, so the search index can refresh the articles that changed.
+ *
+ * After a removal the term is empty when it is deleted, so core's
+ * `delete_term` and `delete_{$taxonomy}` actions receive an empty
+ * `$object_ids`. A listener that needs the objects the term had should use
+ * `licensio_kb_term_assignments_changed` instead.
  *
  * A move rewrites articles the user may not be able to open, so the REST
  * routes ask `check_articles()` first: every article filed under the source
@@ -44,6 +49,7 @@
  *
  * @package Licensio_KB
  * @since   1.0.0
+ * @since   1.0.0 Takes a term off its objects in batches before it is deleted.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -505,11 +511,13 @@ class Licensio_KB_Term_Operations {
             /**
              * Fires after term assignments were written directly to the database.
              *
-             * Moves, copies and merges write the relationship rows in batches
-             * instead of through `wp_set_object_terms()`, so core's per-object
-             * hooks do not fire. This one does, once per taxonomy.
+             * Moves, copies, merges, removals and undos write the relationship
+             * rows in batches instead of through `wp_set_object_terms()`, so
+             * core's per-object hooks do not fire. This one does, once per
+             * taxonomy.
              *
              * @since 1.0.0
+             * @since 1.0.0 Also fires for a term taken off its objects before its delete.
              *
              * @param int[]  $object_ids The objects that gained or lost a term.
              * @param string $taxonomy   The taxonomy whose assignments changed.

@@ -214,13 +214,16 @@ class Licensio_KB_Search_Index {
     }
 
     /**
-     * Reindex the articles a term move, merge or undo changed.
+     * Reindex the articles a term move, merge, removal or undo changed.
      *
      * Those operations write the relationship rows in batches, so core's
-     * `set_object_terms` does not fire for each article. Many articles at once
-     * start a background rebuild instead of reindexing inline.
+     * `set_object_terms` does not fire for each article. A removal takes a
+     * deleted category or tag off its articles before core deletes the term.
+     * Many articles at once start a background rebuild instead of reindexing
+     * inline.
      *
      * @since 1.0.0
+     * @since 1.0.0 Also covers a term taken off its articles before its delete.
      *
      * @param int[]  $object_ids The articles that gained or lost a term.
      * @param string $taxonomy   The taxonomy that changed.
