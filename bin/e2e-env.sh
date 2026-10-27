@@ -26,9 +26,11 @@ set -euo pipefail
 SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" && pwd )"
 ROOT="$( dirname "$SCRIPT_DIR" )"
 
-# Pinned rather than a devDependency: @wordpress/scripts 30 declares a peer
-# range on the 10.x line, and 10.x cannot read a config file from anywhere but
-# the working directory.
+# Run through npx at a pinned version. It was kept out of devDependencies
+# because an older @wordpress/scripts declared a wp-env peer range on the 10.x
+# line; the current one declares an optional peer of >=10.0.0, so it could now
+# be a devDependency. The version must stay 11.x or later: 10.x cannot read a
+# config file from anywhere but the working directory.
 WP_ENV_VERSION='11.17.0'
 CONFIG='tests/Playwright/wp-env.json'
 
