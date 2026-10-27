@@ -357,7 +357,7 @@ cat > "${APP_STRINGS_DIR}/apps/demo/App.vue" <<'VUE'
  * Usage: __( 'Only an example in a docblock', 'licensio-knowledge-base' )
  */
 const title = __( 'Tag saved', 'licensio-knowledge-base' );
-const count = _n( '%d tag', '%d tags', 2, 'licensio-knowledge-base' );
+const count = /* translators: %d: number of tags. */ _n( '%d tag', '%d tags', 2, 'licensio-knowledge-base' );
 const verb = _x( 'Post', 'verb', 'licensio-knowledge-base' );
 const items = _nx( '%d item', '%d items', 2, 'cart', 'licensio-knowledge-base' );
 </script>
@@ -378,6 +378,7 @@ msgstr ""
 msgid "Tag saved"
 msgstr ""
 
+#. translators: %d: number of tags.
 #: dist/apps/demo/index.a1b2c3d4.js:1
 msgid "%d tag"
 msgid_plural "%d tags"
@@ -412,6 +413,7 @@ sed 's|^#: dist/apps/demo/index.a1b2c3d4.js:1$|#: includes/class-licensio-kb-dem
 grep -v '^msgctxt "verb"$' "${APP_STRINGS_DIR}/complete.pot" > "${APP_STRINGS_DIR}/no-context.pot"
 sed 's|^msgctxt "cart"$|msgctxt "basket"|' \
     "${APP_STRINGS_DIR}/complete.pot" > "${APP_STRINGS_DIR}/wrong-context.pot"
+grep -v '^#\. translators:' "${APP_STRINGS_DIR}/complete.pot" > "${APP_STRINGS_DIR}/no-comment.pot"
 
 assert_green 'a template with every app string passes, comments are not calls' \
     node "${ROOT}/tools/check-app-strings.mjs" "${APP_STRINGS_DIR}/complete.pot" "${APP_STRINGS_DIR}/apps"
@@ -431,6 +433,10 @@ assert_red 'an _x string without its context fails' \
 assert_red 'an _nx string under another context fails' \
     'apps/demo/App.vue:8  %d item (context: cart)' \
     node "${ROOT}/tools/check-app-strings.mjs" "${APP_STRINGS_DIR}/wrong-context.pot" "${APP_STRINGS_DIR}/apps"
+
+assert_red 'a translator comment missing from the template entry fails' \
+    'apps/demo/App.vue:6  %d tag (comment lost: translators: %d: number of tags.)' \
+    node "${ROOT}/tools/check-app-strings.mjs" "${APP_STRINGS_DIR}/no-comment.pot" "${APP_STRINGS_DIR}/apps"
 
 printf '\ntools/check-ant-components.mjs\n'
 
