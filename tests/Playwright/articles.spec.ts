@@ -19,6 +19,7 @@
  *
  * @since 1.0.0
  * @since 1.0.0 The status count test runs on its own, after the other specs.
+ * @since 1.0.0 The quick edit save test edits an article of its own.
  */
 
 import { expect, test, type Page, type Request } from '@playwright/test';
@@ -161,19 +162,31 @@ test.describe( 'Articles app', () => {
 		page,
 	} ) => {
 		const app = await openContentManager( page, 'articles' );
-		const writes = recordWrites( page );
-		const row = app.locator( '.ant-table-row' ).first();
+		// An article of its own: other specs search for the titles of theirs.
+		const original = `Quick save ${ Date.now() }`;
 		const title = `E2E ${ Date.now() }`;
-
-		await row.getByRole( 'button', { name: 'Quick edit' } ).click();
-
-		const form = app.locator( '.ant-table-expanded-row' ).first();
-		const original = await form.getByLabel( 'Title' ).inputValue();
-
-		await form.getByLabel( 'Title' ).fill( title );
-		await form.getByRole( 'button', { name: /Save/ } ).click();
+		const { id } = await articleRequest( page, 'POST', '', {
+			title: original,
+			status: 'publish',
+		} );
 
 		try {
+			await page.goto(
+				contentManagerUrl( 'articles' ) +
+					'&search=' +
+					encodeURIComponent( original )
+			);
+
+			const writes = recordWrites( page );
+			const row = app.locator( '.ant-table-row', { hasText: original } );
+
+			await row.getByRole( 'button', { name: 'Quick edit' } ).click();
+
+			const form = app.locator( '.ant-table-expanded-row' ).first();
+
+			await form.getByLabel( 'Title' ).fill( title );
+			await form.getByRole( 'button', { name: /Save/ } ).click();
+
 			await expect( app.getByText( title ) ).toBeVisible();
 			await expect( confirmDialog( page ) ).toHaveCount( 0 );
 
@@ -183,23 +196,7 @@ test.describe( 'Articles app', () => {
 				title,
 			} );
 		} finally {
-			// Put the article's title back so the site is left as found.
-			if ( writes.length > 0 ) {
-				const nonce = await page.evaluate(
-					() =>
-						(
-							window as unknown as {
-								licensioKbArticles?: { nonce?: string };
-							}
-						 ).licensioKbArticles?.nonce ?? ''
-				);
-
-				await page.request.fetch( writes[ 0 ].url(), {
-					method: 'PATCH',
-					headers: { 'X-WP-Nonce': nonce },
-					data: { title: original },
-				} );
-			}
+			await articleRequest( page, 'DELETE', '/' + id );
 		}
 	} );
 
