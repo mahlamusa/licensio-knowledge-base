@@ -619,7 +619,7 @@ class Licensio_KB_Term_Operations_Test extends Licensio_KB_Test_Case {
         $this->assertSame( 'licensio_kb_invalid_taxonomy', $operations->remove_assignments( 10, 'post_tag' )->get_error_code() );
         $this->assertSame( 'licensio_kb_invalid_term', $operations->remove_assignments( 99, 'licensio_tag' )->get_error_code() );
         $this->assertSame( 0, $operations->remove_assignments( 30, 'licensio_tag' ) );
-        $this->assertSame( array(), $this->events, 'Nothing is written.' );
+        $this->assertSame( array( 'defer', 'count' ), $this->events, 'Nothing is written; counting is only paused and resumed, as for an empty move.' );
     }
 
     /**

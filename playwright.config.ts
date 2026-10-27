@@ -19,6 +19,12 @@ const SITE_WIDE = '**/classic-screens.spec.ts';
 /** Tests that read state the whole site shares; see the `one-at-a-time` project. */
 const ONE_AT_A_TIME = /@one-at-a-time/;
 
+/** Desktop Chrome with the administrator's saved session. */
+const signedIn = {
+	...devices[ 'Desktop Chrome' ],
+	storageState: ADMIN_SESSION,
+};
+
 const baseURL =
 	process.env.LICENSIO_KB_BASE_URL ?? 'http://lisenseserver.local';
 
@@ -56,10 +62,7 @@ export default defineConfig( {
 			testIgnore: SITE_WIDE,
 			grepInvert: ONE_AT_A_TIME,
 			dependencies: [ 'setup' ],
-			use: {
-				...devices[ 'Desktop Chrome' ],
-				storageState: ADMIN_SESSION,
-			},
+			use: signedIn,
 		},
 		// Tests that read state the whole site shares, such as the article
 		// status counts or the order of every top-level category, which other
@@ -71,10 +74,7 @@ export default defineConfig( {
 			grep: ONE_AT_A_TIME,
 			workers: 1,
 			dependencies: [ 'chromium' ],
-			use: {
-				...devices[ 'Desktop Chrome' ],
-				storageState: ADMIN_SESSION,
-			},
+			use: signedIn,
 		},
 		// Specs that switch a site-wide setting the others rely on. They run
 		// after every other spec, so no worker meets the setting half-way.
@@ -83,10 +83,7 @@ export default defineConfig( {
 			name: 'site-wide',
 			testMatch: SITE_WIDE,
 			dependencies: [ 'one-at-a-time' ],
-			use: {
-				...devices[ 'Desktop Chrome' ],
-				storageState: ADMIN_SESSION,
-			},
+			use: signedIn,
 		},
 	],
 	outputDir: './test-results',

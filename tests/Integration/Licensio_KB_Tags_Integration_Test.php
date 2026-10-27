@@ -587,14 +587,7 @@ class Licensio_KB_Tags_Integration_Test extends Licensio_KB_Analytics_DB_Test_Ca
         $this->assertSame( $size + 1, $this->count_rows( 'posts' ), 'No article is deleted.' );
         $this->assertSame( array( 'Failing' ), $this->names(), 'The failed tag is kept.' );
 
-        $deletes = array_filter(
-            $GLOBALS['wpdb']->queries,
-            function ( $query ) use ( $tt_id ) {
-                return 1 === preg_match( '/^DELETE FROM \S+ WHERE term_taxonomy_id = ' . (int) $tt_id . ' AND object_id IN /', (string) $query );
-            }
-        );
-
-        $this->assertCount( (int) ceil( count( $ids ) / Licensio_KB_Term_Operations::BATCH_SIZE ), $deletes, 'One statement per batch, not one per article.' );
+        $this->assertCount( (int) ceil( count( $ids ) / Licensio_KB_Term_Operations::BATCH_SIZE ), $this->live_relationship_deletes( $tt_id ), 'One statement per batch, not one per article.' );
     }
 
     /**

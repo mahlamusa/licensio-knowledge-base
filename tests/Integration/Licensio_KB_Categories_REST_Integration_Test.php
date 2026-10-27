@@ -1049,28 +1049,8 @@ class Licensio_KB_Categories_REST_Integration_Test extends Licensio_KB_Analytics
         $this->assertSame( 0, $left_at_delete, 'Core deletes an empty category.' );
         $this->assertNull( $this->parent_of( $source ) );
         $this->assertSame( $size, $this->count_rows( 'term_relationships', 'term_taxonomy_id = ' . $other_tt ), 'The articles keep their other category.' );
-        $this->assertCount( (int) ceil( $size / Licensio_KB_Term_Operations::BATCH_SIZE ), $this->relationship_deletes( $tt_id ), 'One statement per batch, not one per article.' );
+        $this->assertCount( (int) ceil( $size / Licensio_KB_Term_Operations::BATCH_SIZE ), $this->live_relationship_deletes( $tt_id ), 'One statement per batch, not one per article.' );
         $this->assertContains( 'licensio_kb_term_assignments_changed', $this->fired_actions );
-    }
-
-    /**
-     * The batched relationship deletes the adapter ran for one term.
-     *
-     * @since 1.0.0
-     *
-     * @param int $tt_id The term taxonomy ID.
-     *
-     * @return string[] The statements.
-     */
-    private function relationship_deletes( $tt_id ) {
-        return array_values(
-            array_filter(
-                $this->adapter->queries,
-                function ( $query ) use ( $tt_id ) {
-                    return 1 === preg_match( '/^DELETE FROM \S+ WHERE term_taxonomy_id = ' . (int) $tt_id . ' AND object_id IN /', (string) $query );
-                }
-            )
-        );
     }
 
     /**

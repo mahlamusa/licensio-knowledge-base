@@ -549,6 +549,26 @@ trait Licensio_KB_Live_Term_API {
     }
 
     /**
+     * The batched relationship deletes `$wpdb` ran for one term.
+     *
+     * @since 1.0.0
+     *
+     * @param int $tt_id The term taxonomy ID.
+     *
+     * @return string[] The statements.
+     */
+    protected function live_relationship_deletes( $tt_id ) {
+        return array_values(
+            array_filter(
+                $GLOBALS['wpdb']->queries,
+                function ( $query ) use ( $tt_id ) {
+                    return 1 === preg_match( '/^DELETE FROM \S+ WHERE term_taxonomy_id = ' . (int) $tt_id . ' AND object_id IN /', (string) $query );
+                }
+            )
+        );
+    }
+
+    /**
      * Make the relationship delete of one term fail for one object.
      *
      * Swaps `$wpdb` for an adapter that refuses the batched `DELETE` taking
