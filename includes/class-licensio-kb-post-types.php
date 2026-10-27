@@ -203,6 +203,28 @@ class Licensio_KB_Post_Types {
     }
 
     /**
+     * The admin menu icon as a base64 SVG data URL.
+     *
+     * WordPress draws a data URL icon the way it draws a dashicon, centred in
+     * the menu row, and recolours it to the admin colour scheme, so the brand
+     * mark turns white on hover and on the current page like the core icons.
+     * An icon given as a file URL is drawn as a fixed-colour `img` instead.
+     *
+     * @since 1.0.0
+     *
+     * @return string The data URL, or an empty string when the file is missing.
+     */
+    private function menu_icon() {
+        $svg = file_get_contents( LICENSIO_KB_ABSPATH . 'assets/images/logo/knowledge_base_icon.svg' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- A local file bundled with the plugin.
+
+        if ( false === $svg ) {
+            return '';
+        }
+
+        return 'data:image/svg+xml;base64,' . base64_encode( $svg ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- WordPress only recolours menu icons given as base64 SVG data URLs.
+    }
+
+    /**
      * Register the `licensio_article` post type.
      *
      * @since 1.0.0
@@ -246,7 +268,7 @@ class Licensio_KB_Post_Types {
             'has_archive'        => $this->article_slug(),
             'hierarchical'       => false,
             'menu_position'      => self::MENU_POSITION,
-            'menu_icon'          => LICENSIO_KB_ASSETS_URL . 'images/logo/knowledge_base_icon.svg',
+            'menu_icon'          => $this->menu_icon(),
             'supports'           => array(
                 'title',
                 'editor',

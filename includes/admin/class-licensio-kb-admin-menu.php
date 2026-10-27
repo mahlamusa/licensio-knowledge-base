@@ -67,28 +67,6 @@ class Licensio_KB_Admin_Menu {
      */
     public function init_hooks() {
         add_action( 'admin_menu', array( $this, 'register_pages' ), 20 );
-        add_action( 'admin_enqueue_scripts', array( $this, 'style_menu_icon' ) );
-    }
-
-    /**
-     * Size the menu icon like the rest of the rail.
-     *
-     * WordPress draws a plugin's SVG menu icon as an `img` and gives it
-     * `padding: 9px 0 0` without a height, so the icon renders 9px taller than
-     * the dashicon glyphs above it and sits low in its row. The rule is scoped
-     * to this one menu item by its slug, so nothing else in the rail moves.
-     *
-     * @since 1.0.0
-     *
-     * @return void
-     */
-    public function style_menu_icon() {
-        $selector = '#adminmenu .menu-icon-' . Licensio_KB_Post_Types::POST_TYPE . ' .wp-menu-image img';
-
-        wp_add_inline_style(
-            'wp-admin',
-            $selector . '{width:20px;height:20px;padding:7px 0 0;}'
-        );
     }
 
     /**

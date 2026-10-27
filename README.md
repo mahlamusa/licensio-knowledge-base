@@ -100,7 +100,9 @@ The staged tree is assembled from an **allowlist** (`SHIP_PATHS` in the script),
 | `npm run release:github [-- X.Y.Z]` | `bin/github-release.sh`: from a clean tree whose HEAD is the pushed `vX.Y.Z` tag, rebuilds and opens a **draft** GitHub release with the free and pro zips and the readme changelog entry as notes. |
 | `npm run wporg:publish [-- X.Y.Z]` | `bin/wp-org-publish.sh`: rebuilds, then stages the WordPress.org SVN working copy (`/tmp/licensio-knowledge-base-svn`): `trunk/` gets the wporg build, `tags/X.Y.Z/` is synced to exactly the free zip, `assets/` mirrors `.wordpress-org/`. It stops before `svn ci`. While the plugin has no SVN repository yet, it prints the wporg zip to upload for review and exits with status 2. |
 
-None of these push to git or commit to SVN. The two local Claude skills `prepare-git-release` and `prepare-wporg-release` (in the git-ignored `.claude/skills/`) walk through the full sequence, including the gates and the confirmations.
+None of these push to git or commit to SVN. The Claude skills `/publish-release` and `/prepare-wporg-release` walk through the full sequence, including the gates and the confirmations. They read this repository's release profile from the git-ignored `.claude/release.md`.
+
+The WordPress.org listing images live in `.wordpress-org/`: `screenshot-N.png` (one per `== Screenshots ==` entry in `readme.txt`), `icon-128x128.png`, `icon-256x256.png`, `banner-772x250.png` and `banner-1544x500.png`. The icon and banner are rendered from the SVG sources in `docs/brand/`; after editing a source, re-export both sizes, for example `inkscape docs/brand/banner.svg -w 1544 -h 500 -o .wordpress-org/banner-1544x500.png` (the Inkscape snap needs absolute paths).
 
 ### Release gates
 
@@ -138,6 +140,8 @@ apps/                        Vue admin apps                 (#8, #9, #10)
 assets/                      frontend css + js sources
 tools/                       build helpers and the disposable migrator (#12); never shipped
 pro/                         pro-only code; excluded from the free build
+docs/                        design notes and the listing icon and banner sources (brand/); never shipped
+.wordpress-org/              WordPress.org listing screenshots, icons and banners (SVN assets/); never shipped
 tests/                       PHPUnit (tests/Unit) and Playwright (tests/Playwright)
 ```
 
