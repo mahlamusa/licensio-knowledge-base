@@ -12,6 +12,11 @@
  * the same text cannot hide a missing app string, and a string with a context
  * (`_x`, `_nx`) must be in the template under that same context.
  *
+ * A `translators:` comment written right before a call must reach the
+ * template on that call's entry too. The bundler and the minifier both drop
+ * comments they do not recognise, and a lost comment leaves translators
+ * guessing what a placeholder holds.
+ *
  * Usage: node tools/check-app-strings.mjs <file.pot> [apps-directory]
  *
  * @since 1.0.0
@@ -129,10 +134,10 @@ function poField( entry, field ) {
  *
  * @param {string} file The template path.
  *
- * @return {Set<string>} A key() for every msgid and msgid_plural.
+ * @return {Map<string, string[]>} A key() for every msgid and msgid_plural, mapped to the entry's extracted comments.
  */
 function potStrings( file ) {
-	const strings = new Set();
+	const strings = new Map();
 
 	for ( const entry of readFileSync( file, 'utf8' ).split( /\n\s*\n/ ) ) {
 		const references = [ ...entry.matchAll( /^#: (.*)$/gm ) ].flatMap(
@@ -144,12 +149,15 @@ function potStrings( file ) {
 		}
 
 		const context = poField( entry, 'msgctxt' ) ?? '';
+		const comments = [ ...entry.matchAll( /^#\. (.*)$/gm ) ].map(
+			( [ , comment ] ) => comment.trim()
+		);
 
 		for ( const field of [ 'msgid', 'msgid_plural' ] ) {
 			const text = poField( entry, field );
 
 			if ( undefined !== text ) {
-				strings.add( key( context, text ) );
+				strings.set( key( context, text ), comments );
 			}
 		}
 	}
@@ -165,12 +173,22 @@ const missing = [];
 let checked = 0;
 
 for ( const file of sourceFiles( appsDir ) ) {
+	const raw = readFileSync( file, 'utf8' );
+
 	// Usage examples in docblocks and markup comments are not calls. Blank
 	// them out, keeping their line breaks so reported line numbers stay right.
-	const source = readFileSync( file, 'utf8' ).replace(
+	const source = raw.replace(
 		/\/\*[\s\S]*?\*\/|<!--[\s\S]*?-->/g,
 		( comment ) => comment.replace( /[^\n]/g, ' ' )
 	);
+
+	// Translator comments, each waiting for the first call after it.
+	const notes = [
+		...raw.matchAll( /\/\*\s*(translators:[\s\S]*?)\s*\*\//g ),
+	].map( ( note ) => ( {
+		end: note.index + note[ 0 ].length,
+		text: note[ 1 ].replace( /\s+/g, ' ' ),
+	} ) );
 
 	for ( const match of source.matchAll( call ) ) {
 		const [ , name, , single, , second ] = match;
@@ -193,14 +211,18 @@ for ( const file of sourceFiles( appsDir ) ) {
 			context = rest ? unescapeString( rest[ 2 ] ) : '';
 		}
 
+		let note;
+
+		while ( notes.length && notes[ 0 ].end <= match.index ) {
+			note = notes.shift().text;
+		}
+
+		const line = source.slice( 0, match.index ).split( '\n' ).length;
+
 		for ( const text of wanted ) {
 			checked++;
 
 			if ( ! known.has( key( context, text ) ) ) {
-				const line = source
-					.slice( 0, match.index )
-					.split( '\n' ).length;
-
 				missing.push(
 					`${ path.relative( root, file ) }:${ line }  ${ text }${
 						context ? ` (context: ${ context })` : ''
@@ -208,12 +230,24 @@ for ( const file of sourceFiles( appsDir ) ) {
 				);
 			}
 		}
+
+		if (
+			note &&
+			known.has( key( context, wanted[ 0 ] ) ) &&
+			! known.get( key( context, wanted[ 0 ] ) ).includes( note )
+		) {
+			missing.push(
+				`${ path.relative( root, file ) }:${ line }  ${
+					wanted[ 0 ]
+				} (comment lost: ${ note })`
+			);
+		}
 	}
 }
 
 if ( missing.length > 0 ) {
 	process.stderr.write(
-		`App string check FAILED: ${ missing.length } of ${ checked } Vue app strings are missing from ${ potFile }:\n`
+		`App string check FAILED: ${ missing.length } Vue app strings or translator comments are missing from ${ potFile } (${ checked } strings checked):\n`
 	);
 	process.stderr.write(
 		missing.map( ( item ) => `  ${ item }\n` ).join( '' )
@@ -222,5 +256,5 @@ if ( missing.length > 0 ) {
 }
 
 process.stdout.write(
-	`App string check: all ${ checked } Vue app strings are in the template.\n`
+	`App string check: all ${ checked } Vue app strings and their translator comments are in the template.\n`
 );
