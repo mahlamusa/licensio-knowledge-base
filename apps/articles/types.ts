@@ -12,12 +12,7 @@ import type { TermTaxonomy, TermValue } from '../components/types/terms';
 
 /** A post status an article can have. */
 export type ArticleStatus =
-	| 'publish'
-	| 'future'
-	| 'draft'
-	| 'pending'
-	| 'private'
-	| 'trash';
+	'publish' | 'future' | 'draft' | 'pending' | 'private' | 'trash';
 
 /** The status filter: one status, or every status except trash. */
 export type StatusFilter = 'all' | ArticleStatus;
@@ -176,13 +171,7 @@ export interface QuickEditPayload {
 
 /** The bulk actions. */
 export type BulkAction =
-	| 'trash'
-	| 'restore'
-	| 'delete'
-	| 'status'
-	| 'terms'
-	| 'author'
-	| 'comments';
+	'trash' | 'restore' | 'delete' | 'status' | 'terms' | 'author' | 'comments';
 
 /** How a terms bulk action combines with the existing terms. */
 export type TermsMode = 'add' | 'remove' | 'replace';
@@ -214,11 +203,7 @@ export interface BulkRequest {
 
 /** Why an ID was skipped. */
 export type SkipReason =
-	| 'not_found'
-	| 'forbidden'
-	| 'locked'
-	| 'not_in_trash'
-	| 'in_trash';
+	'not_found' | 'forbidden' | 'locked' | 'not_in_trash' | 'in_trash';
 
 /**
  * `POST articles/bulk` answer.

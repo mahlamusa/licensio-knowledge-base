@@ -307,7 +307,7 @@ async function toCategories(): Promise< void > {
 				: __(
 						'The categories could not be loaded.',
 						'licensio-knowledge-base'
-				  );
+					);
 	} finally {
 		loadingCategories.value = false;
 	}
@@ -694,7 +694,7 @@ onMounted( detect );
 							? __(
 									'Verifying import (dry run)',
 									'licensio-knowledge-base'
-							  )
+								)
 							: __( 'Importing data', 'licensio-knowledge-base' )
 					}}
 				</h2>

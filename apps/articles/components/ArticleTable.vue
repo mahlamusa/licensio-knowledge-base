@@ -191,11 +191,10 @@ function toggleQuickEdit( item: ArticleItem ): void {
 function closeQuickEdit( id: number ): void {
 	store.quickEditId = 0;
 
-	nextTick(
-		() =>
-			document
-				.querySelector< HTMLElement >( `[data-quick-edit="${ id }"]` )
-				?.focus()
+	nextTick( () =>
+		document
+			.querySelector< HTMLElement >( `[data-quick-edit="${ id }"]` )
+			?.focus()
 	);
 }
 
@@ -353,7 +352,7 @@ const expandedKeys = computed( () =>
 								? __(
 										'Row actions are paused until the bulk action finishes.',
 										'licensio-knowledge-base'
-								  )
+									)
 								: undefined
 						"
 					>
@@ -400,11 +399,11 @@ const expandedKeys = computed( () =>
 											? __(
 													'View',
 													'licensio-knowledge-base'
-											  )
+												)
 											: __(
 													'Preview',
 													'licensio-knowledge-base'
-											  )
+												)
 									}}
 								</a>
 								<a
@@ -550,7 +549,7 @@ const expandedKeys = computed( () =>
 							? sprintf(
 									__( '%d min', 'licensio-knowledge-base' ),
 									record.reading_time
-							  )
+								)
 							: '—'
 					}}
 				</template>

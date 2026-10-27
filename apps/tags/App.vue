@@ -96,9 +96,9 @@ function editTag( tag: TagItem ): void {
 	nextTick( () => {
 		const name = document.getElementById( 'lkb-tag-name' );
 
-		name
-			?.closest( '.lkb-tag-form' )
-			?.scrollIntoView( { block: 'nearest' } );
+		name?.closest( '.lkb-tag-form' )?.scrollIntoView( {
+			block: 'nearest',
+		} );
 		name?.focus();
 	} );
 }

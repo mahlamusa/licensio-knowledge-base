@@ -28,8 +28,7 @@ export async function switchOffWelcomeGuides(
 	names: string[]
 ): Promise< void > {
 	await page.waitForFunction(
-		() =>
-			!! ( window as any ).wp?.data?.dispatch( 'core/preferences' )
+		() => !! ( window as any ).wp?.data?.dispatch( 'core/preferences' )
 	);
 	await page.evaluate(
 		( [ prefScope, prefNames ] ) => {

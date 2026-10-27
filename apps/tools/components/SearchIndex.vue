@@ -67,7 +67,7 @@ async function load(): Promise< void > {
 				: __(
 						'Failed to load the index status.',
 						'licensio-knowledge-base'
-				  );
+					);
 	} finally {
 		loading.value = false;
 	}

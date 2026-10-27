@@ -101,8 +101,8 @@ useEscapeClose(
 );
 
 // Move focus into the form as it opens, so keyboard users land on the title.
-onMounted(
-	() => formEl.value?.querySelector< HTMLInputElement >( 'input' )?.focus()
+onMounted( () =>
+	formEl.value?.querySelector< HTMLInputElement >( 'input' )?.focus()
 );
 
 // When the form goes away while it has focus, as it does when a save moves
@@ -131,7 +131,7 @@ const statusOptions = computed( () => {
 						value: 'publish',
 						label: __( 'Published', 'licensio-knowledge-base' ),
 					},
-			  ]
+				]
 			: [] ),
 		{ value: 'draft', label: __( 'Draft', 'licensio-knowledge-base' ) },
 		{
@@ -428,7 +428,7 @@ function statusOf( field: string ): 'error' | undefined {
 							? __(
 									'Leave empty to keep the current password',
 									'licensio-knowledge-base'
-							  )
+								)
 							: __( 'Password', 'licensio-knowledge-base' )
 					"
 					:aria-label="__( 'Password', 'licensio-knowledge-base' )"

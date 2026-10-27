@@ -119,7 +119,7 @@ function runLabel( item: LogRun ): string {
 			? ` · ${ item.failed } ${ __(
 					'failed',
 					'licensio-knowledge-base'
-			  ) }`
+				) }`
 			: '';
 
 	return `${ item.started_at } UTC · ${ item.source } · ${ kind } · ${
@@ -255,7 +255,7 @@ async function loadRuns(): Promise< void > {
 
 		selectedRun.value = wanted
 			? ( props.runId as string )
-			: runs.value[ 0 ]?.run_id ?? '';
+			: ( runs.value[ 0 ]?.run_id ?? '' );
 	} catch ( caught ) {
 		error.value =
 			caught instanceof Error
@@ -263,7 +263,7 @@ async function loadRuns(): Promise< void > {
 				: __(
 						'The log could not be loaded.',
 						'licensio-knowledge-base'
-				  );
+					);
 	}
 }
 
@@ -300,7 +300,7 @@ async function loadEntries(): Promise< void > {
 				: __(
 						'The log could not be loaded.',
 						'licensio-knowledge-base'
-				  );
+					);
 	} finally {
 		loading.value = false;
 	}
@@ -326,7 +326,7 @@ async function clear( everything: boolean ): Promise< void > {
 				: __(
 						'The log could not be cleared.',
 						'licensio-knowledge-base'
-				  );
+					);
 	}
 }
 

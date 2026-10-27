@@ -247,7 +247,7 @@ test.describe( 'Knowledge base settings', () => {
 						Math.abs(
 							rect.y + rect.height / 2 - viewport.height / 2
 						)
-				  )
+					)
 				: Infinity;
 		};
 

@@ -53,7 +53,7 @@ async function failGets(
 						message: 'The server could not answer.',
 						data: { status: 500 },
 					} ),
-			  } )
+				} )
 			: route.continue()
 	);
 

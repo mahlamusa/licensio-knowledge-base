@@ -67,7 +67,7 @@ const choices = computed( () =>
 						'licensio-knowledge-base'
 					),
 				},
-		  ]
+			]
 		: [
 				{
 					value: 'trash',
@@ -113,7 +113,7 @@ const choices = computed( () =>
 									'licensio-knowledge-base'
 								),
 							},
-					  ]
+						]
 					: [] ),
 				{
 					value: 'comments_open',
@@ -123,7 +123,7 @@ const choices = computed( () =>
 					value: 'comments_close',
 					label: __( 'Close comments', 'licensio-knowledge-base' ),
 				},
-		  ]
+			]
 );
 
 // Publishing and making private need the publish capability.
@@ -276,7 +276,7 @@ watch( inTrash, () => {
 									'licensio-knowledge-base'
 								),
 								count
-						  )
+							)
 						: sprintf(
 								/* translators: %d: number of selected articles. */
 								_n(
@@ -286,7 +286,7 @@ watch( inTrash, () => {
 									'licensio-knowledge-base'
 								),
 								count
-						  )
+							)
 				}}
 			</span>
 
@@ -372,11 +372,11 @@ watch( inTrash, () => {
 							? __(
 									'Tags for the bulk action',
 									'licensio-knowledge-base'
-							  )
+								)
 							: __(
 									'Categories for the bulk action',
 									'licensio-knowledge-base'
-							  )
+								)
 					"
 				/>
 

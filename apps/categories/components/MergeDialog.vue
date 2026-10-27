@@ -62,7 +62,7 @@ const targetExclude = computed( () => [
 ] );
 
 const targetName = computed( () =>
-	target.value ? store.find( target.value )?.name ?? '' : ''
+	target.value ? ( store.find( target.value )?.name ?? '' ) : ''
 );
 
 const confirmTitle = computed( () =>
@@ -209,7 +209,7 @@ async function merge(): Promise< void > {
 						? __(
 								'At most 50 categories can be merged at once.',
 								'licensio-knowledge-base'
-						  )
+							)
 						: undefined
 				"
 				:extra="

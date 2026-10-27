@@ -80,9 +80,9 @@ function loadForm( category: CategoryItem | null, parent: number ): void {
 	nextTick( () => {
 		const name = document.getElementById( 'lkb-category-name' );
 
-		name
-			?.closest( '.lkb-category-form' )
-			?.scrollIntoView( { block: 'nearest' } );
+		name?.closest( '.lkb-category-form' )?.scrollIntoView( {
+			block: 'nearest',
+		} );
 		name?.focus();
 	} );
 }
@@ -189,7 +189,7 @@ function restoreFocus(): void {
 				? null
 				: document.querySelector< HTMLElement >(
 						`[data-lkb-actions="${ returnTo }"]`
-				  );
+					);
 
 		( actions ?? document.getElementById( 'lkb-category-name' ) )?.focus();
 	} );
