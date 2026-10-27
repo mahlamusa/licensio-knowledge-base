@@ -28,6 +28,7 @@ licensio-kb-test-fixture.*
 /.tmp/
 /.epic-status
 /.playwright-cli/
+/reports/
 
 # Environment
 .env
