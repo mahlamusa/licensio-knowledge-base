@@ -1807,6 +1807,54 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * A delete leaving the articles without the category checks them too.
+     *
+     * The articles lose the category even with no target, so an article
+     * someone is editing, or one the user may not edit, stops the delete
+     * before anything is written.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_delete_without_a_target_checks_the_articles() {
+        Functions\when( 'apply_filters' )->returnArg( 2 );
+        Functions\expect( 'wp_delete_term' )->never();
+
+        $request = $this->request(
+            array(
+                'id'                => 1,
+                'reassign_articles' => 'none',
+                'reassign_children' => 'parent',
+            )
+        );
+
+        $GLOBALS['wpdb']->edit_locks = array( 101 => time() . ':9' );
+
+        $locked = $this->controller->delete_item( $request );
+
+        $this->assertInstanceOf( 'WP_Error', $locked );
+        $this->assertSame( 'licensio_kb_articles_locked', $locked->get_error_code() );
+        $this->assertSame( 409, $locked->get_error_data()['status'] );
+        $this->assertSame( array( 101 ), $locked->get_error_data()['ids'] );
+
+        $GLOBALS['wpdb']->edit_locks = array();
+        $this->denied                = array( 'edit_others_licensio_articles', 'edit_post:101' );
+
+        $forbidden = $this->controller->delete_item( $request );
+
+        $this->assertInstanceOf( 'WP_Error', $forbidden );
+        $this->assertSame( 'licensio_kb_articles_forbidden', $forbidden->get_error_code() );
+        $this->assertSame( 403, $forbidden->get_error_data()['status'] );
+        $this->assertSame( array( 101 ), $forbidden->get_error_data()['ids'] );
+
+        $this->assertSame( array(), $this->events, 'Nothing is written.' );
+        $this->assertSame( array( 101 ), $this->assignments[1] );
+        $this->assertArrayHasKey( 1, $this->terms );
+        $this->assertSame( 1, $this->terms[2]['parent'] );
+    }
+
+    /**
      * A source that is a child of another source is merged, not re-parented.
      *
      * @since 1.0.0
@@ -2230,6 +2278,33 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
         $this->assertSame( array( 101 ), $this->assignments[1] );
         $this->assertSame( array( 104 ), $this->assignments[4] );
         $this->assertSame( 1, $this->terms[2]['parent'] );
+    }
+
+    /**
+     * A delete with no target whose final step fails gives the articles the category back.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_failed_delete_without_a_target_puts_the_articles_back() {
+        Functions\when( 'wp_delete_term' )->justReturn( false );
+
+        $result = $this->controller->delete_item(
+            $this->request(
+                array(
+                    'id'                => 1,
+                    'reassign_articles' => 'none',
+                    'reassign_children' => 'parent',
+                )
+            )
+        );
+
+        $this->assert_error( 'licensio_kb_category_not_deleted', 500, $result );
+        $this->assertSame( array( 101 ), $this->assignments[1] );
+        $this->assertSame( 1, $this->terms[2]['parent'] );
+        $this->assertSame( 'unassign 101 from 1', $this->events[0], 'The articles lost the category before the delete.' );
+        $this->assertContains( 'assign 101 to 1', $this->events, 'Then got it back.' );
     }
 
     /**

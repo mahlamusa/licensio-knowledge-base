@@ -871,6 +871,36 @@ class Licensio_KB_Categories_REST_Integration_Test extends Licensio_KB_Analytics
     }
 
     /**
+     * A delete with no target whose final step fails gives the articles the category back.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_delete_without_a_target_that_fails_at_the_end_changes_nothing() {
+        $this->make_article( array( 'categories' => array( $this->ids['Getting started'] ) ) );
+        $this->make_article( array( 'categories' => array( $this->ids['Getting started'], $this->ids['Billing'] ) ) );
+
+        $before = $this->live_snapshot();
+
+        Brain\Monkey\Functions\when( 'wp_delete_term' )->justReturn( false );
+
+        $result = $this->controller->delete_item(
+            $this->request(
+                array(
+                    'id'                => $this->ids['Getting started'],
+                    'reassign_articles' => 'none',
+                    'reassign_children' => 'parent',
+                )
+            )
+        );
+
+        $this->assertInstanceOf( 'WP_Error', $result );
+        $this->assertSame( 'licensio_kb_category_not_deleted', $result->get_error_code() );
+        $this->assertSame( $before, $this->live_snapshot(), 'The articles have the category again and the children are back under it.' );
+    }
+
+    /**
      * A delete whose second child move fails leaves everything where it was.
      *
      * @since 1.0.0
