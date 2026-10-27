@@ -231,11 +231,9 @@ for ( const file of sourceFiles( appsDir ) ) {
 			}
 		}
 
-		if (
-			note &&
-			known.has( key( context, wanted[ 0 ] ) ) &&
-			! known.get( key( context, wanted[ 0 ] ) ).includes( note )
-		) {
+		const comments = known.get( key( context, wanted[ 0 ] ) );
+
+		if ( note && comments && ! comments.includes( note ) ) {
 			missing.push(
 				`${ path.relative( root, file ) }:${ line }  ${
 					wanted[ 0 ]
