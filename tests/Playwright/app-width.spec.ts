@@ -28,6 +28,7 @@
  *
  * @since 1.0.0
  * @since 1.0.0 Measures the Articles columns with the long-titled article alone.
+ * @since 1.0.0 Seeding that fails stops the run with the cause.
  */
 
 import { expect, test, type Page } from '@playwright/test';
@@ -168,8 +169,14 @@ test.describe( 'App width', () => {
 			$short = wp_insert_term( '${ SHORT_SLUG }', 'licensio_tag' );
 			$word  = wp_insert_term( '${ LONG_WORD }', 'licensio_tag', array( 'slug' => 'oneword${ suffix }' ) );
 			$post  = wp_insert_post( array( 'post_type' => 'licensio_article', 'post_status' => 'publish', 'post_title' => 'How to configure automatic license key renewal and handle expired subscriptions across multisite networks', 'post_author' => $admin ? $admin->ID : 0 ) );
-			wp_set_object_terms( $post, array( (int) $long['term_id'] ), 'licensio_tag' );
 			$category = wp_insert_term( 'Width check category ${ suffix }', 'licensio_category' );
+			// Fail with the cause rather than on a missing term ID further on.
+			foreach ( array( 'long tag' => $long, 'short tag' => $short, 'one-word tag' => $word, 'article' => $post, 'category' => $category ) as $what => $made ) {
+				if ( ! $made || is_wp_error( $made ) ) {
+					WP_CLI::error( 'Could not make the ' . $what . ' to measure: ' . ( is_wp_error( $made ) ? $made->get_error_message() : 'nothing was saved.' ) );
+				}
+			}
+			wp_set_object_terms( $post, array( (int) $long['term_id'] ), 'licensio_tag' );
 			wp_set_object_terms( $post, array( (int) $category['term_id'] ), 'licensio_category' );
 			echo wp_json_encode( array( 'admin' => $admin ? $admin->ID : 0, 'prefs' => $prefs, 'terms' => array( (int) $long['term_id'], (int) $short['term_id'], (int) $word['term_id'] ), 'category' => (int) $category['term_id'], 'post' => $post ) );
 		` );
