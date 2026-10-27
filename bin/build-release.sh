@@ -11,7 +11,9 @@
 #
 # WordPress.org requires the human-readable source of every compiled file, and
 # the repository is private, so the wporg artifact carries `apps/`, `blocks/`,
-# the two build wrappers in `tools/` and the npm manifests beside the build.
+# the two build wrappers in `tools/`, the npm manifests and the build, type
+# check and lint configs. Anyone working from SVN trunk can then run npm ci,
+# npm run build, npm run typecheck and npm run lint:js.
 # It is what goes up for plugin review and into SVN trunk. The SVN release tag
 # matches the plain free build (see bin/wp-org-publish.sh).
 #
@@ -105,9 +107,10 @@ FORBIDDEN_ROOT_PATHS=(
     'SPEC.md'
 )
 
-# The sources the wporg artifact adds to the free build, so dist/ can be rebuilt
-# from what WordPress.org hosts. Only the two build wrappers come from tools/:
-# the rest of that directory is migration tooling that never ships.
+# The sources the wporg artifact adds to the free build, so dist/ can be rebuilt,
+# type checked and linted from what WordPress.org hosts. Only the two build
+# wrappers come from tools/: the rest of that directory is migration tooling
+# that never ships.
 SOURCE_PATHS=(
     'apps'
     'blocks'
@@ -116,6 +119,8 @@ SOURCE_PATHS=(
     'package.json'
     'package-lock.json'
     'vite.config.mjs'
+    'tsconfig.json'
+    'eslint.config.mjs'
 )
 
 # The FORBIDDEN_ROOT_PATHS entries the wporg artifact may contain, because
@@ -127,6 +132,8 @@ WPORG_ALLOWED_ROOT_PATHS=(
     'package.json'
     'package-lock.json'
     'vite.config.mjs'
+    'tsconfig.json'
+    'eslint.config.mjs'
 )
 
 # These must not appear at any depth.

@@ -190,6 +190,7 @@ The admin screens and the editor blocks are compiled. The compiled files are in 
 * `apps/`: the Vue 3 admin applications (articles, categories, tags, settings, analytics, feedback and tools).
 * `blocks/`: the editor blocks.
 * `package.json`, `package-lock.json`, `vite.config.mjs` and `tools/build-apps.mjs` / `tools/build-blocks.mjs`: the build configuration.
+* `tsconfig.json` and `eslint.config.mjs`: the type check and lint configuration, for `npm run typecheck` and `npm run lint:js`.
 
 To rebuild `dist/` from source, install Node.js 22 or later, then run `npm ci` followed by `npm run build` in the plugin folder.
 

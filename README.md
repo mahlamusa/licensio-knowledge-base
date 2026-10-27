@@ -83,7 +83,7 @@ One command produces all three artifacts from a clean checkout:
 |---|---|
 | `licensio-knowledge-base.zip` | the free plugin; no `pro/` path anywhere in it |
 | `licensio-knowledge-base-pro.zip` | the same tree plus `pro/` |
-| `licensio-knowledge-base-wporg.zip` | the free plugin plus the sources `dist/` is built from (`apps/`, `blocks/`, `tools/build-*.mjs`, `package.json`, `package-lock.json`, `vite.config.mjs`) |
+| `licensio-knowledge-base-wporg.zip` | the free plugin plus the sources `dist/` is built from (`apps/`, `blocks/`, `tools/build-*.mjs`, `package.json`, `package-lock.json`, `vite.config.mjs`, `tsconfig.json`, `eslint.config.mjs`). It becomes SVN `trunk/`, where `npm ci` then `npm run build`, `typecheck` and `lint:js` all work. |
 
 All three run the production Vite and `wp-scripts` builds first. The free and pro zips ship compiled `dist/` output only. The wporg zip exists because WordPress.org requires the human-readable source of every compiled file and this repository is private: it is the plugin review upload and becomes SVN `trunk/`. `libraries/` ships in all three — it is the Strauss-prefixed StellarWP DB and the plugin cannot run without it.
 
