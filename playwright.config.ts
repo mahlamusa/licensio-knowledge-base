@@ -7,6 +7,7 @@
  * before the specs run (see tests/Playwright/auth.setup.ts).
  *
  * @since 1.0.0
+ * @since 1.0.0 Runs tests tagged `@one-at-a-time` alone, after the others.
  */
 
 import { defineConfig, devices } from '@playwright/test';
@@ -14,6 +15,9 @@ import { ADMIN_SESSION } from './tests/Playwright/helpers/session';
 
 /** Specs that switch a site-wide setting; see the `site-wide` project. */
 const SITE_WIDE = '**/classic-screens.spec.ts';
+
+/** Tests that read site-wide totals; see the `one-at-a-time` project. */
+const ONE_AT_A_TIME = /@one-at-a-time/;
 
 const baseURL =
 	process.env.LICENSIO_KB_BASE_URL ?? 'http://lisenseserver.local';
@@ -50,7 +54,22 @@ export default defineConfig( {
 		{
 			name: 'chromium',
 			testIgnore: SITE_WIDE,
+			grepInvert: ONE_AT_A_TIME,
 			dependencies: [ 'setup' ],
+			use: {
+				...devices[ 'Desktop Chrome' ],
+				storageState: ADMIN_SESSION,
+			},
+		},
+		// Tests that assert on totals across the whole site, such as the
+		// article status counts, which any spec writing articles changes.
+		// They run one at a time once the other specs are done.
+		{
+			name: 'one-at-a-time',
+			testIgnore: SITE_WIDE,
+			grep: ONE_AT_A_TIME,
+			workers: 1,
+			dependencies: [ 'chromium' ],
 			use: {
 				...devices[ 'Desktop Chrome' ],
 				storageState: ADMIN_SESSION,
@@ -62,7 +81,7 @@ export default defineConfig( {
 		{
 			name: 'site-wide',
 			testMatch: SITE_WIDE,
-			dependencies: [ 'chromium' ],
+			dependencies: [ 'one-at-a-time' ],
 			use: {
 				...devices[ 'Desktop Chrome' ],
 				storageState: ADMIN_SESSION,

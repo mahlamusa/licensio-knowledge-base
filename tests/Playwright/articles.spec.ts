@@ -18,6 +18,7 @@
  * provides both through `bin/e2e-env.sh`.
  *
  * @since 1.0.0
+ * @since 1.0.0 The status count test runs on its own, after the other specs.
  */
 
 import { expect, test, type Page, type Request } from '@playwright/test';
@@ -430,7 +431,9 @@ test.describe( 'Articles app', () => {
 		await expect( app.getByText( 'No articles match' ) ).toHaveCount( 0 );
 	} );
 
-	test( 'a quick edit that publishes a draft takes it out of the Drafts view and keeps focus on the page', async ( {
+	// The status counts are site-wide and other specs write articles, so this
+	// test runs on its own in the one-at-a-time project.
+	test( 'a quick edit that publishes a draft takes it out of the Drafts view and keeps focus on the page @one-at-a-time', async ( {
 		page,
 	} ) => {
 		const app = await openContentManager( page, 'articles' );
