@@ -397,6 +397,48 @@ class Licensio_KB_Categories_REST_Integration_Test extends Licensio_KB_Analytics
     }
 
     /**
+     * An order listing a category deleted since the tree loaded saves the others in order.
+     *
+     * A term of another taxonomy in the list still refuses the order.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_order_leaves_out_a_deleted_category() {
+        $deleted = $this->ids['Upgrade'];
+        $tag     = $this->live_insert_term( 'Not a category', Licensio_KB_Post_Types::TAXONOMY_TAG );
+
+        $this->assertTrue( $this->live_delete_term( $deleted, Licensio_KB_Post_Types::TAXONOMY_CATEGORY ) );
+
+        $refused = $this->controller->update_order(
+            $this->request(
+                array(
+                    'parent' => 0,
+                    'ids'    => array( $this->ids['Billing'], (int) $tag['term_id'], $this->ids['Getting started'] ),
+                )
+            )
+        );
+
+        $this->assertInstanceOf( 'WP_Error', $refused );
+        $this->assertSame( 'licensio_kb_invalid_category', $refused->get_error_code() );
+        $this->assertSame( '', $this->live_get_term_meta( $this->ids['Billing'], 'licensio_order' ) );
+
+        $request = $this->request(
+            array(
+                'parent' => 0,
+                'ids'    => array( $this->ids['Billing'], $deleted, $this->ids['Getting started'] ),
+            )
+        );
+
+        $this->tree( $this->controller->update_order( $request ) );
+
+        $this->assertSame( '10', $this->live_get_term_meta( $this->ids['Billing'], 'licensio_order' ) );
+        $this->assertSame( '20', $this->live_get_term_meta( $this->ids['Getting started'], 'licensio_order' ) );
+        $this->assertSame( '', $this->live_get_term_meta( $deleted, 'licensio_order' ) );
+    }
+
+    /**
      * An order that puts a category inside its own descendant changes nothing.
      *
      * @since 1.0.0

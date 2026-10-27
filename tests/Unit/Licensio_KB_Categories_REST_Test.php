@@ -64,6 +64,14 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
     private $denied = array();
 
     /**
+     * IDs of terms in other taxonomies, which term_exists() finds.
+     *
+     * @since 1.0.0
+     * @var int[]
+     */
+    private $foreign = array();
+
+    /**
      * What get_taxonomy() answers.
      *
      * @since 1.0.0
@@ -130,6 +138,7 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
         $this->image_urls  = array();
         $this->file_urls   = array();
         $this->term_writes = array();
+        $this->foreign     = array();
         $this->meta        = array();
         $this->terms       = array(
             1 => $this->fields( 'Getting started', 0 ),
@@ -215,6 +224,11 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
         Functions\when( 'get_taxonomy' )->alias(
             function () {
                 return $this->taxonomy;
+            }
+        );
+        Functions\when( 'term_exists' )->alias(
+            function ( $term ) {
+                return isset( $this->terms[ $term ] ) || in_array( $term, $this->foreign, true ) ? $term : null;
             }
         );
         Functions\when( 'get_term' )->alias(
@@ -1713,6 +1727,64 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
         );
 
         $this->assert_error( 'licensio_kb_category_cycle', 400, $result );
+    }
+
+    /**
+     * An order listing a category deleted since the tree loaded saves the others.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_order_leaves_out_a_deleted_category() {
+        $request = $this->request(
+            array(
+                'parent' => 0,
+                'ids'    => array( 4, 99, 1 ),
+            )
+        );
+
+        $this->assertTrue( $this->controller->update_order_permissions_check( $request ) );
+        $this->assertNotContains( array( 'edit_term', 99 ), $this->cap_calls );
+
+        $this->as_list( $this->controller->update_order( $request ) );
+
+        $this->assertSame( array( 'meta 4 licensio_order=10', 'meta 1 licensio_order=20' ), $this->events );
+        $this->assertArrayNotHasKey( 99, $this->meta );
+    }
+
+    /**
+     * An order listing a term of another taxonomy, or only deleted categories, is still refused.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_order_still_refuses_a_term_of_another_taxonomy() {
+        $this->expect_no_writes();
+        $this->foreign = array( 50 );
+
+        $foreign = $this->request(
+            array(
+                'parent' => 0,
+                'ids'    => array( 4, 50, 1 ),
+            )
+        );
+
+        $this->assert_error( 'licensio_kb_category_not_found', 404, $this->controller->update_order_permissions_check( $foreign ) );
+        $this->assert_error( 'licensio_kb_invalid_category', 400, $this->controller->update_order( $foreign ) );
+        $this->assert_error(
+            'licensio_kb_invalid_category',
+            400,
+            $this->controller->update_order(
+                $this->request(
+                    array(
+                        'parent' => 0,
+                        'ids'    => array( 99 ),
+                    )
+                )
+            )
+        );
     }
 
     /**

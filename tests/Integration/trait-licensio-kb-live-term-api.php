@@ -77,6 +77,7 @@ trait Licensio_KB_Live_Term_API {
         Functions\when( 'get_terms' )->alias( array( $this, 'live_get_terms' ) );
         Functions\when( 'get_term' )->alias( array( $this, 'live_get_term' ) );
         Functions\when( 'get_term_by' )->alias( array( $this, 'live_get_term_by' ) );
+        Functions\when( 'term_exists' )->alias( array( $this, 'live_term_exists' ) );
         Functions\when( 'wp_insert_term' )->alias( array( $this, 'live_insert_term' ) );
         Functions\when( 'wp_update_term' )->alias( array( $this, 'live_update_term' ) );
         Functions\when( 'wp_delete_term' )->alias( array( $this, 'live_delete_term' ) );
@@ -250,6 +251,25 @@ trait Licensio_KB_Live_Term_API {
         $row = $this->live_term_row( (int) $term_id, (string) $taxonomy );
 
         return null === $row ? null : $this->live_term_object( $row );
+    }
+
+    /**
+     * Stand-in for `term_exists()`, by ID in any taxonomy only.
+     *
+     * @since 1.0.0
+     *
+     * @param int    $term     The term ID.
+     * @param string $taxonomy Optional. Must be empty: any taxonomy.
+     *
+     * @return int|null The term ID, or null when no term has it.
+     */
+    public function live_term_exists( $term, $taxonomy = '' ) {
+        $this->assertIsInt( $term, 'Only ID lookups are supported by this stand-in.' );
+        $this->assertSame( '', $taxonomy, 'Only lookups in any taxonomy are supported by this stand-in.' );
+
+        $rows = $this->live_rows( 'SELECT term_id FROM ' . $this->table( 'terms' ) . ' WHERE term_id = ' . (int) $term );
+
+        return empty( $rows ) ? null : (int) $rows[0]['term_id'];
     }
 
     /**

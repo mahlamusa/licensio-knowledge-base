@@ -27,12 +27,13 @@
  * Other specs make and use categories of their own on the same site, so
  * it only ever deletes the categories it makes itself, puts them first at the
  * top level, and reads the tree through those alone. A move saves the order
- * of every sibling, and a category deleted since the tree loaded makes the
- * server refuse it, so the spec runs on its own after the other specs (the
- * `one-at-a-time` project).
+ * of every sibling, so the spec runs on its own (the `one-at-a-time`
+ * project), where no other spec reorders or deletes categories meanwhile. A
+ * sibling deleted since the tree loaded is left out of a move, not refused.
  *
  * @since 1.0.0
  * @since 1.0.0 Leaves the categories of other specs alone and runs on its own.
+ * @since 1.0.0 A move still saves when a sibling was deleted since the tree loaded.
  */
 
 import { expect, test, type Page, type Request } from '@playwright/test';
@@ -427,8 +428,8 @@ async function act(
 		.click();
 }
 
-// A move sends every sibling, so a category another spec deletes meanwhile
-// refuses it: the spec runs on its own in the one-at-a-time project.
+// A move sends every sibling, so the order other specs save would interleave
+// with it: the spec runs on its own in the one-at-a-time project.
 test.describe( 'Categories app @one-at-a-time', () => {
 	test.describe.configure( { mode: 'serial' } );
 	test.skip(
@@ -503,6 +504,30 @@ test.describe( 'Categories app @one-at-a-time', () => {
 			.poll( () => topLevel( page ) )
 			.toEqual( [ 'Beta', 'Alpha', 'Gamma' ] );
 		expect( writes ).toHaveLength( 1 );
+	} );
+
+	test( 'a move still saves when a sibling was deleted since the tree loaded', async ( {
+		page,
+	} ) => {
+		// Deleted behind the app's back, so the tree still shows it.
+		await api(
+			page,
+			'DELETE',
+			`categories/${ await categoryId( page, 'Beta' ) }`
+		);
+
+		await act( page, 'Alpha', 'Move down' );
+
+		await expect( page.locator( '.ant-message' ) ).toContainText(
+			'Category moved.'
+		);
+		await expect
+			.poll( () => topLevel( page ) )
+			.toEqual( [ 'Alpha', 'Gamma' ] );
+
+		await page.reload();
+		await expect( node( page, 'Gamma child' ) ).toBeVisible();
+		expect( await topLevel( page ) ).toEqual( [ 'Alpha', 'Gamma' ] );
 	} );
 
 	test( 'the actions menu works from the keyboard alone', async ( {
