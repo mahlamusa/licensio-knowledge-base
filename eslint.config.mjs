@@ -14,6 +14,8 @@ import pluginVue from 'eslint-plugin-vue';
 import tseslint from 'typescript-eslint';
 import vueParser from 'vue-eslint-parser';
 
+const WORDPRESS_EXTERNALS = '^@wordpress/(?!(icons|interface|style-engine))';
+
 export default [
 	{
 		ignores: [ '**/build/**', '**/node_modules/**', '**/vendor/**' ],
@@ -29,8 +31,7 @@ export default [
 		// runtime (webpack externals), so they are not npm dependencies here.
 		// Earlier presets treated them as internal modules; keep doing so.
 		settings: {
-			'import/internal-regex':
-				'^@wordpress/(?!(icons|interface|style-engine))',
+			'import/internal-regex': WORDPRESS_EXTERNALS,
 		},
 		rules: {
 			'@wordpress/i18n-text-domain': [
@@ -55,9 +56,7 @@ export default [
 			'import/no-unresolved': [
 				'error',
 				{
-					ignore: [
-						'^@wordpress/(?!(icons|interface|style-engine))',
-					],
+					ignore: [ WORDPRESS_EXTERNALS ],
 				},
 			],
 		},
