@@ -13,18 +13,28 @@
  * unless `LICENSIO_KB_E2E=1` and the two credential variables are present. CI
  * provides both through `bin/e2e-env.sh`.
  *
+ * A template previews with an article, category and tag the site already
+ * has, so with `LICENSIO_KB_WP_CLI` set the spec files an article of its own
+ * under a category and tag of its own first. Other specs empty or delete
+ * their own terms while this one runs.
+ *
  * @since 1.0.0
  * @since 1.0.0 Covers the view block preview and finds cards by searching.
  * @since 1.0.0 Checks the Site Editor offers the view block in its inserter.
+ * @since 1.0.0 Makes the article, category and tag its previews show.
  */
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { switchOffWelcomeGuides } from './helpers/editor';
 import { openDashboard, password, user } from './helpers/session';
+import { wpCli, wpEval } from './helpers/wp-cli';
 
 const enabled = process.env.LICENSIO_KB_E2E === '1';
 
 const MARKER = 'Licensio KB override marker';
+
+/** Tells this run's article and terms apart from those of other runs. */
+const RUN = `${ Date.now() }-${ process.pid }`;
 
 /**
  * How long a cold Site Editor may take to show its template list.
@@ -103,6 +113,36 @@ test.describe( 'Knowledge base block templates in the Site Editor', () => {
 		! enabled || '' === user || '' === password,
 		'Set LICENSIO_KB_E2E=1, LICENSIO_KB_ADMIN_USER and LICENSIO_KB_ADMIN_PASSWORD to run this suite.'
 	);
+
+	/** What the spec made, removed again after the run. */
+	let seeded = { article: 0, category: 0, tag: 0 };
+
+	test.beforeAll( () => {
+		if ( ! wpCli ) {
+			return;
+		}
+
+		seeded = JSON.parse(
+			wpEval( `
+				$category = wp_insert_term( 'Site editor category ${ RUN }', 'licensio_category' );
+				$tag      = wp_insert_term( 'Site editor tag ${ RUN }', 'licensio_tag' );
+				$article  = wp_insert_post( array( 'post_type' => 'licensio_article', 'post_status' => 'publish', 'post_title' => 'Site editor article ${ RUN }' ) );
+				wp_set_object_terms( $article, array( (int) $category['term_id'] ), 'licensio_category' );
+				wp_set_object_terms( $article, array( (int) $tag['term_id'] ), 'licensio_tag' );
+				echo wp_json_encode( array( 'article' => (int) $article, 'category' => (int) $category['term_id'], 'tag' => (int) $tag['term_id'] ) );
+			` )
+		);
+	} );
+
+	test.afterAll( () => {
+		if ( ! seeded.article ) {
+			return;
+		}
+
+		wpEval(
+			`wp_delete_post( ${ seeded.article }, true ); wp_delete_term( ${ seeded.category }, 'licensio_category' ); wp_delete_term( ${ seeded.tag }, 'licensio_tag' );`
+		);
+	} );
 
 	test.beforeEach( async ( { page } ) => {
 		await openDashboard( page );
