@@ -9,8 +9,8 @@
 #   licensio-knowledge-base-wporg.zip  the free build plus the sources dist/ is
 #                                      compiled from, for WordPress.org
 #
-# WordPress.org requires the human-readable source of every compiled file, and
-# the repository is private, so the wporg artifact carries `apps/`, `blocks/`,
+# WordPress.org requires the human-readable source of every compiled file next
+# to the plugin, so the wporg artifact carries `apps/`, `blocks/`,
 # the two build wrappers in `tools/`, the npm manifests and the build, type
 # check and lint configs. Anyone working from SVN trunk can then run npm ci,
 # npm run build, npm run typecheck and npm run lint:js.

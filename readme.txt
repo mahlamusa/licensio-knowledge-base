@@ -184,9 +184,10 @@ This plugin does not connect to any external service. Search, analytics and ever
 
 == Source code and build tools ==
 
-The admin screens and the editor blocks are compiled. The compiled files are in `dist/`, and their full, human-readable source is published alongside the plugin in the WordPress.org SVN repository:
+The admin screens and the editor blocks are compiled. The compiled files are in `dist/`, and their full, human-readable source is published alongside the plugin in the WordPress.org SVN repository and on GitHub:
 
 * SVN trunk: https://plugins.svn.wordpress.org/licensio-knowledge-base/trunk/
+* GitHub: https://github.com/mahlamusa/licensio-knowledge-base
 * `apps/`: the Vue 3 admin applications (articles, categories, tags, settings, analytics, feedback and tools).
 * `blocks/`: the editor blocks.
 * `package.json`, `package-lock.json`, `vite.config.mjs` and `tools/build-apps.mjs` / `tools/build-blocks.mjs`: the build configuration.
