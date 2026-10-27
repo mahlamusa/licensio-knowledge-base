@@ -7,7 +7,7 @@
  * before the specs run (see tests/Playwright/auth.setup.ts).
  *
  * @since 1.0.0
- * @since 1.0.0 Runs tests tagged `@one-at-a-time` alone, after the others.
+ * @since 1.0.0 Runs tests tagged `@one-at-a-time` alone, before the others.
  */
 
 import { defineConfig, devices } from '@playwright/test';
@@ -57,23 +57,26 @@ export default defineConfig( {
 			testMatch: '**/auth.setup.ts',
 			use: { ...devices[ 'Desktop Chrome' ] },
 		},
-		{
-			name: 'chromium',
-			testIgnore: SITE_WIDE,
-			grepInvert: ONE_AT_A_TIME,
-			dependencies: [ 'setup' ],
-			use: signedIn,
-		},
 		// Tests that read state the whole site shares, such as the article
 		// status counts or the order of every top-level category, which other
-		// specs change as they run. They run one at a time once the other
-		// specs are done.
+		// specs change as they run. They run one at a time before the other
+		// specs start. A dependency always runs in full, and these are few, so
+		// a run of one spec file stays small.
 		{
 			name: 'one-at-a-time',
 			testIgnore: SITE_WIDE,
 			grep: ONE_AT_A_TIME,
 			workers: 1,
-			dependencies: [ 'chromium' ],
+			dependencies: [ 'setup' ],
+			use: signedIn,
+		},
+		// Every other spec, in parallel, once the one-at-a-time tests are done.
+		// A failure there skips this project; add --no-deps to run it anyway.
+		{
+			name: 'chromium',
+			testIgnore: SITE_WIDE,
+			grepInvert: ONE_AT_A_TIME,
+			dependencies: [ 'one-at-a-time' ],
 			use: signedIn,
 		},
 		// Specs that switch a site-wide setting the others rely on. They run
@@ -82,7 +85,7 @@ export default defineConfig( {
 		{
 			name: 'site-wide',
 			testMatch: SITE_WIDE,
-			dependencies: [ 'one-at-a-time' ],
+			dependencies: [ 'chromium' ],
 			use: signedIn,
 		},
 	],

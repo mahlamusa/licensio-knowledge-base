@@ -18,7 +18,7 @@
  * provides both through `bin/e2e-env.sh`.
  *
  * @since 1.0.0
- * @since 1.0.0 The status count test runs on its own, after the other specs.
+ * @since 1.0.0 The status count test runs on its own, before the other specs.
  * @since 1.0.0 The quick edit save test edits an article of its own.
  */
 
