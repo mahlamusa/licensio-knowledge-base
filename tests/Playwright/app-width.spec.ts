@@ -27,6 +27,7 @@
  * two credential variables are present.
  *
  * @since 1.0.0
+ * @since 1.0.0 Measures the Articles columns with the long-titled article alone.
  */
 
 import { expect, test, type Page } from '@playwright/test';
@@ -333,7 +334,13 @@ test.describe( 'App width', () => {
 		test.skip( ! seeded, 'Set LICENSIO_KB_WP_CLI to run.' );
 
 		await page.setViewportSize( { width: 1024, height: 900 } );
-		await page.goto( contentManagerUrl( 'articles' ) );
+		// Only the long-titled article, so the column widths come from its
+		// long names rather than from whichever articles other specs made last.
+		await page.goto(
+			contentManagerUrl( 'articles' ) +
+				'&search=' +
+				encodeURIComponent( 'automatic license key renewal' )
+		);
 
 		const app = page.locator( '#lkb-main' );
 		// A sortable header's name ends with its sort icons.
