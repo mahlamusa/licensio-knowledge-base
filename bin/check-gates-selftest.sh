@@ -330,15 +330,15 @@ PHP
         'TextDomainMismatch' \
         bash "${SCRIPT_DIR}/check-i18n.sh" "${I18N_DIR}/wrong.php"
 
-    printf '{ "rules": {} }\n' > "${WORK_DIR}/unpinned-eslintrc.json"
+    printf 'export default [ { rules: {} } ];\n' > "${WORK_DIR}/unpinned-eslint.config.mjs"
     assert_red 'an eslint config that no longer pins the JS text domain fails' \
         'no longer pins @wordpress/i18n-text-domain' \
-        env "LICENSIO_KB_ESLINTRC=${WORK_DIR}/unpinned-eslintrc.json" \
+        env "LICENSIO_KB_ESLINT_CONFIG=${WORK_DIR}/unpinned-eslint.config.mjs" \
         bash "${SCRIPT_DIR}/check-i18n.sh" "${I18N_DIR}/good.php"
 
     assert_red 'a missing eslint config fails' \
         'is missing' \
-        env "LICENSIO_KB_ESLINTRC=${WORK_DIR}/no-such-eslintrc.json" \
+        env "LICENSIO_KB_ESLINT_CONFIG=${WORK_DIR}/no-such-eslint.config.mjs" \
         bash "${SCRIPT_DIR}/check-i18n.sh" "${I18N_DIR}/good.php"
 fi
 

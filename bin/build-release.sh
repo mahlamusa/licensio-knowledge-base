@@ -96,7 +96,7 @@ FORBIDDEN_ROOT_PATHS=(
     'playwright.config.ts'
     'tsconfig.json'
     'vite.config.mjs'
-    '.eslintrc.json'
+    'eslint.config.mjs'
     '.editorconfig'
     '.nvmrc'
     '.gitignore'

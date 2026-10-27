@@ -13,7 +13,7 @@
 # ships `@wordpress/i18n-text-domain`, and `npm run lint:js` runs it. That rule
 # is a no-op until `allowedTextDomain` is set - with no domains configured it
 # treats a missing domain as the WordPress default and says nothing - so the
-# repo's `.eslintrc.json` pins it to this plugin's domain. That pin is the JS
+# repo's `eslint.config.mjs` pins it to this plugin's domain. That pin is the JS
 # gate, and this script asserts the pin is still in place, because losing it
 # turns the JS gate green forever without any visible failure.
 #
@@ -34,7 +34,7 @@ PHPCS="${ROOT}/vendor/bin/phpcs"
 
 # Overridable so the gate's own self-test can point the pin check at a fixture.
 # Nothing else should set it.
-ESLINTRC="${LICENSIO_KB_ESLINTRC:-${ROOT}/.eslintrc.json}"
+ESLINT_CONFIG="${LICENSIO_KB_ESLINT_CONFIG:-${ROOT}/eslint.config.mjs}"
 
 if [ ! -x "$PHPCS" ]; then
     printf 'i18n check: %s is missing. Run composer install first.\n' "$PHPCS" >&2
@@ -52,13 +52,14 @@ fi
 
 printf 'i18n check: JavaScript text domain rule is pinned\n'
 
-if [ ! -f "$ESLINTRC" ]; then
-    printf 'i18n check FAILED: %s is missing, so npm run lint:js no longer enforces the JS text domain.\n' "$ESLINTRC" >&2
+# The config is JavaScript, so the rule name and domain may be in either quote.
+if [ ! -f "$ESLINT_CONFIG" ]; then
+    printf 'i18n check FAILED: %s is missing, so npm run lint:js no longer enforces the JS text domain.\n' "$ESLINT_CONFIG" >&2
     status=1
-elif ! grep -q '"@wordpress/i18n-text-domain"' "$ESLINTRC" \
-    || ! grep -q "\"allowedTextDomain\"" "$ESLINTRC" \
-    || ! grep -q "\"${TEXT_DOMAIN}\"" "$ESLINTRC"; then
-    printf 'i18n check FAILED: %s no longer pins @wordpress/i18n-text-domain to %s.\n' "$ESLINTRC" "$TEXT_DOMAIN" >&2
+elif ! grep -qE "[\"']@wordpress/i18n-text-domain[\"']" "$ESLINT_CONFIG" \
+    || ! grep -q 'allowedTextDomain' "$ESLINT_CONFIG" \
+    || ! grep -qE "[\"']${TEXT_DOMAIN}[\"']" "$ESLINT_CONFIG"; then
+    printf 'i18n check FAILED: %s no longer pins @wordpress/i18n-text-domain to %s.\n' "$ESLINT_CONFIG" "$TEXT_DOMAIN" >&2
     printf 'Without allowedTextDomain the rule accepts a missing domain silently.\n' >&2
     status=1
 fi

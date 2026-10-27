@@ -109,7 +109,7 @@ The build refuses to package when any of these fails, and CI runs all of them in
 | Gate | What it asserts |
 |---|---|
 | `bin/check-versions.sh` | the version is identical in the plugin header, `LICENSIO_KB_VERSION`, `readme.txt`'s `Stable tag` and `package.json`, and that the readme's `Requires at least` and `Requires PHP` match the plugin header |
-| `bin/check-i18n.sh` | no PHP translation call is missing the `licensio-knowledge-base` text domain or carries another one, and `.eslintrc.json` still pins the JS rule |
+| `bin/check-i18n.sh` | no PHP translation call is missing the `licensio-knowledge-base` text domain or carries another one, and `eslint.config.mjs` still pins the JS rule |
 | `bin/check-free-boundary.sh` | the free artifact contains no `pro/` path and no SLSWC or WooCommerce symbol |
 | `bin/check-gates-selftest.sh` | each of the three gates above still goes red on a violation, and still goes green on something that only looks like one |
 
@@ -117,7 +117,7 @@ The boundary check is about **symbols**, not prose. Two shipped files name WooCo
 
 There is no per-line exemption marker. `readme.txt` therefore answers *"Does this require any other plugin?"* rather than naming the plugin it does not require: a legitimate free-side mention has to be an argued change to the pattern list, reviewed like any other.
 
-The JavaScript half of the text-domain rule lives in `.eslintrc.json` and runs under `npm run lint:js`. `@wordpress/eslint-plugin` enables `@wordpress/i18n-text-domain` by default but leaves `allowedTextDomain` unset, and with no domains configured the rule reads a missing domain as WordPress core's and says nothing. Pinning it is what makes the rule do anything, which is why `bin/check-i18n.sh` asserts the pin is still there.
+The JavaScript half of the text-domain rule lives in `eslint.config.mjs` and runs under `npm run lint:js`. `@wordpress/eslint-plugin` enables `@wordpress/i18n-text-domain` by default but leaves `allowedTextDomain` unset, and with no domains configured the rule reads a missing domain as WordPress core's and says nothing. Pinning it is what makes the rule do anything, which is why `bin/check-i18n.sh` asserts the pin is still there.
 
 ---
 
