@@ -117,6 +117,11 @@ function keepTranslationCalls() {
  * Only block comments can be marked this way, so a `// translators:` line
  * comment is still dropped. `tools/check-app-strings.mjs` rejects those.
  *
+ * Both hooks return `map: null`, which tells the bundler the code did not
+ * move. That is nearly true: each marked comment shifts the rest of its line
+ * by one column. Source maps are off for the build (`sourcemap: false`); if
+ * they are turned on, generate maps here (with magic-string) instead.
+ *
  * @since 1.0.0
  *
  * @return {import('vite').Plugin} The Vite plugin.
@@ -170,6 +175,9 @@ export default defineConfig( ( { command } ) => ( {
 		emptyOutDir: false,
 		manifest: true,
 		sourcemap: false,
+		// The translator comment handling depends on terser: its
+		// `format.comments` drops the library legal comments that
+		// `comments.legal` keeps. Another minifier would ship them.
 		minify: 'terser',
 		terserOptions: {
 			// `x ? __( 'a' ) : __( 'b' )` would become `__( x ? 'a' : 'b' )`,
