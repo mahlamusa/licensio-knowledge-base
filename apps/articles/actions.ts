@@ -131,7 +131,7 @@ export function confirmTitle(
 							'licensio-knowledge-base'
 						),
 						count
-				  )
+					)
 				: sprintf(
 						/* translators: %d: number of articles. */
 						_n(
@@ -141,7 +141,7 @@ export function confirmTitle(
 							'licensio-knowledge-base'
 						),
 						count
-				  );
+					);
 		case 'terms':
 			if ( 'add' === args.mode ) {
 				return sprintf(
@@ -180,7 +180,7 @@ export function confirmTitle(
 								'licensio-knowledge-base'
 							),
 							count
-					  )
+						)
 					: sprintf(
 							/* translators: %d: number of articles. */
 							_n(
@@ -190,7 +190,7 @@ export function confirmTitle(
 								'licensio-knowledge-base'
 							),
 							count
-					  );
+						);
 			}
 
 			return sprintf(

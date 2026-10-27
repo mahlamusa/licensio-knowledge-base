@@ -28,13 +28,10 @@ export async function switchOffWelcomeGuides(
 	names: string[]
 ): Promise< void > {
 	await page.waitForFunction(
-		() =>
-			// eslint-disable-next-line no-undef
-			!! ( window as any ).wp?.data?.dispatch( 'core/preferences' )
+		() => !! ( window as any ).wp?.data?.dispatch( 'core/preferences' )
 	);
 	await page.evaluate(
 		( [ prefScope, prefNames ] ) => {
-			// eslint-disable-next-line no-undef
 			const preferences = ( window as any ).wp.data.dispatch(
 				'core/preferences'
 			);

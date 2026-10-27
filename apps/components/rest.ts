@@ -39,12 +39,7 @@ export interface RestConfig {
  * undefined are left out.
  */
 export type QueryValue =
-	| string
-	| number
-	| boolean
-	| Array< string | number >
-	| null
-	| undefined;
+	string | number | boolean | Array< string | number > | null | undefined;
 
 export type Query = Record< string, QueryValue >;
 

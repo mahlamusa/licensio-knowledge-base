@@ -330,15 +330,41 @@ PHP
         'TextDomainMismatch' \
         bash "${SCRIPT_DIR}/check-i18n.sh" "${I18N_DIR}/wrong.php"
 
-    printf '{ "rules": {} }\n' > "${WORK_DIR}/unpinned-eslintrc.json"
+    printf 'export default [ { rules: {} } ];\n' > "${WORK_DIR}/unpinned-eslint.config.mjs"
     assert_red 'an eslint config that no longer pins the JS text domain fails' \
         'no longer pins @wordpress/i18n-text-domain' \
-        env "LICENSIO_KB_ESLINTRC=${WORK_DIR}/unpinned-eslintrc.json" \
+        env "LICENSIO_KB_ESLINT_CONFIG=${WORK_DIR}/unpinned-eslint.config.mjs" \
         bash "${SCRIPT_DIR}/check-i18n.sh" "${I18N_DIR}/good.php"
 
     assert_red 'a missing eslint config fails' \
         'is missing' \
-        env "LICENSIO_KB_ESLINTRC=${WORK_DIR}/no-such-eslintrc.json" \
+        env "LICENSIO_KB_ESLINT_CONFIG=${WORK_DIR}/no-such-eslint.config.mjs" \
+        bash "${SCRIPT_DIR}/check-i18n.sh" "${I18N_DIR}/good.php"
+
+    # Copies of the real config, so every grep-able part of the pin is still
+    # in the file while the config ESLint resolves no longer carries it. The
+    # node_modules link lets the copy resolve its imports.
+    ESLINT_DIR="${WORK_DIR}/eslint"
+    mkdir -p "$ESLINT_DIR"
+    ln -s "${ROOT}/node_modules" "${ESLINT_DIR}/node_modules"
+
+    sed "/'@wordpress\/i18n-text-domain': \[/,/^\t\t\t\],\$/ s|^|// |" \
+        "${ROOT}/eslint.config.mjs" > "${ESLINT_DIR}/commented.config.mjs"
+    sed "s|allowedTextDomain: \[ 'licensio-knowledge-base' \]|allowedTextDomain: []|" \
+        "${ROOT}/eslint.config.mjs" > "${ESLINT_DIR}/empty.config.mjs"
+
+    assert_green 'the real eslint config passes when named explicitly' \
+        env "LICENSIO_KB_ESLINT_CONFIG=${ROOT}/eslint.config.mjs" \
+        bash "${SCRIPT_DIR}/check-i18n.sh" "${I18N_DIR}/good.php"
+
+    assert_red 'an eslint config with the text domain rule commented out fails' \
+        'no longer pins @wordpress/i18n-text-domain' \
+        env "LICENSIO_KB_ESLINT_CONFIG=${ESLINT_DIR}/commented.config.mjs" \
+        bash "${SCRIPT_DIR}/check-i18n.sh" "${I18N_DIR}/good.php"
+
+    assert_red 'an eslint config with an empty allowedTextDomain list fails' \
+        'no longer pins @wordpress/i18n-text-domain' \
+        env "LICENSIO_KB_ESLINT_CONFIG=${ESLINT_DIR}/empty.config.mjs" \
         bash "${SCRIPT_DIR}/check-i18n.sh" "${I18N_DIR}/good.php"
 fi
 
@@ -357,9 +383,13 @@ cat > "${APP_STRINGS_DIR}/apps/demo/App.vue" <<'VUE'
  * Usage: __( 'Only an example in a docblock', 'licensio-knowledge-base' )
  */
 const title = __( 'Tag saved', 'licensio-knowledge-base' );
-const count = _n( '%d tag', '%d tags', 2, 'licensio-knowledge-base' );
+const count = /* translators: %d: number of tags. */ _n( '%d tag', '%d tags', 2, 'licensio-knowledge-base' );
 const verb = _x( 'Post', 'verb', 'licensio-knowledge-base' );
 const items = _nx( '%d item', '%d items', 2, 'cart', 'licensio-knowledge-base' );
+/* translators: a stray note that describes no call. */
+const unrelated = 1;
+const again = __( 'Tag saved', 'licensio-knowledge-base' );
+const named = /* Translators: %s: tag name. */ __( 'Tag %s', 'licensio-knowledge-base' );
 </script>
 <template>
 	<!-- __( 'Only an example in markup', 'licensio-knowledge-base' ) -->
@@ -378,6 +408,7 @@ msgstr ""
 msgid "Tag saved"
 msgstr ""
 
+#. translators: %d: number of tags.
 #: dist/apps/demo/index.a1b2c3d4.js:1
 msgid "%d tag"
 msgid_plural "%d tags"
@@ -404,6 +435,11 @@ msgstr[1] ""
 #: dist/apps/demo/index.a1b2c3d4.js:1
 msgid "It's here"
 msgstr ""
+
+#. Translators: %s: tag name.
+#: dist/apps/demo/index.a1b2c3d4.js:1
+msgid "Tag %s"
+msgstr ""
 POT
 
 grep -v '%d tags' "${APP_STRINGS_DIR}/complete.pot" > "${APP_STRINGS_DIR}/no-plural.pot"
@@ -412,8 +448,17 @@ sed 's|^#: dist/apps/demo/index.a1b2c3d4.js:1$|#: includes/class-licensio-kb-dem
 grep -v '^msgctxt "verb"$' "${APP_STRINGS_DIR}/complete.pot" > "${APP_STRINGS_DIR}/no-context.pot"
 sed 's|^msgctxt "cart"$|msgctxt "basket"|' \
     "${APP_STRINGS_DIR}/complete.pot" > "${APP_STRINGS_DIR}/wrong-context.pot"
+grep -vi '^#\. translators:' "${APP_STRINGS_DIR}/complete.pot" > "${APP_STRINGS_DIR}/no-comment.pot"
+# A later entry for the plural text alone, without the comment, which is the
+# entry the plural form of the _n call is looked up in.
+cat "${APP_STRINGS_DIR}/complete.pot" - > "${APP_STRINGS_DIR}/plural-no-comment.pot" <<'POT'
 
-assert_green 'a template with every app string passes, comments are not calls' \
+#: dist/apps/demo/index.a1b2c3d4.js:1
+msgid "%d tags"
+msgstr ""
+POT
+
+assert_green 'a template with every app string passes, comments are not calls, stray notes are ignored' \
     node "${ROOT}/tools/check-app-strings.mjs" "${APP_STRINGS_DIR}/complete.pot" "${APP_STRINGS_DIR}/apps"
 
 assert_red 'a template missing an app plural form fails' \
@@ -431,6 +476,28 @@ assert_red 'an _x string without its context fails' \
 assert_red 'an _nx string under another context fails' \
     'apps/demo/App.vue:8  %d item (context: cart)' \
     node "${ROOT}/tools/check-app-strings.mjs" "${APP_STRINGS_DIR}/wrong-context.pot" "${APP_STRINGS_DIR}/apps"
+
+assert_red 'a translator comment missing from the template entry fails' \
+    'apps/demo/App.vue:6  %d tag (comment lost: translators: %d: number of tags.)' \
+    node "${ROOT}/tools/check-app-strings.mjs" "${APP_STRINGS_DIR}/no-comment.pot" "${APP_STRINGS_DIR}/apps"
+
+assert_red 'a translator comment written with a capital T is checked too' \
+    'apps/demo/App.vue:12  Tag %s (comment lost: Translators: %s: tag name.)' \
+    node "${ROOT}/tools/check-app-strings.mjs" "${APP_STRINGS_DIR}/no-comment.pot" "${APP_STRINGS_DIR}/apps"
+
+assert_red 'a translator comment missing from the plural form fails' \
+    'apps/demo/App.vue:6  %d tags (comment lost: translators: %d: number of tags.)' \
+    node "${ROOT}/tools/check-app-strings.mjs" "${APP_STRINGS_DIR}/plural-no-comment.pot" "${APP_STRINGS_DIR}/apps"
+
+mkdir -p "${APP_STRINGS_DIR}/line-comment/demo"
+cat > "${APP_STRINGS_DIR}/line-comment/demo/index.ts" <<'TS'
+// translators: %d: number of tags.
+const count = _n( '%d tag', '%d tags', 2, 'licensio-knowledge-base' );
+TS
+
+assert_red 'a line comment translator note fails, the build would drop it' \
+    'line-comment/demo/index.ts:1  // translators: (a line comment does not survive the build' \
+    node "${ROOT}/tools/check-app-strings.mjs" "${APP_STRINGS_DIR}/complete.pot" "${APP_STRINGS_DIR}/line-comment"
 
 printf '\ntools/check-ant-components.mjs\n'
 

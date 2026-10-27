@@ -120,9 +120,9 @@ jobs:
           cache: npm
 
       # Node 22 bundles npm 10, but the lockfile is written by the npm pinned in
-      # packageManager. Same Node, different npm resolves the nested vite that
-      # @wordpress/stylelint-config pulls in differently, and npm ci then reports
-      # the lockfile as out of sync. Pin both halves, not just Node.
+      # packageManager. A different npm can resolve nested dependencies
+      # differently from the lockfile, and npm ci then reports it as out of
+      # sync. Pin both halves, not just Node.
       - name: Use the pinned npm
         run: npm i -g "npm@$(node -p "require('./package.json').packageManager.split('@')[1]")"
 

@@ -200,7 +200,7 @@ const options = computed( () => {
 		add(
 			keyOf( value ),
 			typeof value === 'number'
-				? labels.value[ value ] ?? String( value )
+				? ( labels.value[ value ] ?? String( value ) )
 				: value.name
 		);
 	} );
@@ -463,7 +463,7 @@ onBeforeUnmount( () => clearTimeout( searchTimer ) );
 				? __(
 						'The terms could not be loaded.',
 						'licensio-knowledge-base'
-				  )
+					)
 				: __( 'No matches', 'licensio-knowledge-base' )
 		"
 		show-search

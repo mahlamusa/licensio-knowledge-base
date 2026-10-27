@@ -140,12 +140,12 @@ const articleNotice = computed( () =>
 				/* translators: %s: article title. */
 				__( 'Filtered to article: %s', 'licensio-knowledge-base' ),
 				articleName.value
-		  )
+			)
 		: sprintf(
 				/* translators: %d: article ID. */
 				__( 'Filtered to article #%d', 'licensio-knowledge-base' ),
 				articleId.value
-		  )
+			)
 );
 
 /**
@@ -472,11 +472,11 @@ onMounted( () => {
 											? __(
 													'Helpful',
 													'licensio-knowledge-base'
-											  )
+												)
 											: __(
 													'Not helpful',
 													'licensio-knowledge-base'
-											  )
+												)
 									}}
 								</a-tag>
 							</template>

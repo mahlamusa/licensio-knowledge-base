@@ -127,77 +127,63 @@ const resultLines = computed( () => {
 
 	const report = result.value;
 
-	return (
-		[
-			[
-				/* translators: %d: a count from the merge report. */
-				__( 'Article groups merged: %d', 'licensio-knowledge-base' ),
-				report.groups_merged,
-			],
-			[
-				/* translators: %d: a count from the merge report. */
-				__(
-					'Duplicates moved to trash: %d',
-					'licensio-knowledge-base'
-				),
-				report.posts_trashed,
-			],
-			[
-				/* translators: %d: a count from the merge report. */
-				__( 'Meta keys copied: %d', 'licensio-knowledge-base' ),
-				report.meta_copied,
-			],
-			[
-				/* translators: %d: a count from the merge report. */
-				__( 'Votes moved: %d', 'licensio-knowledge-base' ),
-				report.votes_moved,
-			],
-			[
-				/* translators: %d: a count from the merge report. */
-				__( 'Views moved: %d', 'licensio-knowledge-base' ),
-				report.views_moved,
-			],
-			[
-				/* translators: %d: a count from the merge report. */
-				__(
-					'Migration sources cleaned: %d',
-					'licensio-knowledge-base'
-				),
-				report.source_groups_cleaned,
-			],
-			[
-				/* translators: %d: a count from the merge report. */
-				__(
-					'Source posts moved to trash: %d',
-					'licensio-knowledge-base'
-				),
-				report.sources_trashed,
-			],
-			[
-				/* translators: %d: a count from the merge report. */
-				__( 'Term groups merged: %d', 'licensio-knowledge-base' ),
-				report.term_groups_merged,
-			],
-			[
-				/* translators: %d: a count from the merge report. */
-				__( 'Terms deleted: %d', 'licensio-knowledge-base' ),
-				report.terms_deleted,
-			],
-			[
-				/* translators: %d: a count from the merge report. */
-				__( 'Term meta keys copied: %d', 'licensio-knowledge-base' ),
-				report.term_meta_copied,
-			],
-			[
-				/* translators: %d: a count from the merge report. */
-				__(
-					'Article assignments moved: %d',
-					'licensio-knowledge-base'
-				),
-				report.articles_reassigned,
-			],
-		] as const
-	 ).map( ( [ format, count ] ) => sprintf( format, count ) );
+	return [
+		sprintf(
+			/* translators: %d: a count from the merge report. */
+			__( 'Article groups merged: %d', 'licensio-knowledge-base' ),
+			report.groups_merged
+		),
+		sprintf(
+			/* translators: %d: a count from the merge report. */
+			__( 'Duplicates moved to trash: %d', 'licensio-knowledge-base' ),
+			report.posts_trashed
+		),
+		sprintf(
+			/* translators: %d: a count from the merge report. */
+			__( 'Meta keys copied: %d', 'licensio-knowledge-base' ),
+			report.meta_copied
+		),
+		sprintf(
+			/* translators: %d: a count from the merge report. */
+			__( 'Votes moved: %d', 'licensio-knowledge-base' ),
+			report.votes_moved
+		),
+		sprintf(
+			/* translators: %d: a count from the merge report. */
+			__( 'Views moved: %d', 'licensio-knowledge-base' ),
+			report.views_moved
+		),
+		sprintf(
+			/* translators: %d: a count from the merge report. */
+			__( 'Migration sources cleaned: %d', 'licensio-knowledge-base' ),
+			report.source_groups_cleaned
+		),
+		sprintf(
+			/* translators: %d: a count from the merge report. */
+			__( 'Source posts moved to trash: %d', 'licensio-knowledge-base' ),
+			report.sources_trashed
+		),
+		sprintf(
+			/* translators: %d: a count from the merge report. */
+			__( 'Term groups merged: %d', 'licensio-knowledge-base' ),
+			report.term_groups_merged
+		),
+		sprintf(
+			/* translators: %d: a count from the merge report. */
+			__( 'Terms deleted: %d', 'licensio-knowledge-base' ),
+			report.terms_deleted
+		),
+		sprintf(
+			/* translators: %d: a count from the merge report. */
+			__( 'Term meta keys copied: %d', 'licensio-knowledge-base' ),
+			report.term_meta_copied
+		),
+		sprintf(
+			/* translators: %d: a count from the merge report. */
+			__( 'Article assignments moved: %d', 'licensio-knowledge-base' ),
+			report.articles_reassigned
+		),
+	];
 } );
 </script>
 

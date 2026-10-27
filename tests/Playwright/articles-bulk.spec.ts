@@ -106,7 +106,7 @@ async function openSeeded( page: Page ) {
  * @return {Promise<void>} Resolves once the bulk bar is armed.
  */
 async function selectPage(
-	app: import('@playwright/test').Locator
+	app: import( '@playwright/test' ).Locator
 ): Promise< void > {
 	await app.locator( '.ant-table-thead .ant-checkbox-input' ).check();
 	await expect( app.locator( '.lkb-bulk.is-armed' ) ).toBeVisible();
@@ -125,7 +125,7 @@ async function selectPage(
  */
 async function chooseAction(
 	page: Page,
-	app: import('@playwright/test').Locator,
+	app: import( '@playwright/test' ).Locator,
 	label: string
 ): Promise< void > {
 	await app.locator( '.lkb-bulk__choice' ).click();

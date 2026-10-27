@@ -107,7 +107,7 @@ export function pickMedia(
 							url:
 								attachment.sizes?.thumbnail?.url ??
 								attachment.url,
-					  }
+						}
 					: null
 			);
 		} );

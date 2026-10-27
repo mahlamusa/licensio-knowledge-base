@@ -13,9 +13,12 @@
 # ships `@wordpress/i18n-text-domain`, and `npm run lint:js` runs it. That rule
 # is a no-op until `allowedTextDomain` is set - with no domains configured it
 # treats a missing domain as the WordPress default and says nothing - so the
-# repo's `.eslintrc.json` pins it to this plugin's domain. That pin is the JS
+# repo's `eslint.config.mjs` pins it to this plugin's domain. That pin is the JS
 # gate, and this script asserts the pin is still in place, because losing it
-# turns the JS gate green forever without any visible failure.
+# turns the JS gate green forever without any visible failure. It asks ESLint
+# for the config it resolves for a .vue, a .ts and a .js file rather than
+# reading the config's text, so a commented-out rule or an empty domain list
+# fails here too.
 #
 # Usage: bin/check-i18n.sh [path ...]
 #
@@ -34,10 +37,15 @@ PHPCS="${ROOT}/vendor/bin/phpcs"
 
 # Overridable so the gate's own self-test can point the pin check at a fixture.
 # Nothing else should set it.
-ESLINTRC="${LICENSIO_KB_ESLINTRC:-${ROOT}/.eslintrc.json}"
+ESLINT_CONFIG="${LICENSIO_KB_ESLINT_CONFIG:-${ROOT}/eslint.config.mjs}"
 
 if [ ! -x "$PHPCS" ]; then
     printf 'i18n check: %s is missing. Run composer install first.\n' "$PHPCS" >&2
+    exit 2
+fi
+
+if [ ! -d "${ROOT}/node_modules/eslint" ]; then
+    printf 'i18n check: ESLint is missing from %s/node_modules. Run npm ci first.\n' "$ROOT" >&2
     exit 2
 fi
 
@@ -52,14 +60,35 @@ fi
 
 printf 'i18n check: JavaScript text domain rule is pinned\n'
 
-if [ ! -f "$ESLINTRC" ]; then
-    printf 'i18n check FAILED: %s is missing, so npm run lint:js no longer enforces the JS text domain.\n' "$ESLINTRC" >&2
+if [ ! -f "$ESLINT_CONFIG" ]; then
+    printf 'i18n check FAILED: %s is missing, so npm run lint:js no longer enforces the JS text domain.\n' "$ESLINT_CONFIG" >&2
     status=1
-elif ! grep -q '"@wordpress/i18n-text-domain"' "$ESLINTRC" \
-    || ! grep -q "\"allowedTextDomain\"" "$ESLINTRC" \
-    || ! grep -q "\"${TEXT_DOMAIN}\"" "$ESLINTRC"; then
-    printf 'i18n check FAILED: %s no longer pins @wordpress/i18n-text-domain to %s.\n' "$ESLINTRC" "$TEXT_DOMAIN" >&2
-    printf 'Without allowedTextDomain the rule accepts a missing domain silently.\n' >&2
+elif ! ( cd "$ROOT" && ESLINT_CONFIG="$ESLINT_CONFIG" TEXT_DOMAIN="$TEXT_DOMAIN" node --input-type=module - ) <<'JS'
+// The rule as ESLint resolves it for each kind of linted file, so only the
+// effective config counts, not what the config file happens to contain.
+import { ESLint } from 'eslint';
+
+const { ESLINT_CONFIG: configFile, TEXT_DOMAIN: domain } = process.env;
+const eslint = new ESLint( { cwd: process.cwd(), overrideConfigFile: configFile } );
+let pinned = true;
+
+for ( const file of [ 'apps/i18n-probe.vue', 'apps/i18n-probe.ts', 'assets/js/i18n-probe.js' ] ) {
+    const config = await eslint.calculateConfigForFile( file );
+    const [ severity, options ] = config?.rules?.[ '@wordpress/i18n-text-domain' ] ?? [];
+    const domains = [ options?.allowedTextDomain ?? [] ].flat();
+
+    if ( 2 !== severity || 1 !== domains.length || domain !== domains[ 0 ] ) {
+        process.stderr.write( `  ${ file }: ${ JSON.stringify( [ severity, options ] ) }\n` );
+        pinned = false;
+    }
+}
+
+process.exit( pinned ? 0 : 1 );
+JS
+then
+    printf 'i18n check FAILED: %s no longer pins @wordpress/i18n-text-domain to %s.\n' "$ESLINT_CONFIG" "$TEXT_DOMAIN" >&2
+    printf 'The rule must be an error with allowedTextDomain set to exactly that domain;\n' >&2
+    printf 'without it the rule accepts a missing domain silently.\n' >&2
     status=1
 fi
 

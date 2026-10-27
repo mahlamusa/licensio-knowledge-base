@@ -271,7 +271,7 @@
 				: this.settings.i18n.results.replace(
 						'%d',
 						String( items.length )
-				  )
+					)
 		);
 	};
 

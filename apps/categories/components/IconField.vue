@@ -221,8 +221,8 @@ const inlinePreview = computed( () => {
 				props.errors.icon
 					? 'error'
 					: iconLooksWrong
-					? 'warning'
-					: undefined
+						? 'warning'
+						: undefined
 			"
 			:help="
 				props.errors.icon ||
@@ -230,7 +230,7 @@ const inlinePreview = computed( () => {
 					? __(
 							'Dashicons names start with dashicons- and use lowercase letters, digits and hyphens.',
 							'licensio-knowledge-base'
-					  )
+						)
 					: undefined )
 			"
 			:extra="

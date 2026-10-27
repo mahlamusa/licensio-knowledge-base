@@ -311,7 +311,7 @@ async function save(): Promise< void > {
 							/* translators: %s: category name. */
 							__( 'Articles in “%s”', 'licensio-knowledge-base' ),
 							props.category.name
-					  )
+						)
 					: __( 'Article order', 'licensio-knowledge-base' )
 			}}
 		</h2>

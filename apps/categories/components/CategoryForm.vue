@@ -457,11 +457,11 @@ async function save(): Promise< void > {
 						? __(
 								'The slug is part of the category’s web address, so it does not change when the category is renamed.',
 								'licensio-knowledge-base'
-						  )
+							)
 						: __(
 								'Made from the name until you edit it.',
 								'licensio-knowledge-base'
-						  )
+							)
 				"
 			>
 				<div class="lkb-category-form__slug">
@@ -560,7 +560,7 @@ async function save(): Promise< void > {
 							: __(
 									'Add New Category',
 									'licensio-knowledge-base'
-							  )
+								)
 					}}
 				</a-button>
 				<a-button v-if="props.category" @click="cancel">
