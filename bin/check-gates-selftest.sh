@@ -340,6 +340,32 @@ PHP
         'is missing' \
         env "LICENSIO_KB_ESLINT_CONFIG=${WORK_DIR}/no-such-eslint.config.mjs" \
         bash "${SCRIPT_DIR}/check-i18n.sh" "${I18N_DIR}/good.php"
+
+    # Copies of the real config, so every grep-able part of the pin is still
+    # in the file while the config ESLint resolves no longer carries it. The
+    # node_modules link lets the copy resolve its imports.
+    ESLINT_DIR="${WORK_DIR}/eslint"
+    mkdir -p "$ESLINT_DIR"
+    ln -s "${ROOT}/node_modules" "${ESLINT_DIR}/node_modules"
+
+    sed "/'@wordpress\/i18n-text-domain': \[/,/^\t\t\t\],\$/ s|^|// |" \
+        "${ROOT}/eslint.config.mjs" > "${ESLINT_DIR}/commented.config.mjs"
+    sed "s|allowedTextDomain: \[ 'licensio-knowledge-base' \]|allowedTextDomain: []|" \
+        "${ROOT}/eslint.config.mjs" > "${ESLINT_DIR}/empty.config.mjs"
+
+    assert_green 'the real eslint config passes when named explicitly' \
+        env "LICENSIO_KB_ESLINT_CONFIG=${ROOT}/eslint.config.mjs" \
+        bash "${SCRIPT_DIR}/check-i18n.sh" "${I18N_DIR}/good.php"
+
+    assert_red 'an eslint config with the text domain rule commented out fails' \
+        'no longer pins @wordpress/i18n-text-domain' \
+        env "LICENSIO_KB_ESLINT_CONFIG=${ESLINT_DIR}/commented.config.mjs" \
+        bash "${SCRIPT_DIR}/check-i18n.sh" "${I18N_DIR}/good.php"
+
+    assert_red 'an eslint config with an empty allowedTextDomain list fails' \
+        'no longer pins @wordpress/i18n-text-domain' \
+        env "LICENSIO_KB_ESLINT_CONFIG=${ESLINT_DIR}/empty.config.mjs" \
+        bash "${SCRIPT_DIR}/check-i18n.sh" "${I18N_DIR}/good.php"
 fi
 
 # ---------------------------------------------------------------------------
