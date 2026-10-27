@@ -35,7 +35,7 @@ import {
 	openContentManager,
 } from './helpers/content-manager';
 import { failOnUnresolvedComponents } from './helpers/ant-components';
-import { logIn, password, user } from './helpers/session';
+import { openDashboard, password, user } from './helpers/session';
 import { wpCli, wpEval } from './helpers/wp-cli';
 
 failOnUnresolvedComponents();
@@ -226,7 +226,7 @@ test( 'tags are added and edited at once, merged and converted only after confir
 	const beta = `Beta ${ suffix }`;
 	const gamma = `Gamma ${ suffix }`;
 
-	await logIn( page );
+	await openDashboard( page );
 	await openContentManager( page, 'tags' );
 
 	// The Add New Tag form has nothing to cancel, and sends nothing until submitted.
@@ -333,7 +333,7 @@ test( 'Escape leaves the Edit Tag form and closes a Quick edit', async ( {
 	const writes = recordWrites( page );
 	const name = `Escape ${ suffix }`;
 
-	await logIn( page );
+	await openDashboard( page );
 	await openContentManager( page, 'tags' );
 	await addTag( page, name );
 	await search( page, name );
@@ -381,7 +381,7 @@ test( 'Quick edit tabs through every field before Save and Cancel', async ( {
 	const writes = recordWrites( page );
 	const name = `Tab order ${ suffix }`;
 
-	await logIn( page );
+	await openDashboard( page );
 	await openContentManager( page, 'tags' );
 	await addTag( page, name );
 	await search( page, name );
@@ -428,7 +428,7 @@ test( 'Quick edit keeps readable fields on a phone and Save in reach', async ( {
 } ) => {
 	const name = `Phone edit ${ suffix }`;
 
-	await logIn( page );
+	await openDashboard( page );
 	await page.setViewportSize( { width: 390, height: 844 } );
 	await openContentManager( page, 'tags' );
 	await addTag( page, name );
@@ -500,7 +500,7 @@ test( 'the pager keeps focus when the page it moved to disables the pressed cont
 	` );
 
 	try {
-		await logIn( page );
+		await openDashboard( page );
 		await openContentManager( page, 'tags' );
 		await search( page, word );
 
@@ -534,7 +534,7 @@ test( 'a description shows as plain text and is edited as stored', async ( {
 	const name = `Plain ${ suffix }`;
 	const stored = 'Tom &amp; <em>Jerry</em>';
 
-	await logIn( page );
+	await openDashboard( page );
 	await openContentManager( page, 'tags' );
 
 	const form = tagForm( page );
@@ -573,7 +573,7 @@ test( 'a description leaves out the code in script and style elements', async ( 
 
 	const name = `Code ${ suffix }`;
 
-	await logIn( page );
+	await openDashboard( page );
 	await openContentManager( page, 'tags' );
 	await addTag( page, name );
 
@@ -603,7 +603,7 @@ test( 'a tag count links to the Articles app filtered by the tag', async ( {
 } ) => {
 	const name = `Counted ${ suffix }`;
 
-	await logIn( page );
+	await openDashboard( page );
 	await openContentManager( page, 'tags' );
 	await addTag( page, name );
 	await search( page, name );
@@ -638,7 +638,7 @@ test( 'a slow save leaves the row the user opened next alone', async ( {
 	const first = `Slow ${ suffix }`;
 	const second = `Next ${ suffix }`;
 
-	await logIn( page );
+	await openDashboard( page );
 	await openContentManager( page, 'tags' );
 	await addTag( page, first );
 	await addTag( page, second );
@@ -705,7 +705,7 @@ test( 'a merge reports the tags it could not delete apart from those it merged',
 	const target = `Keep ${ suffix }`;
 	const sources = [ `Away one ${ suffix }`, `Away two ${ suffix }` ];
 
-	await logIn( page );
+	await openDashboard( page );
 	await openContentManager( page, 'tags' );
 
 	for ( const name of [ target, ...sources ] ) {
@@ -761,7 +761,7 @@ test( 'a failed merge or convert shows its error inside the dialog', async ( {
 	const source = `Fail away ${ suffix }`;
 	const failing = /tags(%2F|\/)(merge|convert)/;
 
-	await logIn( page );
+	await openDashboard( page );
 	await openContentManager( page, 'tags' );
 
 	for ( const name of [ target, source ] ) {
@@ -847,7 +847,7 @@ test( 'a failed merge or convert shows its error inside the dialog', async ( {
 test( 'a success answer that is not JSON is reported as an error', async ( {
 	page,
 } ) => {
-	await logIn( page );
+	await openDashboard( page );
 	await page.route(
 		( url ) => /licensio-kb(%2F|\/)v1(%2F|\/)tags/.test( url.href ),
 		async ( route ) => {
@@ -875,7 +875,7 @@ test( 'Escape on the open target list closes only the list, not the merge dialog
 } ) => {
 	const name = `Esc merge ${ suffix }`;
 
-	await logIn( page );
+	await openDashboard( page );
 	await openContentManager( page, 'tags' );
 	await addTag( page, name );
 	await search( page, name );
@@ -907,7 +907,7 @@ test( 'Edit loads a tag into the left form, and Update saves it at once', async 
 	const writes = recordWrites( page );
 	const name = `Form edit ${ suffix }`;
 
-	await logIn( page );
+	await openDashboard( page );
 	await openContentManager( page, 'tags' );
 	await addTag( page, name );
 	await search( page, name );
@@ -962,7 +962,7 @@ test( 'the form returns to Add when the tag in it is deleted, not when it is fil
 	const name = `Gone ${ suffix }`;
 	const form = tagForm( page );
 
-	await logIn( page );
+	await openDashboard( page );
 	await openContentManager( page, 'tags' );
 	await addTag( page, name );
 	await search( page, name );
@@ -995,7 +995,7 @@ test( 'loading another tag or cancelling asks before it drops unsaved changes', 
 	const heading = ( text: string ) =>
 		form.getByRole( 'heading', { name: text } );
 
-	await logIn( page );
+	await openDashboard( page );
 	await openContentManager( page, 'tags' );
 	await addTag( page, first );
 	await addTag( page, second );
@@ -1056,7 +1056,7 @@ test( 'a page opened for one tag loads it into the form', async ( {
 	const name = `Linked ${ suffix }`;
 	const form = tagForm( page );
 
-	await logIn( page );
+	await openDashboard( page );
 	await openContentManager( page, 'tags' );
 
 	// The list has a heading for screen readers.
@@ -1084,7 +1084,7 @@ test( 'a page opened for one tag loads it into the form', async ( {
 test( 'the form sits left of the list on a desktop and above it on a phone', async ( {
 	page,
 } ) => {
-	await logIn( page );
+	await openDashboard( page );
 	await page.setViewportSize( { width: 1440, height: 900 } );
 	await openContentManager( page, 'tags' );
 

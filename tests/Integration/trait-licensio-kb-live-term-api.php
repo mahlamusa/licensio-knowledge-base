@@ -77,6 +77,7 @@ trait Licensio_KB_Live_Term_API {
         Functions\when( 'get_terms' )->alias( array( $this, 'live_get_terms' ) );
         Functions\when( 'get_term' )->alias( array( $this, 'live_get_term' ) );
         Functions\when( 'get_term_by' )->alias( array( $this, 'live_get_term_by' ) );
+        Functions\when( 'term_exists' )->alias( array( $this, 'live_term_exists' ) );
         Functions\when( 'wp_insert_term' )->alias( array( $this, 'live_insert_term' ) );
         Functions\when( 'wp_update_term' )->alias( array( $this, 'live_update_term' ) );
         Functions\when( 'wp_delete_term' )->alias( array( $this, 'live_delete_term' ) );
@@ -250,6 +251,25 @@ trait Licensio_KB_Live_Term_API {
         $row = $this->live_term_row( (int) $term_id, (string) $taxonomy );
 
         return null === $row ? null : $this->live_term_object( $row );
+    }
+
+    /**
+     * Stand-in for `term_exists()`, by ID in any taxonomy only.
+     *
+     * @since 1.0.0
+     *
+     * @param int    $term     The term ID.
+     * @param string $taxonomy Optional. Must be empty: any taxonomy.
+     *
+     * @return int|null The term ID, or null when no term has it.
+     */
+    public function live_term_exists( $term, $taxonomy = '' ) {
+        $this->assertIsInt( $term, 'Only ID lookups are supported by this stand-in.' );
+        $this->assertSame( '', $taxonomy, 'Only lookups in any taxonomy are supported by this stand-in.' );
+
+        $rows = $this->live_rows( 'SELECT term_id FROM ' . $this->table( 'terms' ) . ' WHERE term_id = ' . (int) $term );
+
+        return empty( $rows ) ? null : (int) $rows[0]['term_id'];
     }
 
     /**
@@ -510,6 +530,62 @@ trait Licensio_KB_Live_Term_API {
         $rows = $this->live_rows( 'SELECT object_id FROM ' . $this->table( 'term_relationships' ) . ' WHERE term_taxonomy_id = ' . (int) $row['term_taxonomy_id'] . ' ORDER BY object_id' );
 
         return array_column( $rows, 'object_id' );
+    }
+
+    /**
+     * Insert many published articles under one term and recount it.
+     *
+     * @since 1.0.0
+     *
+     * @param int $term_id The term.
+     * @param int $count   How many articles.
+     *
+     * @return int[] The article IDs.
+     */
+    protected function live_seed_articles( $term_id, $count ) {
+        $posts = array();
+
+        for ( $i = 0; $i < $count; $i++ ) {
+            $posts[] = "(1, NOW(), NOW(), '', 'Bulk {$i}', '', 'publish', 'open', '', 'bulk-{$i}', '', '', NOW(), NOW(), '', 0, 'licensio_article')";
+        }
+
+        $this->db->query(
+            'INSERT INTO ' . $this->table( 'posts' ) . ' (post_author, post_date, post_date_gmt, post_content, post_title, post_excerpt, post_status, comment_status, post_password, post_name, to_ping, pinged, post_modified, post_modified_gmt, post_content_filtered, menu_order, post_type) VALUES '
+            . implode( ', ', $posts )
+        );
+
+        $ids   = range( (int) $this->db->insert_id, (int) $this->db->insert_id + $count - 1 );
+        $tt_id = (int) $this->live_rows( 'SELECT term_taxonomy_id FROM ' . $this->table( 'term_taxonomy' ) . ' WHERE term_id = ' . (int) $term_id )[0]['term_taxonomy_id'];
+        $rows  = array();
+
+        foreach ( $ids as $id ) {
+            $rows[] = '(' . $id . ', ' . $tt_id . ')';
+        }
+
+        $this->db->query( 'INSERT INTO ' . $this->table( 'term_relationships' ) . ' (object_id, term_taxonomy_id) VALUES ' . implode( ', ', $rows ) );
+        $this->live_recount( $tt_id );
+
+        return $ids;
+    }
+
+    /**
+     * The batched relationship deletes `$wpdb` ran for one term.
+     *
+     * @since 1.0.0
+     *
+     * @param int $tt_id The term taxonomy ID.
+     *
+     * @return string[] The statements.
+     */
+    protected function live_relationship_deletes( $tt_id ) {
+        return array_values(
+            array_filter(
+                $GLOBALS['wpdb']->queries,
+                function ( $query ) use ( $tt_id ) {
+                    return 1 === preg_match( '/^DELETE FROM \S+ WHERE term_taxonomy_id = ' . (int) $tt_id . ' AND object_id IN /', (string) $query );
+                }
+            )
+        );
     }
 
     /**

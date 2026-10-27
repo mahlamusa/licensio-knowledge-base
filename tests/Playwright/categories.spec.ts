@@ -24,7 +24,16 @@
  * administrator account, so it is skipped unless `LICENSIO_KB_E2E=1` and the
  * two credential variables are present.
  *
+ * Other specs make and use categories of their own on the same site, so
+ * it only ever deletes the categories it makes itself, puts them first at the
+ * top level, and reads the tree through those alone. A move saves the order
+ * of every sibling, so the spec runs on its own (the `one-at-a-time`
+ * project), where no other spec reorders or deletes categories meanwhile. A
+ * sibling deleted since the tree loaded is left out of a move, not refused.
+ *
  * @since 1.0.0
+ * @since 1.0.0 Leaves the categories of other specs alone and runs on its own.
+ * @since 1.0.0 A move still saves when a sibling was deleted since the tree loaded.
  */
 
 import { expect, test, type Page, type Request } from '@playwright/test';
@@ -36,13 +45,28 @@ import {
 	openContentManager,
 } from './helpers/content-manager';
 import { failOnUnresolvedComponents } from './helpers/ant-components';
-import { logIn, password, user } from './helpers/session';
+import { openDashboard, password, user } from './helpers/session';
 import { wpCli, wpEval } from './helpers/wp-cli';
 import { slugify } from '../../apps/categories/slug';
 
 failOnUnresolvedComponents();
 
 const enabled = process.env.LICENSIO_KB_E2E === '1';
+
+/**
+ * The name of every category these tests save.
+ *
+ * Cleaning up by name also clears what a run that stopped half-way left.
+ */
+const OWN = new Set( [
+	'Alpha',
+	'Beta',
+	'Beta child',
+	'Beta renamed',
+	'Gamma',
+	'Gamma child',
+	'Getting Started: “Quick” Guide',
+] );
 
 interface Category {
 	id: number;
@@ -207,19 +231,25 @@ async function paneTitles( page: Page ): Promise< string[] > {
 }
 
 /**
- * Remove every category, so each test starts from an empty tree.
+ * Remove the categories these tests make, so each test starts without them.
+ *
+ * Categories other specs made stay, and so do their articles' filings.
  *
  * @since 1.0.0
+ * @since 1.0.0 Removes only the categories named in OWN.
  *
  * @param {Page} page A page with the Categories app loaded.
  *
- * @return {Promise<void>} Resolves once the tree is empty.
+ * @return {Promise<void>} Resolves once none of them is left.
  */
 async function clearCategories( page: Page ): Promise< void > {
 	const items = ( await api( page, 'GET', 'categories' ) ) as Category[];
+	const own = items.filter( ( one ) => OWN.has( one.name ) );
 
-	for ( const item of items.filter( ( one ) => 0 === one.parent ) ) {
-		await deleteTree( page, item, items );
+	for ( const item of own.filter(
+		( one ) => ! own.some( ( other ) => other.id === one.parent )
+	) ) {
+		await deleteTree( page, item, own );
 	}
 }
 
@@ -337,20 +367,23 @@ function node( page: Page, name: string ) {
 }
 
 /**
- * The names of the top-level categories, in tree order.
+ * The names of the top-level categories these tests made, in tree order.
  *
  * @since 1.0.0
+ * @since 1.0.0 Leaves out the categories of other specs.
  *
  * @param {Page} page The browser page.
  *
  * @return {Promise<string[]>} The names.
  */
 async function topLevel( page: Page ): Promise< string[] > {
-	return page
-		.locator(
-			'.ant-tree-treenode:not(:has(.ant-tree-indent-unit)) .lkb-tree__name'
-		)
-		.allTextContents();
+	return (
+		await page
+			.locator(
+				'.ant-tree-treenode:not(:has(.ant-tree-indent-unit)) .lkb-tree__name'
+			)
+			.allTextContents()
+	).filter( ( name ) => OWN.has( name.trim() ) );
 }
 
 /**
@@ -395,7 +428,9 @@ async function act(
 		.click();
 }
 
-test.describe( 'Categories app', () => {
+// A move sends every sibling, so the order other specs save would interleave
+// with it: the spec runs on its own in the one-at-a-time project.
+test.describe( 'Categories app @one-at-a-time', () => {
 	test.describe.configure( { mode: 'serial' } );
 	test.skip(
 		! enabled || ! user || ! password,
@@ -403,14 +438,19 @@ test.describe( 'Categories app', () => {
 	);
 
 	test.beforeEach( async ( { page } ) => {
-		await logIn( page );
+		await openDashboard( page );
 		await openContentManager( page, 'categories' );
 		await clearArticles( page );
 		await clearCategories( page );
-		await make( page, 'Alpha' );
-		await make( page, 'Beta' );
+		const alpha = await make( page, 'Alpha' );
+		const beta = await make( page, 'Beta' );
 		const gamma = await make( page, 'Gamma' );
 		await make( page, 'Gamma child', gamma );
+		// First at the top level, ahead of the categories of other specs.
+		await api( page, 'POST', 'categories/order', {
+			parent: 0,
+			ids: [ alpha, beta, gamma ],
+		} );
 		await page.reload();
 		await expect( node( page, 'Gamma child' ) ).toBeVisible();
 	} );
@@ -464,6 +504,30 @@ test.describe( 'Categories app', () => {
 			.poll( () => topLevel( page ) )
 			.toEqual( [ 'Beta', 'Alpha', 'Gamma' ] );
 		expect( writes ).toHaveLength( 1 );
+	} );
+
+	test( 'a move still saves when a sibling was deleted since the tree loaded', async ( {
+		page,
+	} ) => {
+		// Deleted behind the app's back, so the tree still shows it.
+		await api(
+			page,
+			'DELETE',
+			`categories/${ await categoryId( page, 'Beta' ) }`
+		);
+
+		await act( page, 'Alpha', 'Move down' );
+
+		await expect( page.locator( '.ant-message' ) ).toContainText(
+			'Category moved.'
+		);
+		await expect
+			.poll( () => topLevel( page ) )
+			.toEqual( [ 'Alpha', 'Gamma' ] );
+
+		await page.reload();
+		await expect( node( page, 'Gamma child' ) ).toBeVisible();
+		expect( await topLevel( page ) ).toEqual( [ 'Alpha', 'Gamma' ] );
 	} );
 
 	test( 'the actions menu works from the keyboard alone', async ( {

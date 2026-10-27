@@ -977,6 +977,69 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * Bulk delete takes each tag off its articles in one batch before deleting it.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_bulk_delete_removes_the_assignments_in_a_batch_first() {
+        $result = $this->call( '/tags/bulk-delete', 'POST', array( 'ids' => array( 10, 11 ) ) );
+
+        $this->assertSame( array( 10, 11 ), $result['deleted'] );
+        $this->assertSame(
+            array(
+                array( 'remove', 10, array( 100, 101 ) ),
+                array( 'delete', 10, 'licensio_tag' ),
+                array( 'remove', 11, array( 100, 101 ) ),
+                array( 'delete', 11, 'licensio_tag' ),
+            ),
+            $this->calls,
+            'Core finds each tag empty, so it rewrites no article.'
+        );
+    }
+
+    /**
+     * Bulk delete keeps a tag with an article the user may not edit.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_bulk_delete_keeps_a_tag_with_an_article_the_user_may_not_edit() {
+        $this->caps = array_diff( $this->caps, array( 'edit_others_licensio_articles' ) );
+
+        $result = $this->call( '/tags/bulk-delete', 'POST', array( 'ids' => array( 10 ) ) );
+
+        $this->assertSame( array(), $result['deleted'] );
+        $this->assertSame( array( 10 ), array_column( $result['failed'], 'id' ) );
+        $this->assertSame( array(), $this->calls, 'Nothing was written.' );
+    }
+
+    /**
+     * A tag whose delete fails after its articles lost it gets them back.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_bulk_delete_puts_the_articles_back_when_the_delete_fails() {
+        Functions\when( 'wp_delete_term' )->justReturn( new WP_Error( 'db_delete_error', 'Could not delete term from the database.' ) );
+
+        $result = $this->call( '/tags/bulk-delete', 'POST', array( 'ids' => array( 10 ) ) );
+
+        $this->assertSame( array(), $result['deleted'] );
+        $this->assertSame( 'Could not delete term from the database.', $result['failed'][0]['message'] );
+        $this->assertSame(
+            array(
+                array( 'remove', 10, array( 100, 101 ) ),
+                array( 'add', 10, array( 100, 101 ) ),
+            ),
+            $this->calls
+        );
+    }
+
+    /**
      * The admin page announces the controller.
      *
      * @since 1.0.0

@@ -535,6 +535,94 @@ class Licensio_KB_Term_Operations_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * Removing a term's assignments takes it off every object, recounts it and can be undone.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_assignments_are_removed_counted_and_undone() {
+        $counted = array();
+
+        Functions\when( 'wp_update_term_count' )->alias(
+            function ( $tt_ids, $taxonomy ) use ( &$counted ) {
+                $counted[] = array( $tt_ids, $taxonomy );
+
+                return true;
+            }
+        );
+        Actions\expectDone( 'deleted_term_relationships' )->twice();
+        Actions\expectDone( 'licensio_kb_term_assignments_changed' )->twice()->with( array( 1, 2 ), 'licensio_tag' );
+
+        $operations = new Licensio_KB_Term_Operations();
+        $record     = array();
+        $removed    = $operations->remove_assignments( 10, 'licensio_tag', $record );
+
+        $this->assertSame( 2, $removed );
+        $this->assertSame( array(), $this->assignments[10] );
+        $this->assertSame( array( 2, 3 ), $this->assignments[11], 'Other terms keep their objects.' );
+        $this->assertSame( array(), $this->deleted, 'The term itself is left in place.' );
+        $this->assertSame( array( array( 1, 2 ) ), array_column( $record, 'removed' ) );
+        $this->assertSame( array( array( array( 1010 ), 'licensio_tag' ) ), $counted, 'Only the term is recounted; no target is named.' );
+        $this->assertSame( array( 'defer', 'unassign 1,2 from 10', 'count' ), $this->events );
+
+        $operations->undo( $record );
+
+        $this->assertSame( array( 1, 2 ), $this->assignments[10], 'Undo gives the term back.' );
+    }
+
+    /**
+     * A big removal is batched, and a failed later batch puts back the earlier ones.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_big_removal_is_batched_and_a_late_failure_puts_everything_back() {
+        $size                  = Licensio_KB_Term_Operations::BATCH_SIZE;
+        $this->assignments[10] = range( 100, 99 + ( 2 * $size ) + 1 );
+        $before                = $this->assignments[10];
+        $last                  = 99 + ( 2 * $size ) + 1;
+        $operations            = new Licensio_KB_Term_Operations();
+
+        $this->refuse_write = function ( $action, $term_id, $object_ids ) use ( $last ) {
+            return 'remove' === $action && 10 === $term_id && in_array( $last, $object_ids, true );
+        };
+
+        $record = array( 'stale' );
+        $result = $operations->remove_assignments( 10, 'licensio_category', $record );
+
+        $this->assertInstanceOf( 'WP_Error', $result );
+        $this->assertSame( 'licensio_kb_assignments_not_saved', $result->get_error_code() );
+        $this->assertSame( 2, count( preg_grep( '/^unassign .* from 10$/', $this->events ) ), 'Two batches went through before the third failed.' );
+        $this->assertEqualsCanonicalizing( $before, $this->assignments[10] );
+        $this->assertSame( array(), $record, 'A failed removal leaves nothing to undo.' );
+
+        $this->refuse_write = null;
+        $this->events       = array();
+
+        $this->assertSame( ( 2 * $size ) + 1, $operations->remove_assignments( 10, 'licensio_category' ) );
+        $this->assertSame( 3, count( preg_grep( '/^unassign .* from 10$/', $this->events ) ), 'Three statements, not one per object.' );
+        $this->assertSame( array(), $this->assignments[10] );
+    }
+
+    /**
+     * A removal names a knowledge base taxonomy and an existing term, and an empty term writes nothing.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_bad_or_empty_removal_writes_nothing() {
+        $operations = new Licensio_KB_Term_Operations();
+
+        $this->assertSame( 'licensio_kb_invalid_taxonomy', $operations->remove_assignments( 10, 'post_tag' )->get_error_code() );
+        $this->assertSame( 'licensio_kb_invalid_term', $operations->remove_assignments( 99, 'licensio_tag' )->get_error_code() );
+        $this->assertSame( 0, $operations->remove_assignments( 30, 'licensio_tag' ) );
+        $this->assertSame( array( 'defer', 'count' ), $this->events, 'Nothing is written; counting is only paused and resumed, as for an empty move.' );
+    }
+
+    /**
      * An edited slug is refused only when another term of the taxonomy has it.
      *
      * @since 1.0.0

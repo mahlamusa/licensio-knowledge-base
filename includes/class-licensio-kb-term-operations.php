@@ -4,8 +4,10 @@
  *
  * Moving article assignments from one term to another and merging terms are
  * needed by category delete with reassignment, category merge, tag merge and
- * tag conversion. They live here once, so both REST controllers apply the same
- * rules and fire the same hooks.
+ * tag conversion. Taking a term off all its articles before the term is
+ * deleted is needed by category delete without reassignment and tag delete.
+ * They live here once, so both REST controllers apply the same rules and fire
+ * the same hooks.
  *
  * Every move is all or nothing and is recorded, so a caller whose later step
  * fails can put the articles back with `undo()`. The relationship rows move
@@ -21,8 +23,13 @@
  * `deleted_term_relationships` ( $object_id, array( $tt_id ), $taxonomy ).
  * `set_object_terms` is not fired, since no object's whole term list is set.
  * `licensio_kb_term_assignments_changed` ( int[] $object_ids, string
- * $taxonomy ) also fires, once per taxonomy for every move, merge or undo, so
- * the search index can refresh the articles that changed.
+ * $taxonomy ) also fires, once per taxonomy for every move, merge, removal or
+ * undo, so the search index can refresh the articles that changed.
+ *
+ * After a removal the term is empty when it is deleted, so core's
+ * `delete_term` and `delete_{$taxonomy}` actions receive an empty
+ * `$object_ids`. A listener that needs the objects the term had should use
+ * `licensio_kb_term_assignments_changed` instead.
  *
  * A move rewrites articles the user may not be able to open, so the REST
  * routes ask `check_articles()` first: every article filed under the source
@@ -42,6 +49,7 @@
  *
  * @package Licensio_KB
  * @since   1.0.0
+ * @since   1.0.0 Takes a term off its objects in batches before it is deleted.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -190,18 +198,58 @@ class Licensio_KB_Term_Operations {
     }
 
     /**
+     * Take a term off every object assigned to it.
+     *
+     * For deleting a term whose objects are not moved elsewhere: a category
+     * deleted with its articles left without it, or a deleted tag. Core's
+     * `wp_delete_term()` would rewrite the terms of every assigned object one
+     * object at a time; here the relationship rows are deleted in batches, as
+     * in `move_assignments()`, so the delete that follows finds the term
+     * empty. The term itself is left in place.
+     *
+     * All or nothing: if a batch fails, the objects already handled get the
+     * term back and the error is returned. On success `$record` receives what
+     * was removed, so a caller whose own later step fails (the term's delete)
+     * can put the objects back with `undo()`.
+     *
+     * No capability is checked here. Callers must check the current user's
+     * capability first, and `check_articles()` for the objects.
+     *
+     * @since 1.0.0
+     *
+     * @param int        $term_id  The term to take off its objects.
+     * @param string     $taxonomy The term's taxonomy.
+     * @param array|null $record   Optional. Receives the removal made, for `undo()`; empty when nothing was removed.
+     *
+     * @return int|WP_Error The number of objects that lost the term, or an error when an input is invalid or a write fails.
+     */
+    public function remove_assignments( $term_id, $taxonomy, &$record = null ) {
+        $record  = array();
+        $term_id = absint( $term_id );
+
+        $valid = $this->validate( array( $term_id ), $taxonomy, null, $taxonomy );
+
+        if ( is_wp_error( $valid ) ) {
+            return $valid;
+        }
+
+        return $this->move_all( array( $term_id ), $taxonomy, 0, $taxonomy, $record );
+    }
+
+    /**
      * Put back the assignments a move or merge recorded.
      *
      * Works through the record newest first: the objects that lost the source
      * term get it back, and the objects that gained the target term lose it
-     * again; an object that had the target before the move keeps it. Best
+     * again; an object that had the target before the move keeps it. A
+     * removal, which has no target, only gives the term back. Best
      * effort: a write that fails here is skipped, since the caller is already
      * reporting the error that made it undo. Caches and counts are refreshed
      * for every object in the record.
      *
      * @since 1.0.0
      *
-     * @param array<int, array<string, mixed>> $record The record `move_assignments()` or `move_across_taxonomies()` filled.
+     * @param array<int, array<string, mixed>> $record The record `move_assignments()`, `move_across_taxonomies()` or `remove_assignments()` filled.
      *
      * @return void
      */
@@ -236,7 +284,7 @@ class Licensio_KB_Term_Operations {
      *
      * @param int[]  $sources         The terms to take objects from.
      * @param string $source_taxonomy The sources' taxonomy.
-     * @param int    $to              The term the objects gain.
+     * @param int    $to              The term the objects gain, or 0 for none.
      * @param string $target_taxonomy The target's taxonomy.
      * @param array  $record          Receives one entry per source term handled.
      *
@@ -276,12 +324,15 @@ class Licensio_KB_Term_Operations {
      * removed, in batches. The record entry is added before anything is
      * written and grows with each batch that succeeds, so the objects of a
      * batch already written are put back too when a later batch fails.
+     * With no target the objects only lose the source term, and the entry
+     * records 0 as the target.
      *
      * @since 1.0.0
+     * @since 1.0.0 Takes 0 as the target, for a removal.
      *
      * @param int    $from            The term to take objects from.
      * @param string $source_taxonomy The source's taxonomy.
-     * @param int    $to              The term the objects gain.
+     * @param int    $to              The term the objects gain, or 0 for none.
      * @param string $target_taxonomy The target's taxonomy.
      * @param array  $record          Receives one entry for this source term.
      *
@@ -294,7 +345,7 @@ class Licensio_KB_Term_Operations {
             return $object_ids;
         }
 
-        $on_target = get_objects_in_term( $to, $target_taxonomy );
+        $on_target = $to ? get_objects_in_term( $to, $target_taxonomy ) : array();
 
         if ( is_wp_error( $on_target ) ) {
             return $on_target;
@@ -307,9 +358,9 @@ class Licensio_KB_Term_Operations {
         }
 
         $from_term = get_term( $from, $source_taxonomy );
-        $to_term   = get_term( $to, $target_taxonomy );
+        $to_term   = $to ? get_term( $to, $target_taxonomy ) : null;
 
-        if ( ! $from_term instanceof WP_Term || ! $to_term instanceof WP_Term ) {
+        if ( ! $from_term instanceof WP_Term || ( $to && ! $to_term instanceof WP_Term ) ) {
             return new WP_Error(
                 'licensio_kb_invalid_term',
                 __( 'One of the chosen terms does not exist.', 'licensio-knowledge-base' ),
@@ -323,13 +374,13 @@ class Licensio_KB_Term_Operations {
             'from_tt'       => (int) $from_term->term_taxonomy_id,
             'from_taxonomy' => (string) $source_taxonomy,
             'to'            => (int) $to,
-            'to_tt'         => (int) $to_term->term_taxonomy_id,
+            'to_tt'         => $to_term instanceof WP_Term ? (int) $to_term->term_taxonomy_id : 0,
             'to_taxonomy'   => (string) $target_taxonomy,
             'added'         => array(),
             'removed'       => array(),
         );
 
-        $missing = array_values( array_diff( $object_ids, array_map( 'intval', (array) $on_target ) ) );
+        $missing = $to ? array_values( array_diff( $object_ids, array_map( 'intval', (array) $on_target ) ) ) : array();
         $written = $this->write_relationships( 'add', $missing, $record[ $index ]['to_tt'], (string) $target_taxonomy, $record[ $index ]['added'] );
 
         if ( is_wp_error( $written ) ) {
@@ -427,6 +478,7 @@ class Licensio_KB_Term_Operations {
      * `licensio_kb_term_assignments_changed` once per taxonomy.
      *
      * @since 1.0.0
+     * @since 1.0.0 Leaves out the zero a removal records in place of a target term.
      *
      * @param array<int, array<string, mixed>> $record The record of the writes.
      *
@@ -447,7 +499,8 @@ class Licensio_KB_Term_Operations {
         foreach ( $objects as $taxonomy => $object_ids ) {
             $object_ids = array_values( array_unique( $object_ids ) );
 
-            wp_update_term_count( array_values( array_unique( $terms[ $taxonomy ] ) ), $taxonomy );
+            // A removal records no target term, so its zero is left out.
+            wp_update_term_count( array_values( array_unique( array_filter( $terms[ $taxonomy ] ) ) ), $taxonomy );
 
             if ( array() === $object_ids ) {
                 continue;
@@ -458,11 +511,13 @@ class Licensio_KB_Term_Operations {
             /**
              * Fires after term assignments were written directly to the database.
              *
-             * Moves, copies and merges write the relationship rows in batches
-             * instead of through `wp_set_object_terms()`, so core's per-object
-             * hooks do not fire. This one does, once per taxonomy.
+             * Moves, copies, merges, removals and undos write the relationship
+             * rows in batches instead of through `wp_set_object_terms()`, so
+             * core's per-object hooks do not fire. This one does, once per
+             * taxonomy.
              *
              * @since 1.0.0
+             * @since 1.0.0 Also fires for a term taken off its objects before its delete.
              *
              * @param int[]  $object_ids The objects that gained or lost a term.
              * @param string $taxonomy   The taxonomy whose assignments changed.
@@ -513,11 +568,12 @@ class Licensio_KB_Term_Operations {
      * the edit locks are read in one query per batch either way.
      *
      * @since 1.0.0
+     * @since 1.0.0 Its messages fit a removal as well as a move.
      *
-     * @param int[]  $term_ids The terms whose articles would move.
+     * @param int[]  $term_ids The terms whose articles would move or lose the terms.
      * @param string $taxonomy Their taxonomy.
      *
-     * @return true|WP_Error True when every article may be moved; 403 `licensio_kb_articles_forbidden` or 409 `licensio_kb_articles_locked` naming the articles otherwise.
+     * @return true|WP_Error True when every article may be changed; 403 `licensio_kb_articles_forbidden` or 409 `licensio_kb_articles_locked` naming the articles otherwise.
      */
     public function check_articles( array $term_ids, $taxonomy ) {
         $object_ids = array();
@@ -558,7 +614,7 @@ class Licensio_KB_Term_Operations {
         if ( ! empty( $forbidden ) ) {
             return new WP_Error(
                 'licensio_kb_articles_forbidden',
-                __( 'You are not allowed to edit some of the articles this would move.', 'licensio-knowledge-base' ),
+                __( 'You are not allowed to edit some of the articles this would change.', 'licensio-knowledge-base' ),
                 array(
                     'status' => rest_authorization_required_code(),
                     'ids'    => $forbidden,
@@ -572,8 +628,8 @@ class Licensio_KB_Term_Operations {
             return new WP_Error(
                 'licensio_kb_articles_locked',
                 _n(
-                    'Someone is editing an article this would move. Try again when they have finished.',
-                    'Someone is editing articles this would move. Try again when they have finished.',
+                    'Someone is editing an article this would change. Try again when they have finished.',
+                    'Someone is editing articles this would change. Try again when they have finished.',
                     count( $locked ),
                     'licensio-knowledge-base'
                 ),
@@ -766,11 +822,12 @@ class Licensio_KB_Term_Operations {
      * Check the taxonomies and the terms an operation names.
      *
      * @since 1.0.0
+     * @since 1.0.0 Takes null as the target, for a removal.
      *
-     * @param int[]  $sources         The source term IDs.
-     * @param string $source_taxonomy The sources' taxonomy.
-     * @param int    $target          The target term ID.
-     * @param string $target_taxonomy The target's taxonomy.
+     * @param int[]    $sources         The source term IDs.
+     * @param string   $source_taxonomy The sources' taxonomy.
+     * @param int|null $target          The target term ID, or null for none.
+     * @param string   $target_taxonomy The target's taxonomy.
      *
      * @return true|WP_Error True when every input is usable, an error naming the first problem otherwise.
      */
@@ -793,7 +850,7 @@ class Licensio_KB_Term_Operations {
             );
         }
 
-        $terms = array( array( $target, $target_taxonomy ) );
+        $terms = null === $target ? array() : array( array( $target, $target_taxonomy ) );
 
         foreach ( $sources as $source ) {
             $terms[] = array( $source, $source_taxonomy );

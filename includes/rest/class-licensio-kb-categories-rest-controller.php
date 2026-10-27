@@ -579,16 +579,18 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      *
      * Also needs `edit_term` on the parent they are placed under, and on
      * every child of that parent the request leaves out, since those are
-     * renumbered after the listed ones.
+     * renumbered after the listed ones. A listed category deleted since the
+     * admin's tree loaded is left out, as `update_order()` leaves it out.
      *
      * @since 1.0.0
+     * @since 1.0.0 Leaves out listed categories that were deleted.
      *
      * @param WP_REST_Request $request The request.
      *
      * @return true|WP_Error True when allowed.
      */
     public function update_order_permissions_check( $request ) {
-        $ids     = self::id_list( $request->get_param( 'ids' ) );
+        $ids     = $this->order_ids( $request );
         $allowed = $this->term_permission( $request, 'edit_terms', 'edit_term', $ids );
 
         if ( true !== $allowed ) {
@@ -859,13 +861,14 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      * of `parent` is refused for a top-level category, which has no parent to
      * move them to; `none` leaves the articles without this category.
      *
-     * The articles are moved first, then the child categories, then the
-     * category is deleted. All or nothing: if a step fails, the articles and
-     * child categories already moved are put back, the category is kept and
-     * the error is returned. Articles are only moved when the user may edit
-     * every one of them and nobody else has one open in the editor.
+     * The articles are moved (or, for `none`, lose the category) first, in
+     * batches, then the child categories, then the empty category is deleted.
+     * All or nothing: if a step fails, the articles and child categories
+     * already moved are put back, the category is kept and the error is
+     * returned. Articles are only changed when the user may edit every one of
+     * them and nobody else has one open in the editor.
      *
-     * @since 1.0.0 Checks each article before moving it.
+     * @since 1.0.0 Checks each article before changing it, and takes the category off in batches for `none`.
      *
      * @param WP_REST_Request $request The request.
      *
@@ -898,20 +901,26 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
             return $plan;
         }
 
-        $moved  = 0;
-        $record = array();
+        $moved   = 0;
+        $record  = array();
+        $checked = $this->operations->check_articles( array( $id ), Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
+
+        if ( is_wp_error( $checked ) ) {
+            return $checked;
+        }
 
         if ( $plan['articles'] > 0 ) {
-            $checked = $this->operations->check_articles( array( $id ), Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
-
-            if ( is_wp_error( $checked ) ) {
-                return $checked;
-            }
-
             $moved = $this->operations->move_assignments( $id, $plan['articles'], Licensio_KB_Post_Types::TAXONOMY_CATEGORY, $record );
 
             if ( is_wp_error( $moved ) ) {
                 return $moved;
+            }
+        } else {
+            // Taken off in batches, so the delete below finds the category empty.
+            $removed = $this->operations->remove_assignments( $id, Licensio_KB_Post_Types::TAXONOMY_CATEGORY, $record );
+
+            if ( is_wp_error( $removed ) ) {
+                return $removed;
             }
         }
 
@@ -1013,11 +1022,16 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      * with or jumps ahead of the categories it names. This matches how the
      * per-category article order treats a partial list.
      *
+     * A listed category deleted since the admin's tree loaded is left out,
+     * and the others are saved in the order sent. An ID that belongs to
+     * another taxonomy is still refused.
+     *
      * Everything is checked first. All the parent changes are written before
      * any position; if one fails, the ones already made are put back and no
      * position is written.
      *
      * @since 1.0.0
+     * @since 1.0.0 Leaves out listed categories that were deleted.
      *
      * @param WP_REST_Request $request The request.
      *
@@ -1025,7 +1039,7 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      */
     public function update_order( $request ) {
         $parent  = absint( $request->get_param( 'parent' ) );
-        $ids     = self::id_list( $request->get_param( 'ids' ) );
+        $ids     = $this->order_ids( $request );
         $parents = $this->parent_map();
 
         if ( is_wp_error( $parents ) ) {
@@ -1579,6 +1593,36 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
         $term = get_term( (int) $id, Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
 
         return $term instanceof WP_Term ? $term : null;
+    }
+
+    /**
+     * The categories an order request lists, less the ones deleted since.
+     *
+     * The admin sends every sibling it shows, so a category another user or
+     * tab deleted since the tree loaded would otherwise refuse the whole
+     * order. An ID with no term at all is left out. An ID that is a term of
+     * another taxonomy is kept, so the checks after this still refuse it.
+     *
+     * @since 1.0.0
+     *
+     * @param WP_REST_Request $request The request.
+     *
+     * @return int[] The listed IDs that still exist, in the order sent.
+     */
+    private function order_ids( $request ) {
+        $ids = self::id_list( $request->get_param( 'ids' ) );
+
+        // One query loads every listed term, rather than one each.
+        _prime_term_caches( $ids );
+
+        return array_values(
+            array_filter(
+                $ids,
+                function ( $id ) {
+                    return $this->get_category( $id ) instanceof WP_Term || term_exists( $id );
+                }
+            )
+        );
     }
 
     /**

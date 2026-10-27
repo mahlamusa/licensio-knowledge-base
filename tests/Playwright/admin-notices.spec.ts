@@ -20,7 +20,7 @@
 
 import { expect, test } from '@playwright/test';
 import { contentManagerUrl } from './helpers/content-manager';
-import { logIn, password, user } from './helpers/session';
+import { openDashboard, password, user } from './helpers/session';
 
 const enabled = process.env.LICENSIO_KB_E2E === '1';
 
@@ -50,7 +50,7 @@ test.describe( 'Admin notices on the app screens', () => {
 	);
 
 	test.beforeEach( async ( { page } ) => {
-		await logIn( page );
+		await openDashboard( page );
 
 		await page.route( '**/wp-admin/**', async ( route ) => {
 			if ( 'document' !== route.request().resourceType() ) {

@@ -3,15 +3,27 @@
  *
  * End-to-end specs live in `tests/Playwright/`. The base URL comes from
  * `LICENSIO_KB_BASE_URL` so the same suite runs against a local LocalWP site,
- * a Playground instance or CI.
+ * a Playground instance or CI. The `setup` project signs in once per user
+ * before the specs run (see tests/Playwright/auth.setup.ts).
  *
  * @since 1.0.0
+ * @since 1.0.0 Runs tests tagged `@one-at-a-time` alone, before the others.
  */
 
 import { defineConfig, devices } from '@playwright/test';
+import { ADMIN_SESSION } from './tests/Playwright/helpers/session';
 
 /** Specs that switch a site-wide setting; see the `site-wide` project. */
 const SITE_WIDE = '**/classic-screens.spec.ts';
+
+/** Tests that read state the whole site shares; see the `one-at-a-time` project. */
+const ONE_AT_A_TIME = /@one-at-a-time/;
+
+/** Desktop Chrome with the administrator's saved session. */
+const signedIn = {
+	...devices[ 'Desktop Chrome' ],
+	storageState: ADMIN_SESSION,
+};
 
 const baseURL =
 	process.env.LICENSIO_KB_BASE_URL ?? 'http://lisenseserver.local';
@@ -37,10 +49,35 @@ export default defineConfig( {
 		video: 'retain-on-failure',
 	},
 	projects: [
+		// Signs in once per user and saves the sessions the other projects
+		// start from, so parallel workers never sign in as the same user at
+		// once. A run with --no-deps reuses the sessions of the last run.
+		{
+			name: 'setup',
+			testMatch: '**/auth.setup.ts',
+			use: { ...devices[ 'Desktop Chrome' ] },
+		},
+		// Tests that read state the whole site shares, such as the article
+		// status counts or the order of every top-level category, which other
+		// specs change as they run. They run one at a time before the other
+		// specs start. A dependency always runs in full, and these are few, so
+		// a run of one spec file stays small.
+		{
+			name: 'one-at-a-time',
+			testIgnore: SITE_WIDE,
+			grep: ONE_AT_A_TIME,
+			workers: 1,
+			dependencies: [ 'setup' ],
+			use: signedIn,
+		},
+		// Every other spec, in parallel, once the one-at-a-time tests are done.
+		// A failure there skips this project; add --no-deps to run it anyway.
 		{
 			name: 'chromium',
 			testIgnore: SITE_WIDE,
-			use: { ...devices[ 'Desktop Chrome' ] },
+			grepInvert: ONE_AT_A_TIME,
+			dependencies: [ 'one-at-a-time' ],
+			use: signedIn,
 		},
 		// Specs that switch a site-wide setting the others rely on. They run
 		// after every other spec, so no worker meets the setting half-way.
@@ -49,7 +86,7 @@ export default defineConfig( {
 			name: 'site-wide',
 			testMatch: SITE_WIDE,
 			dependencies: [ 'chromium' ],
-			use: { ...devices[ 'Desktop Chrome' ] },
+			use: signedIn,
 		},
 	],
 	outputDir: './test-results',

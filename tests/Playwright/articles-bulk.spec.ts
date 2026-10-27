@@ -21,6 +21,7 @@
  * Without them it is skipped.
  *
  * @since 1.0.0
+ * @since 1.0.0 The bulk trash and Undo test has the slow test budget.
  */
 
 import { expect, test, type Page, type Request } from '@playwright/test';
@@ -30,7 +31,7 @@ import {
 	contentManagerUrl,
 } from './helpers/content-manager';
 import { failOnUnresolvedComponents } from './helpers/ant-components';
-import { logIn, password, user } from './helpers/session';
+import { openDashboard, password, user } from './helpers/session';
 import { wpCli, wpEval } from './helpers/wp-cli';
 
 failOnUnresolvedComponents();
@@ -169,7 +170,7 @@ test.describe( 'Articles bulk actions', () => {
 	} );
 
 	test.beforeEach( async ( { page } ) => {
-		await logIn( page );
+		await openDashboard( page );
 	} );
 
 	test( 'Cancel on the bulk confirmation sends no request', async ( {
@@ -392,6 +393,10 @@ test.describe( 'Articles bulk actions', () => {
 	test( 'bulk trash runs in batches, skips the locked article and Undo restores the rest', async ( {
 		page,
 	} ) => {
+		// Trashing and putting back 250 articles takes longer than the default
+		// test budget while other specs share the site.
+		test.slow();
+
 		const app = await openSeeded( page );
 		const bulk = recordWrites( page, 'bulk' );
 		const reverts = recordWrites( page, 'revert' );

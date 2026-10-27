@@ -27,7 +27,7 @@ import {
 	pathOf,
 	type ContentManagerApp,
 } from './helpers/content-manager';
-import { logIn, password, user } from './helpers/session';
+import { openDashboard, password, user } from './helpers/session';
 import { wpCli, wpEval } from './helpers/wp-cli';
 
 failOnUnresolvedComponents();
@@ -91,7 +91,7 @@ test.describe( 'Classic screens setting', () => {
 	} );
 
 	test.beforeEach( async ( { page } ) => {
-		await logIn( page );
+		await openDashboard( page );
 	} );
 
 	test( 'on: the core screens and menu come back and the apps stay reachable', async ( {

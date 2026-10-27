@@ -539,6 +539,58 @@ class Licensio_KB_Tags_Integration_Test extends Licensio_KB_Analytics_DB_Test_Ca
     }
 
     /**
+     * Bulk delete of a tag with thousands of articles removes them in batches.
+     *
+     * The articles lose the tag in one statement per batch before core
+     * deletes it, so core finds the tag empty. A tag whose last batch fails
+     * is kept with every article, while the other tags are still deleted.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_bulk_delete_of_a_large_tag_removes_its_articles_in_batches() {
+        $size    = 3000;
+        $large   = $this->make_term( 'Large' );
+        $failing = $this->make_term( 'Failing' );
+        $ids     = $this->live_seed_articles( $large, $size );
+        $tt_id   = (int) $this->live_term_row( $large, Licensio_KB_Post_Types::TAXONOMY_TAG )['term_taxonomy_id'];
+        $article = $this->make_article( array( 'tags' => array( $failing ) ) );
+
+        $this->live_fail_removal( $failing, Licensio_KB_Post_Types::TAXONOMY_TAG, $article );
+
+        $left_at_delete = null;
+
+        Brain\Monkey\Functions\when( 'wp_delete_term' )->alias(
+            function ( $term_id, $taxonomy ) use ( $tt_id, &$left_at_delete ) {
+                if ( Licensio_KB_Post_Types::TAXONOMY_TAG === $taxonomy && null === $left_at_delete ) {
+                    $left_at_delete = $this->count_rows( 'term_relationships', 'term_taxonomy_id = ' . $tt_id );
+                }
+
+                return $this->live_delete_term( $term_id, $taxonomy );
+            }
+        );
+
+        $result = $this->controller->bulk_delete(
+            new WP_REST_Request(
+                array(),
+                '/licensio-kb/v1/tags/bulk-delete',
+                array( 'ids' => array( $large, $failing ) )
+            )
+        );
+
+        $this->assertSame( array( $large ), $result['deleted'] );
+        $this->assertSame( array( $failing ), array_column( $result['failed'], 'id' ) );
+        $this->assertSame( 0, $left_at_delete, 'Core deletes an empty tag.' );
+        $this->assertSame( array( $article ), $this->articles_in( $failing, Licensio_KB_Post_Types::TAXONOMY_TAG ), 'The failed tag gets its article back.' );
+        $this->assertSame( 1, $this->count_rows( 'term_relationships' ), 'Only the failed tag keeps an article.' );
+        $this->assertSame( $size + 1, $this->count_rows( 'posts' ), 'No article is deleted.' );
+        $this->assertSame( array( 'Failing' ), $this->names(), 'The failed tag is kept.' );
+
+        $this->assertCount( (int) ceil( count( $ids ) / Licensio_KB_Term_Operations::BATCH_SIZE ), $this->live_relationship_deletes( $tt_id ), 'One statement per batch, not one per article.' );
+    }
+
+    /**
      * A merge whose second source fails leaves every term and assignment as it was.
      *
      * @since 1.0.0

@@ -397,6 +397,48 @@ class Licensio_KB_Categories_REST_Integration_Test extends Licensio_KB_Analytics
     }
 
     /**
+     * An order listing a category deleted since the tree loaded saves the others in order.
+     *
+     * A term of another taxonomy in the list still refuses the order.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_order_leaves_out_a_deleted_category() {
+        $deleted = $this->ids['Upgrade'];
+        $tag     = $this->live_insert_term( 'Not a category', Licensio_KB_Post_Types::TAXONOMY_TAG );
+
+        $this->assertTrue( $this->live_delete_term( $deleted, Licensio_KB_Post_Types::TAXONOMY_CATEGORY ) );
+
+        $refused = $this->controller->update_order(
+            $this->request(
+                array(
+                    'parent' => 0,
+                    'ids'    => array( $this->ids['Billing'], (int) $tag['term_id'], $this->ids['Getting started'] ),
+                )
+            )
+        );
+
+        $this->assertInstanceOf( 'WP_Error', $refused );
+        $this->assertSame( 'licensio_kb_invalid_category', $refused->get_error_code() );
+        $this->assertSame( '', $this->live_get_term_meta( $this->ids['Billing'], 'licensio_order' ) );
+
+        $request = $this->request(
+            array(
+                'parent' => 0,
+                'ids'    => array( $this->ids['Billing'], $deleted, $this->ids['Getting started'] ),
+            )
+        );
+
+        $this->tree( $this->controller->update_order( $request ) );
+
+        $this->assertSame( '10', $this->live_get_term_meta( $this->ids['Billing'], 'licensio_order' ) );
+        $this->assertSame( '20', $this->live_get_term_meta( $this->ids['Getting started'], 'licensio_order' ) );
+        $this->assertSame( '', $this->live_get_term_meta( $deleted, 'licensio_order' ) );
+    }
+
+    /**
      * An order that puts a category inside its own descendant changes nothing.
      *
      * @since 1.0.0
@@ -871,6 +913,36 @@ class Licensio_KB_Categories_REST_Integration_Test extends Licensio_KB_Analytics
     }
 
     /**
+     * A delete with no target whose final step fails gives the articles the category back.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_delete_without_a_target_that_fails_at_the_end_changes_nothing() {
+        $this->make_article( array( 'categories' => array( $this->ids['Getting started'] ) ) );
+        $this->make_article( array( 'categories' => array( $this->ids['Getting started'], $this->ids['Billing'] ) ) );
+
+        $before = $this->live_snapshot();
+
+        Brain\Monkey\Functions\when( 'wp_delete_term' )->justReturn( false );
+
+        $result = $this->controller->delete_item(
+            $this->request(
+                array(
+                    'id'                => $this->ids['Getting started'],
+                    'reassign_articles' => 'none',
+                    'reassign_children' => 'parent',
+                )
+            )
+        );
+
+        $this->assertInstanceOf( 'WP_Error', $result );
+        $this->assertSame( 'licensio_kb_category_not_deleted', $result->get_error_code() );
+        $this->assertSame( $before, $this->live_snapshot(), 'The articles have the category again and the children are back under it.' );
+    }
+
+    /**
      * A delete whose second child move fails leaves everything where it was.
      *
      * @since 1.0.0
@@ -954,7 +1026,7 @@ class Licensio_KB_Categories_REST_Integration_Test extends Licensio_KB_Analytics
         $size   = ( 2 * Licensio_KB_Term_Operations::BATCH_SIZE ) + 1;
         $source = $this->ids['Upgrade'];
         $target = $this->ids['Billing'];
-        $ids    = $this->seed_articles( $source, $size );
+        $ids    = $this->live_seed_articles( $source, $size );
 
         $before = $this->live_snapshot();
 
@@ -994,39 +1066,63 @@ class Licensio_KB_Categories_REST_Integration_Test extends Licensio_KB_Analytics
     }
 
     /**
-     * Insert many published articles into one category and recount it.
+     * Deleting a category with thousands of articles and `none` removes them in batches.
+     *
+     * The articles lose the category in one statement per batch, so core's
+     * delete finds the category empty and rewrites no article one at a time.
+     * The articles keep their other categories, and a late batch that fails
+     * puts every article back and keeps the category.
      *
      * @since 1.0.0
      *
-     * @param int $term_id The category.
-     * @param int $count   How many articles.
-     *
-     * @return int[] The article IDs.
+     * @return void
      */
-    private function seed_articles( $term_id, $count ) {
-        $posts = array();
+    public function test_a_large_delete_leaving_articles_uncategorised_removes_them_in_batches() {
+        $size     = 3000;
+        $source   = $this->ids['Upgrade'];
+        $other    = $this->ids['Billing'];
+        $ids      = $this->live_seed_articles( $source, $size );
+        $tt_id    = (int) $this->live_term_row( $source, Licensio_KB_Post_Types::TAXONOMY_CATEGORY )['term_taxonomy_id'];
+        $other_tt = (int) $this->live_term_row( $other, Licensio_KB_Post_Types::TAXONOMY_CATEGORY )['term_taxonomy_id'];
 
-        for ( $i = 0; $i < $count; $i++ ) {
-            $posts[] = "(1, NOW(), NOW(), '', 'Bulk {$i}', '', 'publish', 'open', '', 'bulk-{$i}', '', '', NOW(), NOW(), '', 0, 'licensio_article')";
-        }
+        $this->db->query( 'INSERT INTO ' . $this->table( 'term_relationships' ) . ' (object_id, term_taxonomy_id) SELECT object_id, ' . $other_tt . ' FROM ' . $this->table( 'term_relationships' ) . ' WHERE term_taxonomy_id = ' . $tt_id );
 
-        $this->db->query(
-            'INSERT INTO ' . $this->table( 'posts' ) . ' (post_author, post_date, post_date_gmt, post_content, post_title, post_excerpt, post_status, comment_status, post_password, post_name, to_ping, pinged, post_modified, post_modified_gmt, post_content_filtered, menu_order, post_type) VALUES '
-            . implode( ', ', $posts )
+        $request = $this->request(
+            array(
+                'id'                => $source,
+                'reassign_articles' => 'none',
+                'reassign_children' => 'parent',
+            )
+        );
+        $before  = $this->live_snapshot();
+
+        $this->live_fail_removal( $source, Licensio_KB_Post_Types::TAXONOMY_CATEGORY, end( $ids ) );
+
+        $this->assertInstanceOf( 'WP_Error', $this->controller->delete_item( $request ) );
+        $this->assertSame( $before, $this->live_snapshot(), 'The batches written before the failure are put back and the category is kept.' );
+
+        $GLOBALS['wpdb']        = $this->adapter; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Back to the plain adapter.
+        $this->adapter->queries = array();
+
+        $left_at_delete = null;
+
+        Brain\Monkey\Functions\when( 'wp_delete_term' )->alias(
+            function ( $term_id, $taxonomy ) use ( $tt_id, &$left_at_delete ) {
+                $left_at_delete = $this->count_rows( 'term_relationships', 'term_taxonomy_id = ' . $tt_id );
+
+                return $this->live_delete_term( $term_id, $taxonomy );
+            }
         );
 
-        $ids   = range( (int) $this->db->insert_id, (int) $this->db->insert_id + $count - 1 );
-        $tt_id = (int) $this->live_rows( 'SELECT term_taxonomy_id FROM ' . $this->table( 'term_taxonomy' ) . ' WHERE term_id = ' . (int) $term_id )[0]['term_taxonomy_id'];
-        $rows  = array();
+        $result = $this->controller->delete_item( $request );
 
-        foreach ( $ids as $id ) {
-            $rows[] = '(' . $id . ', ' . $tt_id . ')';
-        }
-
-        $this->db->query( 'INSERT INTO ' . $this->table( 'term_relationships' ) . ' (object_id, term_taxonomy_id) VALUES ' . implode( ', ', $rows ) );
-        $this->live_recount( $tt_id );
-
-        return $ids;
+        $this->assertIsArray( $result );
+        $this->assertSame( 0, $result['moved'] );
+        $this->assertSame( 0, $left_at_delete, 'Core deletes an empty category.' );
+        $this->assertNull( $this->parent_of( $source ) );
+        $this->assertSame( $size, $this->count_rows( 'term_relationships', 'term_taxonomy_id = ' . $other_tt ), 'The articles keep their other category.' );
+        $this->assertCount( (int) ceil( $size / Licensio_KB_Term_Operations::BATCH_SIZE ), $this->live_relationship_deletes( $tt_id ), 'One statement per batch, not one per article.' );
+        $this->assertContains( 'licensio_kb_term_assignments_changed', $this->fired_actions );
     }
 
     /**

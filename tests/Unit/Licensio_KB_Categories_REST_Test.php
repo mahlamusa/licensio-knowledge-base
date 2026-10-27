@@ -64,6 +64,14 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
     private $denied = array();
 
     /**
+     * IDs of terms in other taxonomies, which term_exists() finds.
+     *
+     * @since 1.0.0
+     * @var int[]
+     */
+    private $foreign = array();
+
+    /**
      * What get_taxonomy() answers.
      *
      * @since 1.0.0
@@ -130,6 +138,7 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
         $this->image_urls  = array();
         $this->file_urls   = array();
         $this->term_writes = array();
+        $this->foreign     = array();
         $this->meta        = array();
         $this->terms       = array(
             1 => $this->fields( 'Getting started', 0 ),
@@ -215,6 +224,11 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
         Functions\when( 'get_taxonomy' )->alias(
             function () {
                 return $this->taxonomy;
+            }
+        );
+        Functions\when( 'term_exists' )->alias(
+            function ( $term ) {
+                return isset( $this->terms[ $term ] ) || in_array( $term, $this->foreign, true ) ? $term : null;
             }
         );
         Functions\when( 'get_term' )->alias(
@@ -1501,7 +1515,7 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * By default a delete leaves the articles and moves the children up.
+     * By default a delete takes the category off its articles and moves the children up.
      *
      * @since 1.0.0
      *
@@ -1526,7 +1540,7 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
             ),
             $result
         );
-        $this->assertSame( array( 'update 2 parent=0', 'delete 1' ), $this->events );
+        $this->assertSame( array( 'unassign 101 from 1', 'update 2 parent=0', 'delete 1' ), $this->events, 'The articles lose the category before core deletes it.' );
     }
 
     /**
@@ -1716,6 +1730,64 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * An order listing a category deleted since the tree loaded saves the others.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_order_leaves_out_a_deleted_category() {
+        $request = $this->request(
+            array(
+                'parent' => 0,
+                'ids'    => array( 4, 99, 1 ),
+            )
+        );
+
+        $this->assertTrue( $this->controller->update_order_permissions_check( $request ) );
+        $this->assertNotContains( array( 'edit_term', 99 ), $this->cap_calls );
+
+        $this->as_list( $this->controller->update_order( $request ) );
+
+        $this->assertSame( array( 'meta 4 licensio_order=10', 'meta 1 licensio_order=20' ), $this->events );
+        $this->assertArrayNotHasKey( 99, $this->meta );
+    }
+
+    /**
+     * An order listing a term of another taxonomy, or only deleted categories, is still refused.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_an_order_still_refuses_a_term_of_another_taxonomy() {
+        $this->expect_no_writes();
+        $this->foreign = array( 50 );
+
+        $foreign = $this->request(
+            array(
+                'parent' => 0,
+                'ids'    => array( 4, 50, 1 ),
+            )
+        );
+
+        $this->assert_error( 'licensio_kb_category_not_found', 404, $this->controller->update_order_permissions_check( $foreign ) );
+        $this->assert_error( 'licensio_kb_invalid_category', 400, $this->controller->update_order( $foreign ) );
+        $this->assert_error(
+            'licensio_kb_invalid_category',
+            400,
+            $this->controller->update_order(
+                $this->request(
+                    array(
+                        'parent' => 0,
+                        'ids'    => array( 99 ),
+                    )
+                )
+            )
+        );
+    }
+
+    /**
      * A merge moves the sources' children to the target before deleting anything.
      *
      * @since 1.0.0
@@ -1804,6 +1876,54 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
         $this->assertInstanceOf( 'WP_Error', $deleted );
         $this->assertSame( 'licensio_kb_articles_locked', $deleted->get_error_code() );
         $this->assertSame( array(), $this->events, 'Nothing is written.' );
+    }
+
+    /**
+     * A delete leaving the articles without the category checks them too.
+     *
+     * The articles lose the category even with no target, so an article
+     * someone is editing, or one the user may not edit, stops the delete
+     * before anything is written.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_delete_without_a_target_checks_the_articles() {
+        Functions\when( 'apply_filters' )->returnArg( 2 );
+        Functions\expect( 'wp_delete_term' )->never();
+
+        $request = $this->request(
+            array(
+                'id'                => 1,
+                'reassign_articles' => 'none',
+                'reassign_children' => 'parent',
+            )
+        );
+
+        $GLOBALS['wpdb']->edit_locks = array( 101 => time() . ':9' );
+
+        $locked = $this->controller->delete_item( $request );
+
+        $this->assertInstanceOf( 'WP_Error', $locked );
+        $this->assertSame( 'licensio_kb_articles_locked', $locked->get_error_code() );
+        $this->assertSame( 409, $locked->get_error_data()['status'] );
+        $this->assertSame( array( 101 ), $locked->get_error_data()['ids'] );
+
+        $GLOBALS['wpdb']->edit_locks = array();
+        $this->denied                = array( 'edit_others_licensio_articles', 'edit_post:101' );
+
+        $forbidden = $this->controller->delete_item( $request );
+
+        $this->assertInstanceOf( 'WP_Error', $forbidden );
+        $this->assertSame( 'licensio_kb_articles_forbidden', $forbidden->get_error_code() );
+        $this->assertSame( 403, $forbidden->get_error_data()['status'] );
+        $this->assertSame( array( 101 ), $forbidden->get_error_data()['ids'] );
+
+        $this->assertSame( array(), $this->events, 'Nothing is written.' );
+        $this->assertSame( array( 101 ), $this->assignments[1] );
+        $this->assertArrayHasKey( 1, $this->terms );
+        $this->assertSame( 1, $this->terms[2]['parent'] );
     }
 
     /**
@@ -1995,7 +2115,7 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * A delete whose child move fails puts back the children already moved and keeps the category.
+     * A delete whose child move fails puts back the children and the articles and keeps the category.
      *
      * @since 1.0.0
      *
@@ -2018,7 +2138,7 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
         );
 
         $this->assert_error( 'db_update_error', 400, $result );
-        $this->assertSame( array( 'update 2 parent=4', 'update 2 parent=1' ), $this->events );
+        $this->assertSame( array( 'unassign 101 from 1', 'update 2 parent=4', 'update 2 parent=1', 'assign 101 to 1' ), $this->events );
         $this->assertSame( 1, $this->terms[2]['parent'] );
         $this->assertSame( 1, $this->terms[6]['parent'] );
     }
@@ -2230,6 +2350,33 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
         $this->assertSame( array( 101 ), $this->assignments[1] );
         $this->assertSame( array( 104 ), $this->assignments[4] );
         $this->assertSame( 1, $this->terms[2]['parent'] );
+    }
+
+    /**
+     * A delete with no target whose final step fails gives the articles the category back.
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
+    public function test_a_failed_delete_without_a_target_puts_the_articles_back() {
+        Functions\when( 'wp_delete_term' )->justReturn( false );
+
+        $result = $this->controller->delete_item(
+            $this->request(
+                array(
+                    'id'                => 1,
+                    'reassign_articles' => 'none',
+                    'reassign_children' => 'parent',
+                )
+            )
+        );
+
+        $this->assert_error( 'licensio_kb_category_not_deleted', 500, $result );
+        $this->assertSame( array( 101 ), $this->assignments[1] );
+        $this->assertSame( 1, $this->terms[2]['parent'] );
+        $this->assertSame( 'unassign 101 from 1', $this->events[0], 'The articles lost the category before the delete.' );
+        $this->assertContains( 'assign 101 to 1', $this->events, 'Then got it back.' );
     }
 
     /**
