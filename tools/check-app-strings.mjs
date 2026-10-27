@@ -13,9 +13,21 @@
  * (`_x`, `_nx`) must be in the template under that same context.
  *
  * A `translators:` comment written right before a call must reach the
- * template on that call's entry too. The bundler and the minifier both drop
- * comments they do not recognise, and a lost comment leaves translators
- * guessing what a placeholder holds.
+ * template on that call's entry too, for the singular and the plural form.
+ * The bundler and the minifier both drop comments they do not recognise, and
+ * a lost comment leaves translators guessing what a placeholder holds. The
+ * comment belongs to a call only when nothing but whitespace separates them,
+ * or the start of the expression the call sits in: a property key, a ternary
+ * condition, a `sprintf(`. Any other comment is left alone, so a stray one
+ * cannot be charged to a call further down. The `translators:` keyword is
+ * matched in any case, as the build and `wp i18n make-pot` do.
+ *
+ * Translator comments must be block comments: the build only keeps those, so
+ * a `// translators:` line comment fails the check.
+ *
+ * A template entry is shared by every call with the same text and context,
+ * so a comment that reaches it from one file also covers the same string in
+ * another file whose comment was lost.
  *
  * Usage: node tools/check-app-strings.mjs <file.pot> [apps-directory]
  *
@@ -169,6 +181,12 @@ const known = potStrings( potFile );
 const call =
 	/\b(__|_x|_n|_nx)\(\s*(['"`])((?:\\.|(?!\2)[^\\])*)\2(?:\s*,\s*(['"`])((?:\\.|(?!\4)[^\\])*)\4)?/g;
 
+// What may sit between a translator comment and the call it describes: the
+// start of the expression the call is in, such as `'aria-label': sprintf( `
+// or `count ? sprintf( `.
+const leadIn =
+	/^\s*(?:['"]?[\w$-]+['"]?\s*:\s*)?(?:[\w$.]+\s*\?\s*)?(?:sprintf\(\s*)?$/;
+
 const missing = [];
 let checked = 0;
 
@@ -182,13 +200,33 @@ for ( const file of sourceFiles( appsDir ) ) {
 		( comment ) => comment.replace( /[^\n]/g, ' ' )
 	);
 
-	// Translator comments, each waiting for the first call after it.
-	const notes = [
-		...raw.matchAll( /\/\*\s*(translators:[\s\S]*?)\s*\*\//g ),
-	].map( ( note ) => ( {
-		end: note.index + note[ 0 ].length,
-		text: note[ 1 ].replace( /\s+/g, ' ' ),
-	} ) );
+	// Translator comments, each waiting for the call right after it. Block
+	// comments are matched the same way they are blanked out above.
+	const notes = [ ...raw.matchAll( /\/\*[\s\S]*?\*\//g ) ].flatMap(
+		( comment ) => {
+			const note = comment[ 0 ].match(
+				/^\/\*\s*(translators:[\s\S]*?)\s*\*\/$/i
+			);
+
+			return note
+				? [
+						{
+							end: comment.index + comment[ 0 ].length,
+							text: note[ 1 ].replace( /\s+/g, ' ' ),
+						},
+					]
+				: [];
+		}
+	);
+
+	// The build drops line comments, so a translator note must be a block.
+	for ( const lineNote of source.matchAll( /\/\/\s*translators:/gi ) ) {
+		missing.push(
+			`${ path.relative( root, file ) }:${
+				source.slice( 0, lineNote.index ).split( '\n' ).length
+			}  ${ lineNote[ 0 ] } (a line comment does not survive the build; use /* translators: */)`
+		);
+	}
 
 	for ( const match of source.matchAll( call ) ) {
 		const [ , name, , single, , second ] = match;
@@ -214,7 +252,11 @@ for ( const file of sourceFiles( appsDir ) ) {
 		let note;
 
 		while ( notes.length && notes[ 0 ].end <= match.index ) {
-			note = notes.shift().text;
+			const candidate = notes.shift();
+
+			note = leadIn.test( source.slice( candidate.end, match.index ) )
+				? candidate.text
+				: undefined;
 		}
 
 		const line = source.slice( 0, match.index ).split( '\n' ).length;
@@ -231,14 +273,17 @@ for ( const file of sourceFiles( appsDir ) ) {
 			}
 		}
 
-		const comments = known.get( key( context, wanted[ 0 ] ) );
+		for ( const text of note ? wanted : [] ) {
+			const comments = known.get( key( context, text ) );
 
-		if ( note && comments && ! comments.includes( note ) ) {
-			missing.push(
-				`${ path.relative( root, file ) }:${ line }  ${
-					wanted[ 0 ]
-				} (comment lost: ${ note })`
-			);
+			if ( comments && ! comments.includes( note ) ) {
+				missing.push(
+					`${ path.relative(
+						root,
+						file
+					) }:${ line }  ${ text } (comment lost: ${ note })`
+				);
+			}
 		}
 	}
 }

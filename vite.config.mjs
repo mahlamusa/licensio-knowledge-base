@@ -114,6 +114,9 @@ function keepTranslationCalls() {
  * reads the plain `/* translators:` comment it expects. Terser drops every
  * other legal comment, as before.
  *
+ * Only block comments can be marked this way, so a `// translators:` line
+ * comment is still dropped. `tools/check-app-strings.mjs` rejects those.
+ *
  * @since 1.0.0
  *
  * @return {import('vite').Plugin} The Vite plugin.

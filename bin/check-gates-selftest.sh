@@ -386,6 +386,10 @@ const title = __( 'Tag saved', 'licensio-knowledge-base' );
 const count = /* translators: %d: number of tags. */ _n( '%d tag', '%d tags', 2, 'licensio-knowledge-base' );
 const verb = _x( 'Post', 'verb', 'licensio-knowledge-base' );
 const items = _nx( '%d item', '%d items', 2, 'cart', 'licensio-knowledge-base' );
+/* translators: a stray note that describes no call. */
+const unrelated = 1;
+const again = __( 'Tag saved', 'licensio-knowledge-base' );
+const named = /* Translators: %s: tag name. */ __( 'Tag %s', 'licensio-knowledge-base' );
 </script>
 <template>
 	<!-- __( 'Only an example in markup', 'licensio-knowledge-base' ) -->
@@ -431,6 +435,11 @@ msgstr[1] ""
 #: dist/apps/demo/index.a1b2c3d4.js:1
 msgid "It's here"
 msgstr ""
+
+#. Translators: %s: tag name.
+#: dist/apps/demo/index.a1b2c3d4.js:1
+msgid "Tag %s"
+msgstr ""
 POT
 
 grep -v '%d tags' "${APP_STRINGS_DIR}/complete.pot" > "${APP_STRINGS_DIR}/no-plural.pot"
@@ -439,9 +448,17 @@ sed 's|^#: dist/apps/demo/index.a1b2c3d4.js:1$|#: includes/class-licensio-kb-dem
 grep -v '^msgctxt "verb"$' "${APP_STRINGS_DIR}/complete.pot" > "${APP_STRINGS_DIR}/no-context.pot"
 sed 's|^msgctxt "cart"$|msgctxt "basket"|' \
     "${APP_STRINGS_DIR}/complete.pot" > "${APP_STRINGS_DIR}/wrong-context.pot"
-grep -v '^#\. translators:' "${APP_STRINGS_DIR}/complete.pot" > "${APP_STRINGS_DIR}/no-comment.pot"
+grep -vi '^#\. translators:' "${APP_STRINGS_DIR}/complete.pot" > "${APP_STRINGS_DIR}/no-comment.pot"
+# A later entry for the plural text alone, without the comment, which is the
+# entry the plural form of the _n call is looked up in.
+cat "${APP_STRINGS_DIR}/complete.pot" - > "${APP_STRINGS_DIR}/plural-no-comment.pot" <<'POT'
 
-assert_green 'a template with every app string passes, comments are not calls' \
+#: dist/apps/demo/index.a1b2c3d4.js:1
+msgid "%d tags"
+msgstr ""
+POT
+
+assert_green 'a template with every app string passes, comments are not calls, stray notes are ignored' \
     node "${ROOT}/tools/check-app-strings.mjs" "${APP_STRINGS_DIR}/complete.pot" "${APP_STRINGS_DIR}/apps"
 
 assert_red 'a template missing an app plural form fails' \
@@ -463,6 +480,24 @@ assert_red 'an _nx string under another context fails' \
 assert_red 'a translator comment missing from the template entry fails' \
     'apps/demo/App.vue:6  %d tag (comment lost: translators: %d: number of tags.)' \
     node "${ROOT}/tools/check-app-strings.mjs" "${APP_STRINGS_DIR}/no-comment.pot" "${APP_STRINGS_DIR}/apps"
+
+assert_red 'a translator comment written with a capital T is checked too' \
+    'apps/demo/App.vue:12  Tag %s (comment lost: Translators: %s: tag name.)' \
+    node "${ROOT}/tools/check-app-strings.mjs" "${APP_STRINGS_DIR}/no-comment.pot" "${APP_STRINGS_DIR}/apps"
+
+assert_red 'a translator comment missing from the plural form fails' \
+    'apps/demo/App.vue:6  %d tags (comment lost: translators: %d: number of tags.)' \
+    node "${ROOT}/tools/check-app-strings.mjs" "${APP_STRINGS_DIR}/plural-no-comment.pot" "${APP_STRINGS_DIR}/apps"
+
+mkdir -p "${APP_STRINGS_DIR}/line-comment/demo"
+cat > "${APP_STRINGS_DIR}/line-comment/demo/index.ts" <<'TS'
+// translators: %d: number of tags.
+const count = _n( '%d tag', '%d tags', 2, 'licensio-knowledge-base' );
+TS
+
+assert_red 'a line comment translator note fails, the build would drop it' \
+    'line-comment/demo/index.ts:1  // translators: (a line comment does not survive the build' \
+    node "${ROOT}/tools/check-app-strings.mjs" "${APP_STRINGS_DIR}/complete.pot" "${APP_STRINGS_DIR}/line-comment"
 
 printf '\ntools/check-ant-components.mjs\n'
 
