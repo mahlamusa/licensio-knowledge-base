@@ -25,8 +25,8 @@
  * two credential variables are present.
  *
  * Other specs make and use categories of their own while this one runs, so
- * it only ever deletes the categories it makes itself, and reads the tree
- * through those alone.
+ * it only ever deletes the categories it makes itself, puts them first at the
+ * top level, and reads the tree through those alone.
  *
  * @since 1.0.0
  * @since 1.0.0 Leaves the categories of other specs alone.
@@ -436,10 +436,15 @@ test.describe( 'Categories app', () => {
 		await openContentManager( page, 'categories' );
 		await clearArticles( page );
 		await clearCategories( page );
-		await make( page, 'Alpha' );
-		await make( page, 'Beta' );
+		const alpha = await make( page, 'Alpha' );
+		const beta = await make( page, 'Beta' );
 		const gamma = await make( page, 'Gamma' );
 		await make( page, 'Gamma child', gamma );
+		// First at the top level, ahead of the categories of other specs.
+		await api( page, 'POST', 'categories/order', {
+			parent: 0,
+			ids: [ alpha, beta, gamma ],
+		} );
 		await page.reload();
 		await expect( node( page, 'Gamma child' ) ).toBeVisible();
 	} );
