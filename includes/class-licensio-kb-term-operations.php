@@ -560,11 +560,12 @@ class Licensio_KB_Term_Operations {
      * the edit locks are read in one query per batch either way.
      *
      * @since 1.0.0
+     * @since 1.0.0 Its messages fit a removal as well as a move.
      *
-     * @param int[]  $term_ids The terms whose articles would move.
+     * @param int[]  $term_ids The terms whose articles would move or lose the terms.
      * @param string $taxonomy Their taxonomy.
      *
-     * @return true|WP_Error True when every article may be moved; 403 `licensio_kb_articles_forbidden` or 409 `licensio_kb_articles_locked` naming the articles otherwise.
+     * @return true|WP_Error True when every article may be changed; 403 `licensio_kb_articles_forbidden` or 409 `licensio_kb_articles_locked` naming the articles otherwise.
      */
     public function check_articles( array $term_ids, $taxonomy ) {
         $object_ids = array();
@@ -605,7 +606,7 @@ class Licensio_KB_Term_Operations {
         if ( ! empty( $forbidden ) ) {
             return new WP_Error(
                 'licensio_kb_articles_forbidden',
-                __( 'You are not allowed to edit some of the articles this would move.', 'licensio-knowledge-base' ),
+                __( 'You are not allowed to edit some of the articles this would change.', 'licensio-knowledge-base' ),
                 array(
                     'status' => rest_authorization_required_code(),
                     'ids'    => $forbidden,
@@ -619,8 +620,8 @@ class Licensio_KB_Term_Operations {
             return new WP_Error(
                 'licensio_kb_articles_locked',
                 _n(
-                    'Someone is editing an article this would move. Try again when they have finished.',
-                    'Someone is editing articles this would move. Try again when they have finished.',
+                    'Someone is editing an article this would change. Try again when they have finished.',
+                    'Someone is editing articles this would change. Try again when they have finished.',
                     count( $locked ),
                     'licensio-knowledge-base'
                 ),
