@@ -24,12 +24,15 @@
  * administrator account, so it is skipped unless `LICENSIO_KB_E2E=1` and the
  * two credential variables are present.
  *
- * Other specs make and use categories of their own while this one runs, so
+ * Other specs make and use categories of their own on the same site, so
  * it only ever deletes the categories it makes itself, puts them first at the
- * top level, and reads the tree through those alone.
+ * top level, and reads the tree through those alone. A move saves the order
+ * of every sibling, and a category deleted since the tree loaded makes the
+ * server refuse it, so the spec runs on its own after the other specs (the
+ * `one-at-a-time` project).
  *
  * @since 1.0.0
- * @since 1.0.0 Leaves the categories of other specs alone.
+ * @since 1.0.0 Leaves the categories of other specs alone and runs on its own.
  */
 
 import { expect, test, type Page, type Request } from '@playwright/test';
@@ -424,7 +427,9 @@ async function act(
 		.click();
 }
 
-test.describe( 'Categories app', () => {
+// A move sends every sibling, so a category another spec deletes meanwhile
+// refuses it: the spec runs on its own in the one-at-a-time project.
+test.describe( 'Categories app @one-at-a-time', () => {
 	test.describe.configure( { mode: 'serial' } );
 	test.skip(
 		! enabled || ! user || ! password,

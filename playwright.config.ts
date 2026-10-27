@@ -16,7 +16,7 @@ import { ADMIN_SESSION } from './tests/Playwright/helpers/session';
 /** Specs that switch a site-wide setting; see the `site-wide` project. */
 const SITE_WIDE = '**/classic-screens.spec.ts';
 
-/** Tests that read site-wide totals; see the `one-at-a-time` project. */
+/** Tests that read state the whole site shares; see the `one-at-a-time` project. */
 const ONE_AT_A_TIME = /@one-at-a-time/;
 
 const baseURL =
@@ -61,9 +61,10 @@ export default defineConfig( {
 				storageState: ADMIN_SESSION,
 			},
 		},
-		// Tests that assert on totals across the whole site, such as the
-		// article status counts, which any spec writing articles changes.
-		// They run one at a time once the other specs are done.
+		// Tests that read state the whole site shares, such as the article
+		// status counts or the order of every top-level category, which other
+		// specs change as they run. They run one at a time once the other
+		// specs are done.
 		{
 			name: 'one-at-a-time',
 			testIgnore: SITE_WIDE,
