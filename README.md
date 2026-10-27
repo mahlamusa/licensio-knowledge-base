@@ -13,7 +13,7 @@ This file documents the **scaffold contracts** that every sub-issue builds on, s
 | PHP | 7.4+ |
 | WordPress | 6.4+ |
 | MySQL / MariaDB | 5.6 / 10.0+ |
-| Node | 20+ |
+| Node | ^22.22.2, ^24.15.0 or 26+ (see `.nvmrc`) |
 
 ## Conventions
 
