@@ -506,19 +506,3 @@ add_filter( 'licensio_import_drivers', function ( $drivers ) {
 ## Privacy
 
 No IP address is written to any table. Visitor identity is a rotating salted hash, the salt is not exposed to the frontend, and analytics retention defaults to 90 days.
-
-## Dependency note: the esbuild override
-
-`package.json` pins `esbuild` to `0.21.5` through `overrides`. Do not remove this
-without checking that `npm ci` still works from a clean checkout.
-
-`@wordpress/stylelint-config`, pulled in transitively by `@wordpress/scripts`,
-depends on a newer vite which in turn wants esbuild `^0.27`. That put two esbuild
-versions in the tree, and the three newest platform packages in the 0.27 line
-(`@esbuild/netbsd-arm64`, `@esbuild/openbsd-arm64`, `@esbuild/openharmony-arm64`)
-are written into `package-lock.json` without their `optional: true` flag. `npm ci`
-then treats them as required and fails with `EBADPLATFORM` on any machine that is
-not NetBSD or OpenBSD on arm64.
-
-The failure only appears on a clean install. `npm install` tolerates it, so local
-development and `npm run build` work fine and CI is the first thing to break.

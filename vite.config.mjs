@@ -21,8 +21,8 @@
  * own template and on WordPress.org, and the JSON translation files it leads to
  * are keyed by the built file paths. So the build keeps every translation call
  * recognisable: `__`, `_x`, `_n` and `_nx` keep their names, translator comments
- * survive minification, and `keepTranslationCalls()` unwraps the calls in
- * compiled templates.
+ * survive minification (`keepTranslatorComments()`), and `keepTranslationCalls()`
+ * unwraps the calls in compiled templates.
  *
  * @since 1.0.0
  */
@@ -102,10 +102,53 @@ function keepTranslationCalls() {
 	};
 }
 
+/**
+ * Carry translator comments through the bundler to terser.
+ *
+ * Vite transforms TypeScript and Vue scripts with Oxc, and Rolldown bundles
+ * the result. Both drop ordinary comments, so a `translators:` comment never
+ * reaches terser, whose `format.comments` setting would otherwise keep it.
+ * Before any other transform runs, each translator comment is marked as a
+ * legal comment (`/*!`), which both keep once `output.comments.legal` is on.
+ * Once the chunk is rendered the mark is removed again, so `wp i18n make-pot`
+ * reads the plain `/* translators:` comment it expects. Terser drops every
+ * other legal comment, as before.
+ *
+ * @since 1.0.0
+ *
+ * @return {import('vite').Plugin} The Vite plugin.
+ */
+function keepTranslatorComments() {
+	return {
+		name: 'licensio-kb-keep-translator-comments',
+		apply: 'build',
+		enforce: 'pre',
+		transform( code, id ) {
+			if (
+				id.includes( '/node_modules/' ) ||
+				! /\.(vue|ts|js)($|\?)/.test( id )
+			) {
+				return null;
+			}
+
+			return {
+				code: code.replace( /\/\*(\s*translators:)/gi, '/*!$1' ),
+				map: null,
+			};
+		},
+		renderChunk( code ) {
+			return {
+				code: code.replace( /\/\*!(\s*translators:)/gi, '/*$1' ),
+				map: null,
+			};
+		},
+	};
+}
+
 export default defineConfig( ( { command } ) => ( {
 	root,
 	base: 'build' === command ? '' : `http://localhost:${ DEV_SERVER_PORT }/`,
-	plugins: [ vue(), keepTranslationCalls() ],
+	plugins: [ keepTranslatorComments(), vue(), keepTranslationCalls() ],
 	resolve: {
 		alias: {
 			'@': path.resolve( root, 'apps' ),
@@ -132,12 +175,15 @@ export default defineConfig( ( { command } ) => ( {
 			mangle: { reserved: [ '__', '_x', '_n', '_nx' ] },
 			format: { comments: /translators:/i },
 		},
-		rollupOptions: {
+		rolldownOptions: {
 			input: collectEntries(),
 			output: {
 				entryFileNames: '[name].[hash].js',
 				chunkFileNames: 'chunks/[name].[hash].js',
 				assetFileNames: 'assets/[name].[hash].[ext]',
+				// Vite turns legal comments off when minifying; the translator
+				// comments travel as legal comments, see keepTranslatorComments().
+				comments: { legal: true },
 			},
 		},
 	},
