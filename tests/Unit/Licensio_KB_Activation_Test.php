@@ -55,14 +55,6 @@ class Licensio_KB_Activation_Test extends Licensio_KB_Test_Case {
     private $flushed = false;
 
     /**
-     * Autoload values set through wp_set_option_autoload(), by option name.
-     *
-     * @since 1.0.0
-     * @var array<string, bool>
-     */
-    private $autoload = array();
-
-    /**
      * Stub the WordPress surface the activation routine touches.
      *
      * @since 1.0.0
@@ -76,7 +68,6 @@ class Licensio_KB_Activation_Test extends Licensio_KB_Test_Case {
         $this->taxonomies = array();
         $this->cron       = array();
         $this->flushed    = false;
-        $this->autoload   = array();
 
         $GLOBALS['licensio_kb_delta_calls'] = array();
         $GLOBALS['wpdb']                    = new Licensio_KB_Test_WPDB(); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
@@ -127,13 +118,6 @@ class Licensio_KB_Activation_Test extends Licensio_KB_Test_Case {
                 unset( $this->cron[ $hook ] );
 
                 return 1;
-            }
-        );
-        Functions\when( 'wp_set_option_autoload' )->alias(
-            function ( $option, $autoload ) {
-                $this->autoload[ $option ] = (bool) $autoload;
-
-                return true;
             }
         );
         Functions\when( 'deactivate_plugins' )->justReturn( null );
@@ -195,23 +179,6 @@ class Licensio_KB_Activation_Test extends Licensio_KB_Test_Case {
         Licensio_KB_Lifecycle::activate();
 
         $this->assertTrue( $this->flushed, 'Activation must flush the rewrite rules.' );
-        $this->assertSame( LICENSIO_KB_VERSION, $this->options['licensio_version'] );
-    }
-
-    /**
-     * Activation turns autoload back on for settings an earlier uninstall kept.
-     *
-     * An uninstall that keeps the settings stops them autoloading; a reinstall
-     * reads them on every request again, so it must autoload them again.
-     *
-     * @since 1.0.0
-     *
-     * @return void
-     */
-    public function test_activation_autoloads_the_settings_again() {
-        Licensio_KB_Lifecycle::activate_site();
-
-        $this->assertSame( array( Licensio_KB_Settings::OPTION_NAME => true ), $this->autoload );
     }
 
     /**
@@ -270,7 +237,7 @@ class Licensio_KB_Activation_Test extends Licensio_KB_Test_Case {
             );
         }
 
-        $this->assertSame( LICENSIO_KB_DB_VERSION, $this->options['licensio_db_version'] );
+        $this->assertArrayNotHasKey( 'licensio_db_version', $this->options, 'No schema version marker is kept.' );
     }
 
     /**
@@ -367,87 +334,6 @@ class Licensio_KB_Activation_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * A concurrent upgrade is skipped rather than running the DDL twice.
-     *
-     * maybe_upgrade() runs on admin_init and only records the version once
-     * install() has returned, so without a lock two admin requests arriving
-     * together both read the old version and both run the schema DDL.
-     *
-     * @since 1.0.0
-     *
-     * @return void
-     */
-    public function test_a_concurrent_upgrade_is_skipped_while_the_lock_is_held() {
-        $this->options[ Licensio_KB_Lifecycle::UPGRADE_LOCK_OPTION ] = time();
-
-        Licensio_KB_Lifecycle::maybe_upgrade();
-
-        $this->assertArrayNotHasKey( 'licensio_db_version', $this->options );
-        $this->assertArrayNotHasKey( Licensio_KB_Lifecycle::VERSION_OPTION, $this->options );
-    }
-
-    /**
-     * A lock abandoned by a fatal mid-upgrade is reclaimed.
-     *
-     * @since 1.0.0
-     *
-     * @return void
-     */
-    public function test_an_abandoned_upgrade_lock_is_reclaimed() {
-        $this->options[ Licensio_KB_Lifecycle::UPGRADE_LOCK_OPTION ] = time() - ( Licensio_KB_Lifecycle::UPGRADE_LOCK_TTL + 60 );
-
-        Licensio_KB_Lifecycle::maybe_upgrade();
-
-        $this->assertSame( LICENSIO_KB_VERSION, $this->options[ Licensio_KB_Lifecycle::VERSION_OPTION ] );
-    }
-
-    /**
-     * A first install through the upgrade path autoloads the settings again.
-     *
-     * A subsite of a large network is never activated directly, so after an
-     * uninstall that kept the settings this is the only place their autoload
-     * can be turned back on.
-     *
-     * @since 1.0.0
-     *
-     * @return void
-     */
-    public function test_a_first_install_through_the_upgrade_path_autoloads_the_settings_again() {
-        Licensio_KB_Lifecycle::maybe_upgrade();
-
-        $this->assertSame( array( Licensio_KB_Settings::OPTION_NAME => true ), $this->autoload );
-    }
-
-    /**
-     * An upgrade from an earlier version leaves settings autoload alone.
-     *
-     * @since 1.0.0
-     *
-     * @return void
-     */
-    public function test_an_upgrade_from_an_earlier_version_leaves_settings_autoload_alone() {
-        $this->options[ Licensio_KB_Lifecycle::VERSION_OPTION ] = '0.0.1';
-
-        Licensio_KB_Lifecycle::maybe_upgrade();
-
-        $this->assertSame( LICENSIO_KB_VERSION, $this->options[ Licensio_KB_Lifecycle::VERSION_OPTION ] );
-        $this->assertSame( array(), $this->autoload );
-    }
-
-    /**
-     * The lock is released once the upgrade completes.
-     *
-     * @since 1.0.0
-     *
-     * @return void
-     */
-    public function test_the_upgrade_lock_is_released_on_success() {
-        Licensio_KB_Lifecycle::maybe_upgrade();
-
-        $this->assertArrayNotHasKey( Licensio_KB_Lifecycle::UPGRADE_LOCK_OPTION, $this->options );
-    }
-
-    /**
      * Activation seeds the visitor salt and schedules its daily rotation.
      *
      * @since 1.0.0
@@ -476,7 +362,7 @@ class Licensio_KB_Activation_Test extends Licensio_KB_Test_Case {
 
         $this->assertArrayNotHasKey( Licensio_KB_Visitor::CRON_HOOK, $this->cron );
         $this->assertArrayHasKey( Licensio_KB_Visitor::OPTION_NAME, $this->options );
-        $this->assertArrayHasKey( 'licensio_db_version', $this->options );
+        $this->assertArrayHasKey( 'licensio_fulltext_supported', $this->options );
     }
 
     /**
@@ -532,23 +418,30 @@ class Licensio_KB_Activation_Test extends Licensio_KB_Test_Case {
         Licensio_KB_Lifecycle::activate();
 
         $this->assertFalse( $switched );
-        $this->assertSame( LICENSIO_KB_VERSION, $this->options['licensio_version'] );
+        $this->assertArrayNotHasKey( 'licensio_version', $this->options, 'No plugin version marker is kept.' );
     }
 
     /**
-     * A very large network is left to self-heal rather than walked inline.
+     * A very large network refuses network activation instead of walking its sites.
      *
-     * Walking thousands of sites inside one activation request would time out.
+     * Walking thousands of sites inside one activation request would time out,
+     * and a site never installed into would 404 on every knowledge base URL.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_a_large_network_is_not_walked_during_activation() {
-        $switched = false;
+    public function test_a_large_network_refuses_network_activation() {
+        $switched    = false;
+        $deactivated = null;
 
         Functions\when( 'is_multisite' )->justReturn( true );
         Functions\when( 'wp_is_large_network' )->justReturn( true );
+        Functions\when( 'deactivate_plugins' )->alias(
+            function ( $plugins, $silent, $network_wide ) use ( &$deactivated ) {
+                $deactivated = array( $plugins, $silent, $network_wide );
+            }
+        );
         Functions\when( 'switch_to_blog' )->alias(
             function () use ( &$switched ) {
                 $switched = true;
@@ -558,26 +451,15 @@ class Licensio_KB_Activation_Test extends Licensio_KB_Test_Case {
         );
         Functions\when( 'restore_current_blog' )->justReturn( true );
 
-        Licensio_KB_Lifecycle::activate( true );
+        try {
+            Licensio_KB_Lifecycle::activate( true );
+            $this->fail( 'A large network must be refused through wp_die().' );
+        } catch ( RuntimeException $exception ) {
+            $this->assertSame( 'wp_die() was called during activation.', $exception->getMessage() );
+        }
 
-        $this->assertFalse( $switched, 'A large network must self-heal on admin_init instead.' );
-    }
-
-    /**
-     * A site installed for the first time asks for its rewrite rules.
-     *
-     * This is the self-heal path for a subsite that predates the plugin or was
-     * skipped as part of a large network.
-     *
-     * @since 1.0.0
-     *
-     * @return void
-     */
-    public function test_a_first_upgrade_on_a_site_requests_a_rewrite_flush() {
-        Licensio_KB_Lifecycle::maybe_upgrade();
-
-        $this->assertTrue( Licensio_KB_Settings::needs_rewrite_flush() );
-        $this->assertSame( LICENSIO_KB_VERSION, $this->options['licensio_version'] );
+        $this->assertSame( array( LICENSIO_KB_PLUGIN_BASENAME, false, true ), $deactivated, 'The plugin must be deactivated network wide.' );
+        $this->assertFalse( $switched, 'A large network must not be walked.' );
     }
 
     /**

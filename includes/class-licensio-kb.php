@@ -6,8 +6,6 @@
  * scaffolded component and exposes them to consumers through typed accessors
  * so no sub-issue has to instantiate shared infrastructure itself.
  *
- * Consumed by: #3, #4, #5, #6, #7, #8, #9, #10, #11, #12.
- *
  * @package Licensio_KB
  * @since   1.0.0
  */
@@ -318,7 +316,7 @@ final class Licensio_KB {
             $admin_columns->init_hooks();
 
             /*
-             * Shared menu registration, promoted out of #9 and #10 because both
+             * Shared menu registration, because several admin screens
              * need pages under the Knowledge Base menu. Consumers register
              * through `licensio_admin_menu_pages`; nothing calls
              * add_submenu_page() itself.
@@ -351,20 +349,8 @@ final class Licensio_KB {
             $build_notice->init_hooks();
         }
 
-        add_action( 'init', array( $this, 'load_textdomain' ) );
-
-        /*
-         * Upgrades run in the admin only. Hooking this to `plugins_loaded` ran
-         * schema DDL on every anonymous front-end request, where concurrent hits
-         * can race dbDelta and where the work is pure overhead. WordPress plugins
-         * conventionally settle upgrades when an administrator loads wp-admin.
-         */
-        add_action( 'admin_init', array( 'Licensio_KB_Lifecycle', 'maybe_upgrade' ) );
-
         // A subsite created after a network activation gets its own install.
         add_action( 'wp_initialize_site', array( 'Licensio_KB_Lifecycle', 'initialize_site' ), 20 );
-
-        add_action( 'admin_notices', array( $this, 'maybe_render_library_notice' ) );
 
         /**
          * Fires once every scaffolded component is constructed and hooked.
@@ -376,48 +362,6 @@ final class Licensio_KB {
          * @param Licensio_KB $plugin The plugin container.
          */
         do_action( 'licensio_loaded', $this );
-    }
-
-    /**
-     * Warn an administrator when the vendored database library is missing.
-     *
-     * The plugin ships `libraries/`, so this only fires on a broken install — a
-     * partial checkout, or a `composer install --no-dev` that skipped Strauss.
-     * The database layer degrades to a no-op rather than throwing so the admin
-     * stays reachable; without a notice the plugin would simply appear to do
-     * nothing at all.
-     *
-     * @since 1.0.0
-     *
-     * @return void
-     */
-    public function maybe_render_library_notice() {
-        if ( Licensio_KB_DB::is_available() || ! current_user_can( 'activate_plugins' ) ) {
-            return;
-        }
-
-        printf(
-            '<div class="notice notice-error"><p>%s</p></div>',
-            esc_html__(
-                'Licensio Knowledge Base is missing its bundled database library, so its tables cannot be created. Reinstall the plugin, or run "composer install" in the plugin directory.',
-                'licensio-knowledge-base'
-            )
-        );
-    }
-
-    /**
-     * Load the plugin translations.
-     *
-     * @since 1.0.0
-     *
-     * @return void
-     */
-    public function load_textdomain() {
-        load_plugin_textdomain(
-            'licensio-knowledge-base',
-            false,
-            dirname( LICENSIO_KB_PLUGIN_BASENAME ) . '/languages'
-        );
     }
 
     /**

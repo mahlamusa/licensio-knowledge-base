@@ -10,9 +10,6 @@
 #   * `Stable tag:` in readme.txt
 #   * `version` in package.json (and the matching entries in package-lock.json)
 #
-# `LICENSIO_KB_DB_VERSION` is left alone: it tracks the database schema, not
-# the release, and only moves when a migration does.
-#
 # Nothing is committed. Add the changelog entry for the new version to
 # readme.txt, then commit the bump with it.
 #

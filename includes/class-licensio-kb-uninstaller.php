@@ -14,15 +14,14 @@
  *   import log), the settings (which hold the
  *   article, category and tag slugs, so every permalink survives a delete and
  *   reinstall), the import options (the served redirect map, the resume
- *   cursors and the run reports), the category hierarchy cache core keeps
- *   for the hierarchical category taxonomy, the rate-limit counters and the import URL map
+ *   cursors and the run reports), the rate-limit counters and the import URL map
  *   files. Deleting
  *   support history or the redirects that keep old links alive, on a plugin
  *   delete that may well be an upgrade or a migration, is not recoverable;
- *   keeping it is. Kept options are switched to not autoload, so a site
- *   without the plugin does not load them on every request.
- * - Plugin state - the version markers, the visitor salt, the one-shot flags,
- *   the upgrade lock, the cron events, the knowledge base capabilities on every
+ *   keeping it is. Only the settings autoload; the other kept options never
+ *   did.
+ * - Plugin state - the visitor salt, the one-shot flags, the category
+ *   hierarchy cache core keeps for the category taxonomy, the cron events, the knowledge base capabilities on every
  *   role that holds them, the bulk undo snapshots and per-user admin preferences - is always removed, on every site
  *   of the network. A scheduled hook or a user meta row
  *   that outlives the plugin that owns it is pure residue. Each site's stored
@@ -52,14 +51,11 @@ class Licensio_KB_Uninstaller {
      */
     const OPTIONS = array(
         'licensio_visitor_salt',
-        'licensio_version',
-        'licensio_db_version',
         'licensio_fulltext_supported',
         'licensio_flush_rewrite_rules',
         'licensio_search_reindex_state',
         Licensio_KB_Search_Index::BUILT_OPTION,
-        Licensio_KB_Lifecycle::UPGRADE_LOCK_OPTION,
-        Licensio_KB_Capabilities::VERSION_OPTION,
+        Licensio_KB_Post_Types::TAXONOMY_CATEGORY . '_children',
     );
 
     /**
@@ -70,7 +66,6 @@ class Licensio_KB_Uninstaller {
      */
     const DATA_OPTIONS = array(
         Licensio_KB_Settings::OPTION_NAME,
-        Licensio_KB_Post_Types::TAXONOMY_CATEGORY . '_children',
     );
 
     /**
@@ -138,8 +133,7 @@ class Licensio_KB_Uninstaller {
      * Tear the plugin down for the current site.
      *
      * Removes the plugin state always, and the data only when the site owner
-     * turned on Delete everything on uninstall. Kept data options are switched
-     * to not autoload.
+     * turned on Delete everything on uninstall.
      *
      * The capabilities are removed in both modes, from every role of the site,
      * including roles that were granted `manage_licensio_kb` by hand: a role
@@ -176,8 +170,6 @@ class Licensio_KB_Uninstaller {
             self::delete_rate_limit_transients();
 
             Licensio_KB_Import_Redirects::delete_directory();
-        } else {
-            wp_set_option_autoload_values( array_fill_keys( self::data_options(), false ) );
         }
 
         foreach ( self::OPTIONS as $option ) {

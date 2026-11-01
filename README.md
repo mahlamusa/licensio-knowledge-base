@@ -163,15 +163,15 @@ All access goes through `Licensio_KB_DB`, never raw `$wpdb`:
 Licensio_KB_DB::table( 'feedback' )->where( 'article_id', $id )->getAll();
 ```
 
-Table names are passed unprefixed (`search_index`, `search_log`, `article_views`, `feedback`); the `licensio_` and WordPress prefixes are both applied for you. `Licensio_KB_DB_Installer` owns the schema and the schema version. **No table has an IP column**, and a unit test enforces that.
+Table names are passed unprefixed (`search_index`, `search_log`, `article_views`, `feedback`); the `licensio_` and WordPress prefixes are both applied for you. `Licensio_KB_DB_Installer` owns the schema. **No table has an IP column**, and a unit test enforces that.
 
 `Licensio_KB_DB_Installer::supports_fulltext()` reports whether the search index table actually carries its FULLTEXT key, read back from the live table after install rather than predicted in advance. That is how the search layer (#4) chooses between the FULLTEXT and LIKE drivers.
 
-**Do not assume the tables exist just because the plugin is active.** Schema installs and upgrades run on `admin_init`, so a site nobody logs into can be running with a stale or absent schema. Guard your first read or write with a table-exists check, exactly as you would guard on `supports_fulltext()`.
+**Do not assume the tables exist just because the plugin is active.** The tables are created on activation, and an activation without the bundled database library creates none. Guard your first read or write with a table-exists check, exactly as you would guard on `supports_fulltext()`.
 
 ### Multisite
 
-Activation installs per site: a network activation walks every site, and `wp_initialize_site` installs into subsites created later. Very large networks (`wp_is_large_network()`) are skipped and self-heal instead, on the first admin request per site.
+Activation installs per site: a network activation walks every site, and `wp_initialize_site` installs into subsites created later. On a very large network (`wp_is_large_network()`) network activation is refused with a message to activate per site, because walking every site would time out.
 
 Uninstall walks every site too. Anything you store per site — options, cron events — must be cleaned up on the `licensio_uninstalled` action, which fires once per site inside `switch_to_blog()`.
 
@@ -202,7 +202,7 @@ Add your own with the `licensio_settings_registry` filter. A registry entry is:
 
 Changing a setting marked `flush_rewrites` records a request that `Licensio_KB_Post_Types` honours late on `init`; you do not need to call `flush_rewrite_rules()` yourself, and you should not, because settings are written long before the permastructs are registered.
 
-`delete_data_on_uninstall` (default **false**) decides whether the plugin's data is deleted when the plugin is deleted: the five data tables, the settings (which hold the permalink slugs), the import options (the served redirect map, the resume cursors, the run reports and the URL map file names) and the import URL map directory. The default keeps all of it, and switches the kept options to not autoload. The version markers, the visitor salt, the upgrade lock, the cron events and the per-user admin preferences are always removed. Articles, categories and tags are never removed. The Privacy group on the settings screen surfaces the toggle.
+`delete_data_on_uninstall` (default **false**) decides whether the plugin's data is deleted when the plugin is deleted: the five data tables, the settings (which hold the permalink slugs), the import options (the served redirect map, the resume cursors, the run reports and the URL map file names) and the import URL map directory. The default keeps all of it. The visitor salt, the one-shot flags, the category hierarchy cache, the cron events and the per-user admin preferences are always removed. Articles, categories and tags are never removed. The Privacy group on the settings screen surfaces the toggle.
 
 ### Settings screen
 
@@ -235,7 +235,7 @@ The Appearance group previews live against the same CSS custom properties `Licen
 - `get_hash()` — `hash_hmac( 'sha256', ip . '|' . user_agent, daily_salt )` for this request. The salt is the key, and the delimiter prevents two distinct visitors hashing to one identity.
 - `get_hashes()` — the current hash plus, for 24 hours after a rotation, the previous-salt hash. **Enforce "once per visitor" against all of these**, or a salt rotation lets the same person vote or be counted twice.
 
-The salt lives in an autoloaded option and is rotated daily by the `licensio_rotate_visitor_salt` cron event. The raw IP is never persisted, never returned and never logged.
+The salt lives in an option that does not autoload and is rotated daily by the `licensio_rotate_visitor_salt` cron event. The raw IP is never persisted, never returned and never logged.
 
 ### REST API
 
@@ -431,8 +431,7 @@ It cannot be a module: module scripts are always deferred and execute after ever
 |---|---|---|
 | `licensio_loaded` | action | The container finished booting. |
 | `licensio_activated` / `licensio_deactivated` | action | End of activation / deactivation. |
-| `licensio_upgraded` | action | The plugin version moved forward. |
-| `licensio_db_installed` | action | Tables created or upgraded; passed the FULLTEXT flag. |
+| `licensio_db_installed` | action | Tables created; passed the FULLTEXT flag. |
 | `licensio_uninstalled` | action | The plugin is being removed from a site; fires once per site. Passed whether the data was deleted. |
 | `licensio_visitor_salt_rotated` | action | The daily salt was rotated. |
 | `licensio_feedback_recorded` | action | A vote was written. Passed the article ID and the vote; never the comment. |

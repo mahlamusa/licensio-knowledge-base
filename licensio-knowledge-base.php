@@ -25,7 +25,6 @@
 defined( 'ABSPATH' ) || exit;
 
 define( 'LICENSIO_KB_VERSION', '1.0.0' );
-define( 'LICENSIO_KB_DB_VERSION', '1.0.1' );
 define( 'LICENSIO_KB_MIN_PHP', '7.4' );
 define( 'LICENSIO_KB_MIN_WP', '6.4' );
 define( 'LICENSIO_KB_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
@@ -54,12 +53,9 @@ register_deactivation_hook( __FILE__, array( 'Licensio_KB_Lifecycle', 'deactivat
  * `plugins_loaded` has already fired, then fires the activation hook. They are
  * hooked to `licensio_activated` rather than to the activation hook itself so
  * that a network activation runs them inside each site, where roles and rewrite
- * rules actually live. The capabilities are granted once per capability set
- * version, so an upgrade grants any the new version adds and a reactivation
- * keeps the roles as the site owner left them.
+ * rules actually live.
  */
-add_action( 'licensio_activated', array( 'Licensio_KB_Capabilities', 'maybe_add_capabilities' ) );
-add_action( 'licensio_upgraded', array( 'Licensio_KB_Capabilities', 'maybe_add_capabilities' ) );
+add_action( 'licensio_activated', array( 'Licensio_KB_Capabilities', 'add_capabilities' ) );
 add_action( 'licensio_activated', array( 'Licensio_KB_Permalinks', 'request_flush' ) );
 add_action( 'licensio_activated', array( 'Licensio_KB_Analytics_Retention', 'schedule' ) );
 

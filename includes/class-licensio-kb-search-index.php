@@ -50,7 +50,7 @@ class Licensio_KB_Search_Index {
     const STATE_OPTION = 'licensio_search_reindex_state';
 
     /**
-     * Option recording the plugin version the index was last built for.
+     * Option recording that the index was built after activation.
      *
      * @since 1.0.0
      * @var string
@@ -556,24 +556,23 @@ class Licensio_KB_Search_Index {
     }
 
     /**
-     * Build the index once per plugin version, without anyone asking.
+     * Build the index once after activation, without anyone asking.
      *
      * Activation cannot do this: the activation hook runs in a request where
      * `plugins_loaded` fired before the plugin was active, so nothing this class
-     * registers has been hooked yet. Checking a version marker on `admin_init`
-     * covers a first activation, an upgrade, and a multisite subsite that was
-     * never activated directly.
+     * registers has been hooked yet. The flag is checked on `admin_init`
+     * instead, and the uninstaller deletes it so a reinstall builds again.
      *
      * @since 1.0.0
      *
      * @return bool True when a rebuild was started.
      */
     public function maybe_start_initial_rebuild() {
-        if ( (string) get_option( self::BUILT_OPTION, '' ) === (string) LICENSIO_KB_VERSION ) {
+        if ( get_option( self::BUILT_OPTION, false ) ) {
             return false;
         }
 
-        update_option( self::BUILT_OPTION, LICENSIO_KB_VERSION, false );
+        update_option( self::BUILT_OPTION, 1, false );
 
         $this->start_rebuild();
 

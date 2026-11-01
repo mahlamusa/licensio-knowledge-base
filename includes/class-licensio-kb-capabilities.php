@@ -27,8 +27,6 @@
  * already names this capability, so the REST management endpoints inherit the
  * same model with no further wiring.
  *
- * Consumed by: #4, #8, #9, #10.
- *
  * @package Licensio_KB
  * @since   1.0.0
  */
@@ -86,25 +84,6 @@ class Licensio_KB_Capabilities {
     const CONTRIBUTOR_ARTICLE_CAPABILITIES = array( 'edit_posts', 'delete_posts' );
 
     /**
-     * The version of the capability set the roles are granted.
-     *
-     * Raise it when the capabilities a role receives change, so every site is
-     * granted the new set once.
-     *
-     * @since 1.0.0
-     * @var int
-     */
-    const CAPS_VERSION = 1;
-
-    /**
-     * The option holding the capability set version a site was last granted.
-     *
-     * @since 1.0.0
-     * @var string
-     */
-    const VERSION_OPTION = 'licensio_caps_version';
-
-    /**
      * The query argument that tells the article editor new tags were refused.
      *
      * @since 1.0.0
@@ -123,19 +102,9 @@ class Licensio_KB_Capabilities {
     /**
      * Register the WordPress hooks.
      *
-     * The capabilities are granted once per version of the capability set,
-     * recorded in the `licensio_caps_version` option. `init` checks that
-     * option on every request, so a site whose code changed without an
-     * activation (a subsite of a network too large to walk, a site created
-     * before network activation, a deploy that swapped the plugin files in
-     * place) is granted the capabilities on its first request, before the
-     * admin menu or any REST route checks them. Activation and upgrade run
-     * the same check, see the plugin bootstrap.
-     *
-     * After that the roles are the site owner's: a capability removed or
-     * denied with a role editor stays that way, until a later version of the
-     * plugin changes the capability set and raises `CAPS_VERSION`. Even then
-     * an explicit denial is kept.
+     * The capabilities are granted on activation, see the plugin bootstrap.
+     * After that the roles are the site owner's. An explicit denial made with
+     * a role editor is kept even when the plugin is activated again.
      *
      * Anyone holding `manage_licensio_kb`, however it was granted, also holds
      * every article capability.
@@ -145,7 +114,7 @@ class Licensio_KB_Capabilities {
      * offered to create tags for them. The classic tag box drops the new
      * names, saves the existing tags, and says so on the article editor.
      *
-     * @since 1.0.0 Grants the article capabilities to authors and contributors too, once per capability set, and keeps term creation to managers.
+     * @since 1.0.0 Keeps term creation to managers.
      *
      * @return void
      */
@@ -153,7 +122,6 @@ class Licensio_KB_Capabilities {
         add_filter( 'licensio_article_post_type_args', array( $this, 'filter_post_type_args' ) );
         add_filter( 'licensio_category_taxonomy_args', array( $this, 'filter_taxonomy_args' ) );
         add_filter( 'licensio_tag_taxonomy_args', array( $this, 'filter_taxonomy_args' ) );
-        add_action( 'init', array( __CLASS__, 'maybe_add_capabilities' ), 1 );
         add_filter( 'user_has_cap', array( __CLASS__, 'managers_write_articles' ) );
         add_filter( 'pre_insert_term', array( __CLASS__, 'guard_term_creation' ), 10, 2 );
         add_filter( 'rest_prepare_' . Licensio_KB_Post_Types::POST_TYPE, array( __CLASS__, 'hide_term_creation' ) );
@@ -197,9 +165,8 @@ class Licensio_KB_Capabilities {
          *
          * Applied when capabilities are granted and when they are removed, so a
          * site that adds a role here also has it cleaned up. The grant runs
-         * once per capability set version, so call
-         * Licensio_KB_Capabilities::add_capabilities() directly to apply a
-         * change. A role given `manage_licensio_kb` here also receives
+         * on activation, so call Licensio_KB_Capabilities::add_capabilities()
+         * directly to apply a change. A role given `manage_licensio_kb` here also receives
          * every article capability, so managing the knowledge base still
          * includes managing its articles.
          *
@@ -231,35 +198,6 @@ class Licensio_KB_Capabilities {
      */
     private static function own_capabilities() {
         return array_merge( array( self::CAPABILITY ), array_values( self::ARTICLE_CAPABILITIES ) );
-    }
-
-    /**
-     * Grant the knowledge base capabilities once per capability set version.
-     *
-     * Hooked to `init`, `licensio_activated` and `licensio_upgraded`. Does
-     * nothing once the site holds the current set, so role edits made after
-     * the grant are kept. The current user's capabilities were read before
-     * `init`, so they are read again after a grant, and the first request
-     * after the plugin files change already works.
-     *
-     * @since 1.0.0
-     *
-     * @return void
-     */
-    public static function maybe_add_capabilities() {
-        if ( (int) get_option( self::VERSION_OPTION, 0 ) >= self::CAPS_VERSION ) {
-            return;
-        }
-
-        self::add_capabilities();
-
-        update_option( self::VERSION_OPTION, self::CAPS_VERSION );
-
-        $user = wp_get_current_user();
-
-        if ( $user instanceof WP_User && $user->exists() ) {
-            $user->get_role_caps();
-        }
     }
 
     /**

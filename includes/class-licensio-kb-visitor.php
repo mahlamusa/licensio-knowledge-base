@@ -4,14 +4,12 @@
  *
  * Produces `hash_hmac( 'sha256', ip . '|' . user_agent, daily_salt )` so analytics can count
  * unique visitors without ever writing an IP address to the database. The
- * salt lives in an autoloaded option and is rotated daily by cron; the
+ * salt lives in an option that does not autoload and is rotated daily by cron; the
  * previous salt is kept for 24 hours so a visitor is not counted twice across
  * a rotation.
  *
  * The raw IP address is read from the request and immediately hashed. It is
  * never returned by a public method, never stored and never logged.
- *
- * Consumed by: #4, #8, #9.
  *
  * @package Licensio_KB
  * @since   1.0.0
@@ -307,7 +305,9 @@ class Licensio_KB_Visitor {
     }
 
     /**
-     * Persist the salt pair to the autoloaded option.
+     * Persist the salt pair to its option, which does not autoload.
+     *
+     * Only article views and feedback read it, so it is not loaded on every request.
      *
      * @since 1.0.0
      *
@@ -326,7 +326,7 @@ class Licensio_KB_Visitor {
             'previous_created' => (int) $previous_created,
         );
 
-        update_option( self::OPTION_NAME, $value, true );
+        update_option( self::OPTION_NAME, $value, false );
 
         return $value;
     }

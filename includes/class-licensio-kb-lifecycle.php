@@ -2,11 +2,9 @@
 /**
  * Plugin lifecycle.
  *
- * Activation, deactivation and version upgrades. Activation runs before
+ * Activation and deactivation. Activation runs before
  * `plugins_loaded` fires for this plugin, so it bootstraps the pieces it
  * needs itself rather than reaching for the Licensio_KB singleton.
- *
- * Consumed by: #3, #4, #5, #6, #7, #8, #9, #10, #11, #12.
  *
  * @package Licensio_KB
  * @since   1.0.0
@@ -15,43 +13,17 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Handles activation, deactivation and upgrades.
+ * Handles activation and deactivation.
  *
  * @since 1.0.0
  */
 class Licensio_KB_Lifecycle {
 
     /**
-     * Option storing the installed plugin version.
-     *
-     * @since 1.0.0
-     * @var string
-     */
-    const VERSION_OPTION = 'licensio_version';
-
-    /**
-     * Option holding the upgrade lock while schema work is in progress.
-     *
-     * @since 1.0.0
-     *
-     * @var string
-     */
-    const UPGRADE_LOCK_OPTION = 'licensio_upgrade_lock';
-
-    /**
-     * How long an upgrade lock is honoured before it is treated as abandoned.
-     *
-     * @since 1.0.0
-     *
-     * @var int
-     */
-    const UPGRADE_LOCK_TTL = 300;
-
-    /**
      * Run on plugin activation.
      *
-     * Refuses to activate on an unsupported PHP or WordPress version, then runs
-     * the per-site install routine. On a network activation the routine runs for
+     * Refuses to activate on an unsupported PHP or WordPress version, or network
+     * wide on a large network, then runs the per-site install routine. On a network activation the routine runs for
      * every site on the network, because the tables, the visitor salt and — most
      * visibly — the rewrite rules are all per-site: without the loop every
      * subsite would 404 on `/docs/…` until someone re-saved its permalinks.
@@ -75,6 +47,20 @@ class Licensio_KB_Lifecycle {
         }
 
         if ( $network_wide && is_multisite() ) {
+            /*
+             * A large network cannot be walked inside one activation request
+             * without timing out, and a subsite that is never installed has no
+             * tables and 404s on every knowledge base URL. Refuse instead.
+             */
+            if ( wp_is_large_network() ) {
+                deactivate_plugins( LICENSIO_KB_PLUGIN_BASENAME, false, true );
+                wp_die(
+                    esc_html__( 'Licensio Knowledge Base cannot be network activated on a network this large, because installing it on every site would time out. Activate it on each site that needs it instead.', 'licensio-knowledge-base' ),
+                    esc_html__( 'Licensio Knowledge Base', 'licensio-knowledge-base' ),
+                    array( 'back_link' => true )
+                );
+            }
+
             self::activate_network();
 
             return;
@@ -91,16 +77,6 @@ class Licensio_KB_Lifecycle {
      * @return void
      */
     private static function activate_network() {
-        /*
-         * A large network cannot be walked inside a single activation request
-         * without timing out. Those sites are not left broken: maybe_upgrade()
-         * installs the tables and requests a rewrite flush the first time an
-         * administrator loads wp-admin on each one.
-         */
-        if ( function_exists( 'wp_is_large_network' ) && wp_is_large_network() ) {
-            return;
-        }
-
         $site_ids = get_sites(
             array(
                 'fields' => 'ids',
@@ -140,11 +116,6 @@ class Licensio_KB_Lifecycle {
         $visitor = new Licensio_KB_Visitor();
         $visitor->get_salts();
         $visitor->schedule_rotation();
-
-        update_option( self::VERSION_OPTION, LICENSIO_KB_VERSION, true );
-
-        // A previous uninstall that kept the settings stopped them autoloading.
-        wp_set_option_autoload( Licensio_KB_Settings::OPTION_NAME, true );
 
         flush_rewrite_rules();
 
@@ -208,88 +179,6 @@ class Licensio_KB_Lifecycle {
          * @since 1.0.0
          */
         do_action( 'licensio_deactivated' );
-    }
-
-    /**
-     * Bring an already-active install up to date after a plugin update.
-     *
-     * Also the repair path for a subsite that was never activated directly — a
-     * site created before network activation, or one skipped because the network
-     * was too large to walk. The version marker is only written once the install
-     * actually succeeded, so a site whose database library is missing retries on
-     * the next admin request instead of recording a version it never reached.
-     * A first install here also turns settings autoload back on, as activation
-     * does, for settings an earlier uninstall kept.
-     *
-     * @since 1.0.0
-     *
-     * @return void
-     */
-    public static function maybe_upgrade() {
-        $installed = (string) get_option( self::VERSION_OPTION, '' );
-
-        if ( version_compare( $installed, LICENSIO_KB_VERSION, '>=' ) ) {
-            Licensio_KB_DB_Installer::maybe_install();
-
-            return;
-        }
-
-        /*
-         * Hold a short lock across the upgrade.
-         *
-         * The version marker is only written once install() has returned, so
-         * without a lock two admin requests arriving together both read the old
-         * version and both run the schema DDL. This runs on `admin_init`, where
-         * concurrent requests from one administrator are routine rather than
-         * exotic. add_option() is used for the claim because it is atomic on a
-         * single row: the loser gets false and backs off, and the upgrade simply
-         * happens on its next admin page load.
-         */
-        if ( ! add_option( self::UPGRADE_LOCK_OPTION, time(), '', false ) ) {
-            $claimed_at = (int) get_option( self::UPGRADE_LOCK_OPTION, 0 );
-
-            // Reclaim a lock abandoned by a fatal mid-upgrade.
-            if ( $claimed_at > 0 && ( time() - $claimed_at ) < self::UPGRADE_LOCK_TTL ) {
-                return;
-            }
-
-            update_option( self::UPGRADE_LOCK_OPTION, time(), false );
-        }
-
-        if ( ! Licensio_KB_DB_Installer::install() ) {
-            delete_option( self::UPGRADE_LOCK_OPTION );
-
-            return;
-        }
-
-        update_option( self::VERSION_OPTION, LICENSIO_KB_VERSION, true );
-
-        if ( '' === $installed ) {
-            /*
-             * First install on this site, which on multisite means the rewrite
-             * rules were never built for it. Flushing here would run before the
-             * permastructs are registered, so request one for `init` instead.
-             */
-            Licensio_KB_Settings::request_rewrite_flush();
-
-            /*
-             * A previous uninstall that kept the settings stopped them
-             * autoloading. Activation turns that back on, but a subsite of a
-             * large network is never activated directly and only gets here.
-             */
-            wp_set_option_autoload( Licensio_KB_Settings::OPTION_NAME, true );
-        }
-
-        delete_option( self::UPGRADE_LOCK_OPTION );
-
-        /**
-         * Fires after the plugin has upgraded from an older installed version.
-         *
-         * @since 1.0.0
-         *
-         * @param string $installed The version that was installed before the upgrade.
-         */
-        do_action( 'licensio_upgraded', $installed );
     }
 
     /**

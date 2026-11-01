@@ -2,15 +2,13 @@
 /**
  * Database installer.
  *
- * Owns the schema and the schema version for the four knowledge base tables.
- * Schema only: this class creates, upgrades and drops tables and records
+ * Owns the schema for the knowledge base tables.
+ * Schema only: this class creates and drops tables and records
  * whether the FULLTEXT index landed. It performs no reads and no writes of table rows — those
  * belong to the consuming sub-issues.
  *
  * No table defined here has an IP column. Visitor identity is the rotating
  * salted hash produced by Licensio_KB_Visitor.
- *
- * Consumed by: #4, #8, #9, #12.
  *
  * @package Licensio_KB
  * @since   1.0.0
@@ -24,14 +22,6 @@ defined( 'ABSPATH' ) || exit;
  * @since 1.0.0
  */
 class Licensio_KB_DB_Installer {
-
-    /**
-     * Option storing the installed schema version.
-     *
-     * @since 1.0.0
-     * @var string
-     */
-    const VERSION_OPTION = 'licensio_db_version';
 
     /**
      * Option storing the result of the FULLTEXT capability probe.
@@ -154,12 +144,11 @@ class Licensio_KB_DB_Installer {
     }
 
     /**
-     * Create or upgrade every table.
+     * Create every table.
      *
      * Returns false rather than throwing when the vendored query builder is
-     * missing. This runs from `admin_init` and from activation, and an uncaught
-     * RuntimeException on either path locks the administrator out of the very
-     * screen they would use to deactivate the plugin.
+     * missing. This runs from activation, and an uncaught RuntimeException
+     * there blocks the activation with a fatal error.
      *
      * @since 1.0.0
      *
@@ -202,11 +191,10 @@ class Licensio_KB_DB_Installer {
 
         $fulltext = self::detect_fulltext_index();
 
-        update_option( self::FULLTEXT_OPTION, $fulltext ? 'yes' : 'no', true );
-        update_option( self::VERSION_OPTION, LICENSIO_KB_DB_VERSION, true );
+        update_option( self::FULLTEXT_OPTION, $fulltext ? 'yes' : 'no', false );
 
         /**
-         * Fires after the knowledge base tables have been created or upgraded.
+         * Fires after the knowledge base tables have been created.
          *
          * @since 1.0.0
          *
@@ -218,26 +206,7 @@ class Licensio_KB_DB_Installer {
     }
 
     /**
-     * Run install() when the stored schema version is behind the code.
-     *
-     * @since 1.0.0
-     *
-     * @return bool True when an install or upgrade ran.
-     */
-    public static function maybe_install() {
-        $installed = (string) get_option( self::VERSION_OPTION, '' );
-
-        if ( version_compare( $installed, LICENSIO_KB_DB_VERSION, '>=' ) ) {
-            return false;
-        }
-
-        self::install();
-
-        return true;
-    }
-
-    /**
-     * Drop every table and forget the schema version. Used by uninstall only.
+     * Drop every table and forget the FULLTEXT probe. Used by uninstall only.
      *
      * @since 1.0.0
      *
@@ -247,7 +216,6 @@ class Licensio_KB_DB_Installer {
     public static function uninstall() {
         self::drop_tables();
 
-        delete_option( self::VERSION_OPTION );
         delete_option( self::FULLTEXT_OPTION );
     }
 

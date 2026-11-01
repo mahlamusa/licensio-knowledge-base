@@ -376,12 +376,12 @@ class Licensio_KB_Search_Index_Test extends Licensio_KB_Test_Case {
      *
      * @return void
      */
-    public function test_the_initial_build_runs_once_per_version() {
+    public function test_the_initial_build_runs_once() {
         Functions\when( 'wp_next_scheduled' )->justReturn( false );
         Functions\when( 'wp_schedule_single_event' )->justReturn( true );
 
         $this->assertTrue( $this->index->maybe_start_initial_rebuild() );
-        $this->assertSame( LICENSIO_KB_VERSION, $this->options[ Licensio_KB_Search_Index::BUILT_OPTION ] );
+        $this->assertSame( 1, $this->options[ Licensio_KB_Search_Index::BUILT_OPTION ] );
 
         $this->assertFalse( $this->index->maybe_start_initial_rebuild() );
     }

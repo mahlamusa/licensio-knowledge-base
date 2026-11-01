@@ -95,14 +95,6 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
     private $meta_deleted = array();
 
     /**
-     * The wp_set_option_autoload_values() calls made, as option-to-autoload maps.
-     *
-     * @since 1.0.0
-     * @var array<int, array<string, bool>>
-     */
-    private $autoload_calls = array();
-
-    /**
      * Scratch uploads directory the URL map directory lives in.
      *
      * @since 1.0.0
@@ -138,9 +130,8 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
         $this->cron_hooks_cleared = array();
         $this->meta_deleted       = array();
 
-        $this->autoload_calls = array();
-        $this->roles          = array();
-        $this->uploads        = sys_get_temp_dir() . '/licensio-kb-uninstall-' . uniqid( '', false );
+        $this->roles   = array();
+        $this->uploads = sys_get_temp_dir() . '/licensio-kb-uninstall-' . uniqid( '', false );
 
         $GLOBALS['wpdb'] = new Licensio_KB_Test_WPDB(); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 
@@ -182,14 +173,6 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
                 $this->meta_deleted[] = $args;
 
                 return true;
-            }
-        );
-
-        Functions\when( 'wp_set_option_autoload_values' )->alias(
-            function ( $options ) {
-                $this->autoload_calls[] = $options;
-
-                return array_fill_keys( array_keys( $options ), true );
             }
         );
 
@@ -317,12 +300,9 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
         $this->options = array(
             'licensio_settings'                        => array( 'delete_data_on_uninstall' => $delete_data ),
             'licensio_visitor_salt'                    => array( 'current' => 'a-salt' ),
-            'licensio_version'                         => '1.0.0',
-            'licensio_db_version'                      => '1.0.0',
             'licensio_unrelated_key'                   => 'left alone',
             'rewrite_rules'                            => array( 'help/([^/]+)/?$' => 'index.php?licensio_article=$matches[1]' ),
-            Licensio_KB_Search_Index::BUILT_OPTION     => '1.0.0',
-            Licensio_KB_Lifecycle::UPGRADE_LOCK_OPTION => 1700000000,
+            Licensio_KB_Search_Index::BUILT_OPTION     => 1,
             Licensio_KB_Import_State::option_for( 'heroic' ) => array( 'phase' => 'articles' ),
             Licensio_KB_Import_Report::option_for( 'heroic' ) => array( 'counts' => array() ),
             Licensio_KB_Import_Redirects::OPTION       => array( '/old' => '/new' ),
@@ -423,8 +403,6 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
 
         Licensio_KB_Uninstaller::uninstall_site();
 
-        $this->assertContains( Licensio_KB_Lifecycle::UPGRADE_LOCK_OPTION, Licensio_KB_Uninstaller::OPTIONS, 'A lock left by an interrupted upgrade must not outlive the plugin.' );
-
         foreach ( Licensio_KB_Uninstaller::OPTIONS as $option ) {
             $this->assertArrayNotHasKey( $option, $this->options, $option . ' must not survive uninstall.' );
         }
@@ -459,7 +437,7 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * By default the settings, slugs and redirect map survive, and stop autoloading.
+     * By default the settings, slugs and redirect map survive.
      *
      * The settings hold the permalink slugs and the import options hold the
      * redirects for old links; deleting them on a delete and reinstall changes
@@ -469,7 +447,7 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
      *
      * @return void
      */
-    public function test_data_options_are_kept_by_default_and_stop_autoloading() {
+    public function test_data_options_are_kept_by_default() {
         $this->seed_site( false );
         $this->options['licensio_settings']['article_slug'] = 'help';
 
@@ -481,7 +459,6 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
 
         $this->assertSame( 'help', $this->options['licensio_settings']['article_slug'] );
         $this->assertSame( array( '/old' => '/new' ), $this->options[ Licensio_KB_Import_Redirects::OPTION ] );
-        $this->assertSame( array( array_fill_keys( Licensio_KB_Uninstaller::data_options(), false ) ), $this->autoload_calls );
     }
 
     /**
@@ -518,7 +495,6 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
         }
 
         $this->assertDirectoryDoesNotExist( $directory );
-        $this->assertSame( array(), $this->autoload_calls, 'Deleted options need no autoload change.' );
         $this->assertArrayHasKey( 'licensio_unrelated_key', $this->options, 'Other plugins options must be left alone.' );
     }
 
@@ -535,9 +511,9 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
 
         foreach ( array( 1, 2, 3 ) as $blog_id ) {
             $this->blogs[ $blog_id ] = array(
-                'licensio_settings'     => array( 'delete_data_on_uninstall' => true ),
-                'licensio_version'      => '1.0.0',
-                'licensio_visitor_salt' => array( 'current' => 'a-salt' ),
+                'licensio_settings'          => array( 'delete_data_on_uninstall' => true ),
+                'licensio_category_children' => array(),
+                'licensio_visitor_salt'      => array( 'current' => 'a-salt' ),
             );
         }
 
@@ -547,7 +523,7 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
 
         foreach ( array( 1, 2, 3 ) as $blog_id ) {
             $this->assertArrayNotHasKey(
-                'licensio_version',
+                'licensio_category_children',
                 $this->blogs[ $blog_id ],
                 sprintf( 'Site %d kept its options after a network uninstall.', $blog_id )
             );
@@ -738,28 +714,27 @@ class Licensio_KB_Uninstaller_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * The category hierarchy cache is deleted with the data, and stops autoloading otherwise.
+     * The category hierarchy cache is always deleted.
      *
-     * Core keeps an autoloaded children map per hierarchical taxonomy. Once the
-     * plugin is gone nothing reads it, but it is loaded on every request. Tags
-     * are not hierarchical, so core never writes a children map for them and
-     * there is nothing to delete.
+     * Core keeps an autoloaded children map per hierarchical taxonomy and
+     * rebuilds it when it is missing. Once the plugin is gone nothing reads it,
+     * but it is loaded on every request. Tags are not hierarchical, so core
+     * never writes a children map for them and there is nothing to delete.
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function test_the_category_hierarchy_cache_follows_the_data_setting() {
-        $this->assertContains( 'licensio_category_children', Licensio_KB_Uninstaller::data_options() );
-        $this->assertNotContains( 'licensio_tag_children', Licensio_KB_Uninstaller::data_options(), 'Tags are not hierarchical, so core keeps no children map for them.' );
+    public function test_the_category_hierarchy_cache_is_always_deleted() {
+        $this->assertContains( 'licensio_category_children', Licensio_KB_Uninstaller::OPTIONS );
+        $this->assertNotContains( 'licensio_tag_children', Licensio_KB_Uninstaller::OPTIONS, 'Tags are not hierarchical, so core keeps no children map for them.' );
 
         $this->seed_site( false );
         $this->options['licensio_category_children'] = array( 4 => array( 7 ) );
 
         Licensio_KB_Uninstaller::uninstall_site();
 
-        $this->assertArrayHasKey( 'licensio_category_children', $this->options, 'Kept with the data.' );
-        $this->assertFalse( $this->autoload_calls[0]['licensio_category_children'] );
+        $this->assertArrayNotHasKey( 'licensio_category_children', $this->options, 'Core rebuilds the cache, so it is not kept with the data.' );
 
         $this->seed_site( true );
         $this->options['licensio_category_children'] = array( 4 => array( 7 ) );

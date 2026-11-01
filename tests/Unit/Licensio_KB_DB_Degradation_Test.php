@@ -5,9 +5,8 @@
  * The plugin ships `libraries/`, so this only happens on a broken install — a
  * partial checkout, or a `composer install --no-dev` that skipped Strauss. It
  * matters more than its rarity suggests: the schema install runs on
- * `admin_init`, so an uncaught RuntimeException there locks the administrator
- * out of the Plugins screen, which is the exact screen they would need to
- * deactivate the plugin and recover.
+ * activation, so an uncaught RuntimeException there blocks the activation
+ * with a fatal error instead of finishing without the tables.
  *
  * These run in separate processes because they depend on the vendored library
  * NOT having been loaded, and once loaded it stays loaded for the process.
@@ -39,7 +38,6 @@ class Licensio_KB_DB_Degradation_Test extends Licensio_KB_Test_Case {
         $GLOBALS['wpdb']                    = new Licensio_KB_Test_WPDB(); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 
         Functions\when( 'wp_clear_scheduled_hook' )->justReturn( 1 );
-        Functions\when( 'wp_set_option_autoload' )->justReturn( true );
     }
 
     /**
@@ -98,61 +96,6 @@ class Licensio_KB_DB_Degradation_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * The upgrade routine records no version when the install could not run.
-     *
-     * Writing the version marker anyway would mark the site as up to date and
-     * permanently skip the repair, because maybe_upgrade() early-returns once
-     * the recorded version matches the code.
-     *
-     * @runInSeparateProcess
-     * @preserveGlobalState disabled
-     *
-     * @since 1.0.0
-     *
-     * @return void
-     */
-    public function test_no_version_is_recorded_when_the_install_could_not_run() {
-        $this->set_db_booted( true );
-
-        Licensio_KB_Lifecycle::maybe_upgrade();
-
-        $this->assertArrayNotHasKey( 'licensio_version', $this->options );
-        $this->assertArrayNotHasKey( 'licensio_db_version', $this->options );
-    }
-
-    /**
-     * A broken install repairs itself on the next admin request.
-     *
-     * This is the whole point of not recording the version: the first pass
-     * fails and changes nothing, and once the library is back the next pass
-     * installs and records normally.
-     *
-     * @runInSeparateProcess
-     * @preserveGlobalState disabled
-     *
-     * @since 1.0.0
-     *
-     * @return void
-     */
-    public function test_the_install_is_retried_on_the_next_load() {
-        $this->set_db_booted( true );
-
-        Licensio_KB_Lifecycle::maybe_upgrade();
-
-        $this->assertArrayNotHasKey( 'licensio_version', $this->options, 'The first pass must record nothing.' );
-
-        // The library is back: allow init() to load it on the next attempt.
-        $this->set_db_booted( false );
-
-        Licensio_KB_Lifecycle::maybe_upgrade();
-
-        $this->assertTrue( Licensio_KB_DB::is_available() );
-        $this->assertSame( LICENSIO_KB_VERSION, $this->options['licensio_version'] );
-        $this->assertSame( LICENSIO_KB_DB_VERSION, $this->options['licensio_db_version'] );
-        $this->assertCount( 5, $GLOBALS['licensio_kb_delta_calls'], 'All five tables must be created on the repair pass.' );
-    }
-
-    /**
      * A healthy install reports success.
      *
      * The positive control: without it every assertion above would still pass
@@ -167,6 +110,6 @@ class Licensio_KB_DB_Degradation_Test extends Licensio_KB_Test_Case {
      */
     public function test_install_returns_true_on_a_healthy_install() {
         $this->assertTrue( Licensio_KB_DB_Installer::install() );
-        $this->assertSame( LICENSIO_KB_DB_VERSION, $this->options['licensio_db_version'] );
+        $this->assertArrayNotHasKey( 'licensio_db_version', $this->options );
     }
 }
