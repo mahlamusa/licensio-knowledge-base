@@ -14,6 +14,7 @@
  * @package Licensio_KB
  * @since   1.0.0 Redesigned to the Help Topics card: inline article count, icon-fronted article links and a View all link.
  * @since   1.0.0 Added the article list, so a card says what is in the category rather than only how much.
+ * @since   1.0.1 Sub-category links get a folder icon and the article link styling, so they read as part of the list.
  *
  * @var array $args {
  *     Template arguments.
@@ -151,8 +152,11 @@ $licensio_kb_icon           = $licensio_kb_show_icon && '' === $licensio_kb_icon
         <ul class="licensio-kb-card__children">
             <?php foreach ( $licensio_kb_children as $licensio_kb_child ) : ?>
                 <li class="licensio-kb-card__child">
-                    <a href="<?php echo esc_url( Licensio_KB_Templates::term_link( $licensio_kb_child ) ); ?>">
-                        <?php echo esc_html( $licensio_kb_child->name ); ?>
+                    <a class="licensio-kb-card__child-link" href="<?php echo esc_url( Licensio_KB_Templates::term_link( $licensio_kb_child ) ); ?>">
+                        <svg class="licensio-kb-card__child-icon" viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M1.5 3.5h4.3l1.5 1.7h7.2v8.3h-13z" />
+                        </svg>
+                        <span class="licensio-kb-card__child-name"><?php echo esc_html( $licensio_kb_child->name ); ?></span>
                     </a>
                 </li>
             <?php endforeach; ?>

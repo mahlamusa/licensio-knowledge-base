@@ -646,17 +646,49 @@
 	overflow-wrap: anywhere;
 }
 
+/*
+ * Sub-category links continue the article list below them: same row height,
+ * same text colour, with a folder icon where an article has a document icon.
+ */
 .licensio-kb-card__children {
-	margin: 0.875rem 0 0;
+	display: grid;
+	gap: 0.125rem;
+	margin: 0.125rem 0 0;
 	padding: 0;
 	list-style: none;
 }
 
 .licensio-kb-card__child {
 	margin: 0;
-	padding: 0.25rem 0;
+	min-width: 0;
+}
+
+.licensio-kb .licensio-kb-card__child-link {
+	display: flex;
+	gap: 0.5rem;
+	align-items: baseline;
+	padding: 0.375rem 0;
+	color: inherit;
 	font-size: 0.9375rem;
+	font-weight: 400;
+	text-decoration: none;
 	overflow-wrap: anywhere;
+	transition: color 0.2s;
+}
+
+.licensio-kb .licensio-kb-card__child-icon {
+	flex: 0 0 auto;
+	align-self: center;
+	color: var(--licensio-kb-accent);
+}
+
+.licensio-kb .licensio-kb-card__child-name {
+	min-width: 0;
+}
+
+.licensio-kb .licensio-kb-card__child-link:hover,
+.licensio-kb .licensio-kb-card__child-link:focus {
+	color: var(--licensio-kb-accent);
 }
 
 /* The articles a category card lists. */
