@@ -164,7 +164,9 @@ test.describe( 'Articles app', () => {
 		const app = await openContentManager( page, 'articles' );
 		// An article of its own: other specs search for the titles of theirs.
 		const original = `Quick save ${ Date.now() }`;
-		const title = `E2E ${ Date.now() }`;
+		// The save reloads the list under the page's search for the original
+		// title, so the new title keeps it in view.
+		const title = `${ original } edited`;
 		const { id } = await articleRequest( page, 'POST', '', {
 			title: original,
 			status: 'publish',

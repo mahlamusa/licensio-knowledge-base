@@ -13,6 +13,7 @@
  *
  * @package Licensio_KB
  * @since   1.0.0 Added the article list coverage.
+ * @since   1.0.1 Added the sub-category link coverage.
  */
 
 use Brain\Monkey\Functions;
@@ -640,5 +641,46 @@ class Licensio_KB_Category_Card_Test extends Licensio_KB_Test_Case {
         $this->assertLessThan( $icon, $heading, 'the icon is outside the heading row' );
         $this->assertLessThan( $title, $icon, 'the icon does not precede the name' );
         $this->assertNotFalse( $close, 'the heading row is never closed' );
+    }
+
+    /**
+     * A sub-category is listed as a link to its own archive, its name escaped.
+     *
+     * The link carries the class the stylesheet styles, so the sub-categories
+     * read as part of the article list rather than as bare links.
+     *
+     * @since 1.0.1
+     *
+     * @return void
+     */
+    public function test_a_sub_category_is_listed_as_a_link_to_its_archive() {
+        $child = new WP_Term(
+            array(
+                'term_id'  => 12,
+                'name'     => 'Install <b>guides</b>',
+                'slug'     => 'install-guides',
+                'taxonomy' => 'licensio_category',
+                'parent'   => 9,
+                'count'    => 2,
+            )
+        );
+
+        Functions\when( 'get_terms' )->alias(
+            function ( $query ) use ( $child ) {
+                return isset( $query['parent'] ) && 9 === $query['parent'] ? array( $child ) : array();
+            }
+        );
+        Functions\when( 'get_term_link' )->alias(
+            function ( $term ) {
+                return 'https://example.test/docs/category/' . $term->slug . '/';
+            }
+        );
+
+        $markup = $this->render_card( array( 'show_children' => true ) );
+        $css    = (string) file_get_contents( LICENSIO_KB_ABSPATH . 'assets/css/licensio-kb.css' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+
+        $this->assertStringContainsString( '<a class="licensio-kb-card__child-link" href="https://example.test/docs/category/install-guides/">', $markup );
+        $this->assertStringContainsString( '<span class="licensio-kb-card__child-name">Install &lt;b&gt;guides&lt;/b&gt;</span>', $markup );
+        $this->assertStringContainsString( '.licensio-kb .licensio-kb-card__child-link {', $css );
     }
 }
