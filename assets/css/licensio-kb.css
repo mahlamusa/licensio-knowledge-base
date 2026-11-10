@@ -653,21 +653,34 @@
 .licensio-kb-card__children {
 	display: grid;
 	gap: 0.125rem;
-	margin: 0.125rem 0 0;
+	margin: 0.75rem 0 0;
 	padding: 0;
 	list-style: none;
 }
 
+/* Under the article list, the sub-categories carry on its row rhythm. */
+.licensio-kb-card__articles + .licensio-kb-card__children {
+	margin-top: 0.125rem;
+}
+
+/*
+ * The row padding and size stay on the list item so a theme override of the
+ * 1.0.0 template, which prints a bare link, keeps its styling. The link adds
+ * the rest of the article row height.
+ */
 .licensio-kb-card__child {
 	margin: 0;
+	padding: 0.25rem 0;
 	min-width: 0;
+	font-size: 0.9375rem;
+	overflow-wrap: anywhere;
 }
 
 .licensio-kb .licensio-kb-card__child-link {
 	display: flex;
 	gap: 0.5rem;
 	align-items: baseline;
-	padding: 0.375rem 0;
+	padding: 0.125rem 0;
 	color: inherit;
 	font-size: 0.9375rem;
 	font-weight: 400;
