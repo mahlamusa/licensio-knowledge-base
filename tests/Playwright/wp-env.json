@@ -3,5 +3,8 @@
 	"core": "https://wordpress.org/wordpress-7.1.3.zip",
 	"phpVersion": "8.2",
 	"testsEnvironment": false,
-	"plugins": [ "./.tmp/e2e/licensio-knowledge-base" ]
+	"plugins": [
+		"./.tmp/e2e/licensio-knowledge-base",
+		"./tests/fixtures/extension-example"
+	]
 }

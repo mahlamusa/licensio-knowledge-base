@@ -85,7 +85,8 @@ class Licensio_KB_Extensions_Test extends Licensio_KB_Test_Case {
         $this->extensions->init_hooks();
 
         $this->assertSame( 10, has_action( 'admin_init', array( $this->extensions, 'register' ) ) );
-        $this->assertSame( 10, has_action( 'rest_api_init', array( $this->extensions, 'register' ) ) );
+        $this->assertSame( 5, has_action( 'rest_api_init', array( $this->extensions, 'register' ) ), 'Filled before the REST controllers register their routes.' );
+        $this->assertLessThan( 10, Licensio_KB_Extensions::REST_PRIORITY );
     }
 
     /**

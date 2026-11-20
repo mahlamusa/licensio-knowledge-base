@@ -2,13 +2,15 @@
  * The extension API's shared pieces, end to end.
  *
  * On the Articles, Categories and Tags pages the extension registry
- * (`window.licensioKb.extensions`) is loaded before the app, a script can
- * register handlers on it, and the app config carries the `extensions` the
- * current user may see. The articles list answers `include` with just those
+ * (`window.licensioKb.extensions`) is loaded before the app, a script the
+ * example extension enqueues on `licensio_kb_enqueue_app_extensions` runs once
+ * with that app's screen and registers on it, and the app config carries the
+ * `extensions` the current user may see. The articles list answers `include` with just those
  * rows. Rendering extension columns and actions is covered by the specs of
  * the features that wire them into the apps.
  *
- * The suite needs a running WordPress with this plugin active and an
+ * The suite needs a running WordPress with this plugin and the example
+ * extension (`tests/fixtures/extension-example/`) active and an
  * administrator account, so it is skipped unless `LICENSIO_KB_E2E=1` and the
  * two credential variables are present.
  *
@@ -70,6 +72,13 @@ for ( const app of Object.keys( CONFIGS ) as ContentManagerApp[] ) {
 				const render = () => undefined;
 
 				return {
+					// Set by the example extension's script, which enqueues on
+					// licensio_kb_enqueue_app_extensions.
+					example: (
+						window as unknown as {
+							licensioKbExampleScreens?: string[];
+						}
+					 ).licensioKbExampleScreens,
 					registered: registry.register( screen, {
 						columns: { 'e2e/probe': { render } },
 					} ),
@@ -87,6 +96,7 @@ for ( const app of Object.keys( CONFIGS ) as ContentManagerApp[] ) {
 		);
 
 		expect( result ).toEqual( {
+			example: [ app ],
 			registered: true,
 			refused: false,
 			kept: true,

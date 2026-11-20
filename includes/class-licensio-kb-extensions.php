@@ -78,6 +78,16 @@ class Licensio_KB_Extensions {
     const KEY_PATTERN = '/^[a-z0-9_-]+\/[a-z0-9_-]+$/';
 
     /**
+     * The `rest_api_init` priority the registry is filled at.
+     *
+     * Before `Licensio_KB_REST_API::register_controllers()` (priority 10).
+     *
+     * @since 1.1.0
+     * @var int
+     */
+    const REST_PRIORITY = 5;
+
+    /**
      * The declared items, by screen, then type, then key.
      *
      * @since 1.1.0
@@ -97,7 +107,9 @@ class Licensio_KB_Extensions {
      * Register the WordPress hooks.
      *
      * The registry is filled on `admin_init` for the app pages and on
-     * `rest_api_init` for the REST routes, whichever comes first.
+     * `rest_api_init` for the REST routes, whichever comes first. On
+     * `rest_api_init` it runs at `REST_PRIORITY`, before the plugin's REST
+     * controllers register their routes, so their schemas can read it.
      *
      * @since 1.1.0
      *
@@ -105,7 +117,7 @@ class Licensio_KB_Extensions {
      */
     public function init_hooks() {
         add_action( 'admin_init', array( $this, 'register' ) );
-        add_action( 'rest_api_init', array( $this, 'register' ) );
+        add_action( 'rest_api_init', array( $this, 'register' ), self::REST_PRIORITY );
     }
 
     /**
