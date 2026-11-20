@@ -1,17 +1,17 @@
 /**
  * Unit tests of the Articles app's extension context and row refresh.
  *
- * `refresh( ids )` fetches only the rows on the page again, with the current
- * filters, and swaps them in; the whole page reloads when no IDs are given or
- * a row no longer matches. `clearSelection()` drops the selection, and
- * `screen` and `rest` come from the page's config.
+ * `refresh( ids )` fetches only the given rows on the page again, with the
+ * current filters, and swaps them in; the whole page reloads when no IDs are
+ * given or a row no longer matches. `clearSelection()` drops the selection,
+ * and `screen` and `rest` come from the page's config.
  *
  * @since 1.1.0
  */
 
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fetchArticles } from '../../apps/articles/api';
+import { fetchArticles, fetchRows } from '../../apps/articles/api';
 import { articlesExtensionContext } from '../../apps/articles/extension-context';
 import { useArticlesStore } from '../../apps/articles/store';
 import type { ArticleItem, ArticlePage } from '../../apps/articles/types';
@@ -19,6 +19,7 @@ import type { ArticleItem, ArticlePage } from '../../apps/articles/types';
 vi.mock( '../../apps/articles/api', async ( importOriginal ) => ( {
 	...( await importOriginal< typeof import( '../../apps/articles/api' ) >() ),
 	fetchArticles: vi.fn(),
+	fetchRows: vi.fn(),
 } ) );
 
 /**
@@ -49,53 +50,21 @@ function page( items: ArticleItem[] ): ArticlePage {
 }
 
 /**
- * Answer row fetches (with IDs) and page loads (without) differently.
+ * The titles of the store's rows.
  *
  * @since 1.1.0
  *
- * @param {ArticlePage|Promise<ArticlePage>} rows     The answer to a row fetch.
- * @param {ArticlePage}                      fullPage The answer to a page load.
+ * @param {Object} store The store.
  *
- * @return {void}
+ * @return {string[]} The titles.
  */
-function answer(
-	rows: ArticlePage | Promise< ArticlePage >,
-	fullPage: ArticlePage = page( [] )
-): void {
-	vi.mocked( fetchArticles ).mockImplementation( ( query, include = [] ) =>
-		include.length ? Promise.resolve( rows ) : Promise.resolve( fullPage )
-	);
-}
-
-/**
- * The ID lists of the row fetches made so far.
- *
- * @since 1.1.0
- *
- * @return {number[][]} One list per row fetch.
- */
-function rowFetches(): number[][] {
-	return vi
-		.mocked( fetchArticles )
-		.mock.calls.map( ( call ) => call[ 1 ] ?? [] )
-		.filter( ( ids ) => ids.length > 0 );
-}
-
-/**
- * How many whole-page loads were made so far.
- *
- * @since 1.1.0
- *
- * @return {number} The count.
- */
-function pageLoads(): number {
-	return vi
-		.mocked( fetchArticles )
-		.mock.calls.filter( ( call ) => ! call[ 1 ]?.length ).length;
+function titles( store: ReturnType< typeof useArticlesStore > ): string[] {
+	return store.items.map( ( row ) => row.title );
 }
 
 beforeEach( () => {
 	vi.mocked( fetchArticles ).mockReset();
+	vi.mocked( fetchRows ).mockReset();
 	window.licensioKbArticles = {
 		root: '/wp-json/licensio-kb/v1/',
 		nonce: 'abc',
@@ -118,93 +87,129 @@ describe( 'articlesExtensionContext', () => {
 		const store = useArticlesStore();
 
 		store.selected = [ 1, 2 ];
+		store.allMatching = true;
 		articlesExtensionContext().clearSelection();
 
 		expect( store.selected ).toEqual( [] );
+		expect( store.allMatching ).toBe( false );
 	} );
 
-	it( 'refreshes only the given rows, with the current filters', async () => {
+	it( 'refreshes the given rows with the current filters', async () => {
 		const store = useArticlesStore();
 
 		store.items = [ item( 1, 'One' ), item( 2, 'Two' ) ];
-		store.query = { ...store.query, search: 'needle' };
-		answer( page( [ item( 2, 'Two, changed' ) ] ) );
+		store.query = { ...store.query, search: 'needle', page: 3 };
+		vi.mocked( fetchRows ).mockResolvedValue( {
+			...page( [ item( 2, 'Two, changed' ) ] ),
+			counts: { publish: 9 },
+		} as ArticlePage );
 
 		await articlesExtensionContext().refresh( [ 2 ] );
 
-		expect( fetchArticles ).toHaveBeenCalledWith( store.query, [ 2 ] );
-		expect( pageLoads() ).toBe( 0 );
-		expect( store.items.map( ( row ) => row.title ) ).toEqual( [
-			'One',
-			'Two, changed',
-		] );
+		expect( fetchRows ).toHaveBeenCalledWith( store.filters, [ 2 ] );
+		expect( vi.mocked( fetchRows ).mock.calls[ 0 ][ 0 ].search ).toBe(
+			'needle'
+		);
+		expect( fetchArticles ).not.toHaveBeenCalled();
+		expect( titles( store ) ).toEqual( [ 'One', 'Two, changed' ] );
+		expect( store.counts ).toEqual( { publish: 9 } );
 	} );
 
 	it( 'reloads the page when no IDs are given', async () => {
 		const store = useArticlesStore();
 
-		answer( page( [] ), page( [ item( 3, 'Three' ) ] ) );
+		vi.mocked( fetchArticles ).mockResolvedValue(
+			page( [ item( 3, 'Three' ) ] )
+		);
 
 		await articlesExtensionContext().refresh();
 
-		expect( rowFetches() ).toEqual( [] );
-		expect( store.items.map( ( row ) => row.id ) ).toEqual( [ 3 ] );
+		expect( fetchRows ).not.toHaveBeenCalled();
+		expect( titles( store ) ).toEqual( [ 'Three' ] );
 	} );
 } );
 
 describe( 'refreshRows', () => {
+	it( 'reloads the page for an empty list of IDs', async () => {
+		vi.mocked( fetchArticles ).mockResolvedValue( page( [] ) );
+
+		await useArticlesStore().refreshRows( [] );
+
+		expect( fetchArticles ).toHaveBeenCalledTimes( 1 );
+		expect( fetchRows ).not.toHaveBeenCalled();
+	} );
+
 	it( 'reloads the page when a row no longer matches the filters', async () => {
 		const store = useArticlesStore();
 
 		store.items = [ item( 1, 'One' ), item( 2, 'Two' ) ];
-		answer( page( [] ), page( [ item( 1, 'One' ) ] ) );
+		vi.mocked( fetchRows ).mockResolvedValue( page( [] ) );
+		vi.mocked( fetchArticles ).mockResolvedValue(
+			page( [ item( 1, 'One' ) ] )
+		);
 
 		await store.refreshRows( [ 2 ] );
 
-		expect( pageLoads() ).toBe( 1 );
+		expect( fetchArticles ).toHaveBeenCalledTimes( 1 );
 		expect( store.items.map( ( row ) => row.id ) ).toEqual( [ 1 ] );
 	} );
 
-	it( 'asks for a repeated ID once and does not reload for it', async () => {
+	it( 'fetches only the given rows that are on the page, once each', async () => {
 		const store = useArticlesStore();
 
-		store.items = [ item( 5, 'Five' ) ];
-		answer( page( [ item( 5, 'Five, changed' ) ] ) );
+		store.items = [ item( 1, 'One' ), item( 2, 'Two' ) ];
+		vi.mocked( fetchRows ).mockResolvedValue(
+			page( [ item( 2, 'Two' ) ] )
+		);
 
-		await store.refreshRows( [ 5, 5 ] );
+		await store.refreshRows( [ 2, 2, 9 ] );
 
-		expect( rowFetches() ).toEqual( [ [ 5 ] ] );
-		expect( pageLoads() ).toBe( 0 );
+		expect( vi.mocked( fetchRows ).mock.calls[ 0 ][ 1 ] ).toEqual( [ 2 ] );
+		expect( fetchArticles ).not.toHaveBeenCalled();
 	} );
 
-	it( 'fetches nothing for rows that are not on the page', async () => {
+	it( 'fetches nothing when no given row is on the page', async () => {
 		const store = useArticlesStore();
 
 		store.items = [ item( 1, 'One' ) ];
 
 		await store.refreshRows( [ 9 ] );
 
+		expect( fetchRows ).not.toHaveBeenCalled();
 		expect( fetchArticles ).not.toHaveBeenCalled();
+	} );
+
+	it( 'shows a failure as an error instead of rejecting', async () => {
+		const store = useArticlesStore();
+
+		store.items = [ item( 1, 'One' ) ];
+		vi.mocked( fetchRows ).mockRejectedValue( new Error( 'Offline' ) );
+
+		await expect( store.refreshRows( [ 1 ] ) ).resolves.toBeUndefined();
+		expect( store.error ).toBe( 'Offline' );
+		expect( titles( store ) ).toEqual( [ 'One' ] );
 	} );
 
 	it( 'drops an answer that a page load overtook', async () => {
 		const store = useArticlesStore();
-		let resolveRows: ( value: ArticlePage ) => void = () => undefined;
+		let answer: ( value: ArticlePage ) => void = () => undefined;
 
 		store.items = [ item( 1, 'One' ) ];
-		answer(
+		vi.mocked( fetchRows ).mockReturnValue(
 			new Promise( ( resolve ) => {
-				resolveRows = resolve;
-			} ),
+				answer = resolve;
+			} )
+		);
+		vi.mocked( fetchArticles ).mockResolvedValue(
 			page( [ item( 1, 'One, reloaded' ) ] )
 		);
 
 		const refreshing = store.refreshRows( [ 1 ] );
 
 		await store.load();
-		resolveRows( page( [ item( 1, 'One, stale' ) ] ) );
+		answer( page( [ item( 1, 'One, stale' ) ] ) );
 		await refreshing;
 
-		expect( store.items[ 0 ].title ).toBe( 'One, reloaded' );
+		expect( titles( store ) ).toEqual( [ 'One, reloaded' ] );
 	} );
 } );
