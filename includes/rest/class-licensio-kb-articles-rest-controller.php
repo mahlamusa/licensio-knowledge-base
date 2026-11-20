@@ -40,6 +40,7 @@
  *
  * @package Licensio_KB
  * @since   1.0.0
+ * @since   1.1.0 Adds the extension columns: their row data, sorting and preferences.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -48,6 +49,7 @@ defined( 'ABSPATH' ) || exit;
  * Serves the Articles app.
  *
  * @since 1.0.0
+ * @since 1.1.0 Serves the extension columns: their row data, sorting and preferences.
  */
 class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
 
@@ -328,7 +330,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      * an action changed without reloading the page.
      *
      * @since 1.0.0
-     * @since 1.1.0 Adds `include`, the IDs of the only rows to return.
+     * @since 1.1.0 Adds `include`, the IDs of the only rows to return, and sorting by the sortable extension columns.
      *
      * @return array<string, array<string, mixed>> The argument schema.
      */
@@ -338,7 +340,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
             array(
                 'orderby'  => array(
                     'type'    => 'string',
-                    'enum'    => self::ORDERBY,
+                    'enum'    => array_merge( self::ORDERBY, self::extension_columns()->sortable_keys() ),
                     'default' => 'date',
                 ),
                 'order'    => array(
@@ -527,6 +529,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      * The arguments of `PUT preferences`.
      *
      * @since 1.0.0
+     * @since 1.1.0 Accepts the extension column keys in `columns`.
      *
      * @return array<string, array<string, mixed>> The argument schema.
      */
@@ -537,7 +540,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
                 'required' => true,
                 'items'    => array(
                     'type' => 'string',
-                    'enum' => self::COLUMNS,
+                    'enum' => array_merge( self::COLUMNS, self::extension_columns()->keys() ),
                 ),
             ),
             'per_page'       => array(
@@ -864,15 +867,40 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      * total and page count stay right, and the app can step back to the
      * last page.
      *
+     * Sorting by an extension column is left to the plugin that declared it,
+     * on `licensio_kb_articles_query_args`; the list keeps its date order
+     * until the plugin replaces it. An extension column the current user may
+     * not see sorts by date.
+     *
      * @since 1.0.0
+     * @since 1.1.0 Sorts by the sortable extension columns through `licensio_kb_articles_query_args`.
      *
      * @param WP_REST_Request $request The request.
      *
      * @return WP_REST_Response|WP_Error The page.
      */
     public function get_items( $request ) {
+        $orderby = (string) $request->get_param( 'orderby' );
+
+        if ( '' !== $orderby && ! in_array( $orderby, self::ORDERBY, true ) && ! self::extension_columns()->can_sort_by( $orderby ) ) {
+            $request->set_param( 'orderby', 'date' );
+        }
+
         $params = $request->get_params();
-        $args   = $this->query_args( $params );
+
+        /**
+         * Filter the WP_Query arguments of a page of the Articles list.
+         *
+         * A plugin that declared a sortable Articles column sorts by it here,
+         * when `$request->get_param( 'orderby' )` is its column key.
+         *
+         * @since 1.1.0
+         *
+         * @param array<string, mixed>  $args        The query arguments.
+         * @param array<string, string> $ext_filters The extension filters chosen.
+         * @param WP_REST_Request       $request     The request.
+         */
+        $args   = apply_filters( 'licensio_kb_articles_query_args', $this->query_args( $params ), array(), $request );
         $query  = $this->run_query( $args );
         $posts  = array_values(
             array_filter(
@@ -1005,9 +1033,12 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      *
      * The caches every item reads from are filled first, so the cost is a
      * fixed number of queries: the metrics (two), the attachment counts
-     * (one) and the users (one).
+     * (one) and the users (one). Each item's `extensions` holds the data of
+     * the extension columns the current user shows, keyed by column key,
+     * from Licensio_KB_Article_Extension_Data.
      *
      * @since 1.0.0
+     * @since 1.1.0 Adds each item's `extensions`.
      *
      * @param WP_Post[] $posts  The posts, with their term and meta caches primed.
      * @param int       $window The metrics window, in days.
@@ -1032,21 +1063,27 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
 
         cache_users( array_values( array_unique( array_filter( $users ) ) ) );
 
-        $items = array();
+        $shown      = self::preferences( get_current_user_id() )['columns'];
+        $extensions = Licensio_KB_Article_Extension_Data::for_posts( $posts, self::extension_columns()->visible_keys( $shown ) );
+        $items      = array();
 
         foreach ( $posts as $post ) {
             $id = (int) $post->ID;
 
-            $items[] = $this->prepare_article(
-                $post,
-                isset( $figures[ $id ] ) ? $figures[ $id ] : array(
-                    'views' => 0,
-                    'up'    => 0,
-                    'down'  => 0,
-                    'share' => null,
+            $items[] = array_merge(
+                $this->prepare_article(
+                    $post,
+                    isset( $figures[ $id ] ) ? $figures[ $id ] : array(
+                        'views' => 0,
+                        'up'    => 0,
+                        'down'  => 0,
+                        'share' => null,
+                    ),
+                    isset( $attachments[ $id ] ) ? $attachments[ $id ] : 0,
+                    $locks[ $id ]
                 ),
-                isset( $attachments[ $id ] ) ? $attachments[ $id ] : 0,
-                $locks[ $id ]
+                // An object, so an article with no extension data is `{}` in JSON.
+                array( 'extensions' => (object) ( isset( $extensions[ $id ] ) ? $extensions[ $id ] : array() ) )
             );
         }
 
@@ -1762,24 +1799,42 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      * that the user turned on there, which shows them on medium screens
      * without changing the columns shown on wider ones.
      *
+     * The extension columns the current user may see are allowed too, after
+     * the core ones, and the ones declared visible by default join the
+     * defaults. The key of a column that is no longer declared, because its
+     * plugin was deactivated, is dropped.
+     *
      * @since 1.0.0 Counts columns stored without `columns_chosen` as chosen, and adds `medium_columns`.
+     * @since 1.1.0 Allows the extension columns the current user may see.
      *
      * @param mixed $value The stored or submitted preferences.
      *
      * @return array{columns: string[], per_page: int, columns_chosen: bool, medium_columns: string[]} The clean preferences.
      */
     public static function sanitize_preferences( $value ) {
-        $value    = is_array( $value ) ? $value : array();
-        $columns  = isset( $value['columns'] ) && is_array( $value['columns'] ) ? $value['columns'] : self::DEFAULT_COLUMNS;
-        $per_page = isset( $value['per_page'] ) ? (int) $value['per_page'] : 0;
+        $extension = self::extension_columns();
+        $value     = is_array( $value ) ? $value : array();
+        $columns   = isset( $value['columns'] ) && is_array( $value['columns'] ) ? $value['columns'] : array_merge( self::DEFAULT_COLUMNS, $extension->default_keys() );
+        $per_page  = isset( $value['per_page'] ) ? (int) $value['per_page'] : 0;
 
         return array(
             // Kept in table order, whatever order they were sent in.
-            'columns'        => array_values( array_intersect( self::COLUMNS, array_map( 'strval', $columns ) ) ),
+            'columns'        => array_values( array_intersect( array_merge( self::COLUMNS, $extension->allowed_keys() ), array_map( 'strval', $columns ) ) ),
             'per_page'       => in_array( $per_page, self::PER_PAGE_OPTIONS, true ) ? $per_page : self::PER_PAGE_OPTIONS[0],
             'columns_chosen' => array_key_exists( 'columns_chosen', $value ) ? ! empty( $value['columns_chosen'] ) : isset( $value['columns'] ),
             'medium_columns' => isset( $value['medium_columns'] ) && is_array( $value['medium_columns'] ) ? array_values( array_intersect( self::COLUMNS, array_map( 'strval', $value['medium_columns'] ) ) ) : array(),
         );
+    }
+
+    /**
+     * The extension columns of the Articles app, from the plugin's registry.
+     *
+     * @since 1.1.0
+     *
+     * @return Licensio_KB_Article_Extension_Columns The lookup.
+     */
+    private static function extension_columns() {
+        return new Licensio_KB_Article_Extension_Columns( licensio_kb()->extensions() );
     }
 
     /**

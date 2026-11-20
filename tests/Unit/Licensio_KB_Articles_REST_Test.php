@@ -10,6 +10,7 @@
  * @since   1.0.0
  */
 
+use Brain\Monkey\Filters;
 use Brain\Monkey\Functions;
 
 /**
@@ -50,6 +51,22 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
      * @var array<string, int[]>
      */
     private $terms = array();
+
+    /**
+     * The extension registry the controller reads.
+     *
+     * @since 1.1.0
+     * @var Licensio_KB_Extensions
+     */
+    private $extensions;
+
+    /**
+     * The current user's saved list preferences.
+     *
+     * @since 1.1.0
+     * @var mixed
+     */
+    private $saved_preferences = '';
 
     /**
      * Register the routes with the core functions they touch stubbed.
@@ -139,6 +156,17 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
             }
         );
         Functions\when( 'wp_check_post_lock' )->justReturn( false );
+
+        $this->extensions        = new Licensio_KB_Extensions();
+        $this->saved_preferences = '';
+
+        Functions\when( 'licensio_kb' )->justReturn( new Licensio_KB_Extensions_Plugin_Double( $this->extensions ) );
+        Functions\when( 'get_current_user_id' )->justReturn( 1 );
+        Functions\when( 'get_user_meta' )->alias(
+            function () {
+                return $this->saved_preferences;
+            }
+        );
 
         $this->controller = new Licensio_KB_Articles_REST_Controller( new Licensio_KB_Article_Metrics( 50, 5 ), new Licensio_KB_Article_Bulk() );
         $this->controller->register_routes();
@@ -1478,6 +1506,323 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
         $this->assertSame( 99, ( new Licensio_KB_Article_Metrics( 150, 0 ) )->threshold() );
         $this->assertSame( 1, ( new Licensio_KB_Article_Metrics( 150, 0 ) )->min_votes() );
     }
+
+    /**
+     * Extension columns join the preferences schema, and the sortable ones the sort keys.
+     *
+     * The schemas are built before the current user is known, so they list
+     * every declared column of the Articles app.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_extension_columns_join_the_schemas() {
+        $this->denied = array( 'secret' );
+
+        $this->extensions->add_column(
+            'articles',
+            'acme/score',
+            array(
+                'label'      => 'Score',
+                'sortable'   => true,
+                'capability' => 'edit_posts',
+            )
+        );
+        $this->extensions->add_column(
+            'articles',
+            'acme/note',
+            array(
+                'label'      => 'Note',
+                'capability' => 'secret',
+            )
+        );
+        $this->extensions->add_column(
+            'tags',
+            'acme/terms',
+            array(
+                'label'    => 'Terms',
+                'sortable' => true,
+            )
+        );
+        $this->controller->register_routes();
+
+        $this->assertSame( array( 'date', 'modified', 'title', 'views', 'rating', 'acme/score' ), $this->routes['/articles'][0]['args']['orderby']['enum'] );
+        $this->assertSame(
+            array_merge( Licensio_KB_Articles_REST_Controller::COLUMNS, array( 'acme/score', 'acme/note' ) ),
+            $this->routes['/preferences'][1]['args']['columns']['items']['enum']
+        );
+        $this->assertSame( Licensio_KB_Articles_REST_Controller::COLUMNS, $this->routes['/preferences'][1]['args']['medium_columns']['items']['enum'], 'Only core columns are hidden on medium screens.' );
+    }
+
+    /**
+     * Preferences keep the extension columns the user may see and drop the rest silently.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_preferences_keep_the_extension_columns_the_user_may_see() {
+        $this->denied = array( 'secret' );
+
+        $this->extensions->add_column(
+            'articles',
+            'acme/score',
+            array(
+                'label'           => 'Score',
+                'default_visible' => true,
+                'capability'      => 'edit_posts',
+            )
+        );
+        $this->extensions->add_column(
+            'articles',
+            'acme/note',
+            array(
+                'label'      => 'Note',
+                'capability' => 'edit_posts',
+            )
+        );
+        $this->extensions->add_column(
+            'articles',
+            'acme/secret',
+            array(
+                'label'           => 'Secret',
+                'default_visible' => true,
+                'capability'      => 'secret',
+            )
+        );
+
+        $this->assertSame(
+            array_merge( Licensio_KB_Articles_REST_Controller::DEFAULT_COLUMNS, array( 'acme/score' ) ),
+            Licensio_KB_Articles_REST_Controller::sanitize_preferences( 'junk' )['columns'],
+            'Columns visible by default join the defaults, if the user may see them.'
+        );
+
+        $saved = Licensio_KB_Articles_REST_Controller::sanitize_preferences(
+            array(
+                'columns'        => array( 'acme/note', 'acme/gone', 'author', 'acme/secret' ),
+                'medium_columns' => array( 'acme/note', 'views' ),
+            )
+        );
+
+        $this->assertSame( array( 'author', 'acme/note' ), $saved['columns'], 'A deactivated extension and a column the user may not see are dropped.' );
+        $this->assertSame( array( 'views' ), $saved['medium_columns'] );
+    }
+
+    /**
+     * Each row carries the data of the extension columns the user shows, and only those.
+     *
+     * The batch filter runs once for the page, and each row starts from what
+     * it gave.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_rows_carry_the_data_of_the_shown_extension_columns() {
+        foreach ( array( 'acme/score', 'acme/note', 'acme/hidden' ) as $key ) {
+            $this->extensions->add_column(
+                'articles',
+                $key,
+                array(
+                    'label'      => $key,
+                    'capability' => 'edit_posts',
+                )
+            );
+        }
+
+        $this->saved_preferences = array( 'columns' => array( 'acme/note', 'author', 'acme/score' ) );
+        $this->stub_list_rows();
+
+        $batches = array();
+
+        Filters\expectApplied( 'licensio_kb_article_extension_data_batch' )
+            ->once()
+            ->andReturnUsing(
+                function ( $data, $posts, $keys ) use ( &$batches ) {
+                    $batches[] = array( wp_list_pluck( $posts, 'ID' ), $keys );
+
+                    return array( 12 => array( 'acme/score' => array( 'text' => '72' ) ) );
+                }
+            );
+        Filters\expectApplied( 'licensio_kb_article_extension_data' )
+            ->twice()
+            ->andReturnUsing(
+                function ( $row, $post ) {
+                    if ( 13 === $post->ID ) {
+                        $row['acme/note']   = array( 'text' => 'Short' );
+                        $row['acme/hidden'] = array( 'text' => 'Not shown' );
+                        $row['acme/score']  = 'not an array';
+                    }
+
+                    return $row;
+                }
+            );
+
+        $controller = new Licensio_KB_Articles_REST_Controller( $this->no_figures(), new Licensio_KB_Article_Bulk() );
+        $rows       = $controller->prepare_items( array( $this->post(), $this->post( array( 'ID' => 13 ) ) ), 30 );
+
+        $this->assertSame( array( array( array( 12, 13 ), array( 'acme/score', 'acme/note' ) ) ), $batches );
+        $this->assertSame( array( 'acme/score' => array( 'text' => '72' ) ), (array) $rows[0]['extensions'] );
+        $this->assertSame( array( 'acme/note' => array( 'text' => 'Short' ) ), (array) $rows[1]['extensions'] );
+    }
+
+    /**
+     * Without an extension column shown, no extension filter runs and rows carry an empty object.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_rows_ask_for_no_extension_data_when_none_is_shown() {
+        $this->extensions->add_column(
+            'articles',
+            'acme/score',
+            array(
+                'label'      => 'Score',
+                'capability' => 'edit_posts',
+            )
+        );
+
+        $this->saved_preferences = array( 'columns' => array( 'author' ) );
+        $this->stub_list_rows();
+
+        Filters\expectApplied( 'licensio_kb_article_extension_data_batch' )->never();
+        Filters\expectApplied( 'licensio_kb_article_extension_data' )->never();
+
+        $controller = new Licensio_KB_Articles_REST_Controller( $this->no_figures(), new Licensio_KB_Article_Bulk() );
+        $rows       = $controller->prepare_items( array( $this->post() ), 30 );
+
+        $this->assertEquals( (object) array(), $rows[0]['extensions'] );
+    }
+
+    /**
+     * A sortable extension column reaches the query args filter; one the user may not see sorts by date.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_an_extension_column_sorts_through_the_query_args_filter() {
+        $this->denied = array( 'secret' );
+
+        $this->extensions->add_column(
+            'articles',
+            'acme/score',
+            array(
+                'label'      => 'Score',
+                'sortable'   => true,
+                'capability' => 'edit_posts',
+            )
+        );
+        $this->extensions->add_column(
+            'articles',
+            'acme/secret',
+            array(
+                'label'      => 'Secret',
+                'sortable'   => true,
+                'capability' => 'secret',
+            )
+        );
+
+        Functions\when( 'wp_count_posts' )->justReturn( (object) array() );
+
+        $sorted = array();
+
+        Filters\expectApplied( 'licensio_kb_articles_query_args' )
+            ->twice()
+            ->andReturnUsing(
+                function ( $args, $ext_filters, $request ) use ( &$sorted ) {
+                    $sorted[] = $request->get_param( 'orderby' );
+
+                    if ( 'acme/score' === $request->get_param( 'orderby' ) ) {
+                        $args['orderby'] = array( 'meta_value_num' => 'DESC' );
+                    }
+
+                    return $args;
+                }
+            );
+
+        $controller = new Licensio_KB_Articles_REST_Controller_Double( new WP_Query() );
+
+        $controller->get_items( new WP_REST_Request( array(), '/licensio-kb/v1/articles', array( 'orderby' => 'acme/score' ) ) );
+        $controller->get_items( new WP_REST_Request( array(), '/licensio-kb/v1/articles', array( 'orderby' => 'acme/secret' ) ) );
+
+        $this->assertSame( array( 'acme/score', 'date' ), $sorted );
+        $this->assertSame( array( 'meta_value_num' => 'DESC' ), $controller->calls[0]['orderby'], 'The filtered arguments run.' );
+        $this->assertSame(
+            array(
+                'date' => 'DESC',
+                'ID'   => 'DESC',
+            ),
+            $controller->calls[1]['orderby']
+        );
+    }
+
+    /**
+     * Stub the core functions one page of list rows reads.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    private function stub_list_rows() {
+        Functions\when( 'wp_list_pluck' )->alias(
+            function ( $items, $field ) {
+                return array_map(
+                    function ( $item ) use ( $field ) {
+                        return $item->$field;
+                    },
+                    $items
+                );
+            }
+        );
+        Functions\when( 'cache_users' )->justReturn( null );
+        Functions\when( 'get_the_terms' )->justReturn( false );
+        Functions\when( 'get_edit_post_link' )->justReturn( '' );
+        Functions\when( 'get_preview_post_link' )->justReturn( '' );
+        Functions\when( 'get_post' )->justReturn( null );
+        Functions\when( 'strip_shortcodes' )->returnArg();
+    }
+
+    /**
+     * A metrics helper with no views, votes or attachments for any article.
+     *
+     * @since 1.1.0
+     *
+     * @return Licensio_KB_Article_Metrics The helper.
+     */
+    private function no_figures() {
+        return new class( 50, 5 ) extends Licensio_KB_Article_Metrics {
+
+            /**
+             * No figures for any article.
+             *
+             * @since 1.1.0
+             *
+             * @param int[] $ids    The article IDs.
+             * @param int   $window The window, in days.
+             *
+             * @return array<int, array{views: int, up: int, down: int, share: int|null}> None.
+             */
+            public function for_articles( array $ids, $window ) {
+                return array();
+            }
+
+            /**
+             * No attachments for any article.
+             *
+             * @since 1.1.0
+             *
+             * @param int[] $ids The article IDs.
+             *
+             * @return array<int, int> None.
+             */
+            public function attachment_counts( array $ids ) {
+                return array();
+            }
+        };
+    }
 }
 
 /**
@@ -1529,5 +1874,43 @@ class Licensio_KB_Articles_REST_Controller_Double extends Licensio_KB_Articles_R
         $this->calls[] = $args;
 
         return $this->results[ min( count( $this->calls ), count( $this->results ) ) - 1 ];
+    }
+}
+
+/**
+ * The main plugin object, as far as the extension registry goes.
+ *
+ * @since 1.1.0
+ */
+class Licensio_KB_Extensions_Plugin_Double {
+
+    /**
+     * The registry it hands out.
+     *
+     * @since 1.1.0
+     * @var Licensio_KB_Extensions
+     */
+    private $extensions;
+
+    /**
+     * Constructor.
+     *
+     * @since 1.1.0
+     *
+     * @param Licensio_KB_Extensions $extensions The registry to hand out.
+     */
+    public function __construct( Licensio_KB_Extensions $extensions ) {
+        $this->extensions = $extensions;
+    }
+
+    /**
+     * The extension registry.
+     *
+     * @since 1.1.0
+     *
+     * @return Licensio_KB_Extensions The registry.
+     */
+    public function extensions() {
+        return $this->extensions;
     }
 }

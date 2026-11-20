@@ -6,7 +6,7 @@
  * must have run first; `index.ts` does that before mounting.
  *
  * @since 1.0.0
- * @since 1.1.0 Falls back to no extensions.
+ * @since 1.1.0 Falls back to no extensions, and fetches rows by ID.
  */
 
 import { noExtensions } from '../components/extensions';
@@ -128,6 +128,29 @@ export function fetchArticles( query: ArticleQuery ): Promise< ArticlePage > {
 		order: query.order,
 		page: query.page,
 		per_page: query.per_page,
+	} );
+}
+
+/**
+ * Fetch some rows of the list again, by ID.
+ *
+ * The filters still apply, so a row that no longer matches them is left
+ * out of the answer.
+ *
+ * @since 1.1.0
+ *
+ * @param {ArticleFilters} filters The filters of the view.
+ * @param {number[]}       ids     At most 100 article IDs.
+ *
+ * @return {Promise<ArticlePage>} The rows, all on one page.
+ */
+export function fetchRows(
+	filters: ArticleFilters,
+	ids: number[]
+): Promise< ArticlePage > {
+	return get< ArticlePage >( 'articles', {
+		...filterQuery( filters ),
+		include: ids,
 	} );
 }
 
