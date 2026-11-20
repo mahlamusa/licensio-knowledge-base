@@ -9,8 +9,10 @@
  *
  * @package Licensio_KB
  * @since   1.0.0
+ * @since   1.1.0 Covers the extension registry in the app data and the extension enqueue action.
  */
 
+use Brain\Monkey\Actions;
 use Brain\Monkey\Functions;
 
 /**
@@ -85,6 +87,14 @@ class Licensio_KB_Categories_Admin_Test extends Licensio_KB_Test_Case {
     private $admin;
 
     /**
+     * The extension registry `licensio_kb()->extensions()` hands out.
+     *
+     * @since 1.1.0
+     * @var Licensio_KB_Extensions
+     */
+    private $registry;
+
+    /**
      * Stub the WordPress surface the page touches.
      *
      * @since 1.0.0
@@ -99,6 +109,7 @@ class Licensio_KB_Categories_Admin_Test extends Licensio_KB_Test_Case {
         $this->can_manage = true;
         $this->classic    = false;
         $this->apps       = array();
+        $this->registry   = new Licensio_KB_Extensions();
 
         Functions\when( 'add_submenu_page' )->alias(
             function ( ...$args ) {
@@ -336,6 +347,7 @@ class Licensio_KB_Categories_Admin_Test extends Licensio_KB_Test_Case {
      * On its own screen the app loads with the media modal and its configuration.
      *
      * @since 1.0.0
+     * @since 1.1.0 Loads after the extension registry, carries the extensions and fires the extension enqueue action.
      *
      * @return void
      */
@@ -345,6 +357,12 @@ class Licensio_KB_Categories_Admin_Test extends Licensio_KB_Test_Case {
             ->once()
             ->with( 'licensio-kb-categories-app', 'licensio-knowledge-base' );
 
+        Actions\expectDone( 'licensio_kb_enqueue_app_extensions' )
+            ->once()
+            ->with( 'categories', self::HOOK_SUFFIX );
+
+        $this->registry->add_column( 'categories', 'acme/seo', array( 'label' => 'SEO' ) );
+
         $this->admin->register_page();
         $this->admin->enqueue( self::HOOK_SUFFIX );
 
@@ -352,7 +370,7 @@ class Licensio_KB_Categories_Admin_Test extends Licensio_KB_Test_Case {
             array(
                 'licensio-kb-categories-app' => array(
                     'entry' => 'apps/categories/index.ts',
-                    'deps'  => array( 'wp-i18n' ),
+                    'deps'  => array( 'wp-i18n', 'licensio-kb-extensions' ),
                 ),
             ),
             $this->apps
@@ -367,6 +385,21 @@ class Licensio_KB_Categories_Admin_Test extends Licensio_KB_Test_Case {
                         'nonce'       => 'a-nonce',
                         'settingsUrl' => 'https://example.test/wp-admin/edit.php?post_type=licensio_article&page=licensio-kb-settings',
                         'articlesUrl' => 'https://example.test/wp-admin/admin.php?page=licensio-kb-articles',
+                        'extensions'  => array(
+                            'columns'     => array(
+                                array(
+                                    'key'            => 'acme/seo',
+                                    'label'          => 'SEO',
+                                    'group'          => '',
+                                    'defaultVisible' => false,
+                                    'sortable'       => false,
+                                    'position'       => '',
+                                ),
+                            ),
+                            'filters'     => array(),
+                            'bulkActions' => array(),
+                            'rowActions'  => array(),
+                        ),
                     ),
                 ),
             ),
@@ -405,6 +438,17 @@ class Licensio_KB_Categories_Admin_Test extends Licensio_KB_Test_Case {
         $this->expectExceptionMessage( 'You are not allowed to manage the knowledge base.' );
 
         $this->admin->render_page();
+    }
+
+    /**
+     * The extension registry, as `licensio_kb()->extensions()` hands it out.
+     *
+     * @since 1.1.0
+     *
+     * @return Licensio_KB_Extensions The registry.
+     */
+    public function extensions() {
+        return $this->registry;
     }
 
     /**

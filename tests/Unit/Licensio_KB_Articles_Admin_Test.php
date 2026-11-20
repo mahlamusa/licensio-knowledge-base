@@ -9,8 +9,10 @@
  *
  * @package Licensio_KB
  * @since   1.0.0
+ * @since   1.1.0 Covers the extension registry in the app data and the extension enqueue action.
  */
 
+use Brain\Monkey\Actions;
 use Brain\Monkey\Functions;
 
 /**
@@ -56,6 +58,14 @@ class Licensio_KB_Articles_Admin_Test extends Licensio_KB_Test_Case {
     private $enqueued;
 
     /**
+     * The extension registry the plugin double hands out.
+     *
+     * @since 1.1.0
+     * @var Licensio_KB_Extensions
+     */
+    private $extensions;
+
+    /**
      * Stub the WordPress surface the page touches.
      *
      * @since 1.0.0
@@ -65,9 +75,10 @@ class Licensio_KB_Articles_Admin_Test extends Licensio_KB_Test_Case {
     protected function setUp(): void {
         parent::setUp();
 
-        $this->submenus = array();
-        $this->enqueued = new ArrayObject();
-        $this->classic  = false;
+        $this->submenus   = array();
+        $this->enqueued   = new ArrayObject();
+        $this->classic    = false;
+        $this->extensions = new Licensio_KB_Extensions();
 
         $assets = new class( $this->enqueued ) extends Licensio_KB_Assets {
 
@@ -110,7 +121,7 @@ class Licensio_KB_Articles_Admin_Test extends Licensio_KB_Test_Case {
             }
         };
 
-        $plugin = new class( $assets, array( $this, 'content_manager' ) ) {
+        $plugin = new class( $assets, array( $this, 'content_manager' ), $this->extensions ) {
 
             /**
              * The asset loader handed out.
@@ -129,16 +140,38 @@ class Licensio_KB_Articles_Admin_Test extends Licensio_KB_Test_Case {
             private $content_manager;
 
             /**
-             * Keep the asset loader and the content manager factory.
+             * The extension registry handed out.
+             *
+             * @since 1.1.0
+             * @var Licensio_KB_Extensions
+             */
+            private $extensions;
+
+            /**
+             * Keep the asset loader, the content manager factory and the extension registry.
              *
              * @since 1.0.0
+             * @since 1.1.0 Takes the extension registry.
              *
-             * @param Licensio_KB_Assets $assets          The asset loader.
-             * @param callable           $content_manager Builds the content manager.
+             * @param Licensio_KB_Assets     $assets          The asset loader.
+             * @param callable               $content_manager Builds the content manager.
+             * @param Licensio_KB_Extensions $extensions      The extension registry.
              */
-            public function __construct( $assets, callable $content_manager ) {
+            public function __construct( $assets, callable $content_manager, Licensio_KB_Extensions $extensions ) {
                 $this->assets          = $assets;
                 $this->content_manager = $content_manager;
+                $this->extensions      = $extensions;
+            }
+
+            /**
+             * The extension registry.
+             *
+             * @since 1.1.0
+             *
+             * @return Licensio_KB_Extensions The registry.
+             */
+            public function extensions() {
+                return $this->extensions;
             }
 
             /**
@@ -420,6 +453,52 @@ class Licensio_KB_Articles_Admin_Test extends Licensio_KB_Test_Case {
         $this->assertArrayHasKey( Licensio_KB_Articles_Admin::APP_HANDLE, $this->enqueued );
         $this->assertContains( 'wp-i18n', $this->enqueued[ Licensio_KB_Articles_Admin::APP_HANDLE ] );
         $this->assertContains( 'wp-a11y', $this->enqueued[ Licensio_KB_Articles_Admin::APP_HANDLE ] );
+    }
+
+    /**
+     * The app loads after the extension registry, and extension scripts are
+     * told when to enqueue.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_extension_scripts_enqueue_after_the_app() {
+        Functions\when( 'wp_set_script_translations' )->justReturn( true );
+        Functions\when( 'wp_localize_script' )->justReturn( true );
+        Actions\expectDone( 'licensio_kb_enqueue_app_extensions' )
+            ->once()
+            ->with( 'articles', 'admin_page_licensio-kb-articles' );
+
+        $this->admin->register_page();
+        $this->admin->enqueue_app( 'admin_page_licensio-kb-articles' );
+
+        $this->assertContains( Licensio_KB_Assets::EXTENSIONS_HANDLE, $this->enqueued[ Licensio_KB_Articles_Admin::APP_HANDLE ] );
+    }
+
+    /**
+     * The app data carries the Articles extensions the user may see.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_the_app_data_carries_the_articles_extensions() {
+        $this->extensions->add_row_action( 'articles', 'acme/edit', array( 'label' => 'Edit' ) );
+        $this->extensions->add_row_action( 'tags', 'acme/tag', array( 'label' => 'Tag' ) );
+
+        $data = $this->admin->app_data();
+
+        $this->assertSame(
+            array(
+                array(
+                    'key'   => 'acme/edit',
+                    'label' => 'Edit',
+                ),
+            ),
+            $data['extensions']['rowActions']
+        );
+        $this->assertSame( array(), $data['extensions']['columns'] );
     }
 
     /**

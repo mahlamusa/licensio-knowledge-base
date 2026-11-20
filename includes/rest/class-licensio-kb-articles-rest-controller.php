@@ -324,7 +324,11 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
     /**
      * The arguments of `GET articles`: the filters plus sort and paging.
      *
+     * `include` asks for the given rows only, so an app can refresh the rows
+     * an action changed without reloading the page.
+     *
      * @since 1.0.0
+     * @since 1.1.0 Adds `include`, the IDs of the only rows to return.
      *
      * @return array<string, array<string, mixed>> The argument schema.
      */
@@ -352,6 +356,16 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
                     'minimum' => 1,
                     'maximum' => self::MAX_PER_PAGE,
                     'default' => 20,
+                ),
+                'include'  => array(
+                    'type'        => 'array',
+                    'default'     => array(),
+                    'maxItems'    => self::MAX_PER_PAGE,
+                    'items'       => array(
+                        'type'    => 'integer',
+                        'minimum' => 1,
+                    ),
+                    'description' => __( 'Only the articles with these IDs, on one page. The filters still apply.', 'licensio-knowledge-base' ),
                 ),
             )
         );
@@ -626,6 +640,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      * whatever author the request names.
      *
      * @since 1.0.0 Limits users without `edit_others_licensio_articles` to their own articles.
+     * @since 1.1.0 Limits the list to the `include` IDs, all on one page, when given.
      *
      * @param array<string, mixed> $params  The request parameters, validated against the schema.
      * @param bool                 $ids_only True for `GET articles/ids`: every match, as IDs, unsorted by metrics.
@@ -702,6 +717,16 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
             'modified' => 'modified',
             'title'    => 'title',
         );
+
+        $include = Licensio_KB_Article_Bulk::clean_ids( isset( $params['include'] ) ? (array) $params['include'] : array() );
+
+        if ( ! empty( $include ) ) {
+            $args['post__in'] = $include;
+
+            // Every requested row on one page, whatever page the app is on.
+            $params['per_page'] = count( $include );
+            $params['page']     = 1;
+        }
 
         return array_merge(
             $args,

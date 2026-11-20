@@ -9,6 +9,7 @@
  *
  * @package Licensio_KB
  * @since   1.0.0
+ * @since   1.1.0 Covers the extension registry script.
  */
 
 use Brain\Monkey\Functions;
@@ -486,6 +487,34 @@ class Licensio_KB_Assets_Test extends Licensio_KB_Test_Case {
 
         $this->assertDoesNotMatchRegularExpression( '/^\s*export\s/m', $source );
         $this->assertDoesNotMatchRegularExpression( '/^\s*import\s/m', $source );
+    }
+
+    /**
+     * The extension registry is a classic script registered in wp-admin
+     * before the apps enqueue themselves.
+     *
+     * Extension scripts are classic scripts that call `register()` as soon
+     * as they run, before the apps' module scripts.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_the_extension_registry_is_a_classic_admin_script() {
+        $assets = new Licensio_KB_Assets();
+
+        $assets->init_hooks();
+        $assets->register_extensions_registry();
+
+        $this->assertSame( 1, has_action( 'admin_enqueue_scripts', array( $assets, 'register_extensions_registry' ) ) );
+        $this->assertSame(
+            LICENSIO_KB_ASSETS_URL . 'js/licensio-kb-extensions.js',
+            $this->scripts[ Licensio_KB_Assets::EXTENSIONS_HANDLE ]
+        );
+
+        $source = (string) file_get_contents( LICENSIO_KB_ABSPATH . 'assets/js/licensio-kb-extensions.js' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+
+        $this->assertDoesNotMatchRegularExpression( '/^\s*(export|import)\s/m', $source );
     }
 
     /**

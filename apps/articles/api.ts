@@ -6,8 +6,10 @@
  * must have run first; `index.ts` does that before mounting.
  *
  * @since 1.0.0
+ * @since 1.1.0 Falls back to no extensions.
  */
 
+import { noExtensions } from '../components/extensions';
 import { get, patch, PER_PAGE, post, put } from '../components/rest';
 import type { Query } from '../components/rest';
 import type {
@@ -59,6 +61,7 @@ const FALLBACK_CONFIG: ArticlesConfig = {
 		medium_columns: [],
 	},
 	lowRating: { threshold: 50, minVotes: 5 },
+	extensions: noExtensions(),
 };
 
 /**

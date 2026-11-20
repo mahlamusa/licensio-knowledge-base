@@ -25,6 +25,7 @@ define( 'LICENSIO_KB_ASSETS_URL', LICENSIO_KB_PLUGIN_URL . 'assets/' );
 define( 'LICENSIO_KB_DIST_URL', LICENSIO_KB_PLUGIN_URL . 'dist/' );
 define( 'LICENSIO_KB_DIST_PATH', LICENSIO_KB_ABSPATH . 'dist/' );
 define( 'LICENSIO_KB_REST_NAMESPACE', 'licensio-kb/v1' );
+define( 'LICENSIO_KB_EXTENSIONS_API', 1 );
 
 /*
  * The output-format constants WordPress defines alongside wpdb. The vendored

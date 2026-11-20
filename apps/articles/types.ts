@@ -6,8 +6,10 @@
  * admin page localises (`Licensio_KB_Articles_Admin::app_data()`).
  *
  * @since 1.0.0
+ * @since 1.1.0 Adds the `extensions` config.
  */
 
+import type { ExtensionsConfig } from '../components/extensions';
 import type { TermTaxonomy, TermValue } from '../components/types/terms';
 
 /** A post status an article can have. */
@@ -288,4 +290,6 @@ export interface ArticlesConfig {
 	preferences: ListPreferences;
 	/** The Needs attention rule, for its help text. */
 	lowRating: { threshold: number; minVotes: number };
+	/** The extensions the current user may see. */
+	extensions: ExtensionsConfig;
 }

@@ -1,0 +1,389 @@
+<?php
+/**
+ * The extension registry of the content manager apps.
+ *
+ * @package Licensio_KB
+ * @since   1.1.0
+ */
+
+use Brain\Monkey\Actions;
+use Brain\Monkey\Functions;
+
+/**
+ * Drives Licensio_KB_Extensions and Licensio_KB_Extension_Config.
+ *
+ * @since 1.1.0
+ */
+class Licensio_KB_Extensions_Test extends Licensio_KB_Test_Case {
+
+    /**
+     * The registry under test.
+     *
+     * @since 1.1.0
+     * @var Licensio_KB_Extensions
+     */
+    private $extensions;
+
+    /**
+     * The capabilities the current user holds.
+     *
+     * @since 1.1.0
+     * @var string[]
+     */
+    private $caps = array();
+
+    /**
+     * The messages of the declarations that were refused.
+     *
+     * @since 1.1.0
+     * @var string[]
+     */
+    private $refused = array();
+
+    /**
+     * Build a registry with the capability checks stubbed.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    protected function setUp(): void {
+        parent::setUp();
+
+        $this->caps    = array( 'edit_licensio_articles', 'manage_licensio_kb' );
+        $this->refused = array();
+
+        Functions\when( 'current_user_can' )->alias(
+            function ( $capability ) {
+                return in_array( $capability, $this->caps, true );
+            }
+        );
+        Functions\when( 'get_post_type_object' )->justReturn(
+            (object) array(
+                'cap' => (object) Licensio_KB_Capabilities::post_type_capabilities(),
+            )
+        );
+        Functions\when( '_doing_it_wrong' )->alias(
+            function ( $method, $message ) {
+                unset( $method );
+
+                $this->refused[] = $message;
+            }
+        );
+
+        $this->extensions = new Licensio_KB_Extensions();
+    }
+
+    /**
+     * The registry is filled on admin_init and on rest_api_init.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_the_registry_is_filled_on_admin_and_rest_requests() {
+        $this->extensions->init_hooks();
+
+        $this->assertSame( 10, has_action( 'admin_init', array( $this->extensions, 'register' ) ) );
+        $this->assertSame( 10, has_action( 'rest_api_init', array( $this->extensions, 'register' ) ) );
+    }
+
+    /**
+     * An admin page that also builds the REST server asks for extensions once.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_the_register_action_fires_once_per_request() {
+        Actions\expectDone( 'licensio_kb_register_extensions' )->once()->with( $this->extensions );
+
+        $this->extensions->register();
+        $this->extensions->register();
+    }
+
+    /**
+     * A full declaration of each kind is kept as given, in order.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_each_kind_of_item_is_kept() {
+        $this->assertTrue(
+            $this->extensions->add_column(
+                'articles',
+                'acme/score',
+                array(
+                    'label'           => 'Score',
+                    'group'           => 'Acme',
+                    'default_visible' => 1,
+                    'sortable'        => true,
+                    'position'        => 'tags',
+                    'capability'      => 'manage_licensio_kb',
+                )
+            )
+        );
+        $this->assertTrue( $this->extensions->add_column( 'articles', 'acme/notes', array( 'label' => 'Notes' ) ) );
+        $this->assertTrue(
+            $this->extensions->add_filter(
+                'articles',
+                'acme/seo',
+                array(
+                    'label'     => 'SEO',
+                    'options'   => array(
+                        'Missing_Meta' => 'Missing meta',
+                        'low-score'    => 'Low score',
+                    ),
+                    'query_arg' => 'seo_filter',
+                )
+            )
+        );
+        $this->assertTrue( $this->extensions->add_bulk_action( 'categories', 'acme/check', array( 'label' => 'Check' ) ) );
+        $this->assertTrue( $this->extensions->add_row_action( 'tags', 'acme/edit', array( 'label' => 'Edit' ) ) );
+
+        $this->assertSame(
+            array(
+                'acme/score' => array(
+                    'key'             => 'acme/score',
+                    'label'           => 'Score',
+                    'capability'      => 'manage_licensio_kb',
+                    'group'           => 'Acme',
+                    'default_visible' => true,
+                    'sortable'        => true,
+                    'position'        => 'tags',
+                ),
+                'acme/notes' => array(
+                    'key'             => 'acme/notes',
+                    'label'           => 'Notes',
+                    'capability'      => 'edit_licensio_articles',
+                    'group'           => '',
+                    'default_visible' => false,
+                    'sortable'        => false,
+                    'position'        => '',
+                ),
+            ),
+            $this->extensions->items( 'articles', 'columns' )
+        );
+        $this->assertSame(
+            array(
+                'missing_meta' => 'Missing meta',
+                'low-score'    => 'Low score',
+            ),
+            $this->extensions->items( 'articles', 'filters' )['acme/seo']['options']
+        );
+        $this->assertSame( 'seo_filter', $this->extensions->items( 'articles', 'filters' )['acme/seo']['query_arg'] );
+        $this->assertSame( 'manage_licensio_kb', $this->extensions->items( 'categories', 'bulk_actions' )['acme/check']['capability'], 'The Categories app needs the management capability.' );
+        $this->assertSame( 'manage_licensio_kb', $this->extensions->items( 'tags', 'row_actions' )['acme/edit']['capability'], 'The Tags app needs the management capability.' );
+        $this->assertSame( array(), $this->extensions->items( 'tags', 'columns' ) );
+        $this->assertSame( array(), $this->refused );
+    }
+
+    /**
+     * A key declared again replaces the earlier item.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_a_key_declared_again_replaces_the_first() {
+        $this->extensions->add_row_action( 'articles', 'acme/edit', array( 'label' => 'Edit' ) );
+        $this->extensions->add_row_action( 'articles', 'acme/edit', array( 'label' => 'Edit SEO' ) );
+
+        $this->assertSame( array( 'acme/edit' ), array_keys( $this->extensions->items( 'articles', 'row_actions' ) ) );
+        $this->assertSame( 'Edit SEO', $this->extensions->items( 'articles', 'row_actions' )['acme/edit']['label'] );
+    }
+
+    /**
+     * Unknown screens, keys without a namespace and items without a label are refused.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_invalid_declarations_are_refused() {
+        $this->assertFalse( $this->extensions->add_column( 'posts', 'acme/score', array( 'label' => 'Score' ) ) );
+
+        foreach ( array( 'score', 'Acme/Score', 'acme/score/extra', 'acme/', '/score', 'acme score/x', 'author' ) as $key ) {
+            $this->assertFalse( $this->extensions->add_column( 'articles', $key, array( 'label' => 'Score' ) ), $key );
+        }
+
+        $this->assertFalse( $this->extensions->add_column( 'articles', 'acme/score', array() ) );
+        $this->assertFalse( $this->extensions->add_bulk_action( 'articles', 'acme/check', array( 'label' => '<b></b>' ) ) );
+        $this->assertFalse( $this->extensions->add_filter( 'articles', 'acme/seo', array( 'label' => 'SEO' ) ), 'A filter needs options.' );
+        $this->assertFalse(
+            $this->extensions->add_filter(
+                'articles',
+                'acme/seo',
+                array(
+                    'label'   => 'SEO',
+                    'options' => array( '!!' => 'Nothing left after sanitising' ),
+                )
+            )
+        );
+
+        $this->assertCount( 12, $this->refused, 'Each refusal is reported.' );
+
+        foreach ( Licensio_KB_Extensions::SCREENS as $screen ) {
+            foreach ( Licensio_KB_Extensions::TYPES as $type ) {
+                $this->assertSame( array(), $this->extensions->items( $screen, $type ) );
+            }
+        }
+    }
+
+    /**
+     * A position that is neither a column key nor an extension key means the end.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_a_bad_position_means_the_end() {
+        $this->extensions->add_column(
+            'articles',
+            'acme/a',
+            array(
+                'label'    => 'A',
+                'position' => 'acme/b',
+            )
+        );
+        $this->extensions->add_column(
+            'articles',
+            'acme/b',
+            array(
+                'label'    => 'B',
+                'position' => '<script>',
+            )
+        );
+
+        $columns = $this->extensions->items( 'articles', 'columns' );
+
+        $this->assertSame( 'acme/b', $columns['acme/a']['position'] );
+        $this->assertSame( '', $columns['acme/b']['position'] );
+    }
+
+    /**
+     * Only the items the user may see reach the app, without their capabilities.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_the_app_config_holds_what_the_user_may_see() {
+        $this->extensions->add_column(
+            'articles',
+            'acme/score',
+            array(
+                'label'           => 'Score',
+                'group'           => 'Acme',
+                'default_visible' => true,
+                'sortable'        => true,
+                'position'        => 'date',
+            )
+        );
+        $this->extensions->add_column(
+            'articles',
+            'acme/secret',
+            array(
+                'label'      => 'Secret',
+                'capability' => 'acme_secret',
+            )
+        );
+        $this->extensions->add_filter(
+            'articles',
+            'acme/seo',
+            array(
+                'label'     => 'SEO',
+                'options'   => array(
+                    'missing_meta' => 'Missing meta',
+                    '2024'         => 'A numeric key',
+                ),
+                'query_arg' => 'seo_filter',
+            )
+        );
+        $this->extensions->add_bulk_action(
+            'articles',
+            'acme/optimize',
+            array(
+                'label'      => 'Optimize',
+                'capability' => 'acme_optimize',
+            )
+        );
+        $this->extensions->add_bulk_action( 'articles', 'acme/check', array( 'label' => 'Check' ) );
+        $this->extensions->add_row_action( 'articles', 'acme/edit', array( 'label' => 'Edit' ) );
+
+        $this->assertSame(
+            array(
+                'columns'     => array(
+                    array(
+                        'key'            => 'acme/score',
+                        'label'          => 'Score',
+                        'group'          => 'Acme',
+                        'defaultVisible' => true,
+                        'sortable'       => true,
+                        'position'       => 'date',
+                    ),
+                ),
+                'filters'     => array(
+                    array(
+                        'key'      => 'acme/seo',
+                        'label'    => 'SEO',
+                        'queryArg' => 'seo_filter',
+                        'options'  => array(
+                            array(
+                                'value' => 'missing_meta',
+                                'label' => 'Missing meta',
+                            ),
+                            array(
+                                'value' => '2024',
+                                'label' => 'A numeric key',
+                            ),
+                        ),
+                    ),
+                ),
+                'bulkActions' => array(
+                    array(
+                        'key'   => 'acme/check',
+                        'label' => 'Check',
+                    ),
+                ),
+                'rowActions'  => array(
+                    array(
+                        'key'   => 'acme/edit',
+                        'label' => 'Edit',
+                    ),
+                ),
+            ),
+            Licensio_KB_Extension_Config::for_screen( $this->extensions, 'articles' )
+        );
+    }
+
+    /**
+     * A user without the app page's capability sees no extension by default.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_items_default_to_the_app_pages_capability() {
+        $this->extensions->add_row_action( 'articles', 'acme/edit', array( 'label' => 'Edit' ) );
+        $this->extensions->add_row_action( 'tags', 'acme/edit', array( 'label' => 'Edit' ) );
+
+        $this->caps = array( 'edit_licensio_articles' );
+
+        $this->assertCount( 1, $this->extensions->allowed( 'articles', 'row_actions' ) );
+        $this->assertSame( array(), $this->extensions->allowed( 'tags', 'row_actions' ), 'The Tags app needs the management capability.' );
+
+        $this->caps = array();
+
+        $this->assertSame(
+            array(
+                'columns'     => array(),
+                'filters'     => array(),
+                'bulkActions' => array(),
+                'rowActions'  => array(),
+            ),
+            Licensio_KB_Extension_Config::for_screen( $this->extensions, 'articles' )
+        );
+    }
+}

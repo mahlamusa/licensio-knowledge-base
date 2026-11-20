@@ -188,6 +188,14 @@ final class Licensio_KB {
     private $term_operations = null;
 
     /**
+     * The extension registry of the content manager apps.
+     *
+     * @since 1.1.0
+     * @var Licensio_KB_Extensions|null
+     */
+    private $extensions = null;
+
+    /**
      * Return the single instance of the plugin.
      *
      * @since 1.0.0
@@ -226,6 +234,7 @@ final class Licensio_KB {
      *
      * @since 1.0.0
      * @since 1.0.0 Hooks the notice for a missing admin app build.
+     * @since 1.1.0 Builds the extension registry of the content manager apps.
      *
      * @return void
      */
@@ -260,6 +269,7 @@ final class Licensio_KB {
          */
         $this->content_manager = new Licensio_KB_Content_Manager( $this->settings, $this->assets );
         $this->term_operations = new Licensio_KB_Term_Operations();
+        $this->extensions      = new Licensio_KB_Extensions();
 
         /*
          * Permalinks first. It adds a key to the settings registry, and
@@ -285,6 +295,7 @@ final class Licensio_KB {
         $this->toc->init_hooks();
         $this->content_manager->init_hooks();
         $this->term_operations->init_hooks();
+        $this->extensions->init_hooks();
 
         // Its REST routes must be registered for REST requests, so not admin only.
         $tags_admin = new Licensio_KB_Tags_Admin( $this->assets );
@@ -617,6 +628,21 @@ final class Licensio_KB {
         }
 
         return $this->content_manager;
+    }
+
+    /**
+     * Get the extension registry of the content manager apps.
+     *
+     * @since 1.1.0
+     *
+     * @return Licensio_KB_Extensions
+     */
+    public function extensions() {
+        if ( ! $this->extensions instanceof Licensio_KB_Extensions ) {
+            $this->extensions = new Licensio_KB_Extensions();
+        }
+
+        return $this->extensions;
     }
 
     /**

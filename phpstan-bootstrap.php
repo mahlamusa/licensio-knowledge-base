@@ -19,3 +19,4 @@ define( 'LICENSIO_KB_ASSETS_URL', '' );
 define( 'LICENSIO_KB_DIST_URL', '' );
 define( 'LICENSIO_KB_DIST_PATH', '' );
 define( 'LICENSIO_KB_REST_NAMESPACE', 'licensio-kb/v1' );
+define( 'LICENSIO_KB_EXTENSIONS_API', 1 );
