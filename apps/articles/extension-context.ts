@@ -9,21 +9,22 @@
  */
 
 import { config } from './api';
-import type { useArticlesStore } from './store';
+import { useArticlesStore } from './store';
 import type { ExtensionContext } from '../components/extensions';
 
 /**
  * The extension context of the Articles app.
  *
- * @since 1.1.0
+ * Call it where Pinia is active, such as a component's setup.
  *
- * @param {Object} store The app's store.
+ * @since 1.1.0
  *
  * @return {ExtensionContext} The context.
  */
-export function articlesExtensionContext(
-	store: ReturnType< typeof useArticlesStore >
-): ExtensionContext {
+export function articlesExtensionContext(): ExtensionContext {
+	// A Pinia store, not a React hook.
+	// eslint-disable-next-line react-hooks/rules-of-hooks
+	const store = useArticlesStore();
 	const { root, nonce } = config();
 
 	return {

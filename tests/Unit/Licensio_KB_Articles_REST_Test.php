@@ -10,6 +10,7 @@
  * @since   1.0.0
  */
 
+use Brain\Monkey\Filters;
 use Brain\Monkey\Functions;
 
 /**
@@ -610,6 +611,51 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
         $this->assertCount( 1, $controller->calls );
         $this->assertSame( 0, $result['total'] );
         $this->assertSame( 0, $result['pages'] );
+    }
+
+    /**
+     * The list query runs through `licensio_kb_articles_query_args`, with the extension filters and the request.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_the_list_query_args_filter_changes_the_page_query() {
+        Functions\when( 'wp_count_posts' )->justReturn( (object) array() );
+
+        $controller = new Licensio_KB_Articles_REST_Controller_Double( new WP_Query() );
+        $request    = new WP_REST_Request( array(), '/licensio-kb/v1/articles', array( 'status' => 'draft' ) );
+        $expected   = $controller->query_args( $request->get_params() );
+
+        Filters\expectApplied( 'licensio_kb_articles_query_args' )
+            ->once()
+            ->with( $expected, array(), $request )
+            ->andReturnUsing(
+                function ( $args ) {
+                    $args['orderby'] = 'example_score';
+
+                    return $args;
+                }
+            );
+
+        $controller->get_items( $request );
+
+        $this->assertCount( 1, $controller->calls );
+        $this->assertSame( 'example_score', $controller->calls[0]['orderby'] );
+        $this->assertSame( array( 'draft' ), $controller->calls[0]['post_status'] );
+    }
+
+    /**
+     * No extension filter values are read from a request yet.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_ext_filters_is_empty() {
+        $request = new WP_REST_Request( array(), '/licensio-kb/v1/articles', array( 'status' => 'draft' ) );
+
+        $this->assertSame( array(), $this->controller->ext_filters( $request ) );
     }
 
     /**

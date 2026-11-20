@@ -38,7 +38,7 @@ const root = ref< HTMLElement | null >( null );
 const extensionActions = rowActionEntries< ArticleItem >(
 	'articles',
 	settings.extensions.rowActions,
-	articlesExtensionContext( store )
+	articlesExtensionContext()
 );
 
 /**

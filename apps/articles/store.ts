@@ -19,7 +19,6 @@ import {
 	config,
 	fetchArticles,
 	fetchIds,
-	fetchRows,
 	revert,
 	runBulk,
 	savePreferences,
@@ -700,7 +699,7 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 				return;
 			}
 
-			const shown = ids.filter( ( id ) =>
+			const shown = [ ...new Set( ids ) ].filter( ( id ) =>
 				this.items.some( ( row ) => row.id === id )
 			);
 
@@ -709,7 +708,7 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 			}
 
 			const ticket = latestLoad;
-			const page = await fetchRows( this.query, shown );
+			const page = await fetchArticles( this.query, shown );
 
 			if ( ticket !== latestLoad ) {
 				return;
