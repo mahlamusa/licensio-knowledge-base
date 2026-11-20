@@ -693,8 +693,8 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 		 * - When one of them no longer matches the filters, the whole page
 		 *   loads again instead, so the rows, total and paging stay right.
 		 *
-		 * Like `load()`, it never rejects: a failure shows in `error`. An
-		 * answer that a page load overtook is dropped.
+		 * Like `load()`, it clears `error` first and never rejects: a failure
+		 * shows in `error`. An answer that a page load overtook is dropped.
 		 *
 		 * @since 1.1.0
 		 *
@@ -718,6 +718,8 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 			}
 
 			const ticket = latestLoad;
+
+			this.error = '';
 
 			try {
 				const page = await fetchRows( this.filters, shown );

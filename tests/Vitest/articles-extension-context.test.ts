@@ -190,6 +190,20 @@ describe( 'refreshRows', () => {
 		expect( titles( store ) ).toEqual( [ 'One' ] );
 	} );
 
+	it( 'clears an earlier error once the rows refresh', async () => {
+		const store = useArticlesStore();
+
+		store.items = [ item( 1, 'One' ) ];
+		store.error = 'Offline';
+		vi.mocked( fetchRows ).mockResolvedValue(
+			page( [ item( 1, 'One' ) ] )
+		);
+
+		await store.refreshRows( [ 1 ] );
+
+		expect( store.error ).toBe( '' );
+	} );
+
 	it( 'drops an answer that a page load overtook', async () => {
 		const store = useArticlesStore();
 		let answer: ( value: ArticlePage ) => void = () => undefined;

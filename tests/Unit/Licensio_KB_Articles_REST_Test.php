@@ -8,6 +8,7 @@
  *
  * @package Licensio_KB
  * @since   1.0.0
+ * @since   1.1.0 Covers the list query args filter.
  */
 
 use Brain\Monkey\Filters;
