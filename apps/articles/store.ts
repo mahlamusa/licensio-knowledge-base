@@ -9,6 +9,7 @@
  * new one, so back and forward step through pages and sorts.
  *
  * @since 1.0.0
+ * @since 1.1.0 Fetches some rows again for the extensions.
  */
 
 import { ref } from 'vue';
@@ -676,6 +677,47 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 
 			if ( index > -1 ) {
 				this.items[ index ] = item;
+			}
+		},
+
+		/**
+		 * Fetch some rows again and put them in place, or reload the page.
+		 *
+		 * The whole page reloads when no IDs are given, or when a row on the
+		 * page no longer matches the filters, since the page and its counts
+		 * then change. An answer that a page load overtook is dropped.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param {number[]} ids The rows; empty for the whole page.
+		 *
+		 * @return {Promise<void>} Resolves once the rows are in state.
+		 */
+		async refreshRows( ids: number[] = [] ): Promise< void > {
+			if ( 0 === ids.length ) {
+				await this.load();
+				return;
+			}
+
+			const shown = [ ...new Set( ids ) ].filter( ( id ) =>
+				this.items.some( ( row ) => row.id === id )
+			);
+
+			if ( 0 === shown.length ) {
+				return;
+			}
+
+			const ticket = latestLoad;
+			const page = await fetchArticles( this.query, shown );
+
+			if ( ticket !== latestLoad ) {
+				return;
+			}
+
+			page.items.forEach( ( item ) => this.replaceItem( item ) );
+
+			if ( page.items.length < shown.length ) {
+				await this.load();
 			}
 		},
 

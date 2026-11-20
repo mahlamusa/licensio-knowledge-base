@@ -40,6 +40,7 @@
  *
  * @package Licensio_KB
  * @since   1.0.0
+ * @since   1.1.0 Other plugins can change the list query through `licensio_kb_articles_query_args`.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -865,6 +866,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      * last page.
      *
      * @since 1.0.0
+     * @since 1.1.0 Filters the query through `licensio_kb_articles_query_args`.
      *
      * @param WP_REST_Request $request The request.
      *
@@ -873,6 +875,23 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
     public function get_items( $request ) {
         $params = $request->get_params();
         $args   = $this->query_args( $params );
+
+        /**
+         * Filters the WP_Query arguments of the Articles app's list.
+         *
+         * Lets an extension narrow or sort the list by what it registered,
+         * such as a filter dropdown or a sortable column. Runs on the page
+         * query only, after the plugin's own filters, sort, paging and the
+         * own-articles limit are in place; keep those, since the page count
+         * and the recount past the last page come from the same arguments.
+         *
+         * @since 1.1.0
+         *
+         * @param array<string, mixed>  $args        The WP_Query arguments.
+         * @param array<string, string> $ext_filters The registered extension filter values of the request, keyed by filter key.
+         * @param WP_REST_Request       $request     The request.
+         */
+        $args   = apply_filters( 'licensio_kb_articles_query_args', $args, $this->ext_filters( $request ), $request );
         $query  = $this->run_query( $args );
         $posts  = array_values(
             array_filter(
@@ -906,6 +925,23 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
                 'counts' => self::status_counts(),
             )
         );
+    }
+
+    /**
+     * The registered extension filter values of a request.
+     *
+     * Empty until the Articles app sends extension filters.
+     *
+     * @since 1.1.0
+     *
+     * @param WP_REST_Request $request The request.
+     *
+     * @return array<string, string> The values, keyed by filter key.
+     */
+    public function ext_filters( WP_REST_Request $request ): array {
+        unset( $request );
+
+        return array();
     }
 
     /**
