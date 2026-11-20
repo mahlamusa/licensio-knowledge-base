@@ -93,14 +93,24 @@ class Licensio_KB_Assets {
     const FRONTEND_NAMESPACE_HANDLE = 'licensio-kb';
 
     /**
+     * The handle the content manager apps' extension registry is registered under.
+     *
+     * @since 1.1.0
+     * @var string
+     */
+    const EXTENSIONS_HANDLE = 'licensio-kb-extensions';
+
+    /**
      * Register the WordPress hooks.
      *
      * @since 1.0.0
+     * @since 1.1.0 Registers the extension registry script in wp-admin.
      *
      * @return void
      */
     public function init_hooks() {
         add_action( 'wp_enqueue_scripts', array( $this, 'register_frontend_namespace' ), 1 );
+        add_action( 'admin_enqueue_scripts', array( $this, 'register_extensions_registry' ), 1 );
     }
 
     /**
@@ -119,6 +129,37 @@ class Licensio_KB_Assets {
         wp_register_script(
             self::FRONTEND_NAMESPACE_HANDLE,
             LICENSIO_KB_ASSETS_URL . 'js/licensio-kb.js',
+            array(),
+            LICENSIO_KB_VERSION,
+            false
+        );
+    }
+
+    /**
+     * Register the extension registry script of the content manager apps.
+     *
+     * It defines `window.licensioKb.extensions`, where other plugins' scripts
+     * register the behaviour of the columns and actions they declared in PHP.
+     * The Articles, Categories and Tags apps depend on it, so it is enqueued
+     * with them and nowhere else.
+     *
+     * A classic script served straight from `assets/js/`, like the frontend
+     * namespace and for the same reason: the apps are ES modules, which run
+     * after every classic script, while extension scripts are classic scripts
+     * that call `register()` as soon as they run.
+     *
+     * Registered at priority 1 of `admin_enqueue_scripts`, before the apps
+     * enqueue themselves: WordPress drops a script whose dependency is not
+     * registered.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function register_extensions_registry() {
+        wp_register_script(
+            self::EXTENSIONS_HANDLE,
+            LICENSIO_KB_ASSETS_URL . 'js/licensio-kb-extensions.js',
             array(),
             LICENSIO_KB_VERSION,
             false

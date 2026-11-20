@@ -5,8 +5,10 @@
  * configures with the root and nonce the page localised.
  *
  * @since 1.0.0
+ * @since 1.1.0 Falls back to no extensions.
  */
 
+import { noExtensions } from '../components/extensions';
 import { get, patch, post, PER_PAGE } from '../components/rest';
 import type {
 	BulkDeleteResult,
@@ -41,6 +43,7 @@ export function settings(): TagsConfig {
 			perPage: PER_PAGE,
 			settingsUrl: '',
 			articlesUrl: '',
+			extensions: noExtensions(),
 		}
 	);
 }

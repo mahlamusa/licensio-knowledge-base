@@ -160,6 +160,7 @@ class Licensio_KB_Articles_Admin {
      * Enqueue the app on its own page only.
      *
      * @since 1.0.0 Needs the article capability rather than the management one.
+     * @since 1.1.0 Loads the extension registry and lets extension scripts enqueue after the app.
      *
      * @param string $hook_suffix The screen being loaded.
      *
@@ -174,13 +175,31 @@ class Licensio_KB_Articles_Admin {
             return;
         }
 
-        if ( ! licensio_kb()->assets()->enqueue_app( self::APP_HANDLE, self::APP_ENTRY, array( 'wp-i18n', 'wp-a11y' ) ) ) {
+        if ( ! licensio_kb()->assets()->enqueue_app( self::APP_HANDLE, self::APP_ENTRY, array( 'wp-i18n', 'wp-a11y', Licensio_KB_Assets::EXTENSIONS_HANDLE ) ) ) {
             return;
         }
 
         wp_set_script_translations( self::APP_HANDLE, 'licensio-knowledge-base' );
 
         wp_localize_script( self::APP_HANDLE, 'licensioKbArticles', $this->app_data() );
+
+        /**
+         * Fires after a content manager app's script is enqueued, so extension
+         * scripts can enqueue and depend on it.
+         *
+         * Fired for the Articles, Categories and Tags apps, only on their own
+         * pages. An extension script that registers handlers through
+         * `window.licensioKb.extensions.register( $screen, definition )` is a
+         * classic script (not a module, not deferred or async) that depends
+         * on `licensio-kb-extensions` and calls `register()` straight away,
+         * so its handlers are in place before the app renders.
+         *
+         * @since 1.1.0
+         *
+         * @param string $screen      `articles`, `categories` or `tags`.
+         * @param string $hook_suffix The app page's hook suffix.
+         */
+        do_action( 'licensio_kb_enqueue_app_extensions', Licensio_KB_Extensions::SCREEN_ARTICLES, $hook_suffix );
     }
 
     /**
@@ -194,6 +213,7 @@ class Licensio_KB_Articles_Admin {
      * The server checks every write again whatever the app shows.
      *
      * @since 1.0.0 Adds `can`, and leaves the Settings and Feedback links empty for users who cannot open them.
+     * @since 1.1.0 Adds the `extensions` the current user may see.
      *
      * @return array<string, mixed> The localised configuration.
      */
@@ -217,6 +237,7 @@ class Licensio_KB_Articles_Admin {
                 'threshold' => $metrics->threshold(),
                 'minVotes'  => $metrics->min_votes(),
             ),
+            'extensions'  => Licensio_KB_Extension_Config::for_screen( licensio_kb()->extensions(), Licensio_KB_Extensions::SCREEN_ARTICLES ),
         );
     }
 

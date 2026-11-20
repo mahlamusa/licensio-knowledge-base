@@ -7,7 +7,10 @@
  * `../components/types/category-order.ts` instead.
  *
  * @since 1.0.0
+ * @since 1.1.0 Adds the `extensions` config.
  */
+
+import type { ExtensionsConfig } from '../components/extensions';
 
 /**
  * One category from `GET categories`.
@@ -119,4 +122,6 @@ export interface CategoriesConfig {
 	settingsUrl: string;
 	/** The Articles app, which the article counts link to. */
 	articlesUrl: string;
+	/** The extensions the current user may see. */
+	extensions: ExtensionsConfig;
 }

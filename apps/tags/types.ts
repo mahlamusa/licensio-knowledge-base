@@ -5,7 +5,10 @@
  * the server is a compile error here rather than an undefined at runtime.
  *
  * @since 1.0.0
+ * @since 1.1.0 Adds the `extensions` config.
  */
+
+import type { ExtensionsConfig } from '../components/extensions';
 
 /**
  * One tag. The name is plain text; the description is as stored, so an
@@ -96,4 +99,6 @@ export interface TagsConfig {
 	settingsUrl: string;
 	/** The Articles app, which the article counts link to. */
 	articlesUrl: string;
+	/** The extensions the current user may see. */
+	extensions: ExtensionsConfig;
 }

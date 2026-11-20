@@ -8,8 +8,10 @@
  * itself.
  *
  * @since 1.0.0
+ * @since 1.1.0 Falls back to no extensions.
  */
 
+import { noExtensions } from '../components/extensions';
 import { del, get, patch, post, put } from '../components/rest';
 import {
 	CATEGORY_ORDER_MAX_IDS,
@@ -53,6 +55,7 @@ export function settings(): CategoriesConfig {
 			nonce: '',
 			settingsUrl: '',
 			articlesUrl: '',
+			extensions: noExtensions(),
 		}
 	);
 }

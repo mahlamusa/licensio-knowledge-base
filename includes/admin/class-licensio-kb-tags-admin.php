@@ -151,6 +151,7 @@ class Licensio_KB_Tags_Admin {
      * Enqueue the app on the Tags page and nowhere else.
      *
      * @since 1.0.0
+     * @since 1.1.0 Loads the extension registry and lets extension scripts enqueue after the app.
      *
      * @param string $hook_suffix The screen being loaded.
      *
@@ -161,13 +162,16 @@ class Licensio_KB_Tags_Admin {
             return;
         }
 
-        if ( ! $this->assets->enqueue_app( self::SCRIPT_HANDLE, self::APP_ENTRY, array( 'wp-i18n' ) ) ) {
+        if ( ! $this->assets->enqueue_app( self::SCRIPT_HANDLE, self::APP_ENTRY, array( 'wp-i18n', Licensio_KB_Assets::EXTENSIONS_HANDLE ) ) ) {
             return;
         }
 
         wp_set_script_translations( self::SCRIPT_HANDLE, 'licensio-knowledge-base' );
 
         wp_localize_script( self::SCRIPT_HANDLE, 'licensioKbTags', $this->app_data() );
+
+        /** This action is documented in includes/admin/class-licensio-kb-articles-admin.php */
+        do_action( 'licensio_kb_enqueue_app_extensions', Licensio_KB_Extensions::SCREEN_TAGS, $hook_suffix );
     }
 
     /**
@@ -177,6 +181,7 @@ class Licensio_KB_Tags_Admin {
      * filtered by the term.
      *
      * @since 1.0.0
+     * @since 1.1.0 Adds the `extensions` the current user may see.
      *
      * @return array<string, mixed> The localised configuration.
      */
@@ -187,6 +192,7 @@ class Licensio_KB_Tags_Admin {
             'perPage'     => self::PER_PAGE,
             'settingsUrl' => Licensio_KB_Admin_Page::settings_url(),
             'articlesUrl' => Licensio_KB_Content_Manager::page_url( Licensio_KB_Content_Manager::ARTICLES_SLUG ),
+            'extensions'  => Licensio_KB_Extension_Config::for_screen( licensio_kb()->extensions(), Licensio_KB_Extensions::SCREEN_TAGS ),
         );
     }
 }

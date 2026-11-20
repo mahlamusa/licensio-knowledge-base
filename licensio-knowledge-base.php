@@ -20,6 +20,7 @@
  *
  * @package Licensio_KB
  * @since   1.0.0
+ * @since   1.1.0 Defines the extension API version.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -34,6 +35,13 @@ define( 'LICENSIO_KB_ASSETS_URL', LICENSIO_KB_PLUGIN_URL . 'assets/' );
 define( 'LICENSIO_KB_DIST_URL', LICENSIO_KB_PLUGIN_URL . 'dist/' );
 define( 'LICENSIO_KB_DIST_PATH', LICENSIO_KB_ABSPATH . 'dist/' );
 define( 'LICENSIO_KB_REST_NAMESPACE', 'licensio-kb/v1' );
+
+/*
+ * The extension API version of the content manager apps. Other plugins check
+ * it, not the plugin version, before they declare extensions. Raised when the
+ * API gains something a consumer may need to test for.
+ */
+define( 'LICENSIO_KB_EXTENSIONS_API', 1 );
 
 require_once LICENSIO_KB_ABSPATH . 'includes/class-licensio-kb-autoloader.php';
 Licensio_KB_Autoloader::register();

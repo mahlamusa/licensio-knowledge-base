@@ -490,6 +490,57 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * `include` returns just those rows, on one page, with the filters still applied.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_include_limits_the_list_to_those_rows() {
+        $include = $this->routes['/articles'][0]['args']['include'];
+
+        $this->assertSame( 100, $include['maxItems'] );
+        $this->assertSame( 'integer', $include['items']['type'] );
+        $this->assertArrayNotHasKey( 'include', $this->routes['/articles/ids'][0]['args'], 'Select all matching never takes IDs.' );
+
+        $args = $this->controller->query_args(
+            array(
+                'status'   => 'all',
+                'include'  => array( 9, '4', 9, 0, -2 ),
+                'page'     => 3,
+                'per_page' => 1,
+            )
+        );
+
+        $this->assertSame( array( 9, 4 ), $args['post__in'] );
+        $this->assertSame( 2, $args['posts_per_page'], 'Every requested row fits on the page.' );
+        $this->assertSame( 1, $args['paged'], 'The page the app is on does not hide the rows.' );
+        $this->assertSame( array( 'publish', 'future', 'draft', 'pending', 'private' ), $args['post_status'] );
+        $this->assertSame( 'readable', $args['perm'] );
+
+        $this->assertArrayNotHasKey( 'post__in', $this->controller->query_args( array( 'include' => array() ) ) );
+        $this->assertArrayNotHasKey( 'post__in', $this->controller->query_args( array( 'include' => array( 4 ) ), true ), 'The IDs query ignores it.' );
+    }
+
+    /**
+     * A writer who may not edit other people's articles cannot reach them through `include`.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_include_keeps_a_writer_to_their_own_articles() {
+        $this->denied = array( 'edit_others_posts' );
+
+        Functions\when( 'get_current_user_id' )->justReturn( 7 );
+
+        $args = $this->controller->query_args( array( 'include' => array( 3, 4 ) ) );
+
+        $this->assertSame( array( 3, 4 ), $args['post__in'] );
+        $this->assertSame( 7, $args['author'] );
+    }
+
+    /**
      * A page past the end of a filtered list is empty but still reports the real total.
      *
      * WP_Query skips counting when the page is empty, so the matches are
