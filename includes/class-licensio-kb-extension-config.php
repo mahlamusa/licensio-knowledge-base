@@ -26,6 +26,15 @@ class Licensio_KB_Extension_Config {
     /**
      * The extensions one screen shows the current user.
      *
+     * The shape the apps read, in camelCase:
+     *
+     *     columns:     [ { key, label, group, defaultVisible, sortable, position } ]
+     *     filters:     [ { key, label, queryArg, options: [ { value, label } ] } ]
+     *     bulkActions: [ { key, label } ]
+     *     rowActions:  [ { key, label } ]
+     *
+     * The TypeScript type is `ExtensionsConfig` in `apps/components/extensions.ts`.
+     *
      * @since 1.1.0
      *
      * @param Licensio_KB_Extensions $extensions The registry.

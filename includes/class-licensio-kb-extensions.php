@@ -75,17 +75,18 @@ class Licensio_KB_Extensions {
      * @since 1.1.0
      * @var string
      */
-    const KEY_PATTERN = '/^[a-z0-9_-]+\/[a-z0-9_-]+$/';
+    const KEY_PATTERN = '/^[a-z0-9_-]+\/[a-z0-9_-]+$/D';
 
     /**
-     * The `rest_api_init` priority the registry is filled at.
+     * The `admin_init` and `rest_api_init` priority the registry is filled at.
      *
-     * Before `Licensio_KB_REST_API::register_controllers()` (priority 10).
+     * Before `Licensio_KB_REST_API::register_controllers()` (priority 10), and
+     * before other plugins' `admin_init` callbacks at the default priority.
      *
      * @since 1.1.0
      * @var int
      */
-    const REST_PRIORITY = 5;
+    const PRIORITY = 5;
 
     /**
      * The declared items, by screen, then type, then key.
@@ -107,8 +108,8 @@ class Licensio_KB_Extensions {
      * Register the WordPress hooks.
      *
      * The registry is filled on `admin_init` for the app pages and on
-     * `rest_api_init` for the REST routes, whichever comes first. On
-     * `rest_api_init` it runs at `REST_PRIORITY`, before the plugin's REST
+     * `rest_api_init` for the REST routes, whichever comes first, both at
+     * `PRIORITY`. On `rest_api_init` that is before the plugin's REST
      * controllers register their routes, so their schemas can read it.
      *
      * @since 1.1.0
@@ -116,8 +117,8 @@ class Licensio_KB_Extensions {
      * @return void
      */
     public function init_hooks() {
-        add_action( 'admin_init', array( $this, 'register' ) );
-        add_action( 'rest_api_init', array( $this, 'register' ), self::REST_PRIORITY );
+        add_action( 'admin_init', array( $this, 'register' ), self::PRIORITY );
+        add_action( 'rest_api_init', array( $this, 'register' ), self::PRIORITY );
     }
 
     /**
@@ -141,6 +142,21 @@ class Licensio_KB_Extensions {
         /**
          * Declare columns, filters, bulk actions and row actions for the
          * Articles, Categories and Tags apps.
+         *
+         * Fires once per request, on `admin_init` or `rest_api_init` at
+         * priority 5, whichever comes first, and never on other front-end
+         * requests. Add the callback when your plugin loads, or on
+         * `plugins_loaded` or `init`; never from inside an `admin_init` or
+         * `rest_api_init` callback, which may run after the action fired, in
+         * which case the declarations are silently missed. Check
+         * `defined( 'LICENSIO_KB_EXTENSIONS_API' )` first.
+         *
+         *     add_action( 'licensio_kb_register_extensions', function ( $extensions ) {
+         *         $extensions->add_column( 'articles', 'acme/score', array( 'label' => 'Score' ) );
+         *     } );
+         *
+         * Each item's behaviour is registered in JS from a script enqueued on
+         * `licensio_kb_enqueue_app_extensions`.
          *
          * @since 1.1.0
          *
@@ -293,6 +309,10 @@ class Licensio_KB_Extensions {
     /**
      * The declared items of one type on a screen that the current user may see.
      *
+     * For use while a request is handled (localising an app, a REST callback),
+     * once the current user is known. During `rest_api_init` the REST nonce
+     * has not been checked yet, so route schemas read `items()` instead.
+     *
      * @since 1.1.0
      *
      * @param string $screen `articles`, `categories` or `tags`.
@@ -319,7 +339,7 @@ class Licensio_KB_Extensions {
      * @param array<string, mixed> $args   The item as declared.
      * @param string               $method The public method called, for the notice.
      *
-     * @return array<string, mixed>|null The item, or null when the screen, key or label is invalid.
+     * @return array<string, mixed>|null The item, or null when the screen, key, label or capability is invalid.
      */
     private function base_item( $screen, $key, array $args, $method ) {
         if ( ! in_array( $screen, self::SCREENS, true ) ) {
@@ -344,7 +364,13 @@ class Licensio_KB_Extensions {
             return null;
         }
 
-        $capability = isset( $args['capability'] ) && is_string( $args['capability'] ) ? trim( $args['capability'] ) : '';
+        if ( isset( $args['capability'] ) && ! is_string( $args['capability'] ) ) {
+            self::doing_it_wrong( $method, __( 'An extension item capability must be a string.', 'licensio-knowledge-base' ) );
+
+            return null;
+        }
+
+        $capability = isset( $args['capability'] ) ? trim( $args['capability'] ) : '';
 
         return array(
             'key'        => $key,
@@ -394,7 +420,7 @@ class Licensio_KB_Extensions {
      * @return string The position, or an empty string for the end.
      */
     private static function position( $position ) {
-        return preg_match( '/^[a-z0-9_-]+(\/[a-z0-9_-]+)?$/', $position ) ? $position : '';
+        return preg_match( '/^[a-z0-9_-]+(\/[a-z0-9_-]+)?$/D', $position ) ? $position : '';
     }
 
     /**

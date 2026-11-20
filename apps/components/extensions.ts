@@ -148,8 +148,9 @@ export function noExtensions(): ExtensionsConfig {
 /**
  * The handlers registered for a screen.
  *
- * Read when an app renders rather than once, so a script that registers
- * after the app started is still picked up.
+ * Read when an app renders rather than once at load. Extension scripts
+ * register synchronously before the apps run (see
+ * `assets/js/licensio-kb-extensions.js`).
  *
  * @since 1.1.0
  *

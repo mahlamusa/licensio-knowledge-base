@@ -84,9 +84,9 @@ class Licensio_KB_Extensions_Test extends Licensio_KB_Test_Case {
     public function test_the_registry_is_filled_on_admin_and_rest_requests() {
         $this->extensions->init_hooks();
 
-        $this->assertSame( 10, has_action( 'admin_init', array( $this->extensions, 'register' ) ) );
+        $this->assertSame( 5, has_action( 'admin_init', array( $this->extensions, 'register' ) ), 'Filled before other admin_init callbacks at the default priority.' );
         $this->assertSame( 5, has_action( 'rest_api_init', array( $this->extensions, 'register' ) ), 'Filled before the REST controllers register their routes.' );
-        $this->assertLessThan( 10, Licensio_KB_Extensions::REST_PRIORITY );
+        $this->assertLessThan( 10, Licensio_KB_Extensions::PRIORITY );
     }
 
     /**
@@ -205,13 +205,24 @@ class Licensio_KB_Extensions_Test extends Licensio_KB_Test_Case {
     public function test_invalid_declarations_are_refused() {
         $this->assertFalse( $this->extensions->add_column( 'posts', 'acme/score', array( 'label' => 'Score' ) ) );
 
-        foreach ( array( 'score', 'Acme/Score', 'acme/score/extra', 'acme/', '/score', 'acme score/x', 'author' ) as $key ) {
+        foreach ( array( 'score', 'Acme/Score', 'acme/score/extra', 'acme/', '/score', 'acme score/x', 'author', "acme/score\n" ) as $key ) {
             $this->assertFalse( $this->extensions->add_column( 'articles', $key, array( 'label' => 'Score' ) ), $key );
         }
 
         $this->assertFalse( $this->extensions->add_column( 'articles', 'acme/score', array() ) );
         $this->assertFalse( $this->extensions->add_bulk_action( 'articles', 'acme/check', array( 'label' => '<b></b>' ) ) );
         $this->assertFalse( $this->extensions->add_filter( 'articles', 'acme/seo', array( 'label' => 'SEO' ) ), 'A filter needs options.' );
+        $this->assertFalse(
+            $this->extensions->add_row_action(
+                'articles',
+                'acme/edit',
+                array(
+                    'label'      => 'Edit',
+                    'capability' => array( 'manage_options' ),
+                )
+            ),
+            'A capability that is not a string is refused, not replaced by the default.'
+        );
         $this->assertFalse(
             $this->extensions->add_filter(
                 'articles',
@@ -223,7 +234,7 @@ class Licensio_KB_Extensions_Test extends Licensio_KB_Test_Case {
             )
         );
 
-        $this->assertCount( 12, $this->refused, 'Each refusal is reported.' );
+        $this->assertCount( 14, $this->refused, 'Each refusal is reported.' );
 
         foreach ( Licensio_KB_Extensions::SCREENS as $screen ) {
             foreach ( Licensio_KB_Extensions::TYPES as $type ) {
@@ -256,11 +267,20 @@ class Licensio_KB_Extensions_Test extends Licensio_KB_Test_Case {
                 'position' => '<script>',
             )
         );
+        $this->extensions->add_column(
+            'articles',
+            'acme/c',
+            array(
+                'label'    => 'C',
+                'position' => "tags\n",
+            )
+        );
 
         $columns = $this->extensions->items( 'articles', 'columns' );
 
         $this->assertSame( 'acme/b', $columns['acme/a']['position'] );
         $this->assertSame( '', $columns['acme/b']['position'] );
+        $this->assertSame( '', $columns['acme/c']['position'], 'A trailing newline is not a column key.' );
     }
 
     /**

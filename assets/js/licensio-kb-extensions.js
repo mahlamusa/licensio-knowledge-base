@@ -12,9 +12,14 @@
  *     } );
  *
  * `ctx` gives `refresh( ids? )`, `clearSelection()`, `screen` and `rest`
- * (`root` and `nonce`). The apps read the registered handlers when they render,
- * so a script may register before or after the app's own script runs. The
- * TypeScript types are in `apps/components/extensions.ts`.
+ * (`root` and `nonce`). The TypeScript types are in
+ * `apps/components/extensions.ts`.
+ *
+ * Call `register()` synchronously from a classic (not module, not deferred)
+ * script that depends on the `licensio-kb-extensions` handle and is enqueued
+ * on the `licensio_kb_enqueue_app_extensions` action. Such a script runs
+ * before the apps, which are ES modules, so every handler is in place when
+ * they first render. A handler registered later may be missed.
  *
  * Deliberately a CLASSIC script, not a Vite entry: the apps are ES modules,
  * which run after every classic script on the page, and the extension scripts
@@ -60,7 +65,7 @@
 		 */
 		register( screen, definition ) {
 			if (
-				! handlers[ screen ] ||
+				! SCREENS.includes( screen ) ||
 				! definition ||
 				'object' !== typeof definition
 			) {
@@ -94,7 +99,7 @@
 		 */
 		get( screen ) {
 			return (
-				handlers[ screen ] || {
+				( SCREENS.includes( screen ) && handlers[ screen ] ) || {
 					columns: {},
 					bulkActions: {},
 					rowActions: {},

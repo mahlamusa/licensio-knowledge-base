@@ -82,7 +82,9 @@ for ( const app of Object.keys( CONFIGS ) as ContentManagerApp[] ) {
 					registered: registry.register( screen, {
 						columns: { 'e2e/probe': { render } },
 					} ),
-					refused: registry.register( 'posts', {} ),
+					refused:
+						registry.register( 'posts', {} ) ||
+						registry.register( 'constructor', {} ),
 					kept:
 						registry.get( screen ).columns[ 'e2e/probe' ] !==
 						undefined,

@@ -187,9 +187,12 @@ class Licensio_KB_Articles_Admin {
          * Fires after a content manager app's script is enqueued, so extension
          * scripts can enqueue and depend on it.
          *
-         * Fired for the Articles, Categories and Tags apps. An extension script
-         * that registers handlers through `window.licensioKb.extensions`
-         * depends on the app's handle or on `licensio-kb-extensions`.
+         * Fired for the Articles, Categories and Tags apps, only on their own
+         * pages. An extension script that registers handlers through
+         * `window.licensioKb.extensions.register( $screen, definition )` is a
+         * classic script (not a module, not deferred or async) that depends
+         * on `licensio-kb-extensions` and calls `register()` straight away,
+         * so its handlers are in place before the app renders.
          *
          * @since 1.1.0
          *

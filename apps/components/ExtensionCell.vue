@@ -54,7 +54,7 @@ function handler() {
 }
 
 // Read when the cell is set up: the app mounts after every extension script ran.
-const rendered = undefined !== handler();
+const rendered = 'function' === typeof handler()?.render;
 
 const text = computed(
 	() => props.row.extensions?.[ props.columnKey ]?.text ?? ''
@@ -93,7 +93,7 @@ function paint(): void {
 
 	const column = handler();
 
-	if ( ! column || ! container.value ) {
+	if ( 'function' !== typeof column?.render || ! container.value ) {
 		return;
 	}
 
