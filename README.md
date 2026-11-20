@@ -390,6 +390,30 @@ currently being rendered, which does not exist on the shortcode path, so it
 would make the two paths disagree. The wrapper is built by
 `Licensio_KB_Block::wrapper()` and the blocks opt out of `customClassName`.
 
+#### Reading a FAQ block's questions
+
+`Licensio_KB_FAQ_Block::entries( $attributes )` returns the questions and
+answers a `licensio-kb/faq` block renders, for a plugin that marks them up, e.g.
+as `FAQPage` structured data. Pass the attributes as stored, such as
+`$block['attrs']` from `parse_blocks()` or a shortcode's attributes; they are
+normalised the way the block does it.
+
+```php
+if ( defined( 'LICENSIO_KB_EXTENSIONS_API' ) && class_exists( 'Licensio_KB_FAQ_Block' ) ) {
+    foreach ( Licensio_KB_FAQ_Block::entries( $block['attrs'] ) as $entry ) {
+        // $entry: question, answer, url (strings) and post_id (int).
+    }
+}
+```
+
+The block renders its markup from the same call, so the entries are the same
+articles, in the same order: the same query, the
+`licensio_block_article_query_args` filter and the per-category article order.
+The answer is the excerpt, or an empty string when `showExcerpt` is off;
+callers decide whether to skip it. An untitled article has an empty question,
+which the block does not print. Values are raw text: escape them where they are
+printed. Available from extension API version 1.
+
 Blocks are registered from `dist/blocks/<name>` when the plugin has been built
 and from `blocks/<name>` otherwise, so a checkout that has never run
 `npm run build` still renders — only the editor bundle is missing. The editor

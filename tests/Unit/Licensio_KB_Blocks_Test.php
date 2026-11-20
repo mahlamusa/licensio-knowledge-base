@@ -10,6 +10,7 @@
  *
  * @package Licensio_KB
  * @since   1.0.0
+ * @since   1.1.0 Covers the FAQ entries.
  */
 
 use Brain\Monkey\Filters;
@@ -1142,6 +1143,7 @@ class Licensio_KB_Blocks_Test extends Licensio_KB_Test_Case {
      * given, or no category at all, is left alone.
      *
      * @since 1.0.0
+     * @since 1.1.0 Checks the entries follow the same order.
      *
      * @return void
      */
@@ -1216,6 +1218,9 @@ class Licensio_KB_Blocks_Test extends Licensio_KB_Test_Case {
         $block( array( 'category' => 'billing' ), '', null );
         $this->assertSame( Licensio_KB_Article_Order::ORDERBY, $this->query_args['orderby'] );
         $this->assertSame( 'ASC', $this->query_args['order'] );
+
+        Licensio_KB_FAQ_Block::entries( array( 'category' => 'billing' ) );
+        $this->assertSame( Licensio_KB_Article_Order::ORDERBY, $this->query_args['orderby'], 'The entries follow the same order.' );
 
         $ordered = false;
 
@@ -1910,6 +1915,127 @@ class Licensio_KB_Blocks_Test extends Licensio_KB_Test_Case {
                 '<details class="licensio-kb-faq__item" open>'
             )
         );
+    }
+
+    /**
+     * The FAQ entries list the same articles, in the same order, as the block.
+     *
+     * Rendered and read with the same attributes, the questions, answers and
+     * links match one for one and the query the two ran is the same.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_the_faq_entries_match_the_rendered_block() {
+        $this->stub_articles(
+            array(
+                array(
+                    'id'      => 31,
+                    'title'   => 'How do I update my card?',
+                    'excerpt' => 'Open Billing and choose Update card.',
+                ),
+                array(
+                    'id'      => 7,
+                    'title'   => 'Where is my invoice?',
+                    'excerpt' => 'Every invoice is under Account.',
+                ),
+                array(
+                    'id'    => 19,
+                    'title' => 'Can I get a refund?',
+                ),
+            )
+        );
+
+        $block = $this->render_callback( 'licensio-kb/faq' );
+
+        foreach ( array(
+            array(),
+            array( 'showExcerpt' => false ),
+            array(
+                'orderBy' => 'title',
+                'order'   => 'desc',
+                'count'   => 3,
+            ),
+        ) as $attributes ) {
+            $markup        = $block( $attributes, '', null );
+            $rendered_args = $this->query_args;
+            $entries       = Licensio_KB_FAQ_Block::entries( $attributes );
+
+            $this->assertSame( $rendered_args, $this->query_args, 'entries() must run the query the block runs.' );
+
+            preg_match_all( '#<summary class="licensio-kb-faq__question">(.*?)</summary>#s', $markup, $questions );
+            preg_match_all( '#<p class="licensio-kb-faq__text">(.*?)</p>#s', $markup, $answers );
+            preg_match_all( '#<p class="licensio-kb-faq__more">\s*<a href="([^"]*)">#s', $markup, $urls );
+
+            $this->assertSame( array( 'How do I update my card?', 'Where is my invoice?', 'Can I get a refund?' ), $questions[1] );
+            $this->assertSame( $questions[1], array_column( $entries, 'question' ) );
+            $this->assertSame( $answers[1], array_values( array_filter( array_column( $entries, 'answer' ) ) ) );
+            $this->assertSame( $urls[1], array_column( $entries, 'url' ) );
+            $this->assertSame( array( 31, 7, 19 ), array_column( $entries, 'post_id' ) );
+        }
+    }
+
+    /**
+     * The FAQ entries take raw attributes and normalise them like the block.
+     *
+     * A caller hands over what `parse_blocks()` or a shortcode supplies, so a
+     * lower-cased name and a string value still switch the excerpt off and
+     * reach the query, clamped.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_the_faq_entries_normalise_raw_attributes() {
+        $this->stub_articles(
+            array(
+                array(
+                    'id'    => 12,
+                    'title' => 'How do I reset my password?',
+                ),
+            )
+        );
+
+        $entries = Licensio_KB_FAQ_Block::entries(
+            array(
+                'showexcerpt' => 'false',
+                'count'       => '500',
+                'orderby'     => 'title',
+                'unknown'     => 'dropped',
+            )
+        );
+
+        $this->assertSame(
+            array(
+                array(
+                    'question' => 'How do I reset my password?',
+                    'answer'   => '',
+                    'url'      => 'https://example.test/docs/12/',
+                    'post_id'  => 12,
+                ),
+            ),
+            $entries
+        );
+        $this->assertSame( 100, $this->query_args['posts_per_page'] );
+        $this->assertSame( 'title', $this->query_args['orderby'] );
+    }
+
+    /**
+     * The FAQ entries pass through the block article query filter.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_the_faq_entries_query_is_filterable() {
+        $this->stub_articles( array() );
+
+        Filters\expectApplied( 'licensio_block_article_query_args' )
+            ->once()
+            ->with( Mockery::type( 'array' ), 'licensio-kb/faq' );
+
+        $this->assertSame( array(), Licensio_KB_FAQ_Block::entries( array() ) );
     }
 
     /**
