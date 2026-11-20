@@ -647,6 +647,36 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * "Select all matching" runs through `licensio_kb_articles_query_args` too, so it selects the filtered set.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_the_list_query_args_filter_narrows_the_ids_query() {
+        $controller = new Licensio_KB_Articles_REST_Controller_Double( new WP_Query() );
+        $request    = new WP_REST_Request( array(), '/licensio-kb/v1/articles/ids', array( 'status' => 'draft' ) );
+        $expected   = $controller->query_args( $request->get_params(), true );
+
+        Filters\expectApplied( 'licensio_kb_articles_query_args' )
+            ->once()
+            ->with( $expected, array(), $request )
+            ->andReturnUsing(
+                function ( $args ) {
+                    $args['post__in'] = array( 7 );
+
+                    return $args;
+                }
+            );
+
+        $controller->get_ids( $request );
+
+        $this->assertCount( 1, $controller->calls );
+        $this->assertSame( array( 7 ), $controller->calls[0]['post__in'] );
+        $this->assertSame( 'ids', $controller->calls[0]['fields'] );
+    }
+
+    /**
      * No extension filter values are read from a request yet.
      *
      * @since 1.1.0
