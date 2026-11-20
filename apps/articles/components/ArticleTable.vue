@@ -10,9 +10,11 @@
  * in place under the row. A locked row shows who is editing it and cannot be
  * quick edited. While a bulk action runs the row actions are paused, and
  * hovering them says why. A page change from the pager keeps focus in the
- * pager, on the current page once the control pressed is disabled.
+ * pager, on the current page once the control pressed is disabled. Row
+ * actions other plugins registered follow the app's own, in both views.
  *
  * @since 1.0.0
+ * @since 1.1.0 Shows the extension row actions.
  */
 
 import { computed, nextTick, ref } from 'vue';
@@ -21,8 +23,10 @@ import ConfirmButton from '../../components/ConfirmButton.vue';
 import { changePageKeepingFocus } from '../../components/pager-focus';
 import { __, sprintf } from '../../components/i18n';
 import { statusLabel } from '../../components/status';
+import { rowActionEntries } from '../../components/row-actions';
 import { config } from '../api';
 import { confirmTitle, performAction } from '../actions';
+import { articlesExtensionContext } from '../extension-context';
 import { useArticlesStore } from '../store';
 import { ORDER_BY } from '../url';
 import QuickEditRow from './QuickEditRow.vue';
@@ -31,6 +35,11 @@ import type { ArticleColumn, ArticleItem, ArticleOrderBy } from '../types';
 const store = useArticlesStore();
 const settings = config();
 const root = ref< HTMLElement | null >( null );
+const extensionActions = rowActionEntries< ArticleItem >(
+	'articles',
+	settings.extensions.rowActions,
+	articlesExtensionContext( store )
+);
 
 /**
  * The current sort of a column, in Ant's terms.
@@ -493,6 +502,18 @@ const expandedKeys = computed( () =>
 									}}
 								</ConfirmButton>
 							</template>
+							<a-button
+								v-for="action in extensionActions"
+								:key="action.key"
+								type="link"
+								size="small"
+								class="lkb-rowactions__button"
+								:disabled="store.bulk.running"
+								:data-row-action="action.key"
+								@click="action.run( record as ArticleItem )"
+							>
+								{{ action.label }}
+							</a-button>
 						</div>
 					</a-tooltip>
 				</template>
