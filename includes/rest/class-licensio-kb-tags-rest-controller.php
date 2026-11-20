@@ -15,7 +15,10 @@
  *   use is not unused and deleting the Unused list never strips it from them;
  *   such a tag shows a count of 0. The single-tag answers of the write routes
  *   carry core's count; the app reads counts only from this list, which it
- *   reloads after every write.
+ *   reloads after every write. When the Tags app shows extension columns,
+ *   each item also carries their data as `extensions` (see
+ *   `Licensio_KB_Term_Extension_Data`); `include[]` and `per_page` together
+ *   refresh just the rows an extension changed.
  * - `POST /tags` and `PATCH /tags/{id}`: `name`, `slug`, `description`. As in
  *   core, a new tag with a taken slug gets a unique one; editing a tag to a
  *   slug another tag uses, or adding one with a name a tag has, is refused
@@ -38,6 +41,7 @@
  *
  * @package Licensio_KB
  * @since   1.0.0
+ * @since   1.1.0 Adds the extension column data to the list items.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -541,6 +545,7 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
      * private article still uses.
      *
      * @since 1.0.0
+     * @since 1.1.0 Adds each item's extension column data.
      *
      * @param WP_REST_Request $request The request.
      *
@@ -647,6 +652,8 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
         foreach ( (array) $rows as $row ) {
             $items[] = self::prepare_row( $row );
         }
+
+        $items = ( new Licensio_KB_Term_Extension_Data( licensio_kb()->extensions() ) )->add( Licensio_KB_Extensions::SCREEN_TAGS, $taxonomy, $items );
 
         return rest_ensure_response(
             array(

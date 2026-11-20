@@ -13,13 +13,26 @@
  * links to the Articles app filtered by that category. The category the
  * app's form holds is marked with `aria-current` and an accent bar.
  *
+ * Extension columns show in each row between the name and the count, the
+ * default visible ones only, as the tree has no column picker; each cell
+ * carries its column label for screen readers and on hover. Extension row
+ * actions follow the app's own actions in the row menu, before Delete. The
+ * extensions' `ctx.clearSelection()` does nothing here: the tree has no
+ * multiple selection, and the selected category's unsaved article order
+ * must not be dropped behind the user's back.
+ *
  * @since 1.0.0
+ * @since 1.1.0 Shows extension columns and row actions.
  */
 
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
+import ExtensionCell from '../../components/ExtensionCell.vue';
+import type { ExtensionContext } from '../../components/extensions';
 import { __, sprintf } from '../../components/i18n';
 import { errorMessage } from '../../components/rest';
+import { rowActionEntries } from '../../components/row-actions';
+import { shownColumns } from '../../components/term-extensions';
 import { settings } from '../api';
 import {
 	applyMove,
@@ -56,7 +69,25 @@ const emit = defineEmits< {
 } >();
 
 const store = useCategoriesStore();
-const { articlesUrl } = settings();
+const { articlesUrl, extensions, root, nonce } = settings();
+
+const ctx: ExtensionContext = {
+	refresh: ( ids ) => store.refresh( ids ),
+	clearSelection: () => undefined,
+	screen: 'categories',
+	rest: { root, nonce },
+};
+
+// Read once: every extension script registered before the app mounted.
+const extensionColumns = shownColumns( extensions.columns );
+const extensionActions = rowActionEntries< CategoryItem >(
+	'categories',
+	extensions.rowActions,
+	ctx
+);
+
+/** The menu key prefix of an extension row action. */
+const EXTENSION_ACTION = 'extension:';
 
 const saving = ref( false );
 const collapsed = ref< number[] >( [] );
@@ -488,6 +519,30 @@ function onMenuKey( event: KeyboardEvent, id: number ): void {
 }
 
 /**
+ * Run an extension row action, showing the error when it fails.
+ *
+ * @since 1.1.0
+ *
+ * @param {CategoryItem} item The category.
+ * @param {string}       key  The action's key.
+ *
+ * @return {void}
+ */
+function runExtensionAction( item: CategoryItem, key: string ): void {
+	const action = extensionActions.find( ( entry ) => entry.key === key );
+
+	if ( ! action ) {
+		return;
+	}
+
+	Promise.resolve()
+		.then( () => action.run( item ) )
+		.catch( ( error: unknown ) => {
+			message.error( errorMessage( error ) );
+		} );
+}
+
+/**
  * Run an item from a category's actions menu.
  *
  * @since 1.0.0
@@ -499,6 +554,11 @@ function onMenuKey( event: KeyboardEvent, id: number ): void {
  */
 function onMenu( item: CategoryItem, key: string ): void {
 	menuFor.value = null;
+
+	if ( key.startsWith( EXTENSION_ACTION ) ) {
+		runExtensionAction( item, key.slice( EXTENSION_ACTION.length ) );
+		return;
+	}
 
 	if ( 'up' === key ) {
 		step( item, -1 );
@@ -574,6 +634,25 @@ function onMenu( item: CategoryItem, key: string ): void {
 						<span class="lkb-tree__name">{{
 							itemOf( node ).name
 						}}</span>
+						<span
+							v-for="column in extensionColumns"
+							:key="column.key"
+							class="lkb-tree__extension"
+							draggable="false"
+							:title="column.label"
+							:data-lkb-column="column.key"
+							@click.stop
+						>
+							<span class="screen-reader-text"
+								>{{ column.label }}:
+							</span>
+							<ExtensionCell
+								screen="categories"
+								:column-key="column.key"
+								:row="itemOf( node )"
+								:ctx="ctx"
+							/>
+						</span>
 						<a
 							class="lkb-tree__count"
 							draggable="false"
@@ -702,6 +781,12 @@ function onMenu( item: CategoryItem, key: string ): void {
 											)
 										}}
 									</a-menu-item>
+									<a-menu-item
+										v-for="action in extensionActions"
+										:key="EXTENSION_ACTION + action.key"
+									>
+										{{ action.label }}
+									</a-menu-item>
 									<a-menu-item key="delete" danger>
 										{{
 											__(
@@ -803,5 +888,12 @@ function onMenu( item: CategoryItem, key: string ): void {
 
 .lkb-tree__actions {
 	flex: none;
+}
+
+.lkb-tree__extension {
+	flex: none;
+	max-width: 40%;
+	overflow-wrap: anywhere;
+	font-size: 12px;
 }
 </style>

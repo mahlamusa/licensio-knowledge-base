@@ -38,13 +38,28 @@
  * A save closes its row only if that row is still the one open: the user may
  * have cancelled and opened another tag while the request was on its way.
  *
+ * Extension columns show after the column their `position` names, the
+ * default visible ones only, as the table has no column picker. When one
+ * sits between Name and Description, an open Quick edit row's shared cell
+ * spans it too. Extension row actions follow Edit and Quick edit under the
+ * name, and are disabled with them while a row is open.
+ *
  * @since 1.0.0
+ * @since 1.1.0 Shows extension columns and row actions.
  */
 
 import { computed, nextTick, reactive, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
+import ExtensionCell from '../../components/ExtensionCell.vue';
+import type {
+	ExtensionColumn,
+	ExtensionContext,
+} from '../../components/extensions';
 import { __, sprintf } from '../../components/i18n';
 import { changePageKeepingFocus } from '../../components/pager-focus';
+import { errorMessage } from '../../components/rest';
+import { rowActionEntries } from '../../components/row-actions';
+import { placeColumns, shownColumns } from '../../components/term-extensions';
 import { settings } from '../api';
 import { useTagsStore } from '../store';
 import type { TagFields, TagItem, TagOrder, TagOrderBy } from '../types';
@@ -63,7 +78,27 @@ const emit = defineEmits< {
 } >();
 
 const store = useTagsStore();
-const { articlesUrl } = settings();
+const { articlesUrl, extensions, root: restRoot, nonce } = settings();
+
+const ctx: ExtensionContext = {
+	refresh: ( ids ) => store.refresh( ids ),
+	clearSelection: () => {
+		store.selected = [];
+	},
+	screen: 'tags',
+	rest: { root: restRoot, nonce },
+};
+
+// Read once: every extension script registered before the app mounted.
+const extensionColumns = shownColumns( extensions.columns );
+const extensionKeys = new Set(
+	extensionColumns.map( ( column ) => column.key )
+);
+const extensionActions = rowActionEntries< TagItem >(
+	'tags',
+	extensions.rowActions,
+	ctx
+);
 
 const root = ref< HTMLElement | null >( null );
 const editingId = ref< number | null >( null );
@@ -146,12 +181,13 @@ function sortOrder( key: TagOrderBy ): 'ascend' | 'descend' | null {
 
 /**
  * The cell attributes of a column that an open Quick edit row spans: its
- * Name cell takes the Slug and Description columns too, which then have no
+ * Name cell takes every column up to Description too, which then have no
  * cell of their own in that row.
  *
  * @since 1.0.0
+ * @since 1.1.0 The span covers the extension columns placed in between.
  *
- * @param {number} span The open row's column span: 3 for Name, 0 otherwise.
+ * @param {number} span The open row's column span on Name, 0 otherwise.
  *
  * @return {Function} The column's `customCell`.
  */
@@ -160,35 +196,90 @@ function quickEditCell( span: number ) {
 		editingId.value === record.id ? { colSpan: span } : {};
 }
 
-const columns = computed( () => [
-	{
-		title: __( 'Name', 'licensio-knowledge-base' ),
-		key: 'name',
-		sorter: true,
-		sortOrder: sortOrder( 'name' ),
-		sortDirections: [ 'ascend', 'descend', 'ascend' ],
-		customCell: quickEditCell( 3 ),
-	},
-	{
-		title: __( 'Slug', 'licensio-knowledge-base' ),
-		key: 'slug',
-		customCell: quickEditCell( 0 ),
-	},
-	{
-		title: __( 'Description', 'licensio-knowledge-base' ),
-		key: 'description',
-		customCell: quickEditCell( 0 ),
-	},
-	{
-		title: __( 'Published', 'licensio-knowledge-base' ),
-		key: 'count',
-		class: 'lkb-tags__count',
-		width: 110,
-		sorter: true,
-		sortOrder: sortOrder( 'count' ),
-		sortDirections: [ 'descend', 'ascend', 'descend' ],
-	},
-] );
+/**
+ * A table column for an extension column.
+ *
+ * @since 1.1.0
+ *
+ * @param {ExtensionColumn} column The declared column.
+ *
+ * @return {Object} The table column.
+ */
+function extensionColumn( column: ExtensionColumn ) {
+	return {
+		title: column.label,
+		key: column.key,
+		class: 'lkb-tags__extension',
+	};
+}
+
+const columns = computed( () => {
+	const placed = placeColumns(
+		[
+			{
+				title: __( 'Name', 'licensio-knowledge-base' ),
+				key: 'name',
+				sorter: true,
+				sortOrder: sortOrder( 'name' ),
+				sortDirections: [ 'ascend', 'descend', 'ascend' ],
+			},
+			{
+				title: __( 'Slug', 'licensio-knowledge-base' ),
+				key: 'slug',
+			},
+			{
+				title: __( 'Description', 'licensio-knowledge-base' ),
+				key: 'description',
+			},
+			{
+				title: __( 'Published', 'licensio-knowledge-base' ),
+				key: 'count',
+				class: 'lkb-tags__count',
+				width: 110,
+				sorter: true,
+				sortOrder: sortOrder( 'count' ),
+				sortDirections: [ 'descend', 'ascend', 'descend' ],
+			},
+		] as Array< Record< string, unknown > & { key: string } >,
+		extensionColumns,
+		extensionColumn
+	);
+	const first = placed.findIndex( ( column ) => 'name' === column.key );
+	const last = placed.findIndex( ( column ) => 'description' === column.key );
+
+	return placed.map( ( column, index ) => {
+		if ( index < first || index > last ) {
+			return column;
+		}
+
+		return {
+			...column,
+			customCell: quickEditCell( index === first ? last - first + 1 : 0 ),
+		};
+	} );
+} );
+
+/**
+ * Run an extension row action, showing the error when it fails.
+ *
+ * @since 1.1.0
+ *
+ * @param {Object}   action     The row action.
+ * @param {Function} action.run Runs it on a row.
+ * @param {TagItem}  tag        The row.
+ *
+ * @return {void}
+ */
+function runExtensionAction(
+	action: { run: ( row: TagItem ) => unknown },
+	tag: TagItem
+): void {
+	Promise.resolve()
+		.then( () => action.run( tag ) )
+		.catch( ( error: unknown ) => {
+			message.error( errorMessage( error ) );
+		} );
+}
 
 /**
  * Pass a page or sort change to the store.
@@ -532,7 +623,40 @@ watch(
 						>
 							{{ __( 'Quick edit', 'licensio-knowledge-base' ) }}
 						</a-button>
+						<a-button
+							v-for="action in extensionActions"
+							:key="action.key"
+							type="link"
+							size="small"
+							:data-lkb-extension-action="action.key"
+							:disabled="null !== editingId"
+							:aria-label="
+								sprintf(
+									/* translators: 1: the action's label, 2: the tag's name. */
+									__(
+										'%1$s “%2$s”',
+										'licensio-knowledge-base'
+									),
+									action.label,
+									record.name
+								)
+							"
+							@click="
+								runExtensionAction( action, record as TagItem )
+							"
+						>
+							{{ action.label }}
+						</a-button>
 					</div>
+				</template>
+
+				<template v-else-if="extensionKeys.has( String( column.key ) )">
+					<ExtensionCell
+						screen="tags"
+						:column-key="String( column.key )"
+						:row="record as TagItem"
+						:ctx="ctx"
+					/>
 				</template>
 
 				<template v-else-if="'slug' === column.key">

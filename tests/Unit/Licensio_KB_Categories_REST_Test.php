@@ -12,6 +12,7 @@
  */
 
 use Brain\Monkey\Actions;
+use Brain\Monkey\Filters;
 use Brain\Monkey\Functions;
 
 /**
@@ -112,12 +113,21 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
     private $controller;
 
     /**
+     * The extension registry `licensio_kb()->extensions()` hands out.
+     *
+     * @since 1.1.0
+     * @var Licensio_KB_Extensions
+     */
+    private $registry;
+
+    /**
      * Back the core term functions with a small tree.
      *
      * The tree is Getting started (1) › Install (2) › Requirements (3), plus
      * Billing & invoices (4) › Refunds (5).
      *
      * @since 1.0.0
+     * @since 1.1.0 Hands the controller an extension registry.
      *
      * @return void
      */
@@ -164,6 +174,10 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
 
         $this->stub_core();
 
+        $this->registry = new Licensio_KB_Extensions();
+
+        Functions\when( 'licensio_kb' )->justReturn( $this );
+
         $this->controller = new Licensio_KB_Categories_REST_Controller();
         $this->controller->register_routes();
     }
@@ -185,6 +199,7 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
      * Stub the core functions the controller and term operations call.
      *
      * @since 1.0.0
+     * @since 1.1.0 The term list honours `include`.
      *
      * @return void
      */
@@ -252,7 +267,13 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
                     );
                 }
 
-                return array_map( array( $this, 'term' ), array_keys( $this->terms ) );
+                $ids = array_keys( $this->terms );
+
+                if ( ! empty( $args['include'] ) ) {
+                    $ids = array_values( array_intersect( $ids, $args['include'] ) );
+                }
+
+                return array_map( array( $this, 'term' ), $ids );
             }
         );
         Functions\when( 'get_term_meta' )->alias(
@@ -2489,5 +2510,134 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
             ),
             $this->term_writes
         );
+    }
+
+    /**
+     * The extension registry, as `licensio_kb()->extensions()` hands it out.
+     *
+     * @since 1.1.0
+     *
+     * @return Licensio_KB_Extensions The registry.
+     */
+    public function extensions() {
+        return $this->registry;
+    }
+
+    /**
+     * Declare a default visible extension column on the Categories app.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    private function declare_column() {
+        Functions\when( 'sanitize_text_field' )->returnArg();
+
+        $this->registry->add_column(
+            'categories',
+            'acme/seo',
+            array(
+                'label'           => 'SEO',
+                'default_visible' => true,
+            )
+        );
+    }
+
+    /**
+     * The list takes up to 100 category IDs as `include`.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_the_list_takes_include() {
+        $include = $this->routes['/categories'][0]['args']['include'];
+
+        $this->assertSame( 'array', $include['type'] );
+        $this->assertSame( 'integer', $include['items']['type'] );
+        $this->assertSame( 1, $include['items']['minimum'] );
+        $this->assertSame( 100, $include['maxItems'] );
+    }
+
+    /**
+     * `include` answers just those categories.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_include_answers_just_those_categories() {
+        $items = $this->as_list( $this->controller->get_items( $this->request( array( 'include' => array( '5', 2, 0, 2 ) ) ) ) );
+
+        $ids = array_column( $items, 'id' );
+        sort( $ids );
+
+        $this->assertSame( array( 2, 5 ), $ids );
+    }
+
+    /**
+     * Without a visible extension column the categories carry no extension data.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_the_list_has_no_extension_data_without_a_column() {
+        foreach ( $this->as_list( $this->controller->get_items( $this->request( array() ) ) ) as $item ) {
+            $this->assertArrayNotHasKey( 'extensions', $item );
+        }
+    }
+
+    /**
+     * Each category carries the data of the visible extension columns.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_each_category_carries_its_extension_data() {
+        $this->declare_column();
+
+        Filters\expectApplied( 'licensio_kb_term_extension_data' )->andReturnUsing(
+            function ( $cells, $term, $keys ) {
+                unset( $cells );
+
+                $this->assertSame( 'licensio_category', $term->taxonomy );
+                $this->assertSame( array( 'acme/seo' ), $keys );
+
+                return array( 'acme/seo' => array( 'text' => 'Term ' . $term->term_id ) );
+            }
+        );
+
+        $items = array_column( $this->as_list( $this->controller->get_items( $this->request( array() ) ) ), null, 'id' );
+
+        $this->assertCount( 5, $items );
+        $this->assertEquals( (object) array( 'acme/seo' => array( 'text' => 'Term 4' ) ), $items[4]['extensions'] );
+    }
+
+    /**
+     * A saved order answers the whole list, with extension data, even with `include` sent.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_an_order_answers_the_whole_list_whatever_it_carries() {
+        $this->declare_column();
+
+        $items = $this->as_list(
+            $this->controller->update_order(
+                $this->request(
+                    array(
+                        'parent'  => 0,
+                        'ids'     => array( 4, 1 ),
+                        'include' => array( 4 ),
+                    )
+                )
+            )
+        );
+
+        $this->assertCount( 5, $items );
+        $this->assertArrayHasKey( 'extensions', $items[0] );
     }
 }

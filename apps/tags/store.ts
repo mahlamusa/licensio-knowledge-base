@@ -19,16 +19,23 @@
  * Only the answer of the latest list request is kept, so a slow earlier
  * request can never overwrite a later one.
  *
+ * `refresh( ids )` re-reads just those rows of the page for an extension and
+ * swaps them in place, leaving the filters, the URL and any list request in
+ * flight alone.
+ *
  * @since 1.0.0
+ * @since 1.1.0 Refreshes single rows for the extensions.
  */
 
 import { defineStore } from 'pinia';
 import { errorMessage } from '../components/rest';
+import { refreshIds, replaceRows } from '../components/term-extensions';
 import {
 	convertTags,
 	createTag,
 	deleteTags,
 	fetchTags,
+	fetchTagsById,
 	mergeTags,
 	settings,
 	updateTag,
@@ -205,6 +212,40 @@ export const useTagsStore = defineStore( 'licensioKBTags', {
 					this.loading = false;
 				}
 			}
+		},
+
+		/**
+		 * Re-read rows an extension changed.
+		 *
+		 * With no IDs the page is loaded again. Otherwise only the rows of
+		 * the page among them are read and swapped in where they are; one
+		 * that no longer exists leaves the page and the selection. The page
+		 * holds at most 100 rows, as many as one request may ask for.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param {number[]} [ids] The tags.
+		 *
+		 * @return {Promise<void>} Resolves once the rows are in state.
+		 */
+		async refresh( ids?: number[] ): Promise< void > {
+			if ( ! ids?.length ) {
+				await this.load();
+				return;
+			}
+
+			const wanted = refreshIds( this.items, ids );
+
+			if ( ! wanted.length ) {
+				return;
+			}
+
+			const fresh = await fetchTagsById( wanted );
+
+			this.items = replaceRows( this.items, wanted, fresh );
+			this.selected = this.selected.filter( ( id ) =>
+				this.items.some( ( item ) => item.id === id )
+			);
 		},
 
 		/**
