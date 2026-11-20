@@ -14,15 +14,23 @@
  * a screen reader announces, so the plain selects are named by visually
  * hidden labels instead.
  *
+ * Bulk actions other plugins declared (`extensions.bulkActions`) and gave a
+ * `run` handler follow the built-in ones. Applying one hands the selected IDs
+ * to the handler straight away: the extension asks, shows progress and
+ * refreshes rows itself, so there is no confirmation, progress or undo here.
+ *
  * @since 1.0.0
+ * @since 1.1.0 Offers the extension bulk actions.
  */
 
 import { computed, ref, watch } from 'vue';
 import ConfirmButton from '../../components/ConfirmButton.vue';
 import TermSelect from '../../components/TermSelect.vue';
+import { bulkActionEntries } from '../../components/bulk-actions';
 import { __, _n, sprintf } from '../../components/i18n';
 import { config } from '../api';
 import { confirmTitle, performAction } from '../actions';
+import { articlesExtensionContext } from '../extension-context';
 import { useArticlesStore } from '../store';
 import AuthorSelect from './AuthorSelect.vue';
 import type { TermValue } from '../../components/types/terms';
@@ -46,14 +54,33 @@ type Choice =
 const store = useArticlesStore();
 const can = config().can;
 
-const choice = ref< Choice | undefined >( undefined );
+// Extension scripts register before the app runs, so the entries are fixed.
+const extensionActions = bulkActionEntries(
+	'articles',
+	config().extensions.bulkActions,
+	articlesExtensionContext()
+);
+
+// An extension action's choice is its `namespace/name` key, which never
+// matches a built-in choice.
+const choice = ref< Choice | string | undefined >( undefined );
 const status = ref< BulkArgs[ 'status' ] >( undefined );
 const terms = ref< TermValue[] >( [] );
 const author = ref( 0 );
 
 const inTrash = computed( () => 'trash' === store.query.status );
 
-const choices = computed( () =>
+/** The chosen extension action, if one is chosen. */
+const extension = computed( () =>
+	extensionActions.find( ( entry ) => entry.key === choice.value )
+);
+
+const extensionChoices = extensionActions.map( ( entry ) => ( {
+	value: entry.key,
+	label: entry.label,
+} ) );
+
+const builtInChoices = computed( () =>
 	inTrash.value
 		? [
 				{
@@ -126,6 +153,11 @@ const choices = computed( () =>
 			]
 );
 
+const choices = computed( () => [
+	...builtInChoices.value,
+	...extensionChoices,
+] );
+
 // Publishing and making private need the publish capability.
 const statusOptions = [
 	{ value: 'publish', label: __( 'Published', 'licensio-knowledge-base' ) },
@@ -147,6 +179,7 @@ const taxonomy = computed( () =>
 const isTerms = computed(
 	() =>
 		!! choice.value &&
+		! extension.value &&
 		( choice.value.startsWith( 'cat_' ) ||
 			choice.value.startsWith( 'tag_' ) )
 );
@@ -156,6 +189,10 @@ const isTerms = computed(
  */
 const request = computed< { action: BulkAction; args: BulkArgs } | null >(
 	() => {
+		if ( extension.value ) {
+			return null;
+		}
+
 		switch ( choice.value ) {
 			case 'trash':
 			case 'restore':
@@ -246,6 +283,19 @@ async function apply(): Promise< void > {
 	const { action, args } = request.value;
 
 	await performAction( action, args, [ ...store.selected ] );
+
+	choice.value = undefined;
+}
+
+/**
+ * Hand the selection to the chosen extension action.
+ *
+ * @since 1.1.0
+ *
+ * @return {void}
+ */
+function applyExtension(): void {
+	extension.value?.run( [ ...store.selected ] );
 
 	choice.value = undefined;
 }
@@ -388,7 +438,17 @@ watch( inTrash, () => {
 					:aria-label="__( 'New author', 'licensio-knowledge-base' )"
 				/>
 
+				<a-button
+					v-if="extension"
+					size="small"
+					type="primary"
+					:disabled="store.bulk.running"
+					@click="applyExtension()"
+				>
+					{{ __( 'Apply', 'licensio-knowledge-base' ) }}
+				</a-button>
 				<ConfirmButton
+					v-else
 					size="small"
 					type="primary"
 					:title="title"

@@ -9,6 +9,7 @@
  * new one, so back and forward step through pages and sorts.
  *
  * @since 1.0.0
+ * @since 1.1.0 Refreshes given rows in place, for the extension API.
  */
 
 import { ref } from 'vue';
@@ -18,6 +19,7 @@ import {
 	config,
 	fetchArticles,
 	fetchIds,
+	fetchRows,
 	revert,
 	runBulk,
 	savePreferences,
@@ -676,6 +678,55 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 
 			if ( index > -1 ) {
 				this.items[ index ] = item;
+			}
+		},
+
+		/**
+		 * Reload the given rows in place, or the whole page without IDs.
+		 *
+		 * Only the rows on the current page are fetched, so a selection
+		 * across pages is fine. When one of them no longer matches the view,
+		 * the whole page is loaded instead so totals and counts stay right.
+		 * The answer is dropped when a page load started meanwhile.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param {number[]} ids The articles to refresh.
+		 *
+		 * @return {Promise<void>} Resolves once the rows are in place.
+		 */
+		async refreshRows( ids?: number[] ): Promise< void > {
+			if ( undefined === ids ) {
+				return this.load();
+			}
+
+			const wanted = new Set( ids );
+			const shown = this.items
+				.map( ( item ) => item.id )
+				.filter( ( id ) => wanted.has( id ) );
+
+			if ( 0 === shown.length ) {
+				return;
+			}
+
+			const ticket = latestLoad;
+
+			try {
+				const page = await fetchRows( this.query, shown );
+
+				if ( ticket !== latestLoad ) {
+					return;
+				}
+
+				if ( page.items.length < shown.length ) {
+					return this.load();
+				}
+
+				page.items.forEach( ( item ) => this.replaceItem( item ) );
+			} catch ( error ) {
+				if ( ticket === latestLoad ) {
+					this.error = errorMessage( error );
+				}
 			}
 		},
 
