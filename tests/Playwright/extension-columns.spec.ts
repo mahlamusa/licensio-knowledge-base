@@ -155,25 +155,36 @@ test.describe( 'extension columns @one-at-a-time', () => {
 		await idHeader.click();
 		await expect( page ).toHaveURL( /orderby=example%2Fid/ );
 
-		const descending = ( await ids.allInnerTexts() ).map( ( text ) =>
-			Number( text.slice( 1 ) )
-		);
+		// The URL changes before the list reloads, so the order is read
+		// until it matches.
+		let descending: number[] = [];
 
-		expect( descending ).toEqual(
-			[ ...descending ].sort( ( a, b ) => b - a )
-		);
+		await expect( async () => {
+			descending = ( await ids.allInnerTexts() ).map( ( text ) =>
+				Number( text.slice( 1 ) )
+			);
+
+			expect( descending.length ).toBeGreaterThan( 1 );
+			expect( descending ).toEqual(
+				[ ...descending ].sort( ( a, b ) => b - a )
+			);
+		} ).toPass();
 
 		await idHeader.click();
 		await expect( page ).toHaveURL( /order=asc/ );
-		await expect( ids.first() ).not.toHaveText( `#${ descending[ 0 ] }` );
 
-		const ascending = ( await ids.allInnerTexts() ).map( ( text ) =>
-			Number( text.slice( 1 ) )
-		);
+		let ascending: number[] = [];
 
-		expect( ascending ).toEqual(
-			[ ...ascending ].sort( ( a, b ) => a - b )
-		);
+		await expect( async () => {
+			ascending = ( await ids.allInnerTexts() ).map( ( text ) =>
+				Number( text.slice( 1 ) )
+			);
+
+			expect( ascending[ 0 ] ).not.toBe( descending[ 0 ] );
+			expect( ascending ).toEqual(
+				[ ...ascending ].sort( ( a, b ) => a - b )
+			);
+		} ).toPass();
 
 		// The sort survives a reload.
 		await page.reload();

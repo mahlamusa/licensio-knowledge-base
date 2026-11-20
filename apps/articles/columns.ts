@@ -6,9 +6,11 @@
  * how the Columns picker groups them, and which ones the list can sort by.
  *
  * An extension column follows the column named by its `position`, a core
- * column key (`title` included) or another extension column's key, in the
- * order the columns were declared. A column with no position, or one whose
- * position names no column placed before it, goes at the end.
+ * column key (`title` included) or another extension column's key, and any
+ * extension columns already placed right after that column, so columns
+ * sharing a position keep the order they were declared in. A column with no
+ * position, or one whose position names no column placed before it, goes at
+ * the end.
  *
  * Consumed by the store, `ArticleTable.vue` and `ColumnPicker.vue`.
  *
@@ -53,16 +55,25 @@ export function orderColumns(
 	extensions: ExtensionColumn[]
 ): string[] {
 	const order = [ ...core ];
+	const placed = new Set< string >();
 	const trailing: string[] = [];
 
 	extensions.forEach( ( column ) => {
 		const after = column.position ? order.indexOf( column.position ) : -1;
 
-		if ( after > -1 ) {
-			order.splice( after + 1, 0, column.key );
-		} else {
+		if ( after < 0 ) {
 			trailing.push( column.key );
+			return;
 		}
+
+		let at = after + 1;
+
+		while ( at < order.length && placed.has( order[ at ] ) ) {
+			at++;
+		}
+
+		order.splice( at, 0, column.key );
+		placed.add( column.key );
 	} );
 
 	return [ ...order, ...trailing ];

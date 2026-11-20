@@ -68,8 +68,8 @@ describe( 'orderColumns', () => {
 			'acme/c',
 			'acme/d',
 			'author',
-			'acme/b',
 			'acme/a',
+			'acme/b',
 			'tags',
 			'date',
 		] );

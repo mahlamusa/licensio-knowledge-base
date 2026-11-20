@@ -72,6 +72,7 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
      * Register the routes with the core functions they touch stubbed.
      *
      * @since 1.0.0
+     * @since 1.1.0 Stubs the extension registry and the saved list preferences.
      *
      * @return void
      */

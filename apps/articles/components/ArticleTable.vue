@@ -162,6 +162,7 @@ function feedbackUrl( id: number ): string {
  * Handle a paging or sort change from the table.
  *
  * @since 1.0.0
+ * @since 1.1.0 Sorts by the sortable extension columns too.
  *
  * @param {Object}  pagination           The table pagination.
  * @param {number}  [pagination.current] The page now shown.
