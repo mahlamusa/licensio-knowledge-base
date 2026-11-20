@@ -39,7 +39,8 @@ define( 'LICENSIO_KB_REST_NAMESPACE', 'licensio-kb/v1' );
 /*
  * The extension API version of the content manager apps. Other plugins check
  * it, not the plugin version, before they declare extensions. Raised when the
- * API gains something a consumer may need to test for.
+ * API gains something a consumer may need to test for. Version 1 also covers
+ * Licensio_KB_FAQ_Block::entries(), the questions a FAQ block renders.
  */
 define( 'LICENSIO_KB_EXTENSIONS_API', 1 );
 
