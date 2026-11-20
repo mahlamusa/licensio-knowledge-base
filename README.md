@@ -411,8 +411,10 @@ articles, in the same order: the same query, the
 `licensio_block_article_query_args` filter and the per-category article order.
 The answer is the excerpt, or an empty string when `showExcerpt` is off;
 callers decide whether to skip it. An untitled article has an empty question,
-which the block does not print. Values are raw text: escape them where they are
-printed. Available from extension API version 1.
+which the block does not print. The question and answer are what
+`get_the_title()` and `get_the_excerpt()` return, not escaped, so they may carry
+HTML entities or tags: escape them for HTML, or strip the tags and decode the
+entities for structured data. Available from extension API version 1.
 
 Blocks are registered from `dist/blocks/<name>` when the plugin has been built
 and from `blocks/<name>` otherwise, so a checkout that has never run

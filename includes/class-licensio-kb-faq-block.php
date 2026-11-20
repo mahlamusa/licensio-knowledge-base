@@ -154,9 +154,11 @@ class Licensio_KB_FAQ_Block extends Licensio_KB_Block {
      *
      * The answer is the article excerpt, or an empty string when `showExcerpt`
      * is off; callers decide whether to skip an entry without one. An untitled
-     * article has an empty question, which the block does not print. Values
-     * are raw text, not escaped: escape them for the context they are printed
-     * in.
+     * article has an empty question, which the block does not print. The
+     * question and answer are what `get_the_title()` and `get_the_excerpt()`
+     * return, not escaped, so they may carry HTML entities or tags: escape
+     * them for HTML, or strip the tags and decode the entities for structured
+     * data.
      *
      * Part of the extension API, detectable through `LICENSIO_KB_EXTENSIONS_API`.
      *
