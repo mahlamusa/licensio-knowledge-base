@@ -16,6 +16,9 @@
  * One registry per request, owned by the main plugin class. Consumers detect
  * the API through the `LICENSIO_KB_EXTENSIONS_API` constant.
  *
+ * The same API version covers `Licensio_KB_FAQ_Block::entries()`, which hands
+ * another plugin the questions and answers a FAQ block renders.
+ *
  * @package Licensio_KB
  * @since   1.1.0
  */
