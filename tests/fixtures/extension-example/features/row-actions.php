@@ -2,10 +2,12 @@
 /**
  * Example row actions for the Articles app.
  *
- * Declares three row actions and registers handlers for two of them:
+ * Declares four row actions and registers handlers for three of them:
  *
  * - `example/retitle` adds " (retitled)" to the article's title through the
  *   knowledge base's REST route, then refreshes just that row.
+ * - `example/fails` returns a promise that rejects, so the app shows its
+ *   error toast.
  * - `example/no-script` has no handler, so the app hides it.
  * - `example/forbidden` needs a capability nobody has, so it never reaches the
  *   app config.
@@ -33,6 +35,7 @@ add_action( 'licensio_kb_enqueue_app_extensions', 'licensio_kb_example_row_actio
  */
 function licensio_kb_example_row_actions( $extensions ) {
     $extensions->add_row_action( 'articles', 'example/retitle', array( 'label' => 'Example retitle' ) );
+    $extensions->add_row_action( 'articles', 'example/fails', array( 'label' => 'Example fails' ) );
     $extensions->add_row_action( 'articles', 'example/no-script', array( 'label' => 'Example no script' ) );
     $extensions->add_row_action(
         'articles',
@@ -85,6 +88,13 @@ function licensio_kb_example_row_actions_script( $screen, $hook_suffix ) {
 					} ).then( function () {
 						return ctx.refresh( [ row.id ] );
 					} );
+				},
+			},
+			'example/fails': {
+				run: function ( row, ctx ) {
+					record( row, ctx );
+
+					return Promise.reject( new Error( 'Example failure' ) );
 				},
 			},
 			'example/forbidden': {

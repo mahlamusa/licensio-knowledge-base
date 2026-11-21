@@ -2,11 +2,13 @@
  * Extension row actions in the Articles app, end to end.
  *
  * The example extension (`tests/fixtures/extension-example/features/row-actions.php`)
- * declares three row actions: one with a handler, one without, and one behind
- * a capability nobody has. Only the first shows, among the row's own actions,
- * on hover and on keyboard focus. Running it calls the handler with the row
- * and the app's context, and `ctx.refresh( [ id ] )` fetches just that row
- * again, so the new title shows without a page reload.
+ * declares four row actions: two with a handler, one without, and one behind
+ * a capability nobody has. Only the two with a handler show, among the row's
+ * own actions, on hover and on keyboard focus, and none show in the Trash
+ * view. Running one calls the handler with the row and the app's context,
+ * and `ctx.refresh( [ id ] )` fetches just that row again, so the new title
+ * shows without a page reload and focus stays on the action. A handler that
+ * rejects gets the app's error toast and leaves the row usable.
  *
  * Needs a running WordPress with this plugin and the example extension active
  * and an administrator account, so it is skipped unless `LICENSIO_KB_E2E=1`
@@ -37,10 +39,11 @@ test.skip(
  *
  * @since 1.1.0
  *
- * @param {Page}   page   The browser page, on the Articles app.
- * @param {string} method POST to create, DELETE to delete for good.
- * @param {string} path   The route after `licensio_articles`.
- * @param {Object} data   The fields to send.
+ * @param {Page}    page   The browser page, on the Articles app.
+ * @param {string}  method POST to create, DELETE to delete.
+ * @param {string}  path   The route after `licensio_articles`.
+ * @param {Object}  data   The fields to send.
+ * @param {boolean} force  Whether a DELETE skips the Trash.
  *
  * @return {Promise<{id: number}>} The response body.
  */
@@ -48,10 +51,11 @@ async function articleRequest(
 	page: Page,
 	method: string,
 	path: string,
-	data: Record< string, string > = {}
+	data: Record< string, string > = {},
+	force = true
 ): Promise< { id: number } > {
 	return page.evaluate(
-		async ( { verb, route, body } ) => {
+		async ( { verb, route, body, skipTrash } ) => {
 			const config = (
 				window as unknown as {
 					licensioKbArticles: { root: string; nonce: string };
@@ -63,7 +67,7 @@ async function articleRequest(
 				route;
 			const response = await fetch(
 				base +
-					( 'DELETE' === verb
+					( 'DELETE' === verb && skipTrash
 						? ( base.includes( '?' ) ? '&' : '?' ) + 'force=true'
 						: '' ),
 				{
@@ -80,7 +84,7 @@ async function articleRequest(
 
 			return response.json();
 		},
-		{ verb: method, route: path, body: data }
+		{ verb: method, route: path, body: data, skipTrash: force }
 	);
 }
 
@@ -138,11 +142,15 @@ test.describe( 'Extension row actions', () => {
 
 		// The capability check runs in PHP; a missing handler hides in JS.
 		expect( declared ).toEqual( [
+			'example/fails',
 			'example/no-script',
 			'example/retitle',
 		] );
 		await expect(
 			row.getByRole( 'button', { name: 'Example retitle' } )
+		).toHaveCount( 1 );
+		await expect(
+			row.getByRole( 'button', { name: 'Example fails' } )
 		).toHaveCount( 1 );
 		await expect( row.getByText( 'Example no script' ) ).toHaveCount( 0 );
 		await expect( row.getByText( 'Example forbidden' ) ).toHaveCount( 0 );
@@ -200,6 +208,9 @@ test.describe( 'Extension row actions', () => {
 		await expect(
 			row.getByRole( 'link', { name: `${ title } (retitled)` } )
 		).toBeVisible();
+		// The refreshed row keeps the keyboard user where they were.
+		await expect( action ).toBeFocused();
+		await expect( actions ).toHaveCSS( 'opacity', '1' );
 
 		const runs = await page.evaluate(
 			() =>
@@ -217,5 +228,43 @@ test.describe( 'Extension row actions', () => {
 		// One list request, for that row alone: no reload of the page.
 		expect( lists ).toHaveLength( 1 );
 		expect( lists[ 0 ] ).toContain( `include[]=${ id }` );
+	} );
+
+	test( 'a failing action shows an error and leaves the row usable', async ( {
+		page,
+	} ) => {
+		const app = contentManagerMount( page, 'articles' );
+		const row = app.locator( '.ant-table-row', { hasText: title } );
+
+		await row.hover();
+		await row.getByRole( 'button', { name: 'Example fails' } ).click();
+
+		await expect( page.locator( '.ant-message' ) ).toContainText(
+			'Example fails could not be completed.'
+		);
+
+		await row.getByRole( 'button', { name: 'Example retitle' } ).click();
+
+		await expect(
+			row.getByRole( 'link', { name: `${ title } (retitled)` } )
+		).toBeVisible();
+	} );
+
+	test( 'trashed rows show no extension actions', async ( { page } ) => {
+		const app = contentManagerMount( page, 'articles' );
+
+		await articleRequest( page, 'DELETE', `/${ id }`, {}, false );
+		await page.goto(
+			contentManagerUrl( 'articles' ) +
+				'&status=trash&search=' +
+				encodeURIComponent( title )
+		);
+
+		const row = app.locator( '.ant-table-row', { hasText: title } );
+
+		await expect(
+			row.getByRole( 'button', { name: 'Restore' } )
+		).toBeVisible();
+		await expect( row.locator( '[data-row-action]' ) ).toHaveCount( 0 );
 	} );
 } );
