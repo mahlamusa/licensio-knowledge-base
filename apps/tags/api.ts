@@ -5,7 +5,7 @@
  * configures with the root and nonce the page localised.
  *
  * @since 1.0.0
- * @since 1.1.0 Falls back to no extensions.
+ * @since 1.1.0 Falls back to no extensions, and reads tags by ID.
  */
 
 import { noExtensions } from '../components/extensions';
@@ -77,6 +77,25 @@ export function fetchTags( query: TagQuery ): Promise< TagPage > {
 		page: query.page,
 		per_page: query.perPage,
 	} );
+}
+
+/**
+ * Only the given tags, whatever the filters, for a refresh of their rows.
+ *
+ * @since 1.1.0
+ *
+ * @param {number[]} ids The tags, at most `REFRESH_MAX_IDS`.
+ *
+ * @return {Promise<TagItem[]>} The ones that still exist.
+ */
+export async function fetchTagsById( ids: number[] ): Promise< TagItem[] > {
+	const page = await get< TagPage >( 'tags', {
+		include: ids,
+		page: 1,
+		per_page: ids.length,
+	} );
+
+	return page.items;
 }
 
 /**

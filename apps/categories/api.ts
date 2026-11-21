@@ -8,7 +8,7 @@
  * itself.
  *
  * @since 1.0.0
- * @since 1.1.0 Falls back to no extensions.
+ * @since 1.1.0 Falls back to no extensions, and reads categories by ID.
  */
 
 import { noExtensions } from '../components/extensions';
@@ -69,6 +69,21 @@ export function settings(): CategoriesConfig {
  */
 export function fetchCategories(): Promise< CategoryItem[] > {
 	return get< CategoryItem[] >( 'categories' );
+}
+
+/**
+ * Only the given categories, for a refresh of their rows.
+ *
+ * @since 1.1.0
+ *
+ * @param {number[]} ids The categories, at most `REFRESH_MAX_IDS`.
+ *
+ * @return {Promise<CategoryItem[]>} The ones that still exist.
+ */
+export function fetchCategoriesById(
+	ids: number[]
+): Promise< CategoryItem[] > {
+	return get< CategoryItem[] >( 'categories', { include: ids } );
 }
 
 /**

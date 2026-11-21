@@ -52,6 +52,7 @@ class Licensio_KB_Categories_REST_Integration_Test extends Licensio_KB_Analytics
      * Seed the tree and stub the term API.
      *
      * @since 1.0.0
+     * @since 1.1.0 Hands the controller empty extension data.
      *
      * @return void
      */
@@ -82,7 +83,7 @@ class Licensio_KB_Categories_REST_Integration_Test extends Licensio_KB_Analytics
             )
         );
 
-        $this->controller = new Licensio_KB_Categories_REST_Controller();
+        $this->controller = new Licensio_KB_Categories_REST_Controller( null, new Licensio_KB_Term_Extension_Data( new Licensio_KB_Extensions() ) );
     }
 
     /**
@@ -587,6 +588,7 @@ class Licensio_KB_Categories_REST_Integration_Test extends Licensio_KB_Analytics
      * restores the order it had, or none.
      *
      * @since 1.0.0
+     * @since 1.1.0 Hands the controller empty extension data.
      *
      * @return void
      */
@@ -602,7 +604,7 @@ class Licensio_KB_Categories_REST_Integration_Test extends Licensio_KB_Analytics
         $operations = Mockery::mock( Licensio_KB_Term_Operations::class )->makePartial();
         $operations->shouldReceive( 'merge_terms' )->andReturn( new WP_Error( 'licensio_kb_merge_failed', 'Nope.' ) );
 
-        $controller = new Licensio_KB_Categories_REST_Controller( $operations );
+        $controller = new Licensio_KB_Categories_REST_Controller( $operations, new Licensio_KB_Term_Extension_Data( new Licensio_KB_Extensions() ) );
         $result     = $controller->merge(
             $this->request(
                 array(

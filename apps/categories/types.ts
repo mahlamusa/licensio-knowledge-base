@@ -7,10 +7,13 @@
  * `../components/types/category-order.ts` instead.
  *
  * @since 1.0.0
- * @since 1.1.0 Adds the `extensions` config.
+ * @since 1.1.0 Adds the `extensions` config and each category's extension column data.
  */
 
-import type { ExtensionsConfig } from '../components/extensions';
+import type {
+	ExtensionCellData,
+	ExtensionsConfig,
+} from '../components/extensions';
 
 /**
  * One category from `GET categories`.
@@ -38,6 +41,8 @@ export interface CategoryItem {
 	icon_svg: string;
 	/** An inline Base64 PNG, JPEG, GIF or WebP icon as a data URL, or empty. */
 	icon_data: string;
+	/** The visible extension columns' data, keyed by column key; absent when none. */
+	extensions?: Record< string, ExtensionCellData >;
 	/** The category image's attachment ID, or 0. */
 	image_id: number;
 	/** The uploaded icon's URL, or empty. */
