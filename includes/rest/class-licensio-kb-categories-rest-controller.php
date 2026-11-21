@@ -115,6 +115,14 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
     private $operations;
 
     /**
+     * The extension column data of the list rows.
+     *
+     * @since 1.1.0
+     * @var Licensio_KB_Term_Extension_Data
+     */
+    private $extension_data;
+
+    /**
      * Each category's stored order before `reparent()` moved it, for a rollback.
      *
      * @since 1.0.0
@@ -126,12 +134,16 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      * Build the controller.
      *
      * @since 1.0.0
+     * @since 1.1.0 Takes the term extension data.
      *
-     * @param Licensio_KB_Term_Operations|null $operations The term operations. Created when omitted, so the
-     *                                                     REST registrar can build the controller with no arguments.
+     * @param Licensio_KB_Term_Operations|null     $operations     The term operations. Created when omitted, so the
+     *                                                             REST registrar can build the controller with no arguments.
+     * @param Licensio_KB_Term_Extension_Data|null $extension_data The extension column data. Built over the plugin's
+     *                                                             extension registry when omitted, for the same reason.
      */
-    public function __construct( $operations = null ) {
-        $this->operations = $operations instanceof Licensio_KB_Term_Operations ? $operations : new Licensio_KB_Term_Operations();
+    public function __construct( $operations = null, $extension_data = null ) {
+        $this->operations     = $operations instanceof Licensio_KB_Term_Operations ? $operations : new Licensio_KB_Term_Operations();
+        $this->extension_data = $extension_data instanceof Licensio_KB_Term_Extension_Data ? $extension_data : new Licensio_KB_Term_Extension_Data( licensio_kb()->extensions() );
     }
 
     /**
@@ -807,7 +819,7 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
             return $items;
         }
 
-        $items = ( new Licensio_KB_Term_Extension_Data( licensio_kb()->extensions() ) )->add( Licensio_KB_Extensions::SCREEN_CATEGORIES, Licensio_KB_Post_Types::TAXONOMY_CATEGORY, $items );
+        $items = $this->extension_data->add( Licensio_KB_Extensions::SCREEN_CATEGORIES, Licensio_KB_Post_Types::TAXONOMY_CATEGORY, $items );
 
         return rest_ensure_response( $items );
     }

@@ -113,7 +113,7 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
     private $controller;
 
     /**
-     * The extension registry `licensio_kb()->extensions()` hands out.
+     * The extension registry the controller's extension data reads.
      *
      * @since 1.1.0
      * @var Licensio_KB_Extensions
@@ -176,9 +176,7 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
 
         $this->registry = new Licensio_KB_Extensions();
 
-        Functions\when( 'licensio_kb' )->justReturn( $this );
-
-        $this->controller = new Licensio_KB_Categories_REST_Controller();
+        $this->controller = new Licensio_KB_Categories_REST_Controller( null, new Licensio_KB_Term_Extension_Data( $this->registry ) );
         $this->controller->register_routes();
     }
 
@@ -2510,17 +2508,6 @@ class Licensio_KB_Categories_REST_Test extends Licensio_KB_Test_Case {
             ),
             $this->term_writes
         );
-    }
-
-    /**
-     * The extension registry, as `licensio_kb()->extensions()` hands it out.
-     *
-     * @since 1.1.0
-     *
-     * @return Licensio_KB_Extensions The registry.
-     */
-    public function extensions() {
-        return $this->registry;
     }
 
     /**

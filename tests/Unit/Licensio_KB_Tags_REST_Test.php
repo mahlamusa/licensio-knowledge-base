@@ -71,6 +71,7 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
      * and Billing (21) which has the same slug as the Billing tag.
      *
      * @since 1.0.0
+     * @since 1.1.0 Hands the controller empty extension data.
      *
      * @return void
      */
@@ -211,7 +212,7 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
             }
         );
 
-        ( new Licensio_KB_Tags_REST_Controller() )->register_routes();
+        ( new Licensio_KB_Tags_REST_Controller( null, new Licensio_KB_Term_Extension_Data( new Licensio_KB_Extensions() ) ) )->register_routes();
     }
 
     /**
@@ -855,6 +856,7 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
      * Merge hands the tag taxonomy to the shared term operations.
      *
      * @since 1.0.0
+     * @since 1.1.0 Hands the controller empty extension data.
      *
      * @return void
      */
@@ -891,7 +893,7 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
         };
 
         $this->routes = array();
-        ( new Licensio_KB_Tags_REST_Controller( $operations ) )->register_routes();
+        ( new Licensio_KB_Tags_REST_Controller( $operations, new Licensio_KB_Term_Extension_Data( new Licensio_KB_Extensions() ) ) )->register_routes();
 
         $result = $this->call(
             '/tags/merge',
@@ -916,6 +918,7 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
      * left as it was.
      *
      * @since 1.0.0
+     * @since 1.1.0 Hands the controller empty extension data.
      *
      * @return void
      */
@@ -935,7 +938,7 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
         $operations->shouldNotReceive( 'merge_terms', 'move_across_taxonomies' );
 
         $this->routes = array();
-        ( new Licensio_KB_Tags_REST_Controller( $operations ) )->register_routes();
+        ( new Licensio_KB_Tags_REST_Controller( $operations, new Licensio_KB_Term_Extension_Data( new Licensio_KB_Extensions() ) ) )->register_routes();
 
         $merged = $this->call(
             '/tags/merge',
@@ -1067,39 +1070,6 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
         Functions\when( 'sanitize_text_field' )->returnArg();
         Functions\when( '_prime_term_caches' )->justReturn( null );
         Functions\when( 'rest_sanitize_boolean' )->alias( 'boolval' );
-        Functions\when( 'licensio_kb' )->justReturn(
-            new class( $registry ) {
-                /**
-                 * The registry.
-                 *
-                 * @since 1.1.0
-                 * @var Licensio_KB_Extensions
-                 */
-                private $registry;
-
-                /**
-                 * Keep the registry.
-                 *
-                 * @since 1.1.0
-                 *
-                 * @param Licensio_KB_Extensions $registry The registry.
-                 */
-                public function __construct( $registry ) {
-                    $this->registry = $registry;
-                }
-
-                /**
-                 * The registry, as the plugin hands it out.
-                 *
-                 * @since 1.1.0
-                 *
-                 * @return Licensio_KB_Extensions The registry.
-                 */
-                public function extensions() {
-                    return $this->registry;
-                }
-            }
-        );
 
         $registry->add_column(
             'tags',
@@ -1215,6 +1185,9 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
                 return array( 'acme/seo' => array( 'text' => $term->name ) );
             }
         );
+
+        $this->routes = array();
+        ( new Licensio_KB_Tags_REST_Controller( null, new Licensio_KB_Term_Extension_Data( $registry ) ) )->register_routes();
 
         $page = $this->call(
             '/tags',

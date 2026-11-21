@@ -78,17 +78,29 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
     private $term_operations;
 
     /**
+     * The extension column data of the list rows.
+     *
+     * @since 1.1.0
+     * @var Licensio_KB_Term_Extension_Data
+     */
+    private $extension_data;
+
+    /**
      * Build the controller.
      *
      * The REST registrar builds controllers with no arguments, so the term
-     * operations default to a new instance. They hold no state.
+     * operations default to a new instance (they hold no state), and the
+     * extension data to one over the plugin's extension registry.
      *
      * @since 1.0.0
+     * @since 1.1.0 Takes the term extension data.
      *
-     * @param Licensio_KB_Term_Operations|null $term_operations Optional. The term operations to use.
+     * @param Licensio_KB_Term_Operations|null     $term_operations Optional. The term operations to use.
+     * @param Licensio_KB_Term_Extension_Data|null $extension_data  Optional. The extension column data to use.
      */
-    public function __construct( $term_operations = null ) {
+    public function __construct( $term_operations = null, $extension_data = null ) {
         $this->term_operations = $term_operations instanceof Licensio_KB_Term_Operations ? $term_operations : new Licensio_KB_Term_Operations();
+        $this->extension_data  = $extension_data instanceof Licensio_KB_Term_Extension_Data ? $extension_data : new Licensio_KB_Term_Extension_Data( licensio_kb()->extensions() );
     }
 
     /**
@@ -653,7 +665,7 @@ class Licensio_KB_Tags_REST_Controller extends Licensio_KB_REST_Controller {
             $items[] = self::prepare_row( $row );
         }
 
-        $items = ( new Licensio_KB_Term_Extension_Data( licensio_kb()->extensions() ) )->add( Licensio_KB_Extensions::SCREEN_TAGS, $taxonomy, $items );
+        $items = $this->extension_data->add( Licensio_KB_Extensions::SCREEN_TAGS, $taxonomy, $items );
 
         return rest_ensure_response(
             array(

@@ -44,6 +44,7 @@ class Licensio_KB_Tags_Integration_Test extends Licensio_KB_Analytics_DB_Test_Ca
      * Add the core tables and stand in the term API.
      *
      * @since 1.0.0
+     * @since 1.1.0 Hands the controller empty extension data.
      *
      * @return void
      */
@@ -68,7 +69,7 @@ class Licensio_KB_Tags_Integration_Test extends Licensio_KB_Analytics_DB_Test_Ca
             }
         );
 
-        $this->controller = new Licensio_KB_Tags_REST_Controller();
+        $this->controller = new Licensio_KB_Tags_REST_Controller( null, new Licensio_KB_Term_Extension_Data( new Licensio_KB_Extensions() ) );
     }
 
     /**
