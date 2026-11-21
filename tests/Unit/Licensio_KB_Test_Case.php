@@ -43,6 +43,7 @@ abstract class Licensio_KB_Test_Case extends TestCase {
      * Boot Brain Monkey and the option store.
      *
      * @since 1.0.0
+     * @since 1.1.0 Stubs wp_pre_kses_less_than(), which extension labels pass through.
      *
      * @return void
      */
@@ -150,6 +151,19 @@ abstract class Licensio_KB_Test_Case extends TestCase {
         Functions\when( 'wp_strip_all_tags' )->alias(
             function ( $value ) {
                 return strip_tags( (string) $value ); // phpcs:ignore WordPress.WP.AlternativeFunctions.strip_tags_strip_tags
+            }
+        );
+
+        // Core's wp_pre_kses_less_than(): a less-than sign that opens no tag is escaped, entities are not encoded twice.
+        Functions\when( 'wp_pre_kses_less_than' )->alias(
+            function ( $value ) {
+                return preg_replace_callback(
+                    '%<[^>]*?((?=<)|>|$)%',
+                    function ( $matches ) {
+                        return false === strpos( $matches[0], '>' ) ? htmlspecialchars( $matches[0], ENT_QUOTES, 'UTF-8', false ) : $matches[0];
+                    },
+                    (string) $value
+                );
             }
         );
 

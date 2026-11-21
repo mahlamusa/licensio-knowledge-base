@@ -57,6 +57,7 @@ abstract class Licensio_KB_Analytics_DB_Test_Case extends Licensio_KB_Integratio
      * Create the tables and point the plugin's gateway at them.
      *
      * @since 1.0.0
+     * @since 1.1.0 Stubs the tag stripping that extension labels pass through.
      *
      * @return void
      */
@@ -90,6 +91,13 @@ abstract class Licensio_KB_Analytics_DB_Test_Case extends Licensio_KB_Integratio
         Brain\Monkey\Functions\when( 'sanitize_text_field' )->alias(
             function ( $value ) {
                 return is_string( $value ) ? trim( $value ) : '';
+            }
+        );
+
+        Brain\Monkey\Functions\when( 'wp_pre_kses_less_than' )->returnArg();
+        Brain\Monkey\Functions\when( 'wp_strip_all_tags' )->alias(
+            function ( $value ) {
+                return trim( strip_tags( (string) $value ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.strip_tags_strip_tags
             }
         );
     }
