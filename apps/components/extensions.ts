@@ -10,7 +10,8 @@
  *
  * PHP declares the labels and who sees what; JS supplies the behaviour. A
  * column with no registered `render` shows its row data's `text`, and an
- * action with no registered `run` is hidden.
+ * action with no registered `run` is hidden. A row action's optional
+ * `visible( row )` hides it on the rows where it returns false.
  *
  * Consumed by `ExtensionCell.vue`, `row-actions.ts` and the Articles,
  * Categories and Tags apps.
@@ -82,9 +83,17 @@ export interface BulkActionHandler {
  * that rejects, the app shows a generic error toast and logs the error to the
  * console with the action's key. Rows in the Articles Trash view show no
  * extension row actions.
+ *
+ * `visible( row )` decides per row whether the action shows, for a check
+ * the capability PHP declared cannot make, such as whether the user may
+ * edit that one article. Without it the action shows on every row. It runs
+ * each time the row renders, so keep it synchronous and cheap, working from
+ * the row's own data. When it throws, the action is hidden and the error is
+ * logged to the console once, with the action's key.
  */
 export interface RowActionHandler< Row extends ExtensionRow = ExtensionRow > {
 	run: ( row: Row, ctx: ExtensionContext ) => unknown;
+	visible?: ( row: Row ) => boolean;
 }
 
 /** The handlers a script registers for one screen, keyed by declared key. */

@@ -37,6 +37,7 @@ function licensio_kb_example_row_actions( $extensions ) {
     $extensions->add_row_action( 'articles', 'example/retitle', array( 'label' => 'Example retitle' ) );
     $extensions->add_row_action( 'articles', 'example/fails', array( 'label' => 'Example fails' ) );
     $extensions->add_row_action( 'articles', 'example/no-script', array( 'label' => 'Example no script' ) );
+    $extensions->add_row_action( 'articles', 'example/marked', array( 'label' => 'Example marked' ) );
     $extensions->add_row_action(
         'articles',
         'example/forbidden',
@@ -99,6 +100,12 @@ function licensio_kb_example_row_actions_script( $screen, $hook_suffix ) {
 			},
 			'example/forbidden': {
 				run: record,
+			},
+			'example/marked': {
+				run: record,
+				visible: function ( row ) {
+					return -1 !== row.title_raw.indexOf( '[marked]' );
+				},
 			},
 		},
 	} );

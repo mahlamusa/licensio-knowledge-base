@@ -2,10 +2,11 @@
  * Extension row actions in the Articles app, end to end.
  *
  * The example extension (`tests/fixtures/extension-example/features/row-actions.php`)
- * declares four row actions: two with a handler, one without, and one behind
- * a capability nobody has. Only the two with a handler show, among the row's
- * own actions, on hover and on keyboard focus, and none show in the Trash
- * view. Running one calls the handler with the row and the app's context,
+ * declares five row actions: two with a handler, one without, one behind a
+ * capability nobody has, and one whose `visible( row )` allows only titles
+ * marked `[marked]`. Only the two with a handler show on a plain row, among
+ * the row's own actions, on hover and on keyboard focus; the marked action
+ * shows on a marked row alone, and none show in the Trash view. Running one calls the handler with the row and the app's context,
  * and `ctx.refresh( [ id ] )` fetches just that row again, so the new title
  * shows without a page reload and focus stays on the action. A double click
  * runs it once. A handler that rejects gets the app's error toast, its error
@@ -144,6 +145,7 @@ test.describe( 'Extension row actions', () => {
 		// The capability check runs in PHP; a missing handler hides in JS.
 		expect( declared ).toEqual( [
 			'example/fails',
+			'example/marked',
 			'example/no-script',
 			'example/retitle',
 		] );
@@ -160,6 +162,60 @@ test.describe( 'Extension row actions', () => {
 		await expect( actions ).toHaveCSS( 'opacity', '0' );
 		await row.hover();
 		await expect( actions ).toHaveCSS( 'opacity', '1' );
+	} );
+
+	test( 'an action shows only on the rows its visible check allows', async ( {
+		page,
+	} ) => {
+		const markedTitle = `${ title } [marked]`;
+		const { id: markedId } = await articleRequest( page, 'POST', '', {
+			title: markedTitle,
+			status: 'publish',
+		} );
+
+		try {
+			await page.reload();
+
+			const app = contentManagerMount( page, 'articles' );
+			const rowOf = ( name: string ) =>
+				app.locator( '.ant-table-row' ).filter( {
+					has: page.getByRole( 'link', { name, exact: true } ),
+				} );
+			const plain = rowOf( title );
+			const marked = rowOf( markedTitle );
+
+			await expect( plain ).toHaveCount( 1 );
+			await expect( marked ).toHaveCount( 1 );
+			await expect(
+				plain.getByRole( 'button', { name: 'Example retitle' } )
+			).toHaveCount( 1 );
+			await expect(
+				plain.getByRole( 'button', { name: 'Example marked' } )
+			).toHaveCount( 0 );
+			await expect(
+				marked.getByRole( 'button', { name: 'Example retitle' } )
+			).toHaveCount( 1 );
+
+			await marked.hover();
+			await marked
+				.getByRole( 'button', { name: 'Example marked' } )
+				.click();
+
+			await expect
+				.poll( () =>
+					page.evaluate(
+						() =>
+							(
+								window as unknown as {
+									licensioKbExampleRowRuns?: unknown[];
+								}
+							 ).licensioKbExampleRowRuns
+					)
+				)
+				.toEqual( [ { id: markedId, screen: 'articles' } ] );
+		} finally {
+			await articleRequest( page, 'DELETE', `/${ markedId }` );
+		}
 	} );
 
 	test( 'runs from the keyboard and refreshes just that row', async ( {

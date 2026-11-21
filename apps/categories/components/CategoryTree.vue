@@ -36,7 +36,7 @@ import {
 	isExtensionRowActionRunning,
 	runExtensionRowAction,
 } from '../../components/extension-row-action';
-import { rowActionEntries } from '../../components/row-actions';
+import { rowActionEntries, rowActionsFor } from '../../components/row-actions';
 import { shownColumns } from '../../components/term-extensions';
 import { settings } from '../api';
 import {
@@ -534,7 +534,9 @@ function onMenuKey( event: KeyboardEvent, id: number ): void {
  * @return {void}
  */
 function runExtensionAction( item: CategoryItem, key: string ): void {
-	const action = extensionActions.find( ( entry ) => entry.key === key );
+	const action = rowActionsFor( extensionActions, item ).find(
+		( entry ) => entry.key === key
+	);
 
 	if ( action ) {
 		runExtensionRowAction( action, item );
@@ -782,7 +784,10 @@ function onMenu( item: CategoryItem, key: string ): void {
 										}}
 									</a-menu-item>
 									<a-menu-item
-										v-for="action in extensionActions"
+										v-for="action in rowActionsFor(
+											extensionActions,
+											itemOf( node )
+										)"
 										:key="EXTENSION_ACTION + action.key"
 										:aria-busy="
 											isExtensionRowActionRunning(

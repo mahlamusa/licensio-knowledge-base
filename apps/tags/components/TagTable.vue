@@ -63,7 +63,7 @@ import {
 	isExtensionRowActionRunning,
 	runExtensionRowAction,
 } from '../../components/extension-row-action';
-import { rowActionEntries } from '../../components/row-actions';
+import { rowActionEntries, rowActionsFor } from '../../components/row-actions';
 import { orderColumns } from '../../components/column-order';
 import { shownColumns } from '../../components/term-extensions';
 import { settings } from '../api';
@@ -618,12 +618,17 @@ watch(
 					</div>
 					<div
 						v-if="
-							editingId !== record.id && extensionActions.length
+							editingId !== record.id &&
+							rowActionsFor( extensionActions, record as TagItem )
+								.length
 						"
 						class="lkb-rowactions lkb-rowactions--extensions"
 					>
 						<a-button
-							v-for="action in extensionActions"
+							v-for="action in rowActionsFor(
+								extensionActions,
+								record as TagItem
+							)"
 							:key="action.key"
 							type="link"
 							size="small"
