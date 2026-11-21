@@ -11,8 +11,13 @@
  * expandable without any JavaScript, so the block behaves the same in the
  * editor preview, on the front end and inside a page builder.
  *
+ * `entries()` is the public way to read the questions and answers a block
+ * lists, for another plugin that marks them up, e.g. as `FAQPage` structured
+ * data. The markup is built from the same call, so the two never disagree.
+ *
  * @package Licensio_KB
  * @since   1.0.0
+ * @since   1.1.0 Adds entries(), the public list of the questions the block renders.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -21,6 +26,7 @@ defined( 'ABSPATH' ) || exit;
  * Renders knowledge base articles as a frequently-asked-questions list.
  *
  * @since 1.0.0
+ * @since 1.1.0 Adds entries(), the public list of the questions the block renders.
  */
 class Licensio_KB_FAQ_Block extends Licensio_KB_Block {
 
@@ -115,19 +121,56 @@ class Licensio_KB_FAQ_Block extends Licensio_KB_Block {
     /**
      * The block's inner markup.
      *
-     * Limited to one category with the default order, the questions follow
-     * that category's article order, as the Categories app saves it; articles
-     * without a position follow, in their `menu_order`. A category nobody has
-     * ordered keeps the plain `menu_order` the block always used.
+     * The questions come from `entries()`, so the markup and any other plugin
+     * reading the same attributes list the same articles in the same order.
      *
      * @since 1.0.0 Follows the per-category article order when limited to one ordered category.
+     * @since 1.1.0 Reads its questions from entries().
      *
      * @param array<string, bool|int|string> $attributes The normalised attributes.
      *
      * @return string The markup.
      */
     public function content( array $attributes ) {
-        $orderby = (string) $attributes['orderBy'];
+        return licensio_kb_get_template(
+            'faq',
+            array(
+                'items'        => static::entries( $attributes ),
+                'open_first'   => (bool) $attributes['openFirst'],
+                'show_excerpt' => (bool) $attributes['showExcerpt'],
+            ),
+            false
+        );
+    }
+
+    /**
+     * The questions and answers the block renders for a set of attributes.
+     *
+     * Takes the attributes as stored in the block comment or given to the
+     * shortcode, e.g. `$block['attrs']` from `parse_blocks()`, and normalises
+     * them the way the block does. The articles come from the same query, the
+     * same `licensio_block_article_query_args` filter and the same
+     * per-category order as the rendered block, in the same order.
+     *
+     * The answer is the article excerpt, or an empty string when `showExcerpt`
+     * is off; callers decide whether to skip an entry without one. An untitled
+     * article has an empty question, which the block does not print. The
+     * question and answer are what `get_the_title()` and `get_the_excerpt()`
+     * return, not escaped, so they may carry HTML entities or tags: escape
+     * them for HTML, or strip the tags and decode the entities for structured
+     * data.
+     *
+     * Part of the extension API, detectable through `LICENSIO_KB_EXTENSIONS_API`.
+     *
+     * @since 1.1.0
+     *
+     * @param array<string, mixed> $attributes The block or shortcode attributes.
+     *
+     * @return array<int, array{question: string, answer: string, url: string, post_id: int}> One entry per article, in display order.
+     */
+    public static function entries( array $attributes ) {
+        $attributes = static::normalize( $attributes );
+        $orderby    = (string) $attributes['orderBy'];
 
         if ( '' !== (string) $attributes['category'] && 'menu_order' === $orderby ) {
             $term = get_term_by( 'slug', (string) $attributes['category'], Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
@@ -137,33 +180,27 @@ class Licensio_KB_FAQ_Block extends Licensio_KB_Block {
             }
         }
 
-        $posts = $this->query_articles(
+        $block = new self();
+        $posts = $block->query_articles(
             (string) $attributes['category'],
             $orderby,
             (string) $attributes['order'],
             (int) $attributes['count']
         );
 
-        return licensio_kb_get_template(
-            'faq',
-            array(
-                'items'        => $this->items( $posts, (bool) $attributes['showExcerpt'] ),
-                'open_first'   => (bool) $attributes['openFirst'],
-                'show_excerpt' => (bool) $attributes['showExcerpt'],
-            ),
-            false
-        );
+        return $block->items( $posts, (bool) $attributes['showExcerpt'] );
     }
 
     /**
      * Turn articles into question-and-answer pairs.
      *
      * @since 1.0.0
+     * @since 1.1.0 Adds the article ID as post_id.
      *
      * @param array<int, mixed> $posts        The articles.
      * @param bool              $show_excerpt Whether the answer carries the article excerpt.
      *
-     * @return array<int, array<string, string>> The question, answer and URL of each article.
+     * @return array<int, array{question: string, answer: string, url: string, post_id: int}> The question, answer, URL and ID of each article.
      */
     public function items( array $posts, $show_excerpt ) {
         $items = array();
@@ -177,6 +214,7 @@ class Licensio_KB_FAQ_Block extends Licensio_KB_Block {
                 'question' => (string) get_the_title( $post ),
                 'answer'   => $show_excerpt ? (string) get_the_excerpt( $post ) : '',
                 'url'      => (string) get_permalink( $post ),
+                'post_id'  => (int) $post->ID,
             );
         }
 
