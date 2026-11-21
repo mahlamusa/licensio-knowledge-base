@@ -57,6 +57,22 @@ class Licensio_KB_Articles_REST_Integration_Test extends Licensio_KB_Analytics_D
     private $controller;
 
     /**
+     * The extension registry the controller reads.
+     *
+     * @since 1.1.0
+     * @var Licensio_KB_Extensions
+     */
+    private $extensions;
+
+    /**
+     * The list preferences stored for the current user.
+     *
+     * @since 1.1.0
+     * @var mixed
+     */
+    private $saved_preferences = '';
+
+    /**
      * The capabilities the fake current_user_can() refuses.
      *
      * @since 1.0.0
@@ -68,6 +84,7 @@ class Licensio_KB_Articles_REST_Integration_Test extends Licensio_KB_Analytics_D
      * Add the core tables and stub the response and status count helpers.
      *
      * @since 1.0.0
+     * @since 1.1.0 Hands the controller an extension registry and stubs the user preferences meta.
      *
      * @return void
      */
@@ -104,7 +121,21 @@ class Licensio_KB_Articles_REST_Integration_Test extends Licensio_KB_Analytics_D
             }
         );
 
-        $this->controller = new Licensio_KB_Articles_REST_Live_Controller( $this->adapter );
+        Functions\when( 'get_user_meta' )->alias(
+            function () {
+                return $this->saved_preferences;
+            }
+        );
+        Functions\when( 'update_user_meta' )->alias(
+            function ( $user_id, $key, $value ) {
+                $this->saved_preferences = $value;
+
+                return true;
+            }
+        );
+
+        $this->extensions = new Licensio_KB_Extensions();
+        $this->controller = new Licensio_KB_Articles_REST_Live_Controller( $this->adapter, new Licensio_KB_Article_Extension_Columns( $this->extensions ) );
     }
 
     /**
@@ -659,5 +690,95 @@ class Licensio_KB_Articles_REST_Integration_Test extends Licensio_KB_Analytics_D
         $drafts = $this->ids( array( 'status' => 'draft' ) );
 
         $this->assertSame( array( 1, false ), array( $drafts['total'], $drafts['truncated'] ), 'A filter that fits under the cap is not truncated.' );
+    }
+
+    /**
+     * A sort by an extension column the user may see is checked against the injected registry.
+     *
+     * The list asks the registry whether the column is sortable for the
+     * current user. With no plugin loaded, this proves the controller reads
+     * the registry it was given rather than the plugin's own.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_a_sort_by_an_extension_column_reads_the_injected_registry() {
+        $this->denied = array( 'secret' );
+
+        $this->extensions->add_column(
+            'articles',
+            'acme/score',
+            array(
+                'label'      => 'Score',
+                'sortable'   => true,
+                'capability' => 'edit_posts',
+            )
+        );
+        $this->extensions->add_column(
+            'articles',
+            'acme/hidden',
+            array(
+                'label'      => 'Hidden',
+                'sortable'   => true,
+                'capability' => 'secret',
+            )
+        );
+
+        $old = $this->make_article( array( 'date' => $this->days_ago( 20 ) ) );
+        $new = $this->make_article( array( 'date' => $this->days_ago( 5 ) ) );
+
+        $this->assertSame( array( $new, $old ), $this->listed( array( 'orderby' => 'acme/score' ) ), 'No plugin sorts here, so the list keeps its date order.' );
+        $this->assertSame( array( $new, $old ), $this->listed( array( 'orderby' => 'acme/hidden' ) ), 'A column the user may not see falls back to the date sort.' );
+    }
+
+    /**
+     * The preferences routes keep the extension columns of the injected registry the user may see.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_the_preferences_routes_read_the_injected_registry() {
+        $this->denied = array( 'secret' );
+
+        $this->extensions->add_column(
+            'articles',
+            'acme/score',
+            array(
+                'label'           => 'Score',
+                'default_visible' => true,
+                'capability'      => 'edit_posts',
+            )
+        );
+        $this->extensions->add_column(
+            'articles',
+            'acme/note',
+            array(
+                'label'      => 'Note',
+                'capability' => 'secret',
+            )
+        );
+
+        $this->assertSame(
+            array_merge( Licensio_KB_Articles_REST_Controller::DEFAULT_COLUMNS, array( 'acme/score' ) ),
+            $this->controller->get_preferences( new WP_REST_Request( array(), '/licensio-kb/v1/preferences' ) )['columns'],
+            'A default extension column joins the defaults.'
+        );
+
+        $saved = $this->controller->update_preferences(
+            new WP_REST_Request(
+                array(),
+                '/licensio-kb/v1/preferences',
+                array(
+                    'columns'  => array( 'author', 'acme/score', 'acme/note' ),
+                    'per_page' => 50,
+                )
+            )
+        );
+
+        $this->assertSame( array( 'author', 'acme/score' ), $saved['columns'], 'A column the user may not see is dropped.' );
+        $this->assertSame( array( 'acme/score' ), $saved['known_extensions'] );
+        $this->assertSame( $saved, $this->saved_preferences );
     }
 }

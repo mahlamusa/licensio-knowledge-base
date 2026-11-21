@@ -218,8 +218,9 @@ class Licensio_KB_Articles_Admin {
      * @return array<string, mixed> The localised configuration.
      */
     public function app_data() {
-        $metrics = Licensio_KB_Article_Metrics::from_settings( licensio_kb()->settings() );
-        $manage  = Licensio_KB_Capabilities::current_user_can_manage();
+        $metrics    = Licensio_KB_Article_Metrics::from_settings( licensio_kb()->settings() );
+        $manage     = Licensio_KB_Capabilities::current_user_can_manage();
+        $extensions = licensio_kb()->extensions();
 
         return array(
             'root'        => esc_url_raw( Licensio_KB_REST_API::url() ),
@@ -232,12 +233,12 @@ class Licensio_KB_Articles_Admin {
                 'publish'    => current_user_can( Licensio_KB_Article_Bulk::type_cap( 'publish_posts' ) ),
                 'createTags' => current_user_can( Licensio_KB_Article_Bulk::taxonomy_cap( Licensio_KB_Post_Types::TAXONOMY_TAG, 'edit_terms' ) ),
             ),
-            'preferences' => Licensio_KB_Articles_REST_Controller::preferences( get_current_user_id() ),
+            'preferences' => Licensio_KB_Articles_REST_Controller::preferences( get_current_user_id(), new Licensio_KB_Article_Extension_Columns( $extensions ) ),
             'lowRating'   => array(
                 'threshold' => $metrics->threshold(),
                 'minVotes'  => $metrics->min_votes(),
             ),
-            'extensions'  => Licensio_KB_Extension_Config::for_screen( licensio_kb()->extensions(), Licensio_KB_Extensions::SCREEN_ARTICLES ),
+            'extensions'  => Licensio_KB_Extension_Config::for_screen( $extensions, Licensio_KB_Extensions::SCREEN_ARTICLES ),
         );
     }
 
