@@ -186,8 +186,8 @@ leave its order alone.
 When the list is sorted by a sortable extension column, the request's
 `orderby` is that column's key and the list keeps its date order until you
 replace it. Read `$request->get_param( 'orderby' )` and
-`$request->get_param( 'order' )` (`asc` or `desc`) and set `$args['orderby']`.
-A sort by a column the current user may not see is turned into a sort by
+`$request->get_param( 'order' )` (`asc` or `desc`) and replace the order;
+for a meta value, join it yourself as below. A sort by a column the current user may not see is turned into a sort by
 date before the filter runs.
 
 ```php
@@ -217,7 +217,8 @@ add_filter( 'posts_clauses', function ( $clauses, $query ) {
 
 The first filter marks the query; the second joins the score and sorts by
 it, with the ID as a tiebreak so paging stays stable. Articles with no score
-come first when ascending and last when descending.
+come first when ascending and last when descending. It assumes one
+`_acme_score` row per article; a second row would list the article twice.
 
 Do not sort with `meta_key`, or with a `meta_query` that pairs the key with
 `NOT EXISTS`. `meta_key` leaves out the articles that have no score, so the
@@ -730,7 +731,7 @@ function acme_kb_review_mark( $request ) {
 What to expect:
 
 - **All Articles**: the Reviewed column shows after Title (in the Columns
-  picker under Acme). The filter bar has a Review dropdown. Selecting rows
+  picker under Acme). The Filters panel has a Review dropdown. Selecting rows
   offers Mark reviewed in the bulk bar; each unreviewed row offers a Mark
   reviewed row action, which disappears once the row is reviewed.
 - **Categories** and **Tags**: each row shows Yes or No in a Reviewed column,
