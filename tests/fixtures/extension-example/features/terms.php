@@ -16,9 +16,10 @@
  * - `example/term-silent`, a row action with no script, which stays hidden.
  *
  * Nothing is declared unless the option `licensio_kb_example_terms` is on.
- * The fixture is active for the whole browser suite, and two more columns
- * would change the term apps' layout under every other spec; the term
- * extension spec turns the option on while it runs, alone.
+ * The fixture is active for the whole browser suite, and the width checks
+ * expect the Tags table with its own columns alone to fit at 1024px; with
+ * any more it scrolls inside its card there. The term extension spec turns
+ * the option on while it runs, alone.
  *
  * @package Licensio_KB
  * @since   1.1.0

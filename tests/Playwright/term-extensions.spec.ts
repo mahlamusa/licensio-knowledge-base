@@ -10,9 +10,15 @@
  * menu leaves out. The refresh must ask for just that row (`include[]`) and
  * clean up the cell's last render before it renders again.
  *
+ * The extra columns also keep the page from scrolling sideways: at 1024px
+ * the Tags table has no room to spare, so it scrolls inside its card, and an
+ * extension cell's long word breaks rather than widening the table; on a
+ * phone a category row puts its name on a line of its own.
+ *
  * The example declares the term items only while the option
  * `licensio_kb_example_terms` is on, so the extra columns never change the
- * term apps under other specs. This spec turns it on and off again, and runs
+ * term apps under other specs, such as the width checks that expect the
+ * Tags table alone to fit at 1024px. This spec turns it on and off again, and runs
  * alone (`@one-at-a-time`) so no other spec sees the columns meanwhile.
  *
  * The suite needs a running WordPress with this plugin and the example
@@ -26,6 +32,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { contentManagerUrl } from './helpers/content-manager';
 import { failOnUnresolvedComponents } from './helpers/ant-components';
+import { foldAdminMenu, measureFrame } from './helpers/layout';
 import { password, user } from './helpers/session';
 import { wpCli, wpEval } from './helpers/wp-cli';
 
@@ -128,6 +135,74 @@ test.describe( 'term app extensions @one-at-a-time', () => {
 
 	test.afterAll( () => {
 		wpEval( "delete_option( 'licensio_kb_example_terms' );" );
+	} );
+
+	test.describe( 'the layout', () => {
+		const word = `Unbrokenextensionname${ suffix }`.padEnd( 40, 'x' );
+		let tagId = 0;
+		let categoryId = 0;
+
+		test.beforeAll( () => {
+			tagId = makeTerm( 'licensio_tag', word );
+			categoryId = makeTerm( 'licensio_category', word );
+		} );
+
+		test.afterAll( () => {
+			dropTerm( 'licensio_tag', tagId );
+			dropTerm( 'licensio_category', categoryId );
+		} );
+
+		test( 'extension columns never make the page scroll sideways', async ( {
+			page,
+		} ) => {
+			await page.setViewportSize( { width: 1024, height: 900 } );
+			await page.goto(
+				`${ contentManagerUrl( 'tags' ) }&search=${ encodeURIComponent(
+					word
+				) }`
+			);
+			await foldAdminMenu( page, false );
+
+			const cell = page
+				.locator(
+					`tr[data-row-key="${ tagId }"] td.lkb-tags__extension`
+				)
+				.last();
+
+			await expect( cell ).toContainText( word );
+			expect(
+				( await cell.boundingBox() )?.width ?? Infinity,
+				'the extension cell breaks its long word'
+			).toBeLessThan( 200 );
+
+			let frame = await measureFrame( page );
+
+			expect( frame.page + frame.container, 'Tags at 1024px' ).toBe( 0 );
+
+			await page.setViewportSize( { width: 390, height: 900 } );
+			await page.goto(
+				`${ contentManagerUrl( 'categories' ) }&search=${ encodeURIComponent(
+					word
+				) }`
+			);
+
+			const node = page.locator( '.lkb-tree__node', { hasText: word } );
+
+			await expect(
+				node.locator( '[data-lkb-column="example/term-text"]' )
+			).toBeVisible();
+
+			frame = await measureFrame( page );
+
+			expect( frame.page + frame.container, 'Categories at 390px' ).toBe(
+				0
+			);
+			expect(
+				( await node.locator( '.lkb-tree__name' ).boundingBox() )
+					?.width ?? 0,
+				'the category name keeps its width on a phone'
+			).toBeGreaterThan( 150 );
+		} );
 	} );
 
 	test.describe( 'the Tags app', () => {

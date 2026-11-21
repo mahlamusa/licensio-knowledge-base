@@ -209,7 +209,7 @@ function extensionColumn( column: ExtensionColumn ) {
 	return {
 		title: column.label,
 		key: column.key,
-		class: 'lkb-tags__extension',
+		className: 'lkb-tags__extension',
 	};
 }
 
@@ -719,6 +719,14 @@ watch(
 
 .lkb-tags__description {
 	color: var( --lkb-ink-muted );
+}
+
+/*
+ * An extension cell's long word breaks inside its column instead of
+ * widening the table past its card.
+ */
+.lkb-tablecard--core :deep( td.lkb-tags__extension ) {
+	overflow-wrap: anywhere;
 }
 
 /*

@@ -624,6 +624,7 @@ function onMenu( item: CategoryItem, key: string ): void {
 						class="lkb-tree__node"
 						:class="{
 							'is-editing': props.editingId === itemOf( node ).id,
+							'has-extensions': extensionColumns.length > 0,
 						}"
 						:aria-current="
 							props.editingId === itemOf( node ).id
@@ -890,10 +891,36 @@ function onMenu( item: CategoryItem, key: string ): void {
 	flex: none;
 }
 
+/*
+ * Extension cells shrink and wrap before the name does: the name keeps at
+ * least a third of the row. On a phone the name takes a line of its own and
+ * the cells, the count and the menu go under it, so nothing in the row is
+ * squeezed to a letter per line.
+ */
+.lkb-tree__node.has-extensions .lkb-tree__name {
+	min-width: min( 8em, 34% );
+}
+
 .lkb-tree__extension {
-	flex: none;
-	max-width: 40%;
+	flex: 0 1 auto;
+	min-width: 0;
+	max-width: 30%;
 	overflow-wrap: anywhere;
 	font-size: 12px;
+}
+
+@media ( max-width: 782px ) {
+	.lkb-tree__node.has-extensions {
+		flex-wrap: wrap;
+		row-gap: 4px;
+	}
+
+	.lkb-tree__node.has-extensions .lkb-tree__name {
+		flex-basis: 100%;
+	}
+
+	.lkb-tree__extension {
+		max-width: none;
+	}
 }
 </style>
