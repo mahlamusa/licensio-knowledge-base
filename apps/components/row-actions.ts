@@ -18,9 +18,10 @@
  * @since 1.1.0
  */
 
-import { extensionHandlers } from './extensions';
+import { actionEntries, extensionHandlers } from './extensions';
 import type {
 	ExtensionAction,
+	ExtensionActionEntry,
 	ExtensionContext,
 	ExtensionRow,
 	ExtensionScreen,
@@ -28,11 +29,9 @@ import type {
 } from './extensions';
 
 /** One extension entry of a row's menu. */
-export interface RowActionEntry< Row extends ExtensionRow = ExtensionRow > {
-	key: string;
-	label: string;
-	/** Run the action on a row; returns what the handler returned. */
-	run: ( row: Row ) => unknown;
+export interface RowActionEntry<
+	Row extends ExtensionRow = ExtensionRow,
+> extends ExtensionActionEntry< Row > {
 	/** Whether the action shows on a row. */
 	visible: ( row: Row ) => boolean;
 }
@@ -96,16 +95,10 @@ export function rowActionEntries< Row extends ExtensionRow = ExtensionRow >(
 ): RowActionEntry< Row >[] {
 	const handlers = extensionHandlers< Row >( screen ).rowActions;
 
-	return declared
-		.filter(
-			( action ) => 'function' === typeof handlers[ action.key ]?.run
-		)
-		.map( ( action ) => ( {
-			key: action.key,
-			label: action.label,
-			run: ( row: Row ) => handlers[ action.key ].run( row, ctx ),
-			visible: visibility( action.key, handlers[ action.key ] ),
-		} ) );
+	return actionEntries< Row >( declared, handlers, ctx ).map( ( entry ) => ( {
+		...entry,
+		visible: visibility( entry.key, handlers[ entry.key ] ),
+	} ) );
 }
 
 /**

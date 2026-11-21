@@ -259,6 +259,12 @@ class Licensio_KB_Extensions {
     /**
      * Add an action to an app's bulk action bar.
      *
+     * Its script's `run( ids, ctx )` gets the selected IDs. "Select all
+     * matching" can select up to 10,000 articles, so batch the work rather
+     * than sending one request for each ID or every ID in one request. The
+     * Articles app's Trash view does not offer it: its only actions are
+     * Restore and Delete permanently, as on core's list screens.
+     *
      * @since 1.1.0
      *
      * @param string               $screen `articles`, `categories` or `tags`.
