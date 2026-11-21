@@ -9,7 +9,7 @@
  * new one, so back and forward step through pages and sorts.
  *
  * @since 1.0.0
- * @since 1.1.0 Fetches some rows again for the extensions.
+ * @since 1.1.0 Refreshes rows in place for the extensions.
  */
 
 import { ref } from 'vue';
@@ -19,6 +19,7 @@ import {
 	config,
 	fetchArticles,
 	fetchIds,
+	fetchRows,
 	revert,
 	runBulk,
 	savePreferences,
@@ -681,43 +682,63 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 		},
 
 		/**
-		 * Fetch some rows again and put them in place, or reload the page.
+		 * Fetch some rows again with the current filters and swap them in,
+		 * or reload the page.
 		 *
-		 * The whole page reloads when no IDs are given, or when a row on the
-		 * page no longer matches the filters, since the page and its counts
-		 * then change. An answer that a page load overtook is dropped.
+		 * - No IDs, or an empty list: the whole page loads again.
+		 * - Otherwise only the given rows on the current page are fetched;
+		 *   IDs not on the page are passed over, and nothing is fetched when
+		 *   none are on it. The rows are swapped in place and the status
+		 *   counts updated.
+		 * - When one of them no longer matches the filters, the whole page
+		 *   loads again instead, so the rows, total and paging stay right.
+		 *
+		 * Like `load()`, it clears `error` first and never rejects: a failure
+		 * shows in `error`. An answer that a page load overtook is dropped.
 		 *
 		 * @since 1.1.0
 		 *
-		 * @param {number[]} ids The rows; empty for the whole page.
+		 * @param {number[]} ids The rows; none for the whole page.
 		 *
 		 * @return {Promise<void>} Resolves once the rows are in state.
 		 */
-		async refreshRows( ids: number[] = [] ): Promise< void > {
-			if ( 0 === ids.length ) {
+		async refreshRows( ids?: number[] ): Promise< void > {
+			if ( ! ids?.length ) {
 				await this.load();
 				return;
 			}
 
-			const shown = [ ...new Set( ids ) ].filter( ( id ) =>
-				this.items.some( ( row ) => row.id === id )
-			);
+			const wanted = new Set( ids );
+			const shown = this.items
+				.map( ( row ) => row.id )
+				.filter( ( id ) => wanted.has( id ) );
 
 			if ( 0 === shown.length ) {
 				return;
 			}
 
 			const ticket = latestLoad;
-			const page = await fetchArticles( this.query, shown );
 
-			if ( ticket !== latestLoad ) {
-				return;
-			}
+			this.error = '';
 
-			page.items.forEach( ( item ) => this.replaceItem( item ) );
+			try {
+				const page = await fetchRows( this.filters, shown );
 
-			if ( page.items.length < shown.length ) {
-				await this.load();
+				if ( ticket !== latestLoad ) {
+					return;
+				}
+
+				if ( page.items.length < shown.length ) {
+					await this.load();
+					return;
+				}
+
+				page.items.forEach( ( item ) => this.replaceItem( item ) );
+				this.counts = page.counts ?? this.counts;
+			} catch ( error ) {
+				if ( ticket === latestLoad ) {
+					this.error = errorMessage( error );
+				}
 			}
 		},
 

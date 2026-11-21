@@ -874,24 +874,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      */
     public function get_items( $request ) {
         $params = $request->get_params();
-        $args   = $this->query_args( $params );
-
-        /**
-         * Filters the WP_Query arguments of the Articles app's list.
-         *
-         * Lets an extension narrow or sort the list by what it registered,
-         * such as a filter dropdown or a sortable column. Runs on the page
-         * query only, after the plugin's own filters, sort, paging and the
-         * own-articles limit are in place; keep those, since the page count
-         * and the recount past the last page come from the same arguments.
-         *
-         * @since 1.1.0
-         *
-         * @param array<string, mixed>  $args        The WP_Query arguments.
-         * @param array<string, string> $ext_filters The registered extension filter values of the request, keyed by filter key.
-         * @param WP_REST_Request       $request     The request.
-         */
-        $args   = apply_filters( 'licensio_kb_articles_query_args', $args, $this->ext_filters( $request ), $request );
+        $args   = $this->filtered_query_args( $request, false );
         $query  = $this->run_query( $args );
         $posts  = array_values(
             array_filter(
@@ -928,6 +911,46 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
     }
 
     /**
+     * The WP_Query arguments of a list or IDs request, after the extensions.
+     *
+     * The one place `licensio_kb_articles_query_args` runs, so the page and
+     * "select all matching" always narrow the list the same way.
+     *
+     * @since 1.1.0
+     *
+     * @param WP_REST_Request $request  The request.
+     * @param bool            $ids_only True for `GET articles/ids`.
+     *
+     * @return array<string, mixed> The query arguments.
+     */
+    private function filtered_query_args( WP_REST_Request $request, bool $ids_only ): array {
+        $args = $this->query_args( $request->get_params(), $ids_only );
+
+        /**
+         * Filters the WP_Query arguments of the Articles app's list.
+         *
+         * Lets an extension narrow or sort the list by what it registered,
+         * such as a filter dropdown or a sortable column. Runs after the
+         * plugin's own filters, sort, paging and the own-articles limit are
+         * in place; keep those, since the page count and the recount past
+         * the last page come from the same arguments.
+         *
+         * Runs for the page (`GET articles`) and for every matching ID
+         * (`GET articles/ids`, "select all matching"), so a bulk action hits
+         * exactly the filtered set. The IDs query has `fields` set to `ids`
+         * and is not sorted; narrow it the same way, but leave its order
+         * alone, since a sort on post meta would drop articles without it.
+         *
+         * @since 1.1.0
+         *
+         * @param array<string, mixed>  $args        The WP_Query arguments.
+         * @param array<string, string> $ext_filters The registered extension filter values of the request, keyed by filter key.
+         * @param WP_REST_Request       $request     The request.
+         */
+        return (array) apply_filters( 'licensio_kb_articles_query_args', $args, $this->ext_filters( $request ), $request );
+    }
+
+    /**
      * The registered extension filter values of a request.
      *
      * Empty until the Articles app sends extension filters.
@@ -948,13 +971,14 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      * Every ID matching the filters, for "select all matching".
      *
      * @since 1.0.0
+     * @since 1.1.0 Filters the query through `licensio_kb_articles_query_args`, so the extension filters apply.
      *
      * @param WP_REST_Request $request The request.
      *
      * @return WP_REST_Response|WP_Error The IDs, the full match count, and whether the IDs were cut off.
      */
     public function get_ids( $request ) {
-        $query = $this->run_query( $this->query_args( $request->get_params(), true ) );
+        $query = $this->run_query( $this->filtered_query_args( $request, true ) );
         $ids   = array_map( 'intval', (array) $query->posts );
         $total = (int) $query->found_posts;
 

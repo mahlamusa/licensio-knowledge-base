@@ -113,28 +113,45 @@ function filterQuery( filters: ArticleFilters ): Query {
 }
 
 /**
- * Fetch one page of articles, or some rows by ID.
+ * Fetch one page of articles.
  *
  * @since 1.0.0
- * @since 1.1.0 Takes the IDs of the rows to fetch.
  *
- * @param {ArticleQuery} query   The filters, sort and page.
- * @param {number[]}     include Only these rows, at most 100, on one page;
- *                               the filters still apply. Empty for the page.
+ * @param {ArticleQuery} query The filters, sort and page.
  *
  * @return {Promise<ArticlePage>} The page.
  */
-export function fetchArticles(
-	query: ArticleQuery,
-	include: number[] = []
-): Promise< ArticlePage > {
+export function fetchArticles( query: ArticleQuery ): Promise< ArticlePage > {
 	return get< ArticlePage >( 'articles', {
 		...filterQuery( query ),
 		orderby: query.orderby,
 		order: query.order,
 		page: query.page,
 		per_page: query.per_page,
-		include: include.length ? include : undefined,
+	} );
+}
+
+/**
+ * Fetch some rows again by ID, as the filters show them.
+ *
+ * Sends the IDs as `include`, which puts every matching one on one page. The
+ * filters still apply, so a row that no longer matches them is left out of
+ * the answer. The sort is not sent, since the rows are put back in place.
+ *
+ * @since 1.1.0
+ *
+ * @param {ArticleFilters} filters The filters of the view.
+ * @param {number[]}       ids     The rows, at most 100.
+ *
+ * @return {Promise<ArticlePage>} The rows that still match, on one page.
+ */
+export function fetchRows(
+	filters: ArticleFilters,
+	ids: number[]
+): Promise< ArticlePage > {
+	return get< ArticlePage >( 'articles', {
+		...filterQuery( filters ),
+		include: ids,
 	} );
 }
 

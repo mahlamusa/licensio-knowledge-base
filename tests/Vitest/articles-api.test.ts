@@ -1,14 +1,13 @@
 /**
- * Unit tests of `fetchArticles()`'s rows by ID.
+ * Unit tests of `fetchRows()`, the Articles app's fetch of rows by ID.
  *
- * With IDs it sends them as `include`, beside the filters; without, it sends
- * no `include` at all.
+ * It sends the IDs as `include`, beside the filters, and no sort or paging.
  *
  * @since 1.1.0
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fetchArticles } from '../../apps/articles/api';
+import { fetchRows } from '../../apps/articles/api';
 import { defaultQuery } from '../../apps/articles/url';
 import { get } from '../../apps/components/rest';
 
@@ -23,11 +22,9 @@ beforeEach( () => {
 	vi.mocked( get ).mockClear();
 } );
 
-describe( 'fetchArticles', () => {
+describe( 'fetchRows', () => {
 	it( 'sends the IDs as include, with the filters', () => {
-		const query = { ...defaultQuery( 20 ), search: 'needle' };
-
-		fetchArticles( query, [ 4, 7 ] );
+		fetchRows( { ...defaultQuery( 20 ), search: 'needle' }, [ 4, 7 ] );
 
 		expect( get ).toHaveBeenCalledWith(
 			'articles',
@@ -35,11 +32,13 @@ describe( 'fetchArticles', () => {
 		);
 	} );
 
-	it( 'sends no include without IDs', () => {
-		fetchArticles( defaultQuery( 20 ) );
+	it( 'sends no sort or paging', () => {
+		fetchRows( defaultQuery( 20 ), [ 4 ] );
 
-		expect(
-			vi.mocked( get ).mock.calls[ 0 ][ 1 ]?.include
-		).toBeUndefined();
+		const args = vi.mocked( get ).mock.calls[ 0 ][ 1 ] ?? {};
+
+		expect( args ).not.toHaveProperty( 'orderby' );
+		expect( args ).not.toHaveProperty( 'page' );
+		expect( args ).not.toHaveProperty( 'per_page' );
 	} );
 } );
