@@ -3,7 +3,9 @@
 Licensio Knowledge Base 1.1.0 lets other plugins add columns, filters, bulk
 actions and row actions to the **All Articles**, **Categories** and **Tags**
 apps. PHP declares what exists, its label and who may see it, and fills the
-row data; a JavaScript file supplies the behaviour.
+row data; a JavaScript file supplies the behaviour. None of it shows when
+the site uses the classic screens instead of the apps (the classic screens
+setting).
 
 This guide covers every hook and object of the API, then builds a complete
 example plugin you can copy into `wp-content/plugins/`.
@@ -96,7 +98,7 @@ or a filter with no options is refused: the method returns `false` and calls
 | `group` | string | none | The Columns picker group (Articles only). |
 | `default_visible` | bool | `false` | Whether the column shows before the user picks columns. Categories and Tags have no picker, so there a column shows **only** when this is true. |
 | `sortable` | bool | `false` | Whether the list can sort by it (Articles only). You map the sort yourself; see [sorting](#sorting-by-your-column). |
-| `position` | string | end | The column key it follows. Articles: `title`, `author`, `categories`, `tags`, `attachments`, `rating`, `views`, `reading_time`, `date`, `modified`. Tags: `name`, `slug`, `description`, `count`. It may also name another extension column that has a position itself. Categories ignore it. |
+| `position` | string | end | The column key it follows. Articles: `title`, `author`, `categories`, `tags`, `attachments`, `rating`, `views`, `reading_time`, `date`, `modified`. Tags: `name`, `slug`, `description`, `count`. It may also name another extension column that has a position itself and was declared before this one. Categories ignore it. |
 | `capability` | string | the app page's | Who sees the column. |
 
 In the Articles app, a `default_visible` column shows for users who never
@@ -125,8 +127,8 @@ on [`licensio_kb_articles_query_args`](#narrowing-and-sorting-the-articles-list)
 | `capability` | string | the app page's | Who sees the action. |
 
 An action shows only when your script registered a `run` handler for it. Row
-actions follow the app's own actions in each row's menu; bulk actions follow
-the built-in ones in the Articles bulk bar.
+actions follow the app's own row actions (in Categories, in each row's
+menu); bulk actions follow the built-in ones in the Articles bulk bar.
 
 #### Reading the registry
 
@@ -190,31 +192,38 @@ date before the filter runs.
 
 ```php
 add_filter( 'licensio_kb_articles_query_args', function ( $args, $ext_filters, $request ) {
-    if ( 'acme/score' !== $request->get_param( 'orderby' ) || 'ids' === ( $args['fields'] ?? '' ) ) {
-        return $args;
+    if ( 'acme/score' === $request->get_param( 'orderby' ) && 'ids' !== ( $args['fields'] ?? '' ) ) {
+        $args['acme_score_order'] = 'asc' === $request->get_param( 'order' ) ? 'ASC' : 'DESC';
     }
-
-    $args['meta_query']   = isset( $args['meta_query'] ) ? (array) $args['meta_query'] : array();
-    $args['meta_query'][] = array(
-        'relation'      => 'OR',
-        'acme_score'    => array(
-            'key'  => '_acme_score',
-            'type' => 'NUMERIC',
-        ),
-        'acme_no_score' => array(
-            'key'     => '_acme_score',
-            'compare' => 'NOT EXISTS',
-        ),
-    );
-    $args['orderby']      = array( 'acme_score' => 'asc' === $request->get_param( 'order' ) ? 'ASC' : 'DESC' );
 
     return $args;
 }, 10, 3 );
+
+add_filter( 'posts_clauses', function ( $clauses, $query ) {
+    global $wpdb;
+
+    $order = $query->get( 'acme_score_order' );
+
+    if ( 'ASC' !== $order && 'DESC' !== $order ) {
+        return $clauses;
+    }
+
+    $clauses['join']   .= $wpdb->prepare( " LEFT JOIN {$wpdb->postmeta} AS acme_score ON acme_score.post_id = {$wpdb->posts}.ID AND acme_score.meta_key = %s", '_acme_score' );
+    $clauses['orderby'] = "CAST( acme_score.meta_value AS SIGNED ) {$order}, {$wpdb->posts}.ID {$order}";
+
+    return $clauses;
+}, 10, 2 );
 ```
 
-Do not sort with `meta_key` alone: it leaves out the articles that have no
-such meta, so the sorted list would show fewer articles than the unsorted
-one. The `OR ... NOT EXISTS` pair keeps them.
+The first filter marks the query; the second joins the score and sorts by
+it, with the ID as a tiebreak so paging stays stable. Articles with no score
+come first when ascending and last when descending.
+
+Do not sort with `meta_key`, or with a `meta_query` that pairs the key with
+`NOT EXISTS`. `meta_key` leaves out the articles that have no score, so the
+sorted list shows fewer articles than the unsorted one. The `NOT EXISTS`
+pair keeps them, but sorts an article that has other meta and no score by
+one of those other values.
 
 ## Enqueueing your script
 
@@ -288,7 +297,8 @@ console with the action's key.
 `run` gets the row. While its promise is pending, the same action does not run
 again on that row. A failure shows a generic error toast, as for bulk actions.
 
-The optional `visible( row )` hides the action on rows where it returns false,
+The optional `visible( row )` hides the action on rows where it returns a
+falsy value (a missing `return` hides it too),
 for a check the PHP capability cannot make, such as whether the user may edit
 that one article. It runs on every render of every row, so keep it
 synchronous and cheap, working from the row's own data. If it throws, the
@@ -721,10 +731,11 @@ What to expect:
 
 - **All Articles**: the Reviewed column shows after Title (in the Columns
   picker under Acme). The filter bar has a Review dropdown. Selecting rows
-  offers Mark reviewed in the bulk bar; each unreviewed row's menu offers Mark
-  reviewed, which disappears once the row is reviewed.
+  offers Mark reviewed in the bulk bar; each unreviewed row offers a Mark
+  reviewed row action, which disappears once the row is reviewed.
 - **Categories** and **Tags**: each row shows Yes or No in a Reviewed column,
-  and its menu offers Mark reviewed until it is reviewed.
+  and offers Mark reviewed (in Categories, in the row's menu) until it is
+  reviewed.
 - A user without `manage_licensio_kb` (an author, say) does not see the
-  Categories and Tags items and the route refuses to mark terms for them,
-  while they can still mark the articles they may edit.
+  Categories and Tags items, and the route marks no terms for them, while
+  they can still mark the articles they may edit.
