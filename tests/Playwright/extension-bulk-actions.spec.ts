@@ -86,7 +86,7 @@ test.describe( 'Extension bulk actions', () => {
 
 	test.afterAll( () => {
 		wpEval( `
-			$q = new WP_Query( array( 'post_type' => 'licensio_article', 'post_status' => 'any', 'tax_query' => array( array( 'taxonomy' => 'licensio_category', 'terms' => ${ category } ) ), 'fields' => 'ids', 'posts_per_page' => -1 ) );
+			$q = new WP_Query( array( 'post_type' => 'licensio_article', 'post_status' => array( 'any', 'trash' ), 'tax_query' => array( array( 'taxonomy' => 'licensio_category', 'terms' => ${ category } ) ), 'fields' => 'ids', 'posts_per_page' => -1 ) );
 			foreach ( $q->posts as $id ) { wp_delete_post( $id, true ); }
 			wp_delete_term( ${ category }, 'licensio_category' );
 		` );
