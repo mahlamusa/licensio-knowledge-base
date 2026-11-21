@@ -8,7 +8,7 @@
  *     window.licensioKb.extensions.register( 'articles', {
  *         columns: { 'acme/score': { render( el, row, ctx ) { … return cleanup; } } },
  *         bulkActions: { 'acme/check': { run( ids, ctx ) { … } } },
- *         rowActions: { 'acme/edit': { run( row, ctx ) { … } } },
+ *         rowActions: { 'acme/edit': { run( row, ctx ) { … }, visible( row ) { … } } },
  *     } );
  *
  * `ctx` gives `refresh( ids? )`, `clearSelection()`, `screen` and `rest`
@@ -16,7 +16,9 @@
  * and with none reloads the list; it never rejects. `clearSelection()` does
  * nothing in the Categories app, which has no multiple selection. The
  * Categories and Tags apps have no column picker, so they show only the
- * columns declared `default_visible`. The TypeScript types are in
+ * columns declared `default_visible`. A row action's optional
+ * `visible( row )` returns false to hide it on that row; it runs on every
+ * render, so keep it synchronous and cheap. The TypeScript types are in
  * `apps/components/extensions.ts`.
  *
  * Call `register()` synchronously from a classic (not module, not deferred)

@@ -98,6 +98,7 @@ function licensio_kb_example_terms_declare( $extensions ) {
         $extensions->add_row_action( $screen, 'example/term-bump', array( 'label' => 'Bump note' ) );
         $extensions->add_row_action( $screen, 'example/term-silent', array( 'label' => 'Silent action' ) );
         $extensions->add_row_action( $screen, 'example/term-fail', array( 'label' => 'Failing action' ) );
+        $extensions->add_row_action( $screen, 'example/term-marked', array( 'label' => 'Marked action' ) );
     }
 }
 
@@ -270,6 +271,12 @@ function licensio_kb_example_terms_script( $screen, $hook_suffix ) {
                         "example/term-fail": {
                             run: function () {
                                 return Promise.reject( new Error( "The example action failed." ) );
+                            }
+                        },
+                        "example/term-marked": {
+                            run: function () {},
+                            visible: function ( row ) {
+                                return 0 === row.name.indexOf( "Marked" );
                             }
                         }
                     }

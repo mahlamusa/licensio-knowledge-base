@@ -34,7 +34,7 @@ import {
 	isExtensionRowActionRunning,
 	runExtensionRowAction,
 } from '../../components/extension-row-action';
-import { rowActionEntries } from '../../components/row-actions';
+import { rowActionEntries, rowActionsFor } from '../../components/row-actions';
 import { config } from '../api';
 import { confirmTitle, performAction } from '../actions';
 import { isExtensionKey } from '../columns';
@@ -494,7 +494,10 @@ const expandedKeys = computed( () =>
 									}}
 								</ConfirmButton>
 								<a-button
-									v-for="action in extensionActions"
+									v-for="action in rowActionsFor(
+										extensionActions,
+										record as ArticleItem
+									)"
 									:key="action.key"
 									type="link"
 									size="small"

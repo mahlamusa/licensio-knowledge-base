@@ -73,7 +73,7 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
      * Register the routes with the core functions they touch stubbed.
      *
      * @since 1.0.0
-     * @since 1.1.0 Stubs the extension registry and the saved list preferences.
+     * @since 1.1.0 Builds the extension registry and stubs the saved list preferences.
      *
      * @return void
      */
@@ -162,7 +162,6 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
         $this->extensions        = new Licensio_KB_Extensions();
         $this->saved_preferences = '';
 
-        Functions\when( 'licensio_kb' )->justReturn( new Licensio_KB_Extensions_Plugin_Double( $this->extensions ) );
         Functions\when( 'get_current_user_id' )->justReturn( 1 );
         Functions\when( 'get_user_meta' )->alias(
             function () {
@@ -170,8 +169,30 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
             }
         );
 
-        $this->controller = new Licensio_KB_Articles_REST_Controller( new Licensio_KB_Article_Metrics( 50, 5 ), new Licensio_KB_Article_Bulk() );
+        $this->controller = new Licensio_KB_Articles_REST_Controller( new Licensio_KB_Article_Metrics( 50, 5 ), new Licensio_KB_Article_Bulk(), $this->extension_columns(), $this->extension_filters() );
         $this->controller->register_routes();
+    }
+
+    /**
+     * The extension columns over the test's registry.
+     *
+     * @since 1.1.0
+     *
+     * @return Licensio_KB_Article_Extension_Columns The extension columns.
+     */
+    private function extension_columns() {
+        return new Licensio_KB_Article_Extension_Columns( $this->extensions );
+    }
+
+    /**
+     * The extension filters over the test's registry.
+     *
+     * @since 1.1.0
+     *
+     * @return Licensio_KB_Extension_Filters The filters.
+     */
+    private function extension_filters() {
+        return new Licensio_KB_Extension_Filters( $this->extensions, Licensio_KB_Extensions::SCREEN_ARTICLES );
     }
 
     /**
@@ -587,7 +608,7 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
         $count              = new WP_Query();
         $count->found_posts = 3;
 
-        $controller = new Licensio_KB_Articles_REST_Controller_Double( $empty, $count );
+        $controller = new Licensio_KB_Articles_REST_Controller_Double( $this->extension_columns(), $this->extension_filters(), $empty, $count );
         $result     = $controller->get_items(
             new WP_REST_Request(
                 array(),
@@ -635,12 +656,13 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
 
             $this->assertSame( 'object', $arg['type'] );
             $this->assertSame( array(), $arg['default'] );
-            $this->assertSame( 'sanitize_ext_filters', $arg['sanitize_callback'][1] );
+            $this->assertInstanceOf( Licensio_KB_Extension_Filters::class, $arg['sanitize_callback'][0] );
+            $this->assertSame( 'sanitize', $arg['sanitize_callback'][1] );
         }
 
-        $extensions = $this->extensions;
+        $sanitize = $this->routes['/articles'][0]['args']['ext_filters']['sanitize_callback'];
 
-        $extensions->add_filter(
+        $this->extensions->add_filter(
             'articles',
             'seo/status',
             array(
@@ -649,7 +671,7 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
                 'options'    => array( 'missing_meta' => 'Missing meta' ),
             )
         );
-        $extensions->add_filter(
+        $this->extensions->add_filter(
             'articles',
             'seo/score',
             array(
@@ -663,7 +685,8 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
 
         $this->assertSame(
             array( 'seo/status' => 'missing_meta' ),
-            Licensio_KB_Articles_REST_Controller::sanitize_ext_filters(
+            call_user_func(
+                $sanitize,
                 array(
                     'seo/status' => 'missing_meta',
                     'seo/score'  => 'low',
@@ -671,8 +694,8 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
                 )
             )
         );
-        $this->assertSame( array(), Licensio_KB_Articles_REST_Controller::sanitize_ext_filters( array( 'seo/status' => 'unknown' ) ) );
-        $this->assertSame( array(), Licensio_KB_Articles_REST_Controller::sanitize_ext_filters( 'seo/status' ) );
+        $this->assertSame( array(), call_user_func( $sanitize, array( 'seo/status' => 'unknown' ) ) );
+        $this->assertSame( array(), call_user_func( $sanitize, 'seo/status' ) );
         $this->assertSame(
             array( 'seo/status' => 'missing_meta' ),
             $this->controller->ext_filters( new WP_REST_Request( array(), '/licensio-kb/v1/articles', array( 'ext_filters' => array( 'seo/status' => 'MISSING_META' ) ) ) ),
@@ -721,7 +744,7 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
         $count              = new WP_Query();
         $count->found_posts = 4;
 
-        $controller = new Licensio_KB_Articles_REST_Controller_Double( $empty, $count );
+        $controller = new Licensio_KB_Articles_REST_Controller_Double( $this->extension_columns(), $this->extension_filters(), $empty, $count );
         $result     = $controller->get_items(
             new WP_REST_Request(
                 array(),
@@ -745,7 +768,7 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
         $this->assertSame( 4, $result['total'] );
         $this->assertSame( 2, $result['pages'] );
 
-        $ids = new Licensio_KB_Articles_REST_Controller_Double( new WP_Query() );
+        $ids = new Licensio_KB_Articles_REST_Controller_Double( $this->extension_columns(), $this->extension_filters(), new WP_Query() );
 
         $ids->get_ids( new WP_REST_Request( array(), '/licensio-kb/v1/articles/ids', array() ) );
 
@@ -771,7 +794,7 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
     public function test_an_empty_first_page_is_not_counted_again() {
         Functions\when( 'wp_count_posts' )->justReturn( (object) array() );
 
-        $controller = new Licensio_KB_Articles_REST_Controller_Double( new WP_Query() );
+        $controller = new Licensio_KB_Articles_REST_Controller_Double( $this->extension_columns(), $this->extension_filters(), new WP_Query() );
         $result     = $controller->get_items(
             new WP_REST_Request( array(), '/licensio-kb/v1/articles', array( 'status' => 'draft' ) )
         );
@@ -791,7 +814,7 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
     public function test_the_list_query_args_filter_changes_the_page_query() {
         Functions\when( 'wp_count_posts' )->justReturn( (object) array() );
 
-        $controller = new Licensio_KB_Articles_REST_Controller_Double( new WP_Query() );
+        $controller = new Licensio_KB_Articles_REST_Controller_Double( $this->extension_columns(), $this->extension_filters(), new WP_Query() );
         $request    = new WP_REST_Request( array(), '/licensio-kb/v1/articles', array( 'status' => 'draft' ) );
         $expected   = $controller->query_args( $request->get_params() );
 
@@ -821,7 +844,7 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     public function test_the_list_query_args_filter_narrows_the_ids_query() {
-        $controller = new Licensio_KB_Articles_REST_Controller_Double( new WP_Query() );
+        $controller = new Licensio_KB_Articles_REST_Controller_Double( $this->extension_columns(), $this->extension_filters(), new WP_Query() );
         $request    = new WP_REST_Request( array(), '/licensio-kb/v1/articles/ids', array( 'status' => 'draft' ) );
         $expected   = $controller->query_args( $request->get_params(), true );
 
@@ -898,20 +921,21 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
                     'per_page'       => 50,
                     'columns_chosen' => '1',
                     'medium_columns' => array( 'views', 'post_content', 'rating' ),
-                )
+                ),
+                $this->extension_columns()
             )
         );
 
-        $defaults = Licensio_KB_Articles_REST_Controller::sanitize_preferences( 'junk' );
+        $defaults = Licensio_KB_Articles_REST_Controller::sanitize_preferences( 'junk', $this->extension_columns() );
 
         $this->assertSame( Licensio_KB_Articles_REST_Controller::DEFAULT_COLUMNS, $defaults['columns'] );
         $this->assertSame( 20, $defaults['per_page'] );
         $this->assertFalse( $defaults['columns_chosen'] );
         $this->assertSame( array(), $defaults['medium_columns'] );
-        $this->assertSame( 20, Licensio_KB_Articles_REST_Controller::sanitize_preferences( array( 'per_page' => 25 ) )['per_page'] );
+        $this->assertSame( 20, Licensio_KB_Articles_REST_Controller::sanitize_preferences( array( 'per_page' => 25 ), $this->extension_columns() )['per_page'] );
 
         $this->assertTrue(
-            Licensio_KB_Articles_REST_Controller::sanitize_preferences( array( 'columns' => array( 'author', 'views' ) ) )['columns_chosen'],
+            Licensio_KB_Articles_REST_Controller::sanitize_preferences( array( 'columns' => array( 'author', 'views' ) ), $this->extension_columns() )['columns_chosen'],
             'Columns saved before the key existed were the user’s choice.'
         );
         $this->assertFalse(
@@ -919,7 +943,8 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
                 array(
                     'columns'        => array( 'author' ),
                     'columns_chosen' => false,
-                )
+                ),
+                $this->extension_columns()
             )['columns_chosen']
         );
     }
@@ -1350,7 +1375,7 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
         Functions\when( 'get_preview_post_link' )->justReturn( '' );
         Functions\when( 'strip_shortcodes' )->returnArg();
 
-        $controller = new Licensio_KB_Articles_REST_Controller( $metrics, new Licensio_KB_Article_Bulk() );
+        $controller = new Licensio_KB_Articles_REST_Controller( $metrics, new Licensio_KB_Article_Bulk(), $this->extension_columns(), $this->extension_filters() );
         $row        = $controller->prepare_items( array( $post ), 30 )[0];
 
         $this->assertSame( 'Guide <img src=x onerror=alert(1)> & tips', $row['title'], 'Shown as text.' );
@@ -1798,7 +1823,7 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
 
         $this->assertSame(
             array_merge( Licensio_KB_Articles_REST_Controller::DEFAULT_COLUMNS, array( 'acme/score' ) ),
-            Licensio_KB_Articles_REST_Controller::sanitize_preferences( 'junk' )['columns'],
+            Licensio_KB_Articles_REST_Controller::sanitize_preferences( 'junk', $this->extension_columns() )['columns'],
             'Columns visible by default join the defaults, if the user may see them.'
         );
 
@@ -1806,7 +1831,8 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
             array(
                 'columns'        => array( 'acme/note', 'acme/gone', 'author', 'acme/secret' ),
                 'medium_columns' => array( 'acme/note', 'views' ),
-            )
+            ),
+            $this->extension_columns()
         );
 
         $this->assertSame( array( 'author', 'acme/note' ), $saved['columns'], 'A deactivated extension and a column the user may not see are dropped.' );
@@ -1853,7 +1879,7 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
     public function test_a_default_extension_column_shows_for_a_user_who_never_saved() {
         $this->add_default_visible_columns();
 
-        $preferences = Licensio_KB_Articles_REST_Controller::preferences( 1 );
+        $preferences = Licensio_KB_Articles_REST_Controller::preferences( 1, $this->extension_columns() );
 
         $this->assertSame( array_merge( Licensio_KB_Articles_REST_Controller::DEFAULT_COLUMNS, array( 'acme/score' ) ), $preferences['columns'] );
         $this->assertSame( array(), $preferences['known_extensions'] );
@@ -1876,13 +1902,13 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
             'medium_columns' => array(),
         );
 
-        $this->assertSame( array( 'author', 'views', 'acme/score' ), Licensio_KB_Articles_REST_Controller::preferences( 1 )['columns'] );
+        $this->assertSame( array( 'author', 'views', 'acme/score' ), Licensio_KB_Articles_REST_Controller::preferences( 1, $this->extension_columns() )['columns'] );
 
         $this->saved_preferences['known_extensions'] = array( 'acme/other' );
 
         $this->assertSame(
             array( 'author', 'views', 'acme/score' ),
-            Licensio_KB_Articles_REST_Controller::preferences( 1 )['columns'],
+            Licensio_KB_Articles_REST_Controller::preferences( 1, $this->extension_columns() )['columns'],
             'Knowing other extension columns does not hide a new one.'
         );
     }
@@ -1923,7 +1949,7 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
 
         $this->assertSame( array( 'author', 'views' ), $saved['columns'], 'Saving does not add the hidden column back.' );
         $this->assertSame( array( 'acme/score' ), $this->saved_preferences['known_extensions'], 'A column the user may not see is not stored as known.' );
-        $this->assertSame( array( 'author', 'views' ), Licensio_KB_Articles_REST_Controller::preferences( 1 )['columns'] );
+        $this->assertSame( array( 'author', 'views' ), Licensio_KB_Articles_REST_Controller::preferences( 1, $this->extension_columns() )['columns'] );
     }
 
     /**
@@ -1950,7 +1976,7 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
             'known_extensions' => array( 'acme/gone', 'acme/score' ),
         );
 
-        $preferences = Licensio_KB_Articles_REST_Controller::preferences( 1 );
+        $preferences = Licensio_KB_Articles_REST_Controller::preferences( 1, $this->extension_columns() );
 
         $this->assertSame( array( 'author', 'acme/score' ), $preferences['columns'] );
         $this->assertSame( array( 'acme/score' ), $preferences['known_extensions'] );
@@ -2006,7 +2032,7 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
                 }
             );
 
-        $controller = new Licensio_KB_Articles_REST_Controller( $this->no_figures(), new Licensio_KB_Article_Bulk() );
+        $controller = new Licensio_KB_Articles_REST_Controller( $this->no_figures(), new Licensio_KB_Article_Bulk(), $this->extension_columns(), $this->extension_filters() );
         $rows       = $controller->prepare_items( array( $this->post(), $this->post( array( 'ID' => 13 ) ) ), 30 );
 
         $this->assertSame( array( array( array( 12, 13 ), array( 'acme/score', 'acme/note' ) ) ), $batches );
@@ -2037,7 +2063,7 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
         Filters\expectApplied( 'licensio_kb_article_extension_data_batch' )->never();
         Filters\expectApplied( 'licensio_kb_article_extension_data' )->never();
 
-        $controller = new Licensio_KB_Articles_REST_Controller( $this->no_figures(), new Licensio_KB_Article_Bulk() );
+        $controller = new Licensio_KB_Articles_REST_Controller( $this->no_figures(), new Licensio_KB_Article_Bulk(), $this->extension_columns(), $this->extension_filters() );
         $rows       = $controller->prepare_items( array( $this->post() ), 30 );
 
         $this->assertEquals( (object) array(), $rows[0]['extensions'] );
@@ -2090,7 +2116,7 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
                 }
             );
 
-        $controller = new Licensio_KB_Articles_REST_Controller_Double( new WP_Query() );
+        $controller = new Licensio_KB_Articles_REST_Controller_Double( $this->extension_columns(), $this->extension_filters(), new WP_Query() );
 
         $controller->get_items( new WP_REST_Request( array(), '/licensio-kb/v1/articles', array( 'orderby' => 'acme/score' ) ) );
         $controller->get_items( new WP_REST_Request( array(), '/licensio-kb/v1/articles', array( 'orderby' => 'acme/secret' ) ) );
@@ -2201,11 +2227,14 @@ class Licensio_KB_Articles_REST_Controller_Double extends Licensio_KB_Articles_R
      * Constructor.
      *
      * @since 1.0.0
+     * @since 1.1.0 Takes the extension columns and filters.
      *
-     * @param WP_Query ...$results The queries to answer with, in turn.
+     * @param Licensio_KB_Article_Extension_Columns $extension_columns The extension columns.
+     * @param Licensio_KB_Extension_Filters         $extension_filters The extension filters.
+     * @param WP_Query                              ...$results        The queries to answer with, in turn.
      */
-    public function __construct( WP_Query ...$results ) {
-        parent::__construct( new Licensio_KB_Article_Metrics( 50, 5 ), new Licensio_KB_Article_Bulk() );
+    public function __construct( Licensio_KB_Article_Extension_Columns $extension_columns, Licensio_KB_Extension_Filters $extension_filters, WP_Query ...$results ) {
+        parent::__construct( new Licensio_KB_Article_Metrics( 50, 5 ), new Licensio_KB_Article_Bulk(), $extension_columns, $extension_filters );
 
         $this->results = $results;
     }
@@ -2223,43 +2252,5 @@ class Licensio_KB_Articles_REST_Controller_Double extends Licensio_KB_Articles_R
         $this->calls[] = $args;
 
         return $this->results[ min( count( $this->calls ), count( $this->results ) ) - 1 ];
-    }
-}
-
-/**
- * The main plugin object, as far as the extension registry goes.
- *
- * @since 1.1.0
- */
-class Licensio_KB_Extensions_Plugin_Double {
-
-    /**
-     * The registry it hands out.
-     *
-     * @since 1.1.0
-     * @var Licensio_KB_Extensions
-     */
-    private $extensions;
-
-    /**
-     * Constructor.
-     *
-     * @since 1.1.0
-     *
-     * @param Licensio_KB_Extensions $extensions The registry to hand out.
-     */
-    public function __construct( Licensio_KB_Extensions $extensions ) {
-        $this->extensions = $extensions;
-    }
-
-    /**
-     * The extension registry.
-     *
-     * @since 1.1.0
-     *
-     * @return Licensio_KB_Extensions The registry.
-     */
-    public function extensions() {
-        return $this->extensions;
     }
 }

@@ -77,6 +77,17 @@ class Licensio_KB_Extension_Filters_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * The article filters over the test's registry.
+     *
+     * @since 1.1.0
+     *
+     * @return Licensio_KB_Extension_Filters The filters.
+     */
+    private function filters() {
+        return new Licensio_KB_Extension_Filters( $this->extensions, 'articles' );
+    }
+
+    /**
      * Only declared filters the user may use, set to one of their options, are kept.
      *
      * @since 1.1.0
@@ -89,9 +100,7 @@ class Licensio_KB_Extension_Filters_Test extends Licensio_KB_Test_Case {
                 'seo/status'    => 'missing_meta',
                 'example/plain' => 'yes',
             ),
-            Licensio_KB_Extension_Filters::sanitize(
-                $this->extensions,
-                'articles',
+            $this->filters()->sanitize(
                 array(
                     'seo/status'    => 'Missing_Meta',
                     'seo/score'     => 'low',
@@ -104,15 +113,13 @@ class Licensio_KB_Extension_Filters_Test extends Licensio_KB_Test_Case {
 
         $this->assertSame(
             array( 'seo/status' => '1' ),
-            Licensio_KB_Extension_Filters::sanitize( $this->extensions, 'articles', array( 'seo/status' => 1 ) ),
+            $this->filters()->sanitize( array( 'seo/status' => 1 ) ),
             'A numeric option matches and comes back as a string.'
         );
 
         $this->assertSame(
             array(),
-            Licensio_KB_Extension_Filters::sanitize(
-                $this->extensions,
-                'articles',
+            $this->filters()->sanitize(
                 array(
                     'seo/status'    => 'unknown',
                     'example/plain' => array( 'yes' ),
@@ -121,8 +128,8 @@ class Licensio_KB_Extension_Filters_Test extends Licensio_KB_Test_Case {
             'Unknown options and non-scalar values are dropped.'
         );
 
-        $this->assertSame( array(), Licensio_KB_Extension_Filters::sanitize( $this->extensions, 'articles', 'seo/status' ) );
-        $this->assertSame( array(), Licensio_KB_Extension_Filters::sanitize( $this->extensions, 'tags', array( 'seo/status' => 'missing_meta' ) ), 'Another screen has its own filters.' );
+        $this->assertSame( array(), $this->filters()->sanitize( 'seo/status' ) );
+        $this->assertSame( array(), ( new Licensio_KB_Extension_Filters( $this->extensions, 'tags' ) )->sanitize( array( 'seo/status' => 'missing_meta' ) ), 'Another screen has its own filters.' );
     }
 
     /**
@@ -135,9 +142,7 @@ class Licensio_KB_Extension_Filters_Test extends Licensio_KB_Test_Case {
     public function test_query_args_map_onto_their_filters() {
         $this->assertSame(
             array( 'seo/status' => 'missing_meta' ),
-            Licensio_KB_Extension_Filters::from_query_args(
-                $this->extensions,
-                'articles',
+            $this->filters()->from_query_args(
                 array(
                     'seo_filter'    => 'missing_meta',
                     'seo_score'     => 'low',
@@ -148,6 +153,6 @@ class Licensio_KB_Extension_Filters_Test extends Licensio_KB_Test_Case {
             'A forbidden filter and one without a query argument are skipped.'
         );
 
-        $this->assertSame( array(), Licensio_KB_Extension_Filters::from_query_args( $this->extensions, 'articles', array( 'seo_filter' => 'nope' ) ) );
+        $this->assertSame( array(), $this->filters()->from_query_args( array( 'seo_filter' => 'nope' ) ) );
     }
 }

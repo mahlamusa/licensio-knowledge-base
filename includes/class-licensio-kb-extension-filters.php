@@ -29,6 +29,35 @@ class Licensio_KB_Extension_Filters {
     const PARAM = 'ext_filters';
 
     /**
+     * The extension registry.
+     *
+     * @since 1.1.0
+     * @var Licensio_KB_Extensions
+     */
+    private $extensions;
+
+    /**
+     * The screen whose filters are read: `articles`, `categories` or `tags`.
+     *
+     * @since 1.1.0
+     * @var string
+     */
+    private $screen;
+
+    /**
+     * Read the filters of one screen.
+     *
+     * @since 1.1.0
+     *
+     * @param Licensio_KB_Extensions $extensions The registry.
+     * @param string                 $screen     `articles`, `categories` or `tags`.
+     */
+    public function __construct( Licensio_KB_Extensions $extensions, $screen ) {
+        $this->extensions = $extensions;
+        $this->screen     = $screen;
+    }
+
+    /**
      * The valid values of a `{key} => value` map.
      *
      * A key must be a filter of the screen the current user may use, and its
@@ -37,20 +66,18 @@ class Licensio_KB_Extension_Filters {
      *
      * @since 1.1.0
      *
-     * @param Licensio_KB_Extensions $extensions The registry.
-     * @param string                 $screen     `articles`, `categories` or `tags`.
-     * @param mixed                  $value      The raw map.
+     * @param mixed $value The raw map.
      *
      * @return array<string, string> The chosen option of each filter, keyed by filter key.
      */
-    public static function sanitize( Licensio_KB_Extensions $extensions, $screen, $value ) {
+    public function sanitize( $value ) {
         $chosen = array();
 
         if ( ! is_array( $value ) ) {
             return $chosen;
         }
 
-        foreach ( $extensions->allowed( $screen, 'filters' ) as $key => $filter ) {
+        foreach ( $this->extensions->allowed( $this->screen, 'filters' ) as $key => $filter ) {
             if ( ! isset( $value[ $key ] ) || ! is_scalar( $value[ $key ] ) ) {
                 continue;
             }
@@ -72,21 +99,19 @@ class Licensio_KB_Extension_Filters {
      *
      * @since 1.1.0
      *
-     * @param Licensio_KB_Extensions $extensions The registry.
-     * @param string                 $screen     `articles`, `categories` or `tags`.
-     * @param array<string, mixed>   $query      The request's query arguments, unslashed.
+     * @param array<string, mixed> $query The request's query arguments, unslashed.
      *
      * @return array<string, string> The chosen option of each filter, keyed by filter key.
      */
-    public static function from_query_args( Licensio_KB_Extensions $extensions, $screen, array $query ) {
+    public function from_query_args( array $query ) {
         $values = array();
 
-        foreach ( $extensions->allowed( $screen, 'filters' ) as $key => $filter ) {
+        foreach ( $this->extensions->allowed( $this->screen, 'filters' ) as $key => $filter ) {
             if ( '' !== $filter['query_arg'] && isset( $query[ $filter['query_arg'] ] ) ) {
                 $values[ $key ] = $query[ $filter['query_arg'] ];
             }
         }
 
-        return self::sanitize( $extensions, $screen, $values );
+        return $this->sanitize( $values );
     }
 }

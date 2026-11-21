@@ -49,7 +49,7 @@ defined( 'ABSPATH' ) || exit;
  * Serves the Articles app.
  *
  * @since 1.0.0
- * @since 1.1.0 Serves the extension columns (their row data, sorting and preferences) and the extension filters.
+ * @since 1.1.0 Serves the extension columns it is given (their row data, sorting and preferences) and the extension filters.
  */
 class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
 
@@ -150,16 +150,40 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
     private $bulk;
 
     /**
+     * The extension columns of the Articles app.
+     *
+     * @since 1.1.0
+     * @var Licensio_KB_Article_Extension_Columns
+     */
+    private $extension_columns;
+
+    /**
+     * The extension filters of the Articles app.
+     *
+     * @since 1.1.0
+     * @var Licensio_KB_Extension_Filters
+     */
+    private $extension_filters;
+
+    /**
      * Build the controller.
      *
      * @since 1.0.0
+     * @since 1.1.0 Takes the extension columns and filters.
      *
-     * @param Licensio_KB_Article_Metrics|null $metrics Optional metrics helper; defaults to one built from the plugin settings.
-     * @param Licensio_KB_Article_Bulk|null    $bulk    Optional bulk runner.
+     * @param Licensio_KB_Article_Metrics|null           $metrics           Optional metrics helper; defaults to one built from the plugin settings.
+     * @param Licensio_KB_Article_Bulk|null              $bulk              Optional bulk runner.
+     * @param Licensio_KB_Article_Extension_Columns|null $extension_columns The extension columns. Built over the plugin's extension
+     *                                                                      registry when omitted, so the REST registrar can build
+     *                                                                      the controller with no arguments.
+     * @param Licensio_KB_Extension_Filters|null         $extension_filters The extension filters. Built over the plugin's extension
+     *                                                                      registry when omitted, like the columns.
      */
-    public function __construct( $metrics = null, $bulk = null ) {
-        $this->metrics = $metrics instanceof Licensio_KB_Article_Metrics ? $metrics : Licensio_KB_Article_Metrics::from_settings( licensio_kb()->settings() );
-        $this->bulk    = $bulk instanceof Licensio_KB_Article_Bulk ? $bulk : new Licensio_KB_Article_Bulk();
+    public function __construct( $metrics = null, $bulk = null, $extension_columns = null, $extension_filters = null ) {
+        $this->metrics           = $metrics instanceof Licensio_KB_Article_Metrics ? $metrics : Licensio_KB_Article_Metrics::from_settings( licensio_kb()->settings() );
+        $this->bulk              = $bulk instanceof Licensio_KB_Article_Bulk ? $bulk : new Licensio_KB_Article_Bulk();
+        $this->extension_columns = $extension_columns instanceof Licensio_KB_Article_Extension_Columns ? $extension_columns : new Licensio_KB_Article_Extension_Columns( licensio_kb()->extensions() );
+        $this->extension_filters = $extension_filters instanceof Licensio_KB_Extension_Filters ? $extension_filters : new Licensio_KB_Extension_Filters( licensio_kb()->extensions(), Licensio_KB_Extensions::SCREEN_ARTICLES );
     }
 
     /**
@@ -324,23 +348,10 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
             'ext_filters'     => array(
                 'type'              => 'object',
                 'default'           => array(),
-                'sanitize_callback' => array( __CLASS__, 'sanitize_ext_filters' ),
+                'sanitize_callback' => array( $this->extension_filters, 'sanitize' ),
                 'description'       => __( 'Extension filters, as filter key => option. Unknown keys and options are ignored.', 'licensio-knowledge-base' ),
             ),
         );
-    }
-
-    /**
-     * Keep the extension filters the current user may use, each set to one of its options.
-     *
-     * @since 1.1.0
-     *
-     * @param mixed $value The raw `ext_filters` map.
-     *
-     * @return array<string, string> The chosen option of each filter, keyed by filter key.
-     */
-    public static function sanitize_ext_filters( $value ) {
-        return Licensio_KB_Extension_Filters::sanitize( licensio_kb()->extensions(), Licensio_KB_Extensions::SCREEN_ARTICLES, $value );
     }
 
     /**
@@ -360,7 +371,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
             array(
                 'orderby'  => array(
                     'type'    => 'string',
-                    'enum'    => array_merge( self::ORDERBY, self::extension_columns()->sortable_keys() ),
+                    'enum'    => array_merge( self::ORDERBY, $this->extension_columns->sortable_keys() ),
                     'default' => 'date',
                 ),
                 'order'    => array(
@@ -560,7 +571,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
                 'required' => true,
                 'items'    => array(
                     'type' => 'string',
-                    'enum' => array_merge( self::COLUMNS, self::extension_columns()->keys() ),
+                    'enum' => array_merge( self::COLUMNS, $this->extension_columns->keys() ),
                 ),
             ),
             'per_page'       => array(
@@ -955,7 +966,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
     private function filtered_query_args( WP_REST_Request $request, bool $ids_only ): array {
         $orderby = (string) $request->get_param( 'orderby' );
 
-        if ( '' !== $orderby && ! in_array( $orderby, self::ORDERBY, true ) && ! self::extension_columns()->can_sort_by( $orderby ) ) {
+        if ( '' !== $orderby && ! in_array( $orderby, self::ORDERBY, true ) && ! $this->extension_columns->can_sort_by( $orderby ) ) {
             $request->set_param( 'orderby', 'date' );
         }
 
@@ -998,7 +1009,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      * @return array<string, string> The values, keyed by filter key.
      */
     public function ext_filters( WP_REST_Request $request ): array {
-        return self::sanitize_ext_filters( $request->get_param( 'ext_filters' ) );
+        return $this->extension_filters->sanitize( $request->get_param( 'ext_filters' ) );
     }
 
     /**
@@ -1129,8 +1140,8 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
 
         cache_users( array_values( array_unique( array_filter( $users ) ) ) );
 
-        $shown      = self::preferences( get_current_user_id() )['columns'];
-        $extensions = Licensio_KB_Article_Extension_Data::for_posts( $posts, self::extension_columns()->visible_keys( $shown ) );
+        $shown      = self::preferences( get_current_user_id(), $this->extension_columns )['columns'];
+        $extensions = Licensio_KB_Article_Extension_Data::for_posts( $posts, $this->extension_columns->visible_keys( $shown ) );
         $items      = array();
 
         foreach ( $posts as $post ) {
@@ -1805,6 +1816,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      * The current user's list preferences.
      *
      * @since 1.0.0
+     * @since 1.1.0 Reads the extension columns the controller was given.
      *
      * @param WP_REST_Request $request The request.
      *
@@ -1813,7 +1825,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
     public function get_preferences( $request ) {
         unset( $request );
 
-        return rest_ensure_response( self::preferences( get_current_user_id() ) );
+        return rest_ensure_response( self::preferences( get_current_user_id(), $this->extension_columns ) );
     }
 
     /**
@@ -1824,7 +1836,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      * column they hid stays hidden.
      *
      * @since 1.0.0
-     * @since 1.1.0 Stores the extension columns the user may see as known.
+     * @since 1.1.0 Stores the extension columns the user may see as known, read from the extension columns the controller was given.
      *
      * @param WP_REST_Request $request The request.
      *
@@ -1837,8 +1849,9 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
                 'per_page'         => $request->get_param( 'per_page' ),
                 'columns_chosen'   => $request->get_param( 'columns_chosen' ),
                 'medium_columns'   => $request->get_param( 'medium_columns' ),
-                'known_extensions' => self::extension_columns()->allowed_keys(),
-            )
+                'known_extensions' => $this->extension_columns->allowed_keys(),
+            ),
+            $this->extension_columns
         );
 
         update_user_meta( get_current_user_id(), self::PREFERENCES_META, $preferences );
@@ -1854,21 +1867,22 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      * a plugin activated since. Nothing is stored until the user saves.
      *
      * @since 1.0.0
-     * @since 1.1.0 Shows the default extension columns the user was not offered yet.
+     * @since 1.1.0 Shows the default extension columns the user was not offered yet, and takes the extension columns.
      *
-     * @param int $user_id The user ID.
+     * @param int                                   $user_id           The user ID.
+     * @param Licensio_KB_Article_Extension_Columns $extension_columns The extension columns.
      *
      * @return array{columns: string[], per_page: int, columns_chosen: bool, medium_columns: string[], known_extensions: string[]} The preferences.
      */
-    public static function preferences( $user_id ) {
+    public static function preferences( $user_id, Licensio_KB_Article_Extension_Columns $extension_columns ) {
         $stored = get_user_meta( (int) $user_id, self::PREFERENCES_META, true );
 
         if ( is_array( $stored ) && isset( $stored['columns'] ) && is_array( $stored['columns'] ) ) {
             $known             = isset( $stored['known_extensions'] ) && is_array( $stored['known_extensions'] ) ? array_map( 'strval', $stored['known_extensions'] ) : array();
-            $stored['columns'] = array_merge( $stored['columns'], self::extension_columns()->new_default_keys( $known ) );
+            $stored['columns'] = array_merge( $stored['columns'], $extension_columns->new_default_keys( $known ) );
         }
 
-        return self::sanitize_preferences( $stored );
+        return self::sanitize_preferences( $stored, $extension_columns );
     }
 
     /**
@@ -1891,18 +1905,18 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      * declared, because its plugin was deactivated, is dropped from both.
      *
      * @since 1.0.0 Counts columns stored without `columns_chosen` as chosen, and adds `medium_columns`.
-     * @since 1.1.0 Allows the extension columns the current user may see, and adds `known_extensions`.
+     * @since 1.1.0 Allows the extension columns the current user may see, adds `known_extensions`, and takes the extension columns.
      *
-     * @param mixed $value The stored or submitted preferences.
+     * @param mixed                                 $value             The stored or submitted preferences.
+     * @param Licensio_KB_Article_Extension_Columns $extension_columns The extension columns.
      *
      * @return array{columns: string[], per_page: int, columns_chosen: bool, medium_columns: string[], known_extensions: string[]} The clean preferences.
      */
-    public static function sanitize_preferences( $value ) {
-        $extension = self::extension_columns();
-        $allowed   = $extension->allowed_keys();
-        $value     = is_array( $value ) ? $value : array();
-        $columns   = isset( $value['columns'] ) && is_array( $value['columns'] ) ? $value['columns'] : array_merge( self::DEFAULT_COLUMNS, $extension->default_keys() );
-        $per_page  = isset( $value['per_page'] ) ? (int) $value['per_page'] : 0;
+    public static function sanitize_preferences( $value, Licensio_KB_Article_Extension_Columns $extension_columns ) {
+        $allowed  = $extension_columns->allowed_keys();
+        $value    = is_array( $value ) ? $value : array();
+        $columns  = isset( $value['columns'] ) && is_array( $value['columns'] ) ? $value['columns'] : array_merge( self::DEFAULT_COLUMNS, $extension_columns->default_keys() );
+        $per_page = isset( $value['per_page'] ) ? (int) $value['per_page'] : 0;
 
         return array(
             // Kept in table order, whatever order they were sent in.
@@ -1912,17 +1926,6 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
             'medium_columns'   => isset( $value['medium_columns'] ) && is_array( $value['medium_columns'] ) ? array_values( array_intersect( self::COLUMNS, array_map( 'strval', $value['medium_columns'] ) ) ) : array(),
             'known_extensions' => isset( $value['known_extensions'] ) && is_array( $value['known_extensions'] ) ? array_values( array_intersect( $allowed, array_map( 'strval', $value['known_extensions'] ) ) ) : array(),
         );
-    }
-
-    /**
-     * The extension columns of the Articles app, from the plugin's registry.
-     *
-     * @since 1.1.0
-     *
-     * @return Licensio_KB_Article_Extension_Columns The lookup.
-     */
-    private static function extension_columns() {
-        return new Licensio_KB_Article_Extension_Columns( licensio_kb()->extensions() );
     }
 
     /**

@@ -6,8 +6,9 @@
  * renders from the counter the REST list fills, a column with no script that
  * shows the `text` fallback, a column that is not default visible and stays
  * hidden, a row action that bumps the counter and refreshes the row through
- * `ctx.refresh( [ id ] )`, and a declared row action with no script that the
- * menu leaves out. The refresh must ask for just that row (`include[]`) and
+ * `ctx.refresh( [ id ] )`, a declared row action with no script that the
+ * menu leaves out, and a row action whose `visible( row )` shows it only on
+ * terms named `Marked…`. The refresh must ask for just that row (`include[]`) and
  * clean up the cell's last render before it renders again. The text column
  * sits after Slug, so an open Tags Quick edit row's shared cell spans it. A
  * double click on the Tags action runs it once, and an action that fails
@@ -347,6 +348,58 @@ test.describe( 'term app extensions @one-at-a-time', () => {
 					.locator( '.ant-message' )
 					.getByText( 'Failing action could not be completed.' )
 			).toBeVisible();
+		} );
+	} );
+
+	test.describe( 'per row visibility in the Tags app', () => {
+		const plainName = `Plain visibility ${ suffix }`;
+		const markedName = `Marked visibility ${ suffix }`;
+		let plainId = 0;
+		let markedId = 0;
+
+		test.beforeAll( () => {
+			plainId = makeTerm( 'licensio_tag', plainName );
+			markedId = makeTerm( 'licensio_tag', markedName );
+		} );
+
+		test.afterAll( () => {
+			dropTerm( 'licensio_tag', plainId );
+			dropTerm( 'licensio_tag', markedId );
+		} );
+
+		test( 'hides a row action on the rows its visible check refuses', async ( {
+			page,
+		} ) => {
+			expect( plainId ).toBeGreaterThan( 0 );
+			expect( markedId ).toBeGreaterThan( 0 );
+
+			await page.goto(
+				`${ contentManagerUrl( 'tags' ) }&search=${ encodeURIComponent(
+					`visibility ${ suffix }`
+				) }`
+			);
+
+			const table = page.locator( '#licensio-kb-tags .ant-table' );
+			const plain = table.locator( `tr[data-row-key="${ plainId }"]` );
+			const marked = table.locator( `tr[data-row-key="${ markedId }"]` );
+
+			await expect( plain ).toBeVisible();
+			await expect( marked ).toBeVisible();
+			await expect(
+				plain.getByRole( 'button', {
+					name: `Bump note “${ plainName }”`,
+				} )
+			).toHaveCount( 1 );
+			await expect(
+				plain.getByRole( 'button', {
+					name: `Marked action “${ plainName }”`,
+				} )
+			).toHaveCount( 0 );
+			await expect(
+				marked.getByRole( 'button', {
+					name: `Marked action “${ markedName }”`,
+				} )
+			).toHaveCount( 1 );
 		} );
 	} );
 

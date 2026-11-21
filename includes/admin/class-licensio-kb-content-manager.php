@@ -720,7 +720,9 @@ class Licensio_KB_Content_Manager {
             $args['paged'] = $paged;
         }
 
-        foreach ( Licensio_KB_Extension_Filters::from_query_args( licensio_kb()->extensions(), Licensio_KB_Extensions::SCREEN_ARTICLES, $query ) as $key => $value ) {
+        $extension_filters = new Licensio_KB_Extension_Filters( licensio_kb()->extensions(), Licensio_KB_Extensions::SCREEN_ARTICLES );
+
+        foreach ( $extension_filters->from_query_args( $query ) as $key => $value ) {
             $args[ Licensio_KB_Extension_Filters::PARAM . '[' . $key . ']' ] = $value;
         }
 

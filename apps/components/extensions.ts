@@ -10,7 +10,8 @@
  *
  * PHP declares the labels and who sees what; JS supplies the behaviour. A
  * column with no registered `render` shows its row data's `text`, and an
- * action with no registered `run` is hidden.
+ * action with no registered `run` is hidden. A row action's optional
+ * `visible( row )` hides it on the rows where it returns false.
  *
  * Consumed by `ExtensionCell.vue`, `row-actions.ts` and the Articles,
  * Categories and Tags apps.
@@ -63,7 +64,15 @@ export interface ColumnHandler< Row extends ExtensionRow = ExtensionRow > {
 	) => void | ( () => void );
 }
 
-/** Runs a bulk action on the selected row IDs. */
+/**
+ * Runs a bulk action on the selected row IDs. "Select all matching" can pass
+ * up to 10,000 IDs, so a handler that sends a request per ID or a list of IDs
+ * should batch its own work. The bulk bar stays busy until the returned value
+ * settles, with no timeout, so a promise that never settles keeps it busy
+ * until the page reloads. When it throws or returns a promise that rejects,
+ * the app shows an error toast. The Articles Trash view offers no extension
+ * bulk actions.
+ */
 export interface BulkActionHandler {
 	run: ( ids: number[], ctx: ExtensionContext ) => unknown;
 }
@@ -74,9 +83,17 @@ export interface BulkActionHandler {
  * that rejects, the app shows a generic error toast and logs the error to the
  * console with the action's key. Rows in the Articles Trash view show no
  * extension row actions.
+ *
+ * `visible( row )` decides per row whether the action shows, for a check
+ * the capability PHP declared cannot make, such as whether the user may
+ * edit that one article. Without it the action shows on every row. It runs
+ * each time the row renders, so keep it synchronous and cheap, working from
+ * the row's own data. When it throws, the action is hidden and the error is
+ * logged to the console once, with the action's key.
  */
 export interface RowActionHandler< Row extends ExtensionRow = ExtensionRow > {
 	run: ( row: Row, ctx: ExtensionContext ) => unknown;
+	visible?: ( row: Row ) => boolean;
 }
 
 /** The handlers a script registers for one screen, keyed by declared key. */
@@ -178,4 +195,47 @@ export function extensionHandlers< Row extends ExtensionRow = ExtensionRow >(
 		bulkActions: {},
 		rowActions: {},
 	} ) as unknown as ExtensionHandlers< Row >;
+}
+
+/** One extension action as an entry of a bulk bar or a row menu. */
+export interface ExtensionActionEntry< Target > {
+	key: string;
+	label: string;
+	/** Run the action on its target; returns what the handler returned. */
+	run: ( target: Target ) => unknown;
+}
+
+/**
+ * The declared actions with a registered handler, as entries.
+ *
+ * An action whose script registered no `run` is left out, so the app never
+ * offers something that does nothing. Running an entry calls the handler
+ * with its target (the selected IDs, or a row) and `ctx`.
+ *
+ * @since 1.1.0
+ *
+ * @param {ExtensionAction[]} declared The actions PHP declared for the user.
+ * @param {Object}            handlers The registered handlers of that type, keyed by action key.
+ * @param {ExtensionContext}  ctx      What the handlers are given to talk back to the app.
+ *
+ * @return {ExtensionActionEntry[]} The entries, in the declared order.
+ */
+export function actionEntries< Target >(
+	declared: ExtensionAction[],
+	handlers: Record<
+		string,
+		{ run: ( target: Target, ctx: ExtensionContext ) => unknown }
+	>,
+	ctx: ExtensionContext
+): ExtensionActionEntry< Target >[] {
+	return declared
+		.filter(
+			( action ) => 'function' === typeof handlers[ action.key ]?.run
+		)
+		.map( ( action ) => ( {
+			key: action.key,
+			label: action.label,
+			run: ( target: Target ) =>
+				handlers[ action.key ].run( target, ctx ),
+		} ) );
 }
