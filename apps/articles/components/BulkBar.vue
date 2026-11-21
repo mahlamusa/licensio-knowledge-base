@@ -15,18 +15,21 @@
  * hidden labels instead.
  *
  * Bulk actions other plugins declared (`extensions.bulkActions`) and gave a
- * `run` handler follow the built-in ones. Applying one hands the selected IDs
- * to the handler straight away: the extension asks, shows progress and
- * refreshes rows itself, so there is no confirmation, progress or undo here.
+ * `run` handler follow the built-in ones, outside the Trash view. Applying
+ * one hands the selected IDs to the handler straight away: the extension
+ * asks, shows progress and refreshes rows itself, so there is no
+ * confirmation, progress or undo here. The bar waits for the handler, and
+ * one that fails shows an error toast.
  *
  * @since 1.0.0
  * @since 1.1.0 Offers the extension bulk actions.
  */
 
+import { message } from 'ant-design-vue';
 import { computed, ref, watch } from 'vue';
 import ConfirmButton from '../../components/ConfirmButton.vue';
 import TermSelect from '../../components/TermSelect.vue';
-import { bulkActionEntries } from '../../components/bulk-actions';
+import { actionEntries, extensionHandlers } from '../../components/extensions';
 import { __, _n, sprintf } from '../../components/i18n';
 import { config } from '../api';
 import { confirmTitle, performAction } from '../actions';
@@ -55,9 +58,9 @@ const store = useArticlesStore();
 const can = config().can;
 
 // Extension scripts register before the app runs, so the entries are fixed.
-const extensionActions = bulkActionEntries(
-	'articles',
+const extensionActions = actionEntries< number[] >(
 	config().extensions.bulkActions,
+	extensionHandlers( 'articles' ).bulkActions,
 	articlesExtensionContext()
 );
 
@@ -67,6 +70,7 @@ const choice = ref< Choice | string | undefined >( undefined );
 const status = ref< BulkArgs[ 'status' ] >( undefined );
 const terms = ref< TermValue[] >( [] );
 const author = ref( 0 );
+const extensionRunning = ref( false );
 
 const inTrash = computed( () => 'trash' === store.query.status );
 
@@ -153,10 +157,12 @@ const builtInChoices = computed( () =>
 			]
 );
 
-const choices = computed( () => [
-	...builtInChoices.value,
-	...extensionChoices,
-] );
+// Trashed articles only get restored or deleted, as on core's list screens.
+const choices = computed( () =>
+	inTrash.value
+		? builtInChoices.value
+		: [ ...builtInChoices.value, ...extensionChoices ]
+);
 
 // Publishing and making private need the publish capability.
 const statusOptions = [
@@ -288,16 +294,38 @@ async function apply(): Promise< void > {
 }
 
 /**
- * Hand the selection to the chosen extension action.
+ * Hand the selection to the chosen extension action and wait for it.
+ *
+ * A handler that throws, or returns a promise that rejects, gets the app's
+ * error toast with a generic message; the extension can still show its own.
  *
  * @since 1.1.0
  *
- * @return {void}
+ * @return {Promise<void>} Resolves once the handler settles; never rejects.
  */
-function applyExtension(): void {
-	extension.value?.run( [ ...store.selected ] );
+async function applyExtension(): Promise< void > {
+	const entry = extension.value;
 
-	choice.value = undefined;
+	if ( ! entry ) {
+		return;
+	}
+
+	extensionRunning.value = true;
+
+	try {
+		await entry.run( [ ...store.selected ] );
+	} catch {
+		message.error(
+			sprintf(
+				/* translators: %s: the bulk action's label. */
+				__( '%s could not be completed.', 'licensio-knowledge-base' ),
+				entry.label
+			)
+		);
+	} finally {
+		extensionRunning.value = false;
+		choice.value = undefined;
+	}
 }
 
 watch( choice, () => {
@@ -388,6 +416,7 @@ watch( inTrash, () => {
 					size="small"
 					class="lkb-bulk__choice"
 					:options="choices"
+					:disabled="extensionRunning"
 					:placeholder="
 						__( 'Bulk action', 'licensio-knowledge-base' )
 					"
@@ -443,7 +472,8 @@ watch( inTrash, () => {
 					size="small"
 					type="primary"
 					:disabled="store.bulk.running"
-					@click="applyExtension()"
+					:loading="extensionRunning"
+					@click="void applyExtension()"
 				>
 					{{ __( 'Apply', 'licensio-knowledge-base' ) }}
 				</a-button>

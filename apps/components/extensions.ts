@@ -60,7 +60,13 @@ export interface ColumnHandler< Row extends ExtensionRow = ExtensionRow > {
 	) => void | ( () => void );
 }
 
-/** Runs a bulk action on the selected row IDs. */
+/**
+ * Runs a bulk action on the selected row IDs. "Select all matching" can pass
+ * up to 10,000 IDs, so a handler that sends a request per ID or a list of IDs
+ * should batch its own work. When it throws or returns a promise that
+ * rejects, the app shows an error toast. The Articles Trash view offers no
+ * extension bulk actions.
+ */
 export interface BulkActionHandler {
 	run: ( ids: number[], ctx: ExtensionContext ) => unknown;
 }
@@ -169,4 +175,47 @@ export function extensionHandlers< Row extends ExtensionRow = ExtensionRow >(
 		bulkActions: {},
 		rowActions: {},
 	} ) as unknown as ExtensionHandlers< Row >;
+}
+
+/** One extension action as an entry of a bulk bar or a row menu. */
+export interface ExtensionActionEntry< Target > {
+	key: string;
+	label: string;
+	/** Run the action on its target; returns what the handler returned. */
+	run: ( target: Target ) => unknown;
+}
+
+/**
+ * The declared actions with a registered handler, as entries.
+ *
+ * An action whose script registered no `run` is left out, so the app never
+ * offers something that does nothing. Running an entry calls the handler
+ * with its target (the selected IDs, or a row) and `ctx`.
+ *
+ * @since 1.1.0
+ *
+ * @param {ExtensionAction[]} declared The actions PHP declared for the user.
+ * @param {Object}            handlers The registered handlers of that type, keyed by action key.
+ * @param {ExtensionContext}  ctx      What the handlers are given to talk back to the app.
+ *
+ * @return {ExtensionActionEntry[]} The entries, in the declared order.
+ */
+export function actionEntries< Target >(
+	declared: ExtensionAction[],
+	handlers: Record<
+		string,
+		{ run: ( target: Target, ctx: ExtensionContext ) => unknown }
+	>,
+	ctx: ExtensionContext
+): ExtensionActionEntry< Target >[] {
+	return declared
+		.filter(
+			( action ) => 'function' === typeof handlers[ action.key ]?.run
+		)
+		.map( ( action ) => ( {
+			key: action.key,
+			label: action.label,
+			run: ( target: Target ) =>
+				handlers[ action.key ].run( target, ctx ),
+		} ) );
 }

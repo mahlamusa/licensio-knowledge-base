@@ -8,7 +8,7 @@
  * selected IDs with no confirmation or progress of the app's own, and the
  * handler's `ctx.refresh( ids )` fetches just those rows with `include`
  * instead of reloading the list, and `ctx.clearSelection()` empties the
- * selection.
+ * selection. The Trash view offers no extension bulk actions.
  *
  * The spec seeds three articles in a category of its own with wp-cli and
  * removes them afterwards, so besides `LICENSIO_KB_E2E=1` and the admin
@@ -216,5 +216,35 @@ test.describe( 'Extension bulk actions', () => {
 		await expect(
 			app.locator( `tr[data-row-key="${ keys[ 2 ] }"]` )
 		).toContainText( `${ WORD } ` );
+	} );
+
+	test( 'the Trash view offers no extension bulk actions', async ( {
+		page,
+	} ) => {
+		wpEval( `
+			$q = new WP_Query( array( 'post_type' => 'licensio_article', 'tax_query' => array( array( 'taxonomy' => 'licensio_category', 'terms' => ${ category } ) ), 'fields' => 'ids', 'posts_per_page' => 1 ) );
+			wp_trash_post( $q->posts[0] );
+		` );
+
+		await page.goto(
+			contentManagerUrl( 'articles' ) +
+				'&status=trash&category=' +
+				category
+		);
+
+		const app = page.locator( '#licensio-kb-articles' );
+		const rows = app.locator( '.ant-table-tbody .ant-table-row' );
+
+		await expect( rows ).toHaveCount( 1 );
+		await rows.first().locator( '.ant-checkbox-input' ).check();
+
+		const dropdown = await openChooser( page, app );
+
+		await expect(
+			dropdown.getByText( 'Restore', { exact: true } )
+		).toBeVisible();
+		await expect(
+			dropdown.getByText( 'Example: retitle', { exact: true } )
+		).toHaveCount( 0 );
 	} );
 } );
