@@ -11,7 +11,11 @@
  * A pick on a medium screen changes only the column clicked, so wider
  * screens keep their columns; see the store's `pickColumns()`.
  *
+ * Extension columns follow the core ones: those declared without a group
+ * among them, the others under a heading per group.
+ *
  * @since 1.0.0
+ * @since 1.1.0 Lists the extension columns, by group.
  */
 
 import { useId } from 'vue';
@@ -19,10 +23,13 @@ import { SettingOutlined } from '@ant-design/icons-vue';
 import type { RadioChangeEvent } from 'ant-design-vue';
 import { __ } from '../../components/i18n';
 import { usePopoverFocus } from '../../components/popover-focus';
+import { config } from '../api';
+import { groupColumns } from '../columns';
 import { useArticlesStore } from '../store';
-import type { ArticleColumn, PerPage } from '../types';
+import type { ArticleColumn, ListColumn, PerPage } from '../types';
 
 const store = useArticlesStore();
+const groups = groupColumns( config().extensions.columns );
 const { open, overlayClass, setOpen } = usePopoverFocus();
 
 // Names its radio group: radios that share a name are one tab stop, with
@@ -68,12 +75,35 @@ const perPageOptions: PerPage[] = [ 20, 50, 100 ];
 				</legend>
 				<a-checkbox-group
 					:value="store.visibleColumns"
-					:options="columns"
 					@change="
 						( value: unknown ) =>
-							store.pickColumns( value as ArticleColumn[] )
+							store.pickColumns( value as ListColumn[] )
 					"
-				/>
+				>
+					<a-checkbox
+						v-for="option in columns"
+						:key="option.value"
+						:value="option.value"
+					>
+						{{ option.label }}
+					</a-checkbox>
+					<template v-for="group in groups" :key="group.label">
+						<span
+							v-if="group.label"
+							class="lkb-columns__group"
+							role="presentation"
+						>
+							{{ group.label }}
+						</span>
+						<a-checkbox
+							v-for="option in group.columns"
+							:key="option.key"
+							:value="option.key"
+						>
+							{{ option.label }}
+						</a-checkbox>
+					</template>
+				</a-checkbox-group>
 			</fieldset>
 
 			<fieldset class="lkb-columns">
@@ -131,5 +161,13 @@ const perPageOptions: PerPage[] = [ 20, 50, 100 ];
 	display: grid;
 	grid-template-columns: repeat( 2, minmax( 0, 1fr ) );
 	gap: 4px 12px;
+}
+
+.lkb-columns__group {
+	grid-column: 1 / -1;
+	margin-top: 6px;
+	color: var( --lkb-ink-muted );
+	font-size: 12px;
+	font-weight: 600;
 }
 </style>

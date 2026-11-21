@@ -9,7 +9,7 @@
  * new one, so back and forward step through pages and sorts.
  *
  * @since 1.0.0
- * @since 1.1.0 Refreshes rows in place for the extensions.
+ * @since 1.1.0 Shows and sorts by the extension columns, and refreshes rows in place for the extensions.
  */
 
 import { ref } from 'vue';
@@ -24,16 +24,19 @@ import {
 	runBulk,
 	savePreferences,
 } from './api';
-import { defaultQuery, readQuery, writeQuery } from './url';
+import { isExtensionKey, sortableKeys } from './columns';
+import { defaultQuery, ORDER_BY, readQuery, writeQuery } from './url';
 import type {
 	ArticleColumn,
 	ArticleFilters,
 	ArticleItem,
-	ArticleOrderBy,
 	ArticleQuery,
 	BulkAction,
 	BulkArgs,
 	BulkResult,
+	ExtensionColumnKey,
+	ListColumn,
+	ListOrderBy,
 	ListPreferences,
 	PerPage,
 	RevertResult,
@@ -101,8 +104,33 @@ mediumQuery?.addEventListener( 'change', ( event ) => {
 } );
 
 let preferencesTimer: ReturnType< typeof setTimeout > | undefined;
+let reloadAfterSave = false;
 let latestLoad = 0;
 let latestSelect = 0;
+
+/**
+ * Whether a column is one of the defaults hidden on medium screens.
+ *
+ * @since 1.1.0
+ *
+ * @param {ListColumn} column The column.
+ *
+ * @return {boolean} True for a core column hidden there.
+ */
+function mediumHidden( column: ListColumn ): column is ArticleColumn {
+	return ( MEDIUM_HIDDEN as ListColumn[] ).includes( column );
+}
+
+/**
+ * The keys of the extension columns the list can be sorted by.
+ *
+ * @since 1.1.0
+ *
+ * @return {ExtensionColumnKey[]} The keys.
+ */
+function extensionSorts(): ExtensionColumnKey[] {
+	return sortableKeys( config().extensions.columns );
+}
 
 /**
  * An empty bulk run.
@@ -219,11 +247,21 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 		},
 
 		/**
+		 * What the list can be sorted by: the core sort keys and the
+		 * sortable extension columns.
+		 *
+		 * @return {ListOrderBy[]} The keys.
+		 */
+		sortKeys(): ListOrderBy[] {
+			return [ ...ORDER_BY, ...extensionSorts() ];
+		},
+
+		/**
 		 * Whether a column is shown.
 		 *
-		 * @return {(column: ArticleColumn) => boolean} The check.
+		 * @return {(column: ListColumn) => boolean} The check.
 		 */
-		shows(): ( column: ArticleColumn ) => boolean {
+		shows(): ( column: ListColumn ) => boolean {
 			const visible = this.visibleColumns;
 
 			return ( column ) => visible.includes( column );
@@ -239,9 +277,9 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 		 *
 		 * @param {State} state The store state.
 		 *
-		 * @return {ArticleColumn[]} The columns.
+		 * @return {ListColumn[]} The columns.
 		 */
-		visibleColumns( state ): ArticleColumn[] {
+		visibleColumns( state ): ListColumn[] {
 			const {
 				columns,
 				columns_chosen: chosen,
@@ -254,8 +292,7 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 
 			return columns.filter(
 				( column ) =>
-					! MEDIUM_HIDDEN.includes( column ) ||
-					mediumColumns.includes( column )
+					! mediumHidden( column ) || mediumColumns.includes( column )
 			);
 		},
 
@@ -284,13 +321,15 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 		async init(): Promise< void > {
 			this.query = readQuery(
 				window.location.search,
-				this.preferences.per_page
+				this.preferences.per_page,
+				extensionSorts()
 			);
 
 			window.addEventListener( 'popstate', () => {
 				this.query = readQuery(
 					window.location.search,
-					this.preferences.per_page
+					this.preferences.per_page,
+					extensionSorts()
 				);
 				this.clearSelection();
 				this.load();
@@ -460,13 +499,13 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 		 *
 		 * @since 1.0.0
 		 *
-		 * @param {ArticleOrderBy} orderby The column.
-		 * @param {string}         order   The direction.
+		 * @param {ListOrderBy} orderby The column.
+		 * @param {string}      order   The direction.
 		 *
 		 * @return {Promise<void>} Resolves once loaded.
 		 */
 		async setSort(
-			orderby: ArticleOrderBy,
+			orderby: ListOrderBy,
 			order: 'asc' | 'desc'
 		): Promise< void > {
 			if (
@@ -488,7 +527,12 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 		 * Saved after a short pause so a run of checkbox clicks is one
 		 * request. A failed save only leaves the old preference stored.
 		 *
+		 * The server fills the extension columns of the rows from the saved
+		 * columns, so turning one on saves straight away and then reloads
+		 * the page, to fetch its data.
+		 *
 		 * @since 1.0.0
+		 * @since 1.1.0 Saves at once and reloads when an extension column is turned on.
 		 *
 		 * @param {Partial<ListPreferences>} preferences The changes.
 		 *
@@ -499,15 +543,35 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 				undefined !== preferences.per_page &&
 				preferences.per_page !== this.preferences.per_page;
 
+			const shown = this.preferences.columns;
+
+			if (
+				( preferences.columns ?? [] ).some(
+					( column ) =>
+						isExtensionKey( column ) && ! shown.includes( column )
+				)
+			) {
+				reloadAfterSave = true;
+			}
+
 			this.preferences = {
 				...this.preferences,
 				...preferences,
 			};
 
 			clearTimeout( preferencesTimer );
-			preferencesTimer = setTimeout( () => {
-				savePreferences( this.preferences ).catch( () => undefined );
-			}, PREFERENCES_DELAY );
+			preferencesTimer = setTimeout(
+				() => {
+					const reload = reloadAfterSave;
+
+					reloadAfterSave = false;
+
+					savePreferences( this.preferences )
+						.then( () => ( reload ? this.load() : undefined ) )
+						.catch( () => undefined );
+				},
+				reloadAfterSave ? 0 : PREFERENCES_DELAY
+			);
 
 			if ( perPageChanged ) {
 				this.query = {
@@ -533,12 +597,13 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 		 * then on.
 		 *
 		 * @since 1.0.0
+		 * @since 1.1.0 Takes extension columns too.
 		 *
-		 * @param {ArticleColumn[]} picked The columns ticked.
+		 * @param {ListColumn[]} picked The columns ticked.
 		 *
 		 * @return {void}
 		 */
-		pickColumns( picked: ArticleColumn[] ): void {
+		pickColumns( picked: ListColumn[] ): void {
 			if ( this.preferences.columns_chosen || ! medium.value ) {
 				this.setPreferences( {
 					columns: picked,
@@ -555,15 +620,14 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 			const removed = shown.filter(
 				( column ) => ! picked.includes( column )
 			);
-			const hidden = ( column: ArticleColumn ) =>
-				MEDIUM_HIDDEN.includes( column );
 			const { columns, medium_columns: mediumColumns } = this.preferences;
 
 			this.setPreferences( {
 				columns: [
 					...columns.filter(
 						( column ) =>
-							hidden( column ) || ! removed.includes( column )
+							mediumHidden( column ) ||
+							! removed.includes( column )
 					),
 					...added.filter(
 						( column ) => ! columns.includes( column )
@@ -573,7 +637,7 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 					...mediumColumns.filter(
 						( column ) => ! removed.includes( column )
 					),
-					...added.filter( hidden ),
+					...added.filter( mediumHidden ),
 				],
 			} );
 		},
