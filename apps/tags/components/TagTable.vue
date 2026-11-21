@@ -42,7 +42,8 @@
  * default visible ones only, as the table has no column picker. When one
  * sits between Name and Description, an open Quick edit row's shared cell
  * spans it too. Extension row actions follow Edit and Quick edit under the
- * name, and are disabled with them while a row is open.
+ * name, and are disabled with them while a row is open. A running one is
+ * marked busy and ignores more clicks; a failure shows a generic toast.
  *
  * @since 1.0.0
  * @since 1.1.0 Shows extension columns and row actions.
@@ -57,7 +58,10 @@ import type {
 } from '../../components/extensions';
 import { __, sprintf } from '../../components/i18n';
 import { changePageKeepingFocus } from '../../components/pager-focus';
-import { errorMessage } from '../../components/rest';
+import {
+	isExtensionRowActionRunning,
+	runExtensionRowAction,
+} from '../../components/extension-row-action';
 import { rowActionEntries } from '../../components/row-actions';
 import { placeColumns, shownColumns } from '../../components/term-extensions';
 import { settings } from '../api';
@@ -258,28 +262,6 @@ const columns = computed( () => {
 		};
 	} );
 } );
-
-/**
- * Run an extension row action, showing the error when it fails.
- *
- * @since 1.1.0
- *
- * @param {Object}   action     The row action.
- * @param {Function} action.run Runs it on a row.
- * @param {TagItem}  tag        The row.
- *
- * @return {void}
- */
-function runExtensionAction(
-	action: { run: ( row: TagItem ) => unknown },
-	tag: TagItem
-): void {
-	Promise.resolve()
-		.then( () => action.run( tag ) )
-		.catch( ( error: unknown ) => {
-			message.error( errorMessage( error ) );
-		} );
-}
 
 /**
  * Pass a page or sort change to the store.
@@ -630,6 +612,12 @@ watch(
 							size="small"
 							:data-lkb-extension-action="action.key"
 							:disabled="null !== editingId"
+							:aria-busy="
+								isExtensionRowActionRunning(
+									action,
+									record as TagItem
+								) || undefined
+							"
 							:aria-label="
 								sprintf(
 									/* translators: 1: the action's label, 2: the tag's name. */
@@ -642,7 +630,10 @@ watch(
 								)
 							"
 							@click="
-								runExtensionAction( action, record as TagItem )
+								runExtensionRowAction(
+									action,
+									record as TagItem
+								)
 							"
 						>
 							{{ action.label }}

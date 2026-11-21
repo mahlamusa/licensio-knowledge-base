@@ -16,10 +16,11 @@
  * Extension columns show in each row between the name and the count, the
  * default visible ones only, as the tree has no column picker; each cell
  * carries its column label for screen readers and on hover. Extension row
- * actions follow the app's own actions in the row menu, before Delete. The
- * extensions' `ctx.clearSelection()` does nothing here: the tree has no
- * multiple selection, and the selected category's unsaved article order
- * must not be dropped behind the user's back.
+ * actions follow the app's own actions in the row menu, before Delete; a
+ * running one is marked busy and ignores more clicks, and a failure shows a
+ * generic toast. The extensions' `ctx.clearSelection()` does nothing here:
+ * the tree has no multiple selection, and the selected category's unsaved
+ * article order must not be dropped behind the user's back.
  *
  * @since 1.0.0
  * @since 1.1.0 Shows extension columns and row actions.
@@ -31,6 +32,10 @@ import ExtensionCell from '../../components/ExtensionCell.vue';
 import type { ExtensionContext } from '../../components/extensions';
 import { __, sprintf } from '../../components/i18n';
 import { errorMessage } from '../../components/rest';
+import {
+	isExtensionRowActionRunning,
+	runExtensionRowAction,
+} from '../../components/extension-row-action';
 import { rowActionEntries } from '../../components/row-actions';
 import { shownColumns } from '../../components/term-extensions';
 import { settings } from '../api';
@@ -519,7 +524,7 @@ function onMenuKey( event: KeyboardEvent, id: number ): void {
 }
 
 /**
- * Run an extension row action, showing the error when it fails.
+ * Run an extension row action from a category's menu.
  *
  * @since 1.1.0
  *
@@ -531,15 +536,9 @@ function onMenuKey( event: KeyboardEvent, id: number ): void {
 function runExtensionAction( item: CategoryItem, key: string ): void {
 	const action = extensionActions.find( ( entry ) => entry.key === key );
 
-	if ( ! action ) {
-		return;
+	if ( action ) {
+		runExtensionRowAction( action, item );
 	}
-
-	Promise.resolve()
-		.then( () => action.run( item ) )
-		.catch( ( error: unknown ) => {
-			message.error( errorMessage( error ) );
-		} );
 }
 
 /**
@@ -785,6 +784,12 @@ function onMenu( item: CategoryItem, key: string ): void {
 									<a-menu-item
 										v-for="action in extensionActions"
 										:key="EXTENSION_ACTION + action.key"
+										:aria-busy="
+											isExtensionRowActionRunning(
+												action,
+												itemOf( node )
+											) || undefined
+										"
 									>
 										{{ action.label }}
 									</a-menu-item>

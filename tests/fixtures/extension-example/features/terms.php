@@ -13,7 +13,9 @@
  *   app shows it and the REST list does not fill it;
  * - `example/term-bump`, a row action whose script adds one to the counter
  *   through this plugin's own REST route, then calls `ctx.refresh( [ id ] )`;
- * - `example/term-silent`, a row action with no script, which stays hidden.
+ * - `example/term-silent`, a row action with no script, which stays hidden;
+ * - `example/term-fail`, a row action whose script always fails, so the app
+ *   shows its generic error toast.
  *
  * Nothing is declared unless the option `licensio_kb_example_terms` is on.
  * The fixture is active for the whole browser suite, and the width checks
@@ -92,6 +94,7 @@ function licensio_kb_example_terms_declare( $extensions ) {
         $extensions->add_column( $screen, 'example/term-hidden', array( 'label' => 'Example hidden' ) );
         $extensions->add_row_action( $screen, 'example/term-bump', array( 'label' => 'Bump note' ) );
         $extensions->add_row_action( $screen, 'example/term-silent', array( 'label' => 'Silent action' ) );
+        $extensions->add_row_action( $screen, 'example/term-fail', array( 'label' => 'Failing action' ) );
     }
 }
 
@@ -259,6 +262,11 @@ function licensio_kb_example_terms_script( $screen, $hook_suffix ) {
                                     }
                                     return ctx.refresh( [ row.id ] );
                                 } );
+                            }
+                        },
+                        "example/term-fail": {
+                            run: function () {
+                                return Promise.reject( new Error( "The example action failed." ) );
                             }
                         }
                     }

@@ -8,7 +8,9 @@
  * hidden, a row action that bumps the counter and refreshes the row through
  * `ctx.refresh( [ id ] )`, and a declared row action with no script that the
  * menu leaves out. The refresh must ask for just that row (`include[]`) and
- * clean up the cell's last render before it renders again.
+ * clean up the cell's last render before it renders again. A double click on
+ * the Tags action runs it once, and an action that fails shows the generic
+ * error toast.
  *
  * The extra columns also keep the page from scrolling sideways: at 1024px
  * the Tags table has no room to spare, so it scrolls inside its card, and an
@@ -256,13 +258,29 @@ test.describe( 'term app extensions @one-at-a-time', () => {
 
 			await row
 				.getByRole( 'button', { name: `Bump note “${ name }”` } )
-				.click();
+				.dblclick();
 			await refreshed;
 
 			await expect(
 				row.locator( `[data-example-note="${ id }"]` )
 			).toHaveText( 'Rendered 1' );
 			expect( await cleanups( page ) ).toContain( id );
+
+			// The double click ran the action once.
+			await page.reload();
+			await expect(
+				row.locator( `[data-example-note="${ id }"]` )
+			).toHaveText( 'Rendered 1' );
+
+			await row.hover();
+			await row
+				.getByRole( 'button', { name: `Failing action “${ name }”` } )
+				.click();
+			await expect(
+				page
+					.locator( '.ant-message' )
+					.getByText( 'Failing action could not be completed.' )
+			).toBeVisible();
 		} );
 	} );
 
@@ -324,6 +342,16 @@ test.describe( 'term app extensions @one-at-a-time', () => {
 				node.locator( `[data-example-note="${ id }"]` )
 			).toHaveText( 'Rendered 1' );
 			expect( await cleanups( page ) ).toContain( id );
+
+			await node.locator( `[data-lkb-actions="${ id }"]` ).click();
+			await menu
+				.getByRole( 'menuitem', { name: 'Failing action' } )
+				.click();
+			await expect(
+				page
+					.locator( '.ant-message' )
+					.getByText( 'Failing action could not be completed.' )
+			).toBeVisible();
 		} );
 	} );
 } );
