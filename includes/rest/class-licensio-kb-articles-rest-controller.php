@@ -1819,7 +1819,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      * column they hid stays hidden.
      *
      * @since 1.0.0
-     * @since 1.1.0 Stores the extension columns the user may see as known.
+     * @since 1.1.0 Stores the extension columns the user may see as known, read from the extension columns the controller was given.
      *
      * @param WP_REST_Request $request The request.
      *
