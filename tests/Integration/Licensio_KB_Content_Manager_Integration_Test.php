@@ -89,13 +89,14 @@ class Licensio_KB_Content_Manager_Integration_Test extends Licensio_KB_Analytics
      * A content manager reading the given classic screens value.
      *
      * @since 1.0.0
+     * @since 1.1.0 Passes a built asset loader and the Articles extension filters.
      *
      * @param bool $classic Whether the classic screens are on.
      *
      * @return Licensio_KB_Content_Manager The content manager.
      */
     private function manager( $classic = false ) {
-        return new Licensio_KB_Content_Manager( new Licensio_KB_Integration_Settings( array( 'classic_screens' => $classic ) ) );
+        return new Licensio_KB_Content_Manager( new Licensio_KB_Integration_Settings( array( 'classic_screens' => $classic ) ), new Licensio_KB_Built_Assets(), new Licensio_KB_Extension_Filters( new Licensio_KB_Extensions(), Licensio_KB_Extensions::SCREEN_ARTICLES ) );
     }
 
     /**
@@ -202,7 +203,7 @@ class Licensio_KB_Content_Manager_Integration_Test extends Licensio_KB_Analytics
             )
         );
 
-        $manager  = new Licensio_KB_Content_Manager( new Licensio_KB_Integration_Settings( array( 'classic_screens' => false ) ), null, new Licensio_KB_Extension_Filters( $extensions, Licensio_KB_Extensions::SCREEN_ARTICLES ) );
+        $manager  = new Licensio_KB_Content_Manager( new Licensio_KB_Integration_Settings( array( 'classic_screens' => false ) ), new Licensio_KB_Built_Assets(), new Licensio_KB_Extension_Filters( $extensions, Licensio_KB_Extensions::SCREEN_ARTICLES ) );
         $category = $this->make_term( 'Billing', Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
 
         $this->assertSame(

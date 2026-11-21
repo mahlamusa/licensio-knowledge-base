@@ -505,6 +505,7 @@ class Licensio_KB_Articles_Admin_Test extends Licensio_KB_Test_Case {
      * A content manager whose classic screens setting is `$classic`.
      *
      * @since 1.0.0
+     * @since 1.1.0 Passes a built asset loader and the Articles extension filters.
      *
      * @return Licensio_KB_Content_Manager The content manager.
      */
@@ -518,7 +519,9 @@ class Licensio_KB_Articles_Admin_Test extends Licensio_KB_Test_Case {
                     ),
                 ),
                 array( 'classic_screens' => $this->classic )
-            )
+            ),
+            new Licensio_KB_Built_Assets(),
+            new Licensio_KB_Extension_Filters( $this->extensions, Licensio_KB_Extensions::SCREEN_ARTICLES )
         );
     }
 

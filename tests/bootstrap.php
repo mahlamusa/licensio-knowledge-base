@@ -67,6 +67,7 @@ require_once LICENSIO_KB_ABSPATH . 'tests/fixtures/class-licensio-kb-relationshi
 require_once LICENSIO_KB_ABSPATH . 'tests/fixtures/class-licensio-kb-order-wpdb.php';
 require_once LICENSIO_KB_ABSPATH . 'tests/fixtures/class-licensio-kb-settings-spy.php';
 require_once LICENSIO_KB_ABSPATH . 'tests/fixtures/class-licensio-kb-recording-assets.php';
+require_once LICENSIO_KB_ABSPATH . 'tests/fixtures/class-licensio-kb-built-assets.php';
 require_once LICENSIO_KB_ABSPATH . 'tests/fixtures/trait-licensio-kb-term-assignments.php';
 require_once LICENSIO_KB_ABSPATH . 'includes/licensio-kb-template-functions.php';
 require_once LICENSIO_KB_ABSPATH . 'includes/licensio-kb-hooks.php';
