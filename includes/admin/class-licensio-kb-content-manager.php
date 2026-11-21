@@ -118,18 +118,31 @@ class Licensio_KB_Content_Manager {
     private $assets;
 
     /**
+     * The Articles app's extension filters, which the article list redirect carries over.
+     *
+     * @since 1.1.0
+     * @var Licensio_KB_Extension_Filters|null
+     */
+    private $extension_filters;
+
+    /**
      * Build the content manager.
      *
      * @since 1.0.0
+     * @since 1.1.0 Takes the Articles app's extension filters.
      *
-     * @param Licensio_KB_Settings    $settings The settings store.
-     * @param Licensio_KB_Assets|null $assets   The build asset loader, whose manifest
-     *                                          says whether the apps were built. Null
-     *                                          skips that check.
+     * @param Licensio_KB_Settings               $settings          The settings store.
+     * @param Licensio_KB_Assets|null            $assets            The build asset loader, whose manifest
+     *                                                              says whether the apps were built. Null
+     *                                                              skips that check.
+     * @param Licensio_KB_Extension_Filters|null $extension_filters The Articles app's extension filters,
+     *                                                              whose `query_arg`s the article list
+     *                                                              redirect carries over. Null carries none.
      */
-    public function __construct( Licensio_KB_Settings $settings, ?Licensio_KB_Assets $assets = null ) {
-        $this->settings = $settings;
-        $this->assets   = $assets;
+    public function __construct( Licensio_KB_Settings $settings, ?Licensio_KB_Assets $assets = null, ?Licensio_KB_Extension_Filters $extension_filters = null ) {
+        $this->settings          = $settings;
+        $this->assets            = $assets;
+        $this->extension_filters = $extension_filters;
     }
 
     /**
@@ -720,9 +733,7 @@ class Licensio_KB_Content_Manager {
             $args['paged'] = $paged;
         }
 
-        $extension_filters = new Licensio_KB_Extension_Filters( licensio_kb()->extensions(), Licensio_KB_Extensions::SCREEN_ARTICLES );
-
-        foreach ( $extension_filters->from_query_args( $query ) as $key => $value ) {
+        foreach ( $this->extension_filters ? $this->extension_filters->from_query_args( $query ) : array() as $key => $value ) {
             $args[ Licensio_KB_Extension_Filters::PARAM . '[' . $key . ']' ] = $value;
         }
 

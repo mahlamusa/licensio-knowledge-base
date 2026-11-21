@@ -30,7 +30,7 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
     private $submenus = array();
 
     /**
-     * The extension registry `licensio_kb()->extensions()` hands out.
+     * The extension registry the redirect test declares its filters in.
      *
      * @since 1.1.0
      * @var Licensio_KB_Extensions
@@ -72,42 +72,6 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
         );
 
         $this->extensions = new Licensio_KB_Extensions();
-        $extensions       = $this->extensions;
-
-        Functions\when( 'licensio_kb' )->justReturn(
-            new class( $extensions ) {
-
-                /**
-                 * The registry.
-                 *
-                 * @since 1.1.0
-                 * @var Licensio_KB_Extensions
-                 */
-                private $extensions;
-
-                /**
-                 * Keep the registry.
-                 *
-                 * @since 1.1.0
-                 *
-                 * @param Licensio_KB_Extensions $extensions The registry.
-                 */
-                public function __construct( Licensio_KB_Extensions $extensions ) {
-                    $this->extensions = $extensions;
-                }
-
-                /**
-                 * The registry.
-                 *
-                 * @since 1.1.0
-                 *
-                 * @return Licensio_KB_Extensions The registry.
-                 */
-                public function extensions() {
-                    return $this->extensions;
-                }
-            }
-        );
     }
 
     /**
@@ -751,7 +715,19 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
             )
         );
 
-        $manager = new Licensio_KB_Content_Manager( $this->settings() );
+        $manager = new Licensio_KB_Content_Manager( $this->settings(), null, new Licensio_KB_Extension_Filters( $this->extensions, Licensio_KB_Extensions::SCREEN_ARTICLES ) );
+
+        $this->assertSame(
+            'https://example.test/wp-admin/admin.php?page=licensio-kb-articles',
+            ( new Licensio_KB_Content_Manager( $this->settings() ) )->redirect_url(
+                'edit.php',
+                array(
+                    'post_type'  => 'licensio_article',
+                    'seo_filter' => 'missing_meta',
+                )
+            ),
+            'Without the extension filters nothing is carried over.'
+        );
 
         $this->assertSame(
             'https://example.test/wp-admin/admin.php?page=licensio-kb-articles&status=draft&ext_filters[seo/status]=missing_meta',
