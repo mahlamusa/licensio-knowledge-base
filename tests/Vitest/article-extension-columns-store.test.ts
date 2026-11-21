@@ -1,11 +1,9 @@
 /**
- * Unit tests of the Articles app's extension context and the store actions
- * behind it.
+ * Unit tests of the Articles store's extension column handling.
  *
- * `refresh( ids )` fetches only those rows on the page and puts them in
- * place, loading the page again when one left the view or no IDs are given;
- * turning an extension column on saves the preferences at once and reloads
- * the page, so its data arrives.
+ * Turning an extension column on saves the preferences at once and reloads
+ * the page, so its data arrives; a core column waits for the usual pause and
+ * reloads nothing. A sort by a sortable extension column is read from the URL.
  *
  * @since 1.1.0
  */
@@ -16,7 +14,6 @@ import type { ArticleItem, ArticlePage } from '../../apps/articles/types';
 
 const api = vi.hoisted( () => ( {
 	fetchArticles: vi.fn(),
-	fetchRows: vi.fn(),
 	savePreferences: vi.fn(),
 } ) );
 
@@ -25,8 +22,6 @@ vi.mock( '../../apps/articles/api', async ( original ) => ( {
 	...api,
 } ) );
 
-const { useArticlesExtensionContext } =
-	await import( '../../apps/articles/extension-context' );
 const { useArticlesStore } = await import( '../../apps/articles/store' );
 
 /**
@@ -93,67 +88,6 @@ afterEach( () => {
 	vi.useRealTimers();
 	vi.clearAllMocks();
 	delete window.licensioKbArticles;
-} );
-
-describe( 'useArticlesExtensionContext', () => {
-	it( 'gives the screen and the REST root and nonce', () => {
-		const ctx = useArticlesExtensionContext();
-
-		expect( ctx.screen ).toBe( 'articles' );
-		expect( ctx.rest ).toEqual( {
-			root: 'https://example.test/wp-json/licensio-kb/v1/',
-			nonce: 'a-nonce',
-		} );
-	} );
-
-	it( 'refreshes only the given rows on the page, in place', async () => {
-		const store = useArticlesStore();
-
-		await store.load();
-		api.fetchArticles.mockClear();
-		api.fetchRows.mockResolvedValue( page( [ row( 2, 'Renamed' ) ] ) );
-
-		await useArticlesExtensionContext().refresh( [ 2, 99 ] );
-
-		expect( api.fetchRows ).toHaveBeenCalledWith( store.filters, [ 2 ] );
-		expect( store.items.map( ( item ) => item.title ) ).toEqual( [
-			'Article 1',
-			'Renamed',
-		] );
-		expect( api.fetchArticles ).not.toHaveBeenCalled();
-	} );
-
-	it( 'loads the page again when a row left the view or no IDs are given', async () => {
-		const store = useArticlesStore();
-
-		await store.load();
-		api.fetchRows.mockResolvedValue( page( [] ) );
-
-		const ctx = useArticlesExtensionContext();
-
-		await ctx.refresh( [ 1 ] );
-		await ctx.refresh();
-
-		expect( api.fetchArticles ).toHaveBeenCalledTimes( 3 );
-	} );
-
-	it( 'asks for nothing when none of the rows is on the page', async () => {
-		const store = useArticlesStore();
-
-		await store.load();
-		await useArticlesExtensionContext().refresh( [ 42 ] );
-
-		expect( api.fetchRows ).not.toHaveBeenCalled();
-	} );
-
-	it( 'clears the selection', async () => {
-		const store = useArticlesStore();
-
-		store.select( [ 1, 2 ] );
-		useArticlesExtensionContext().clearSelection();
-
-		expect( store.selected ).toEqual( [] );
-	} );
 } );
 
 describe( 'turning an extension column on', () => {

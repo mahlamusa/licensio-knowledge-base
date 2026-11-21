@@ -9,7 +9,7 @@
  * new one, so back and forward step through pages and sorts.
  *
  * @since 1.0.0
- * @since 1.1.0 Shows, sorts by and refreshes the extension columns.
+ * @since 1.1.0 Shows and sorts by the extension columns, and refreshes rows in place for the extensions.
  */
 
 import { ref } from 'vue';
@@ -746,43 +746,63 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 		},
 
 		/**
-		 * Load some rows of the page again, in place.
+		 * Fetch some rows again with the current filters and swap them in,
+		 * or reload the page.
 		 *
-		 * For an extension that changed rows: only the given rows on this
-		 * page are fetched. When one of them no longer matches the filters,
-		 * or no IDs are given, the whole page is loaded again. A failure is
-		 * shown like a failed page load.
+		 * - No IDs, or an empty list: the whole page loads again.
+		 * - Otherwise only the given rows on the current page are fetched;
+		 *   IDs not on the page are passed over, and nothing is fetched when
+		 *   none are on it. The rows are swapped in place and the status
+		 *   counts updated.
+		 * - When one of them no longer matches the filters, the whole page
+		 *   loads again instead, so the rows, total and paging stay right.
+		 *
+		 * Like `load()`, it clears `error` first and never rejects: a failure
+		 * shows in `error`. An answer that a page load overtook is dropped.
 		 *
 		 * @since 1.1.0
 		 *
-		 * @param {number[]} ids The article IDs.
+		 * @param {number[]} ids The rows; none for the whole page.
 		 *
-		 * @return {Promise<void>} Resolves once the rows are in place.
+		 * @return {Promise<void>} Resolves once the rows are in state.
 		 */
-		async refreshRows( ids: number[] ): Promise< void > {
-			if ( 0 === ids.length ) {
+		async refreshRows( ids?: number[] ): Promise< void > {
+			if ( ! ids?.length ) {
 				await this.load();
 				return;
 			}
 
-			const wanted = this.items
+			const wanted = new Set( ids );
+			const shown = this.items
 				.map( ( row ) => row.id )
-				.filter( ( id ) => ids.includes( id ) );
+				.filter( ( id ) => wanted.has( id ) );
 
-			if ( 0 === wanted.length ) {
+			if ( 0 === shown.length ) {
 				return;
 			}
 
+			const ticket = latestLoad;
+
+			this.error = '';
+
 			try {
-				const page = await fetchRows( this.filters, wanted );
+				const page = await fetchRows( this.filters, shown );
+
+				if ( ticket !== latestLoad ) {
+					return;
+				}
+
+				if ( page.items.length < shown.length ) {
+					await this.load();
+					return;
+				}
 
 				page.items.forEach( ( item ) => this.replaceItem( item ) );
-
-				if ( page.items.length < wanted.length ) {
-					await this.load();
-				}
+				this.counts = page.counts ?? this.counts;
 			} catch ( error ) {
-				this.error = errorMessage( error );
+				if ( ticket === latestLoad ) {
+					this.error = errorMessage( error );
+				}
 			}
 		},
 

@@ -29,7 +29,7 @@ import { statusLabel } from '../../components/status';
 import { config } from '../api';
 import { confirmTitle, performAction } from '../actions';
 import { isExtensionKey, orderColumns } from '../columns';
-import { useArticlesExtensionContext } from '../extension-context';
+import { articlesExtensionContext } from '../extension-context';
 import { useArticlesStore } from '../store';
 import QuickEditRow from './QuickEditRow.vue';
 import type {
@@ -42,7 +42,7 @@ import type {
 const store = useArticlesStore();
 const settings = config();
 const root = ref< HTMLElement | null >( null );
-const ctx = useArticlesExtensionContext();
+const ctx = articlesExtensionContext();
 
 /**
  * The current sort of a column, in Ant's terms.

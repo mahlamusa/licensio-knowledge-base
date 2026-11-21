@@ -132,17 +132,18 @@ export function fetchArticles( query: ArticleQuery ): Promise< ArticlePage > {
 }
 
 /**
- * Fetch some rows of the list again, by ID.
+ * Fetch some rows again by ID, as the filters show them.
  *
- * The filters still apply, so a row that no longer matches them is left
- * out of the answer.
+ * Sends the IDs as `include`, which puts every matching one on one page. The
+ * filters still apply, so a row that no longer matches them is left out of
+ * the answer. The sort is not sent, since the rows are put back in place.
  *
  * @since 1.1.0
  *
  * @param {ArticleFilters} filters The filters of the view.
- * @param {number[]}       ids     At most 100 article IDs.
+ * @param {number[]}       ids     The rows, at most 100.
  *
- * @return {Promise<ArticlePage>} The rows, all on one page.
+ * @return {Promise<ArticlePage>} The rows that still match, on one page.
  */
 export function fetchRows(
 	filters: ArticleFilters,
