@@ -96,16 +96,28 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * A content manager.
+     * A content manager whose apps are built.
      *
      * @since 1.0.0
+     * @since 1.1.0 Passes a built asset loader and the Articles extension filters.
      *
      * @param bool $classic Whether classic screens are on.
      *
      * @return Licensio_KB_Content_Manager The content manager.
      */
     private function active( $classic = false ) {
-        return new Licensio_KB_Content_Manager( $this->settings( $classic ) );
+        return new Licensio_KB_Content_Manager( $this->settings( $classic ), new Licensio_KB_Built_Assets(), $this->filters() );
+    }
+
+    /**
+     * The Articles app's extension filters, read from the test's registry.
+     *
+     * @since 1.1.0
+     *
+     * @return Licensio_KB_Extension_Filters The filters.
+     */
+    private function filters() {
+        return new Licensio_KB_Extension_Filters( $this->extensions, Licensio_KB_Extensions::SCREEN_ARTICLES );
     }
 
     /**
@@ -235,10 +247,10 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
 
         $this->assertSame( $apps, Licensio_KB_Content_Manager::content_entries() );
 
-        $this->assertTrue( ( new Licensio_KB_Content_Manager( $this->settings(), $this->assets( $apps ) ) )->enabled() );
-        $this->assertFalse( ( new Licensio_KB_Content_Manager( $this->settings(), $this->assets( array() ) ) )->enabled() );
-        $this->assertFalse( ( new Licensio_KB_Content_Manager( $this->settings(), $this->assets( array_slice( $apps, 0, 2 ) ) ) )->enabled() );
-        $this->assertTrue( ( new Licensio_KB_Content_Manager( $this->settings(), $this->assets( array(), true ) ) )->enabled() );
+        $this->assertTrue( ( new Licensio_KB_Content_Manager( $this->settings(), $this->assets( $apps ), $this->filters() ) )->enabled() );
+        $this->assertFalse( ( new Licensio_KB_Content_Manager( $this->settings(), $this->assets( array() ), $this->filters() ) )->enabled() );
+        $this->assertFalse( ( new Licensio_KB_Content_Manager( $this->settings(), $this->assets( array_slice( $apps, 0, 2 ) ), $this->filters() ) )->enabled() );
+        $this->assertTrue( ( new Licensio_KB_Content_Manager( $this->settings(), $this->assets( array(), true ), $this->filters() ) )->enabled() );
     }
 
     /**
@@ -251,7 +263,7 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
     public function test_a_missing_app_build_keeps_the_core_menu_items() {
         Functions\expect( 'remove_submenu_page' )->never();
 
-        ( new Licensio_KB_Content_Manager( $this->settings(), $this->assets( array() ) ) )->remove_core_menu_items();
+        ( new Licensio_KB_Content_Manager( $this->settings(), $this->assets( array() ), $this->filters() ) )->remove_core_menu_items();
     }
 
     /**
@@ -287,7 +299,7 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     public function test_the_rest_controllers_are_announced() {
-        $controllers = ( new Licensio_KB_Content_Manager( $this->settings() ) )->register_rest_controllers( array( 'Existing' ) );
+        $controllers = $this->active()->register_rest_controllers( array( 'Existing' ) );
 
         $this->assertSame(
             array( 'Existing', 'Licensio_KB_Terms_REST_Controller', 'Licensio_KB_Category_Order_REST_Controller' ),
@@ -417,7 +429,7 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
                 'edit-tags.php?taxonomy=licensio_category&amp;post_type=licensio_article',
                 'edit-tags.php?taxonomy=licensio_tag&amp;post_type=licensio_article',
             ),
-            ( new Licensio_KB_Content_Manager( $this->settings() ) )->core_menu_items()
+            $this->active()->core_menu_items()
         );
     }
 
@@ -516,7 +528,7 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
             }
         );
 
-        $manager = new Licensio_KB_Content_Manager( $this->settings() );
+        $manager = $this->active();
 
         $this->assertSame(
             'https://example.test/wp-admin/admin.php?page=licensio-kb-articles',
@@ -590,7 +602,7 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
             }
         );
 
-        $manager = new Licensio_KB_Content_Manager( $this->settings() );
+        $manager = $this->active();
         $token   = substr( hash_hmac( 'sha256', '3|5,6', 'salt' ), 0, 32 );
 
         $this->assertSame(
@@ -648,7 +660,7 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     public function test_the_article_list_redirects_with_its_author_sort_and_page() {
-        $manager = new Licensio_KB_Content_Manager( $this->settings() );
+        $manager = $this->active();
 
         $this->assertSame(
             'https://example.test/wp-admin/admin.php?page=licensio-kb-articles&author=3&orderby=title&order=asc&paged=2',
@@ -715,18 +727,19 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
             )
         );
 
-        $manager = new Licensio_KB_Content_Manager( $this->settings(), null, new Licensio_KB_Extension_Filters( $this->extensions, Licensio_KB_Extensions::SCREEN_ARTICLES ) );
+        $manager    = $this->active();
+        $unfiltered = new Licensio_KB_Content_Manager( $this->settings(), new Licensio_KB_Built_Assets(), new Licensio_KB_Extension_Filters( new Licensio_KB_Extensions(), Licensio_KB_Extensions::SCREEN_ARTICLES ) );
 
         $this->assertSame(
             'https://example.test/wp-admin/admin.php?page=licensio-kb-articles',
-            ( new Licensio_KB_Content_Manager( $this->settings() ) )->redirect_url(
+            $unfiltered->redirect_url(
                 'edit.php',
                 array(
                     'post_type'  => 'licensio_article',
                     'seo_filter' => 'missing_meta',
                 )
             ),
-            'Without the extension filters nothing is carried over.'
+            'With no extension filters registered nothing is carried over.'
         );
 
         $this->assertSame(
@@ -777,7 +790,7 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     public function test_an_unusable_author_sort_or_page_is_dropped() {
-        $manager = new Licensio_KB_Content_Manager( $this->settings() );
+        $manager = $this->active();
 
         $this->assertSame(
             'https://example.test/wp-admin/admin.php?page=licensio-kb-articles',
@@ -821,7 +834,7 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
 
         $this->assertSame(
             'https://example.test/wp-admin/admin.php?page=licensio-kb-articles',
-            ( new Licensio_KB_Content_Manager( $this->settings() ) )->redirect_url(
+            $this->active()->redirect_url(
                 'edit.php',
                 array(
                     'post_type'         => 'licensio_article',
@@ -849,7 +862,7 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
             }
         );
 
-        $manager = new Licensio_KB_Content_Manager( $this->settings() );
+        $manager = $this->active();
 
         $this->assertSame(
             'https://example.test/wp-admin/admin.php?page=licensio-kb-articles&category=31',
@@ -883,7 +896,7 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     public function test_article_list_actions_and_other_post_types_are_not_redirected() {
-        $manager = new Licensio_KB_Content_Manager( $this->settings() );
+        $manager = $this->active();
 
         $this->assertSame( '', $manager->redirect_url( 'edit.php', array() ) );
         $this->assertSame( '', $manager->redirect_url( 'edit.php', array( 'post_type' => 'page' ) ) );
@@ -923,7 +936,7 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     public function test_the_term_screens_redirect_to_their_apps() {
-        $manager = new Licensio_KB_Content_Manager( $this->settings() );
+        $manager = $this->active();
 
         $this->assertSame(
             'https://example.test/wp-admin/admin.php?page=licensio-kb-categories&search=billing',
@@ -973,7 +986,7 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     public function test_term_screen_actions_are_not_redirected() {
-        $manager = new Licensio_KB_Content_Manager( $this->settings() );
+        $manager = $this->active();
 
         $actions = array(
             'action'      => 'delete',
@@ -1047,7 +1060,7 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     public function test_other_screens_are_not_redirected() {
-        $manager = new Licensio_KB_Content_Manager( $this->settings() );
+        $manager = $this->active();
 
         $this->assertSame( '', $manager->redirect_url( 'edit-tags.php', array( 'taxonomy' => 'category' ) ) );
         $this->assertSame( '', $manager->redirect_url( 'term.php', array( 'taxonomy' => 'post_tag' ) ) );
@@ -1307,7 +1320,7 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     public function test_a_refused_app_bookmark_goes_to_its_classic_screen() {
-        $manager = new Licensio_KB_Content_Manager( $this->settings(), $this->assets( array() ) );
+        $manager = new Licensio_KB_Content_Manager( $this->settings(), $this->assets( array() ), $this->filters() );
 
         $this->assertSame(
             'https://example.test/wp-admin/edit.php?post_type=licensio_article',
@@ -1345,8 +1358,8 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     public function test_other_refused_pages_are_not_redirected() {
-        $missing = new Licensio_KB_Content_Manager( $this->settings(), $this->assets( array() ) );
-        $built   = new Licensio_KB_Content_Manager( $this->settings(), $this->assets( Licensio_KB_Content_Manager::content_entries() ) );
+        $missing = new Licensio_KB_Content_Manager( $this->settings(), $this->assets( array() ), $this->filters() );
+        $built   = new Licensio_KB_Content_Manager( $this->settings(), $this->assets( Licensio_KB_Content_Manager::content_entries() ), $this->filters() );
 
         $this->assertSame( '', $this->classic_redirect_for( $missing, 'edit.php', 'licensio-kb-settings' ) );
         $this->assertSame( '', $this->classic_redirect_for( $missing, 'edit.php', '' ) );

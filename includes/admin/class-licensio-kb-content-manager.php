@@ -110,10 +110,10 @@ class Licensio_KB_Content_Manager {
     private $settings;
 
     /**
-     * The build asset loader, or null when the build is not checked.
+     * The build asset loader.
      *
      * @since 1.0.0
-     * @var Licensio_KB_Assets|null
+     * @var Licensio_KB_Assets
      */
     private $assets;
 
@@ -121,7 +121,7 @@ class Licensio_KB_Content_Manager {
      * The Articles app's extension filters, which the article list redirect carries over.
      *
      * @since 1.1.0
-     * @var Licensio_KB_Extension_Filters|null
+     * @var Licensio_KB_Extension_Filters
      */
     private $extension_filters;
 
@@ -129,17 +129,16 @@ class Licensio_KB_Content_Manager {
      * Build the content manager.
      *
      * @since 1.0.0
-     * @since 1.1.0 Takes the Articles app's extension filters.
+     * @since 1.1.0 Takes the Articles app's extension filters, and requires the asset loader.
      *
-     * @param Licensio_KB_Settings               $settings          The settings store.
-     * @param Licensio_KB_Assets|null            $assets            The build asset loader, whose manifest
-     *                                                              says whether the apps were built. Null
-     *                                                              skips that check.
-     * @param Licensio_KB_Extension_Filters|null $extension_filters The Articles app's extension filters,
-     *                                                              whose `query_arg`s the article list
-     *                                                              redirect carries over. Null carries none.
+     * @param Licensio_KB_Settings          $settings          The settings store.
+     * @param Licensio_KB_Assets            $assets            The build asset loader, whose manifest
+     *                                                         says whether the apps were built.
+     * @param Licensio_KB_Extension_Filters $extension_filters The Articles app's extension filters,
+     *                                                         whose `query_arg`s the article list
+     *                                                         redirect carries over.
      */
-    public function __construct( Licensio_KB_Settings $settings, ?Licensio_KB_Assets $assets = null, ?Licensio_KB_Extension_Filters $extension_filters = null ) {
+    public function __construct( Licensio_KB_Settings $settings, Licensio_KB_Assets $assets, Licensio_KB_Extension_Filters $extension_filters ) {
         $this->settings          = $settings;
         $this->assets            = $assets;
         $this->extension_filters = $extension_filters;
@@ -241,14 +240,11 @@ class Licensio_KB_Content_Manager {
      * @since 1.0.0
      * @since 1.0.0 Asks the asset loader whether the apps can load.
      * @since 1.0.0 Reads the apps from content_entries().
+     * @since 1.1.0 Always asks the asset loader, now that it is required.
      *
-     * @return bool True when the apps can load, or when no asset loader was given.
+     * @return bool True when the apps can load.
      */
     private function apps_built() {
-        if ( null === $this->assets ) {
-            return true;
-        }
-
         return $this->assets->apps_can_load( self::content_entries() );
     }
 
@@ -733,7 +729,7 @@ class Licensio_KB_Content_Manager {
             $args['paged'] = $paged;
         }
 
-        foreach ( $this->extension_filters ? $this->extension_filters->from_query_args( $query ) : array() as $key => $value ) {
+        foreach ( $this->extension_filters->from_query_args( $query ) as $key => $value ) {
             $args[ Licensio_KB_Extension_Filters::PARAM . '[' . $key . ']' ] = $value;
         }
 
