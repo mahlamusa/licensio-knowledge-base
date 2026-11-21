@@ -13,9 +13,11 @@
  * error toast.
  *
  * The extra columns also keep the page from scrolling sideways: at 1024px
- * the Tags table has no room to spare, so it scrolls inside its card, and an
- * extension cell's long word breaks rather than widening the table; on a
- * phone a category row puts its name on a line of its own.
+ * the Tags table has no room to spare, so it scrolls inside its card, an
+ * extension cell's long word breaks rather than widening the table, and the
+ * extension row actions wrap below Edit and Quick edit rather than widening
+ * the Name column; on a phone a category row puts its name on a line of its
+ * own.
  *
  * The example declares the term items only while the option
  * `licensio_kb_example_terms` is on, so the extra columns never change the
@@ -180,6 +182,40 @@ test.describe( 'term app extensions @one-at-a-time', () => {
 			let frame = await measureFrame( page );
 
 			expect( frame.page + frame.container, 'Tags at 1024px' ).toBe( 0 );
+
+			// Extension row actions wrap on lines of their own, so the Name
+			// column is no wider than Edit and Quick edit side by side.
+			const name = await page
+				.locator( `tr[data-row-key="${ tagId }"]` )
+				.evaluate( ( row ) => {
+					const core = row.querySelector(
+						'.lkb-rowactions:not(.lkb-rowactions--extensions)'
+					) as HTMLElement;
+					const buttons = core.querySelectorAll( '.ant-btn' );
+					const td = core.closest( 'td' ) as HTMLElement;
+					const style = getComputedStyle( td );
+
+					return {
+						actions:
+							buttons[
+								buttons.length - 1
+							].getBoundingClientRect().right -
+							buttons[ 0 ].getBoundingClientRect().left,
+						content:
+							td.clientWidth -
+							parseFloat( style.paddingLeft ) -
+							parseFloat( style.paddingRight ),
+						extensions: row.querySelectorAll(
+							'.lkb-rowactions--extensions .ant-btn'
+						).length,
+					};
+				} );
+
+			expect( name.extensions, 'extension row actions' ).toBe( 2 );
+			expect(
+				name.content,
+				'Name column width beside its core row actions'
+			).toBeLessThanOrEqual( Math.ceil( name.actions ) + 1 );
 
 			await page.setViewportSize( { width: 390, height: 900 } );
 			await page.goto(

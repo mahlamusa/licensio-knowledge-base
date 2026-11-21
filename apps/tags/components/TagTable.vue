@@ -42,7 +42,8 @@
  * default visible ones only, as the table has no column picker. When one
  * sits between Name and Description, an open Quick edit row's shared cell
  * spans it too. Extension row actions follow Edit and Quick edit under the
- * name, and are disabled with them while a row is open. A running one is
+ * name, on lines of their own that wrap, so they never widen the Name
+ * column; they are disabled with them while a row is open. A running one is
  * marked busy and ignores more clicks; a failure shows a generic toast.
  *
  * @since 1.0.0
@@ -605,6 +606,13 @@ watch(
 						>
 							{{ __( 'Quick edit', 'licensio-knowledge-base' ) }}
 						</a-button>
+					</div>
+					<div
+						v-if="
+							editingId !== record.id && extensionActions.length
+						"
+						class="lkb-rowactions lkb-rowactions--extensions"
+					>
 						<a-button
 							v-for="action in extensionActions"
 							:key="action.key"
@@ -697,13 +705,15 @@ watch(
  * A name that is one long word breaks inside the Name column instead of
  * widening the table past its card. The row actions under it stay on one
  * line, so they set the column's narrowest width and a normal word still
- * fits whole.
+ * fits whole. Extension row actions go on lines of their own below and wrap,
+ * so they never widen the column.
  */
 .lkb-tags__name {
 	overflow-wrap: anywhere;
 }
 
-.lkb-tablecard--core .lkb-rowactions:not( .is-open ) {
+.lkb-tablecard--core
+	.lkb-rowactions:not( .is-open ):not( .lkb-rowactions--extensions ) {
 	flex-wrap: nowrap;
 	white-space: nowrap;
 }
