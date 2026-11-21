@@ -44,7 +44,10 @@ describe( 'runExtensionRowAction', () => {
 		const run = vi.fn( () => Promise.resolve( 'done' ) );
 
 		await expect(
-			runExtensionRowAction( { key: 'acme/ok', label: 'Ok', run }, row )
+			runExtensionRowAction(
+				{ key: 'acme/ok', label: 'Ok', run, visible: () => true },
+				row
+			)
 		).resolves.toBeUndefined();
 
 		expect( run ).toHaveBeenCalledWith( row );
@@ -61,7 +64,12 @@ describe( 'runExtensionRowAction', () => {
 		],
 		[ 'rejects', () => Promise.reject( new Error( 'boom' ) ) ],
 	] )( 'shows a generic error when the handler %s', async ( _, run ) => {
-		const entry = { key: 'acme/fail', label: 'Check SEO', run };
+		const entry = {
+			key: 'acme/fail',
+			label: 'Check SEO',
+			run,
+			visible: () => true,
+		};
 
 		await expect(
 			runExtensionRowAction( entry, row )
@@ -86,7 +94,12 @@ describe( 'runExtensionRowAction', () => {
 					settle = () => reject( new Error( 'late' ) );
 				} )
 		);
-		const entry = { key: 'acme/slow', label: 'Slow', run };
+		const entry = {
+			key: 'acme/slow',
+			label: 'Slow',
+			run,
+			visible: () => true,
+		};
 		const other = { id: 8 };
 
 		const first = runExtensionRowAction( entry, row );

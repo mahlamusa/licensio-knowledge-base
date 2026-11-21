@@ -283,6 +283,9 @@ class Licensio_KB_Extensions {
      *
      * Rows in the Articles app's Trash view do not show it: their only
      * actions are Restore and Delete permanently, as on core's list screens.
+     * The capability decides who sees it on every row; to hide it on some
+     * rows only, such as articles the user may not edit, give its script's
+     * handler a `visible( row )` that returns false for them.
      *
      * @since 1.1.0
      *
