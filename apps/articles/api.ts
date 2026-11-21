@@ -6,7 +6,7 @@
  * must have run first; `index.ts` does that before mounting.
  *
  * @since 1.0.0
- * @since 1.1.0 Falls back to no extensions and fetches rows by ID.
+ * @since 1.1.0 Falls back to no extensions, and fetches rows by ID.
  */
 
 import { noExtensions } from '../components/extensions';
@@ -132,27 +132,25 @@ export function fetchArticles( query: ArticleQuery ): Promise< ArticlePage > {
 }
 
 /**
- * Fetch the given rows of the current view, so changed rows can be refreshed
- * in place.
+ * Fetch some rows again by ID, as the filters show them.
  *
- * The filters and metrics window still apply, so a row that no longer
- * matches the view is not returned.
+ * Sends the IDs as `include`, which puts every matching one on one page. The
+ * filters still apply, so a row that no longer matches them is left out of
+ * the answer. The sort is not sent, since the rows are put back in place.
  *
  * @since 1.1.0
  *
- * @param {ArticleQuery} query The current view.
- * @param {number[]}     ids   At most 100 article IDs.
+ * @param {ArticleFilters} filters The filters of the view.
+ * @param {number[]}       ids     The rows, at most 100.
  *
- * @return {Promise<ArticlePage>} The rows, on one page.
+ * @return {Promise<ArticlePage>} The rows that still match, on one page.
  */
 export function fetchRows(
-	query: ArticleQuery,
+	filters: ArticleFilters,
 	ids: number[]
 ): Promise< ArticlePage > {
 	return get< ArticlePage >( 'articles', {
-		...filterQuery( query ),
-		orderby: query.orderby,
-		order: query.order,
+		...filterQuery( filters ),
 		include: ids,
 	} );
 }
