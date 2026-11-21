@@ -103,6 +103,7 @@ class Licensio_KB_Blocks_Test extends Licensio_KB_Test_Case {
      * Stub the WordPress surface the blocks and their templates touch.
      *
      * @since 1.0.0
+     * @since 1.1.0 Stubs the cache last_changed values and counts the article queries.
      *
      * @return void
      */
@@ -367,6 +368,7 @@ class Licensio_KB_Blocks_Test extends Licensio_KB_Test_Case {
      * Stub the post functions around a set of articles.
      *
      * @since 1.0.0
+     * @since 1.1.0 Moves the posts last_changed value, as saving the articles would.
      *
      * @param array<int, array{id: int, title: string, excerpt?: string}> $articles The articles.
      *
@@ -1189,7 +1191,7 @@ class Licensio_KB_Blocks_Test extends Licensio_KB_Test_Case {
      * given, or no category at all, is left alone.
      *
      * @since 1.0.0
-     * @since 1.1.0 Checks the entries follow the same order.
+     * @since 1.1.0 Checks the entries follow the same order, and that reordering drops the stored entries.
      *
      * @return void
      */
