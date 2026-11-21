@@ -7,8 +7,9 @@
  * column after the column its `position` names, or at the end.
  *
  * `ctx.refresh( ids )` re-reads only the given rows (`include[]` on the
- * list route) and swaps them into the list in place; a row the server no
- * longer answers was deleted, so it leaves the list.
+ * list route) and swaps them into the list in place; when one is no longer
+ * answered (it was deleted), the whole list loads again instead, as the
+ * Articles app does.
  *
  * Consumed by the Categories app's tree and store and the Tags app's table
  * and store.
@@ -109,35 +110,23 @@ export function refreshIds(
 /**
  * Swap refreshed rows into a list.
  *
- * A row the refresh answered replaces the row with its ID, where it was. A
- * requested row the refresh did not answer no longer exists and is dropped.
+ * A row the refresh answered replaces the row with its ID, where it was.
  * Every other row is kept as it is.
  *
  * @since 1.1.0
  *
  * @template Row
  *
- * @param {Row[]}    rows  The list.
- * @param {number[]} ids   The IDs that were requested.
- * @param {Row[]}    fresh The rows the server answered.
+ * @param {Row[]} rows  The list.
+ * @param {Row[]} fresh The rows the server answered.
  *
  * @return {Row[]} A new list.
  */
 export function replaceRows< Row extends { id: number } >(
 	rows: Row[],
-	ids: number[],
 	fresh: Row[]
 ): Row[] {
 	const answered = new Map( fresh.map( ( row ) => [ row.id, row ] ) );
-	const requested = new Set( ids );
 
-	return rows.reduce< Row[] >( ( kept, row ) => {
-		if ( answered.has( row.id ) ) {
-			kept.push( answered.get( row.id ) as Row );
-		} else if ( ! requested.has( row.id ) ) {
-			kept.push( row );
-		}
-
-		return kept;
-	}, [] );
+	return rows.map( ( row ) => answered.get( row.id ) ?? row );
 }

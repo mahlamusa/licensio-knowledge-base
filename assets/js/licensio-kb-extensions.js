@@ -12,7 +12,11 @@
  *     } );
  *
  * `ctx` gives `refresh( ids? )`, `clearSelection()`, `screen` and `rest`
- * (`root` and `nonce`). The TypeScript types are in
+ * (`root` and `nonce`). `refresh()` with IDs swaps just those rows in place
+ * and with none reloads the list; it never rejects. `clearSelection()` does
+ * nothing in the Categories app, which has no multiple selection. The
+ * Categories and Tags apps have no column picker, so they show only the
+ * columns declared `default_visible`. The TypeScript types are in
  * `apps/components/extensions.ts`.
  *
  * Call `register()` synchronously from a classic (not module, not deferred)

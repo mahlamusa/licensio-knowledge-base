@@ -12,7 +12,8 @@
  * that asked can show the error where the user is looking.
  *
  * `refresh( ids )` re-reads just those categories for an extension and swaps
- * them into the list in place, without touching a load in flight.
+ * them into the list in place, without touching a load in flight; an answer
+ * that a load or a saved order overtook is dropped.
  *
  * @since 1.0.0
  * @since 1.1.0 Refreshes single categories for the extensions.
@@ -354,10 +355,16 @@ export const useCategoriesStore = defineStore( 'licensioKBCategories', {
 		/**
 		 * Re-read categories an extension changed.
 		 *
-		 * With no IDs, or more listed ones than one request may ask for, the
-		 * whole list is loaded again. Otherwise only the listed categories
-		 * among them are read and swapped in where they are; one that no
-		 * longer exists leaves the list.
+		 * - No IDs, or more listed ones than one request may ask for: the
+		 *   whole list loads again.
+		 * - Otherwise only the listed categories among them are read and
+		 *   swapped in where they are; nothing is read when none is listed.
+		 * - When one of them no longer exists, the whole list loads again, so
+		 *   its children show under their new parent.
+		 *
+		 * Like `load()`, it clears `error` first and never rejects: a failure
+		 * shows in `error`. An answer that a load or a saved order overtook is
+		 * dropped.
 		 *
 		 * @since 1.1.0
 		 *
@@ -377,9 +384,28 @@ export const useCategoriesStore = defineStore( 'licensioKBCategories', {
 				return;
 			}
 
-			const fresh = await fetchCategoriesById( wanted );
+			const ticket = listTicket;
 
-			this.setItems( replaceRows( this.items, wanted, fresh ) );
+			this.error = '';
+
+			try {
+				const fresh = await fetchCategoriesById( wanted );
+
+				if ( ticket !== listTicket ) {
+					return;
+				}
+
+				if ( fresh.length < wanted.length ) {
+					await this.load();
+					return;
+				}
+
+				this.items = replaceRows( this.items, fresh );
+			} catch ( error ) {
+				if ( ticket === listTicket ) {
+					this.error = errorMessage( error );
+				}
+			}
 		},
 
 		/**

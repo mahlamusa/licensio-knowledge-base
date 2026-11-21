@@ -107,19 +107,20 @@ describe( 'refreshIds', () => {
 } );
 
 describe( 'replaceRows', () => {
-	it( 'swaps answered rows in place and drops requested rows that are gone', () => {
+	it( 'swaps answered rows in place and keeps the others', () => {
 		const rows = [
 			{ id: 1, name: 'One' },
 			{ id: 2, name: 'Two' },
 			{ id: 3, name: 'Three' },
 		];
 
-		expect(
-			replaceRows( rows, [ 2, 3 ], [ { id: 2, name: 'Two again' } ] )
-		).toEqual( [
-			{ id: 1, name: 'One' },
-			{ id: 2, name: 'Two again' },
-		] );
-		expect( rows ).toHaveLength( 3 );
+		expect( replaceRows( rows, [ { id: 2, name: 'Two again' } ] ) ).toEqual(
+			[
+				{ id: 1, name: 'One' },
+				{ id: 2, name: 'Two again' },
+				{ id: 3, name: 'Three' },
+			]
+		);
+		expect( rows[ 1 ].name ).toBe( 'Two' );
 	} );
 } );

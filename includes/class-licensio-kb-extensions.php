@@ -181,6 +181,8 @@ class Licensio_KB_Extensions {
      *     @type string $label           Required. The column heading.
      *     @type string $group           The column picker group. Default none.
      *     @type bool   $default_visible Whether the column shows before the user chooses columns. Default false.
+     *                                  The Categories and Tags apps have no column picker, so there a
+     *                                  column shows only when this is true.
      *     @type bool   $sortable        Whether the list can sort by it. Default false.
      *     @type string $position        The column key it follows. Default empty, the end.
      *     @type string $capability      Who sees it. Default the app page's capability.

@@ -39,7 +39,10 @@ export interface ExtensionCellData {
 export interface ExtensionContext {
 	/** Reload the given rows, or the whole page when no IDs are given. */
 	refresh: ( ids?: number[] ) => Promise< void >;
-	/** Clear the list's selection. */
+	/**
+	 * Clear the list's selection. Does nothing in the Categories app, whose
+	 * tree has no multiple selection.
+	 */
 	clearSelection: () => void;
 	/** The app the handler runs in. */
 	screen: ExtensionScreen;
