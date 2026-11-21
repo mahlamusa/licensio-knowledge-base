@@ -6,13 +6,14 @@
  * admin page localises (`Licensio_KB_Articles_Admin::app_data()`).
  *
  * @since 1.0.0
- * @since 1.1.0 Adds the `extensions` config, the extension columns and each row's extension data.
+ * @since 1.1.0 Adds the `extensions` config, the extension columns, each row's extension data and the extension filters.
  */
 
 import type {
 	ExtensionCellData,
 	ExtensionsConfig,
 } from '../components/extensions';
+import type { ExtFilterValues } from './ext-filters';
 import type { TermTaxonomy, TermValue } from '../components/types/terms';
 
 /** A post status an article can have. */
@@ -134,6 +135,8 @@ export interface ArticleFilters {
 	needs_attention: boolean;
 	/** Applies to the views, rating, needs_attention and their sort. */
 	window: MetricsWindow;
+	/** The chosen option of each extension filter, keyed by filter key. */
+	ext_filters: ExtFilterValues;
 }
 
 /**

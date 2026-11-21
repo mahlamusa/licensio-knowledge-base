@@ -31,6 +31,7 @@ use Brain\Monkey\Functions;
  * Exercises Licensio_KB_Content_Manager against a live server.
  *
  * @since 1.0.0
+ * @since 1.1.0 Covers the extension filters the article list redirect carries over.
  */
 class Licensio_KB_Content_Manager_Integration_Test extends Licensio_KB_Analytics_DB_Test_Case {
 
@@ -172,6 +173,61 @@ class Licensio_KB_Content_Manager_Integration_Test extends Licensio_KB_Analytics
                 )
             ),
             'A term ID is not a slug, and an unknown slug is not carried.'
+        );
+    }
+
+    /**
+     * An extension filter's `query_arg` is carried next to a resolved term slug.
+     *
+     * The content manager reads the extension filters it was given, so a core
+     * screen link from an extension opens the app with that filter set, and
+     * an option the filter did not declare is dropped.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_an_extension_filter_query_arg_is_carried_with_a_term() {
+        Functions\when( 'current_user_can' )->justReturn( true );
+
+        $extensions = new Licensio_KB_Extensions();
+        $extensions->add_filter(
+            'articles',
+            'example/flag',
+            array(
+                'label'      => 'Example flag',
+                'capability' => 'edit_posts',
+                'query_arg'  => 'example_flag',
+                'options'    => array( 'flagged' => 'Flagged' ),
+            )
+        );
+
+        $manager  = new Licensio_KB_Content_Manager( new Licensio_KB_Integration_Settings( array( 'classic_screens' => false ) ), null, new Licensio_KB_Extension_Filters( $extensions, Licensio_KB_Extensions::SCREEN_ARTICLES ) );
+        $category = $this->make_term( 'Billing', Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
+
+        $this->assertSame(
+            self::ARTICLES_URL . '&category=' . $category . '&ext_filters[example/flag]=flagged',
+            $manager->redirect_url(
+                'edit.php',
+                array(
+                    'post_type'         => 'licensio_article',
+                    'licensio_category' => 'billing',
+                    'example_flag'      => 'flagged',
+                )
+            )
+        );
+
+        $this->assertSame(
+            self::ARTICLES_URL . '&category=' . $category,
+            $manager->redirect_url(
+                'edit.php',
+                array(
+                    'post_type'         => 'licensio_article',
+                    'licensio_category' => 'billing',
+                    'example_flag'      => 'other',
+                )
+            ),
+            'An option the filter did not declare is not carried.'
         );
     }
 

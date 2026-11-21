@@ -3,11 +3,13 @@
  * The filters popover.
  *
  * Category (with its children), tag, author, date range, Uncategorised, No
- * tags and Needs attention. They combine with AND, apply as soon as they
+ * tags and Needs attention, then one dropdown per extension filter another
+ * plugin declared in PHP. They combine with AND, apply as soon as they
  * change, and the trigger shows how many are set. Opening it moves focus to
  * the first field, and Escape closes it.
  *
  * @since 1.0.0
+ * @since 1.1.0 Adds the extension filter dropdowns.
  */
 
 import { computed } from 'vue';
@@ -22,7 +24,7 @@ import AuthorSelect from './AuthorSelect.vue';
 import type { TermValue } from '../../components/types/terms';
 
 const store = useArticlesStore();
-const { lowRating, can } = config();
+const { lowRating, can, extensions } = config();
 const { open, overlayClass, setOpen } = usePopoverFocus();
 
 const dates = computed< [ string, string ] | undefined >( () =>
@@ -151,6 +153,28 @@ const attentionHelp = sprintf(
 					/>
 				</div>
 
+				<div
+					v-for="filter in extensions.filters"
+					:key="filter.key"
+					class="lkb-filters__field"
+				>
+					<span>{{ filter.label }}</span>
+					<a-select
+						:value="store.query.ext_filters[ filter.key ]"
+						:options="filter.options"
+						:aria-label="filter.label"
+						:placeholder="__( 'Any', 'licensio-knowledge-base' )"
+						allow-clear
+						@change="
+							( value: unknown ) =>
+								store.setExtFilter(
+									filter.key,
+									typeof value === 'string' ? value : ''
+								)
+						"
+					/>
+				</div>
+
 				<a-checkbox
 					:checked="store.query.uncategorised"
 					@change="
@@ -203,6 +227,7 @@ const attentionHelp = sprintf(
 							uncategorised: false,
 							untagged: false,
 							needs_attention: false,
+							ext_filters: {},
 						} )
 					"
 				>

@@ -8,12 +8,15 @@
  *
  * The keys `status`, `search`, `category`, `tag`, `author`, `orderby`,
  * `order` and `paged` are the ones the core screen redirects produce, so a
- * redirected request opens the right view.
+ * redirected request opens the right view. So are the extension filters'
+ * `ext_filters[{key}]`, read only for the filters the page declared.
  *
  * @since 1.0.0
- * @since 1.1.0 Keeps a sort by a sortable extension column.
+ * @since 1.1.0 Keeps a sort by a sortable extension column, and reads and writes the extension filters.
  */
 
+import type { ExtensionFilter } from '../components/extensions';
+import { readExtFilters, writeExtFilters } from './ext-filters';
 import type {
 	ArticleOrderBy,
 	ArticleQuery,
@@ -69,6 +72,7 @@ export function defaultQuery( perPage: PerPage ): ArticleQuery {
 		untagged: false,
 		needs_attention: false,
 		window: 30,
+		ext_filters: {},
 		orderby: 'date',
 		order: 'desc',
 		page: 1,
@@ -97,18 +101,20 @@ function positive( value: string | null ): number {
  * Unknown or malformed values fall back to their defaults.
  *
  * @since 1.0.0
- * @since 1.1.0 Takes the sortable extension columns, which `orderby` may name.
+ * @since 1.1.0 Takes the sortable extension columns, which `orderby` may name, and reads the extension filters the page declared.
  *
- * @param {string}               search    `location.search`.
- * @param {PerPage}              perPage   The user's rows per page.
- * @param {ExtensionColumnKey[]} extension The sortable extension column keys.
+ * @param {string}               search           `location.search`.
+ * @param {PerPage}              perPage          The user's rows per page.
+ * @param {ExtensionColumnKey[]} extension        The sortable extension column keys.
+ * @param {ExtensionFilter[]}    extensionFilters The extension filters the page declared.
  *
  * @return {ArticleQuery} The query.
  */
 export function readQuery(
 	search: string,
 	perPage: PerPage,
-	extension: ExtensionColumnKey[]
+	extension: ExtensionColumnKey[],
+	extensionFilters: ExtensionFilter[]
 ): ArticleQuery {
 	const params = new URLSearchParams( search );
 	const query = defaultQuery( perPage );
@@ -147,6 +153,7 @@ export function readQuery(
 	query.untagged = '1' === params.get( 'untagged' );
 	query.needs_attention = '1' === params.get( 'needs_attention' );
 	query.page = Math.max( 1, positive( params.get( 'paged' ) ) );
+	query.ext_filters = readExtFilters( params, extensionFilters );
 
 	return query;
 }
@@ -155,6 +162,7 @@ export function readQuery(
  * Write the view into a URL, keeping every argument the app does not own.
  *
  * @since 1.0.0
+ * @since 1.1.0 Writes the extension filters.
  *
  * @param {string}       href  The current URL.
  * @param {ArticleQuery} query The view.
@@ -190,6 +198,8 @@ export function writeQuery( href: string, query: ArticleQuery ): string {
 			params.set( key, value );
 		}
 	} );
+
+	writeExtFilters( params, query.ext_filters );
 
 	return url.toString();
 }

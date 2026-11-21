@@ -40,7 +40,7 @@
  *
  * @package Licensio_KB
  * @since   1.0.0
- * @since   1.1.0 Other plugins can change the list query through `licensio_kb_articles_query_args`, and add extension columns: their row data, sorting and preferences.
+ * @since   1.1.0 Other plugins can change the list query through `licensio_kb_articles_query_args`, add extension columns (their row data, sorting and preferences) and narrow the list by the extension filters in `ext_filters`.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -49,7 +49,7 @@ defined( 'ABSPATH' ) || exit;
  * Serves the Articles app.
  *
  * @since 1.0.0
- * @since 1.1.0 Serves the extension columns it is given: their row data, sorting and preferences.
+ * @since 1.1.0 Serves the extension columns it is given (their row data, sorting and preferences) and the extension filters.
  */
 class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
 
@@ -158,21 +158,32 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
     private $extension_columns;
 
     /**
+     * The extension filters of the Articles app.
+     *
+     * @since 1.1.0
+     * @var Licensio_KB_Extension_Filters
+     */
+    private $extension_filters;
+
+    /**
      * Build the controller.
      *
      * @since 1.0.0
-     * @since 1.1.0 Takes the extension columns.
+     * @since 1.1.0 Takes the extension columns and filters.
      *
      * @param Licensio_KB_Article_Metrics|null           $metrics           Optional metrics helper; defaults to one built from the plugin settings.
      * @param Licensio_KB_Article_Bulk|null              $bulk              Optional bulk runner.
      * @param Licensio_KB_Article_Extension_Columns|null $extension_columns The extension columns. Built over the plugin's extension
      *                                                                      registry when omitted, so the REST registrar can build
      *                                                                      the controller with no arguments.
+     * @param Licensio_KB_Extension_Filters|null         $extension_filters The extension filters. Built over the plugin's extension
+     *                                                                      registry when omitted, like the columns.
      */
-    public function __construct( $metrics = null, $bulk = null, $extension_columns = null ) {
+    public function __construct( $metrics = null, $bulk = null, $extension_columns = null, $extension_filters = null ) {
         $this->metrics           = $metrics instanceof Licensio_KB_Article_Metrics ? $metrics : Licensio_KB_Article_Metrics::from_settings( licensio_kb()->settings() );
         $this->bulk              = $bulk instanceof Licensio_KB_Article_Bulk ? $bulk : new Licensio_KB_Article_Bulk();
         $this->extension_columns = $extension_columns instanceof Licensio_KB_Article_Extension_Columns ? $extension_columns : new Licensio_KB_Article_Extension_Columns( licensio_kb()->extensions() );
+        $this->extension_filters = $extension_filters instanceof Licensio_KB_Extension_Filters ? $extension_filters : new Licensio_KB_Extension_Filters( licensio_kb()->extensions(), Licensio_KB_Extensions::SCREEN_ARTICLES );
     }
 
     /**
@@ -286,6 +297,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      * The filters `GET articles` and `GET articles/ids` share.
      *
      * @since 1.0.0
+     * @since 1.1.0 Adds `ext_filters`, the extension filters.
      *
      * @return array<string, array<string, mixed>> The argument schema.
      */
@@ -332,6 +344,12 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
                 'enum'        => Licensio_KB_Article_Metrics::WINDOWS,
                 'default'     => Licensio_KB_Article_Metrics::DEFAULT_WINDOW,
                 'description' => __( 'The days the views and rating cover.', 'licensio-knowledge-base' ),
+            ),
+            'ext_filters'     => array(
+                'type'              => 'object',
+                'default'           => array(),
+                'sanitize_callback' => array( $this->extension_filters, 'sanitize' ),
+                'description'       => __( 'Extension filters, as filter key => option. Unknown keys and options are ignored.', 'licensio-knowledge-base' ),
             ),
         );
     }
@@ -981,7 +999,8 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
     /**
      * The registered extension filter values of a request.
      *
-     * Empty until the Articles app sends extension filters.
+     * Only the filters the current user may use, each set to one of its
+     * options; anything else in `ext_filters` is dropped.
      *
      * @since 1.1.0
      *
@@ -990,9 +1009,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      * @return array<string, string> The values, keyed by filter key.
      */
     public function ext_filters( WP_REST_Request $request ): array {
-        unset( $request );
-
-        return array();
+        return $this->extension_filters->sanitize( $request->get_param( 'ext_filters' ) );
     }
 
     /**

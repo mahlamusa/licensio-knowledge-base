@@ -169,7 +169,7 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
             }
         );
 
-        $this->controller = new Licensio_KB_Articles_REST_Controller( new Licensio_KB_Article_Metrics( 50, 5 ), new Licensio_KB_Article_Bulk(), $this->extension_columns() );
+        $this->controller = new Licensio_KB_Articles_REST_Controller( new Licensio_KB_Article_Metrics( 50, 5 ), new Licensio_KB_Article_Bulk(), $this->extension_columns(), $this->extension_filters() );
         $this->controller->register_routes();
     }
 
@@ -182,6 +182,17 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
      */
     private function extension_columns() {
         return new Licensio_KB_Article_Extension_Columns( $this->extensions );
+    }
+
+    /**
+     * The extension filters over the test's registry.
+     *
+     * @since 1.1.0
+     *
+     * @return Licensio_KB_Extension_Filters The filters.
+     */
+    private function extension_filters() {
+        return new Licensio_KB_Extension_Filters( $this->extensions, Licensio_KB_Extensions::SCREEN_ARTICLES );
     }
 
     /**
@@ -597,7 +608,7 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
         $count              = new WP_Query();
         $count->found_posts = 3;
 
-        $controller = new Licensio_KB_Articles_REST_Controller_Double( $this->extension_columns(), $empty, $count );
+        $controller = new Licensio_KB_Articles_REST_Controller_Double( $this->extension_columns(), $this->extension_filters(), $empty, $count );
         $result     = $controller->get_items(
             new WP_REST_Request(
                 array(),
@@ -633,6 +644,147 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * Both list routes take `ext_filters`, kept to the filters and options the user may use.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_ext_filters_are_sanitised_against_the_registry() {
+        foreach ( array( '/articles', '/articles/ids' ) as $route ) {
+            $arg = $this->routes[ $route ][0]['args']['ext_filters'];
+
+            $this->assertSame( 'object', $arg['type'] );
+            $this->assertSame( array(), $arg['default'] );
+            $this->assertInstanceOf( Licensio_KB_Extension_Filters::class, $arg['sanitize_callback'][0] );
+            $this->assertSame( 'sanitize', $arg['sanitize_callback'][1] );
+        }
+
+        $sanitize = $this->routes['/articles'][0]['args']['ext_filters']['sanitize_callback'];
+
+        $this->extensions->add_filter(
+            'articles',
+            'seo/status',
+            array(
+                'label'      => 'SEO',
+                'capability' => 'edit_licensio_articles',
+                'options'    => array( 'missing_meta' => 'Missing meta' ),
+            )
+        );
+        $this->extensions->add_filter(
+            'articles',
+            'seo/score',
+            array(
+                'label'      => 'Score',
+                'capability' => 'manage_seo',
+                'options'    => array( 'low' => 'Low' ),
+            )
+        );
+
+        $this->denied = array( 'manage_seo' );
+
+        $this->assertSame(
+            array( 'seo/status' => 'missing_meta' ),
+            call_user_func(
+                $sanitize,
+                array(
+                    'seo/status' => 'missing_meta',
+                    'seo/score'  => 'low',
+                    'other/one'  => 'x',
+                )
+            )
+        );
+        $this->assertSame( array(), call_user_func( $sanitize, array( 'seo/status' => 'unknown' ) ) );
+        $this->assertSame( array(), call_user_func( $sanitize, 'seo/status' ) );
+        $this->assertSame(
+            array( 'seo/status' => 'missing_meta' ),
+            $this->controller->ext_filters( new WP_REST_Request( array(), '/licensio-kb/v1/articles', array( 'ext_filters' => array( 'seo/status' => 'MISSING_META' ) ) ) ),
+            'The values the query args filter gets are the sanitised ones.'
+        );
+        $this->assertSame( array(), $this->controller->ext_filters( new WP_REST_Request( array(), '/licensio-kb/v1/articles', array() ) ) );
+    }
+
+    /**
+     * Extensions narrow the page, its recount and the IDs through `licensio_kb_articles_query_args`.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_the_query_args_filter_narrows_every_list_query() {
+        Functions\when( 'wp_count_posts' )->justReturn( (object) array() );
+
+        $this->extensions->add_filter(
+            'articles',
+            'seo/status',
+            array(
+                'label'      => 'SEO',
+                'capability' => 'edit_licensio_articles',
+                'options'    => array( 'missing_meta' => 'Missing meta' ),
+            )
+        );
+
+        $seen = array();
+
+        Filters\expectApplied( 'licensio_kb_articles_query_args' )
+            ->twice()
+            ->andReturnUsing(
+                function ( $args, $ext_filters, $request ) use ( &$seen ) {
+                    $seen[] = array( $ext_filters, $request->get_route() );
+
+                    if ( isset( $ext_filters['seo/status'] ) ) {
+                        $args['meta_query'] = array( array( 'key' => '_seo_' . $ext_filters['seo/status'] ) ); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- A query argument the test checks is passed on, never run.
+                    }
+
+                    return $args;
+                }
+            );
+
+        $empty              = new WP_Query();
+        $count              = new WP_Query();
+        $count->found_posts = 4;
+
+        $controller = new Licensio_KB_Articles_REST_Controller_Double( $this->extension_columns(), $this->extension_filters(), $empty, $count );
+        $result     = $controller->get_items(
+            new WP_REST_Request(
+                array(),
+                '/licensio-kb/v1/articles',
+                array(
+                    'search'      => 'licence',
+                    'page'        => 9,
+                    'per_page'    => 2,
+                    'ext_filters' => array(
+                        'seo/status' => 'missing_meta',
+                        'seo/other'  => 'x',
+                    ),
+                )
+            )
+        );
+
+        $this->assertCount( 2, $controller->calls );
+        $this->assertSame( array( array( 'key' => '_seo_missing_meta' ) ), $controller->calls[0]['meta_query'] );
+        $this->assertSame( 'licence', $controller->calls[0]['s'], 'The core filters still apply.' );
+        $this->assertSame( $controller->calls[0]['meta_query'], $controller->calls[1]['meta_query'], 'The recount keeps the extension narrowing.' );
+        $this->assertSame( 4, $result['total'] );
+        $this->assertSame( 2, $result['pages'] );
+
+        $ids = new Licensio_KB_Articles_REST_Controller_Double( $this->extension_columns(), $this->extension_filters(), new WP_Query() );
+
+        $ids->get_ids( new WP_REST_Request( array(), '/licensio-kb/v1/articles/ids', array() ) );
+
+        $this->assertSame( 'ids', $ids->calls[0]['fields'] );
+        $this->assertArrayNotHasKey( 'meta_query', $ids->calls[0] );
+        $this->assertSame(
+            array(
+                array( array( 'seo/status' => 'missing_meta' ), '/licensio-kb/v1/articles' ),
+                array( array(), '/licensio-kb/v1/articles/ids' ),
+            ),
+            $seen,
+            'The filter runs once per request, with or without extension filters.'
+        );
+    }
+
+    /**
      * A page inside the list takes its total from the page query alone.
      *
      * @since 1.0.0
@@ -642,7 +794,7 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
     public function test_an_empty_first_page_is_not_counted_again() {
         Functions\when( 'wp_count_posts' )->justReturn( (object) array() );
 
-        $controller = new Licensio_KB_Articles_REST_Controller_Double( $this->extension_columns(), new WP_Query() );
+        $controller = new Licensio_KB_Articles_REST_Controller_Double( $this->extension_columns(), $this->extension_filters(), new WP_Query() );
         $result     = $controller->get_items(
             new WP_REST_Request( array(), '/licensio-kb/v1/articles', array( 'status' => 'draft' ) )
         );
@@ -662,7 +814,7 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
     public function test_the_list_query_args_filter_changes_the_page_query() {
         Functions\when( 'wp_count_posts' )->justReturn( (object) array() );
 
-        $controller = new Licensio_KB_Articles_REST_Controller_Double( $this->extension_columns(), new WP_Query() );
+        $controller = new Licensio_KB_Articles_REST_Controller_Double( $this->extension_columns(), $this->extension_filters(), new WP_Query() );
         $request    = new WP_REST_Request( array(), '/licensio-kb/v1/articles', array( 'status' => 'draft' ) );
         $expected   = $controller->query_args( $request->get_params() );
 
@@ -692,7 +844,7 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
      * @return void
      */
     public function test_the_list_query_args_filter_narrows_the_ids_query() {
-        $controller = new Licensio_KB_Articles_REST_Controller_Double( $this->extension_columns(), new WP_Query() );
+        $controller = new Licensio_KB_Articles_REST_Controller_Double( $this->extension_columns(), $this->extension_filters(), new WP_Query() );
         $request    = new WP_REST_Request( array(), '/licensio-kb/v1/articles/ids', array( 'status' => 'draft' ) );
         $expected   = $controller->query_args( $request->get_params(), true );
 
@@ -712,19 +864,6 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
         $this->assertCount( 1, $controller->calls );
         $this->assertSame( array( 7 ), $controller->calls[0]['post__in'] );
         $this->assertSame( 'ids', $controller->calls[0]['fields'] );
-    }
-
-    /**
-     * No extension filter values are read from a request yet.
-     *
-     * @since 1.1.0
-     *
-     * @return void
-     */
-    public function test_ext_filters_is_empty() {
-        $request = new WP_REST_Request( array(), '/licensio-kb/v1/articles', array( 'status' => 'draft' ) );
-
-        $this->assertSame( array(), $this->controller->ext_filters( $request ) );
     }
 
     /**
@@ -1236,7 +1375,7 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
         Functions\when( 'get_preview_post_link' )->justReturn( '' );
         Functions\when( 'strip_shortcodes' )->returnArg();
 
-        $controller = new Licensio_KB_Articles_REST_Controller( $metrics, new Licensio_KB_Article_Bulk(), $this->extension_columns() );
+        $controller = new Licensio_KB_Articles_REST_Controller( $metrics, new Licensio_KB_Article_Bulk(), $this->extension_columns(), $this->extension_filters() );
         $row        = $controller->prepare_items( array( $post ), 30 )[0];
 
         $this->assertSame( 'Guide <img src=x onerror=alert(1)> & tips', $row['title'], 'Shown as text.' );
@@ -1893,7 +2032,7 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
                 }
             );
 
-        $controller = new Licensio_KB_Articles_REST_Controller( $this->no_figures(), new Licensio_KB_Article_Bulk(), $this->extension_columns() );
+        $controller = new Licensio_KB_Articles_REST_Controller( $this->no_figures(), new Licensio_KB_Article_Bulk(), $this->extension_columns(), $this->extension_filters() );
         $rows       = $controller->prepare_items( array( $this->post(), $this->post( array( 'ID' => 13 ) ) ), 30 );
 
         $this->assertSame( array( array( array( 12, 13 ), array( 'acme/score', 'acme/note' ) ) ), $batches );
@@ -1924,7 +2063,7 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
         Filters\expectApplied( 'licensio_kb_article_extension_data_batch' )->never();
         Filters\expectApplied( 'licensio_kb_article_extension_data' )->never();
 
-        $controller = new Licensio_KB_Articles_REST_Controller( $this->no_figures(), new Licensio_KB_Article_Bulk(), $this->extension_columns() );
+        $controller = new Licensio_KB_Articles_REST_Controller( $this->no_figures(), new Licensio_KB_Article_Bulk(), $this->extension_columns(), $this->extension_filters() );
         $rows       = $controller->prepare_items( array( $this->post() ), 30 );
 
         $this->assertEquals( (object) array(), $rows[0]['extensions'] );
@@ -1977,7 +2116,7 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
                 }
             );
 
-        $controller = new Licensio_KB_Articles_REST_Controller_Double( $this->extension_columns(), new WP_Query() );
+        $controller = new Licensio_KB_Articles_REST_Controller_Double( $this->extension_columns(), $this->extension_filters(), new WP_Query() );
 
         $controller->get_items( new WP_REST_Request( array(), '/licensio-kb/v1/articles', array( 'orderby' => 'acme/score' ) ) );
         $controller->get_items( new WP_REST_Request( array(), '/licensio-kb/v1/articles', array( 'orderby' => 'acme/secret' ) ) );
@@ -2088,13 +2227,14 @@ class Licensio_KB_Articles_REST_Controller_Double extends Licensio_KB_Articles_R
      * Constructor.
      *
      * @since 1.0.0
-     * @since 1.1.0 Takes the extension columns.
+     * @since 1.1.0 Takes the extension columns and filters.
      *
      * @param Licensio_KB_Article_Extension_Columns $extension_columns The extension columns.
+     * @param Licensio_KB_Extension_Filters         $extension_filters The extension filters.
      * @param WP_Query                              ...$results        The queries to answer with, in turn.
      */
-    public function __construct( Licensio_KB_Article_Extension_Columns $extension_columns, WP_Query ...$results ) {
-        parent::__construct( new Licensio_KB_Article_Metrics( 50, 5 ), new Licensio_KB_Article_Bulk(), $extension_columns );
+    public function __construct( Licensio_KB_Article_Extension_Columns $extension_columns, Licensio_KB_Extension_Filters $extension_filters, WP_Query ...$results ) {
+        parent::__construct( new Licensio_KB_Article_Metrics( 50, 5 ), new Licensio_KB_Article_Bulk(), $extension_columns, $extension_filters );
 
         $this->results = $results;
     }
