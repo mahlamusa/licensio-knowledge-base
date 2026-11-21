@@ -78,7 +78,7 @@ class Licensio_KB_Article_Extension_Columns {
     }
 
     /**
-     * The column keys the current user may see that show before they choose columns.
+     * The column keys the current user may see that are declared visible by default.
      *
      * @since 1.1.0
      *
