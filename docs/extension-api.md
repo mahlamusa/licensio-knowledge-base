@@ -364,8 +364,12 @@ All under `licensio-kb/v1`.
   capabilities themselves are never sent to the browser.
 - A capability only decides who **sees** an item. Your REST routes must check
   permissions again for every ID they change (`edit_post`, `edit_term`).
-- Labels and option labels pass through `sanitize_text_field()` and are shown
-  as text. A cell's `text` is shown as text.
+- Labels, column groups and option labels are kept as plain text: tags and
+  line breaks are removed and entities decoded, so `Words < 300`,
+  `Words <300`, `Score < 50 & up` or `CTR %ab` shows exactly as written. A
+  `<` followed by a letter and closed by a later `>`, as in `a <b> c`, reads
+  as a tag and is removed. The apps show labels as text, never as HTML. A
+  cell's `text` is shown as text.
 - What `render()` puts in its container is yours to escape. Build it with
   `textContent` and `createElement`, never `innerHTML` with row data.
 

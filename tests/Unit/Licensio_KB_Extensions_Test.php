@@ -198,6 +198,89 @@ class Licensio_KB_Extensions_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * Labels, column groups and filter option labels reach the apps as the plain text declared.
+     *
+     * Tags and line breaks are removed and entities decoded, so a less-than
+     * sign, an ampersand or a percent sign shows exactly as written.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_labels_are_kept_as_plain_text() {
+        // Core's wp_strip_all_tags(), which the base case stubs without the line break removal.
+        Functions\when( 'wp_strip_all_tags' )->alias(
+            function ( $text, $remove_breaks = false ) {
+                $text = preg_replace( '@<(script|style)[^>]*?>.*?</\\1>@si', '', (string) $text );
+                $text = strip_tags( $text ); // phpcs:ignore WordPress.WP.AlternativeFunctions.strip_tags_strip_tags
+
+                return trim( $remove_breaks ? preg_replace( '/[\r\n\t ]+/', ' ', $text ) : $text );
+            }
+        );
+
+        $this->extensions->add_column(
+            'articles',
+            'acme/words',
+            array(
+                'label' => 'Words < 300',
+                'group' => " <b>Score</b> < 50\n&amp; up ",
+            )
+        );
+        $this->extensions->add_filter(
+            'articles',
+            'acme/ctr',
+            array(
+                'label'   => 'CTR %ab',
+                'options' => array(
+                    'low'  => 'CTR < 1% & falling',
+                    'high' => '&quot;Top&quot; &lt;script&gt;',
+                ),
+            )
+        );
+        $this->extensions->add_row_action( 'tags', 'acme/edit', array( 'label' => 'Edit <script>alert(1)</script>SEO' ) );
+
+        $declared = array(
+            'Words <300'  => 'Words <300',
+            'a <b> c'     => 'a c',
+            'x < y > z'   => 'x < y > z',
+            'Under 5 <'   => 'Under 5 <',
+            '<5 min'      => '<5 min',
+            '<b></b>Tips' => 'Tips',
+        );
+
+        foreach ( array_keys( $declared ) as $index => $label ) {
+            $this->extensions->add_bulk_action( 'articles', 'acme/action-' . $index, array( 'label' => $label ) );
+        }
+
+        $this->assertSame(
+            array_values( $declared ),
+            array_column( $this->extensions->items( 'articles', 'bulk_actions' ), 'label' ),
+            'A less-than sign that opens no tag is kept.'
+        );
+
+        $column = $this->extensions->items( 'articles', 'columns' )['acme/words'];
+        $filter = $this->extensions->items( 'articles', 'filters' )['acme/ctr'];
+
+        $this->assertSame( 'Words < 300', $column['label'] );
+        $this->assertSame( 'Score < 50 & up', $column['group'], 'Tags and line breaks go, entities are decoded.' );
+        $this->assertSame( 'CTR %ab', $filter['label'], 'Percent sequences are kept.' );
+        $this->assertSame(
+            array(
+                'low'  => 'CTR < 1% & falling',
+                'high' => '"Top" <script>',
+            ),
+            $filter['options'],
+            'Option labels are decoded too; the apps show them as text.'
+        );
+        $this->assertSame( 'Edit SEO', $this->extensions->items( 'tags', 'row_actions' )['acme/edit']['label'], 'Script contents are removed.' );
+
+        $config = Licensio_KB_Extension_Config::for_screen( $this->extensions, 'articles' );
+
+        $this->assertSame( 'Words < 300', $config['columns'][0]['label'], 'The app config carries the label unchanged.' );
+        $this->assertSame( 'CTR < 1% & falling', $config['filters'][0]['options'][0]['label'] );
+    }
+
+    /**
      * Unknown screens, keys without a namespace and items without a label are refused.
      *
      * @since 1.1.0

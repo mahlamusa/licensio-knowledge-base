@@ -200,7 +200,7 @@ class Licensio_KB_Extensions {
             return false;
         }
 
-        $item['group']           = isset( $args['group'] ) ? sanitize_text_field( (string) $args['group'] ) : '';
+        $item['group']           = isset( $args['group'] ) && is_scalar( $args['group'] ) ? self::plain_text( (string) $args['group'] ) : '';
         $item['default_visible'] = ! empty( $args['default_visible'] );
         $item['sortable']        = ! empty( $args['sortable'] );
         $item['position']        = isset( $args['position'] ) ? self::position( (string) $args['position'] ) : '';
@@ -249,7 +249,7 @@ class Licensio_KB_Extensions {
             $value = sanitize_key( (string) $value );
 
             if ( '' !== $value && is_scalar( $label ) ) {
-                $options[ $value ] = sanitize_text_field( (string) $label );
+                $options[ $value ] = self::plain_text( (string) $label );
             }
         }
 
@@ -395,7 +395,7 @@ class Licensio_KB_Extensions {
             return null;
         }
 
-        $label = isset( $args['label'] ) && is_scalar( $args['label'] ) ? sanitize_text_field( (string) $args['label'] ) : '';
+        $label = isset( $args['label'] ) && is_scalar( $args['label'] ) ? self::plain_text( (string) $args['label'] ) : '';
 
         if ( '' === $label ) {
             self::doing_it_wrong( $method, __( 'An extension item needs a label.', 'licensio-knowledge-base' ) );
@@ -434,6 +434,26 @@ class Licensio_KB_Extensions {
         $this->items[ $screen ][ $type ][ $key ] = $item;
 
         return true;
+    }
+
+    /**
+     * A label as the plain text the apps show.
+     *
+     * Tags and line breaks are removed and entities decoded, so a label such
+     * as "Words < 300", "Words <300" or "Score < 50 & up" reaches the apps
+     * exactly as declared. A less-than sign that opens no tag is kept, and
+     * percent sequences such as "%ab" are left alone.
+     * The apps render labels as text, never as HTML, so the decoded
+     * characters are safe there.
+     *
+     * @since 1.1.0
+     *
+     * @param string $text The label as declared.
+     *
+     * @return string The plain text, trimmed.
+     */
+    private static function plain_text( $text ) {
+        return trim( html_entity_decode( wp_strip_all_tags( wp_pre_kses_less_than( $text ), true ), ENT_QUOTES | ENT_HTML5, 'UTF-8' ) );
     }
 
     /**
