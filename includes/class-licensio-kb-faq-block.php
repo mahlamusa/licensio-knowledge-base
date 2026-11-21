@@ -185,7 +185,11 @@ class Licensio_KB_FAQ_Block extends Licensio_KB_Block {
      * which WordPress does when an article is saved, trashed or deleted, its
      * meta or terms change, or a term is edited or deleted, and which saving
      * or merging a category's article order does too. So a save followed by a
-     * render in the same request never reads stale entries.
+     * render in the same request never reads stale entries. The filters the
+     * query, title, excerpt and permalink pass through are applied by that
+     * first call only: a callback added later in the request, or one whose
+     * answer depends on where it runs (the current user or post), does not
+     * change the stored entries.
      *
      * Part of the extension API, detectable through `LICENSIO_KB_EXTENSIONS_API`.
      *
