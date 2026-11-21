@@ -43,6 +43,7 @@ use Brain\Monkey\Functions;
  * Runs the articles list and ID routes on real rows.
  *
  * @since 1.0.0
+ * @since 1.1.0 Covers the extension columns and filters.
  */
 class Licensio_KB_Articles_REST_Integration_Test extends Licensio_KB_Analytics_DB_Test_Case {
 
@@ -780,5 +781,107 @@ class Licensio_KB_Articles_REST_Integration_Test extends Licensio_KB_Analytics_D
         $this->assertSame( array( 'author', 'acme/score' ), $saved['columns'], 'A column the user may not see is dropped.' );
         $this->assertSame( array( 'acme/score' ), $saved['known_extensions'] );
         $this->assertSame( $saved, $this->saved_preferences );
+    }
+
+    /**
+     * An extension filter narrows the page, its totals and every matching ID alike.
+     *
+     * The example plugin here narrows by author on
+     * `licensio_kb_articles_query_args`, an argument the translator runs. Only
+     * a filter of the injected registry the user may use, set to one of its
+     * options, reaches the hook.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_an_extension_filter_narrows_the_list_and_the_ids_alike() {
+        $this->denied = array( 'secret' );
+
+        Functions\when( 'sanitize_key' )->alias(
+            function ( $key ) {
+                return (string) preg_replace( '/[^a-z0-9_\-]/', '', strtolower( (string) $key ) );
+            }
+        );
+
+        $this->extensions->add_filter(
+            'articles',
+            'acme/owner',
+            array(
+                'label'      => 'Owner',
+                'capability' => 'edit_posts',
+                'options'    => array( 'theirs' => 'Theirs' ),
+            )
+        );
+        $this->extensions->add_filter(
+            'articles',
+            'acme/secret',
+            array(
+                'label'      => 'Secret',
+                'capability' => 'secret',
+                'options'    => array( 'on' => 'On' ),
+            )
+        );
+
+        $seen = array();
+
+        Functions\when( 'apply_filters' )->alias(
+            function ( $hook, $args, $ext_filters = array() ) use ( &$seen ) {
+                if ( 'licensio_kb_articles_query_args' !== $hook ) {
+                    return $args;
+                }
+
+                $seen[] = $ext_filters;
+
+                if ( isset( $ext_filters['acme/owner'] ) ) {
+                    $args['author'] = 3;
+                }
+
+                return $args;
+            }
+        );
+
+        $theirs = array();
+
+        for ( $day = 1; $day <= 5; $day++ ) {
+            $theirs[] = $this->make_article(
+                array(
+                    'author' => 3,
+                    'date'   => sprintf( '2026-03-%02d 08:00:00', $day ),
+                )
+            );
+        }
+
+        $this->make_article( array( 'author' => 2 ) );
+        $this->make_article( array( 'author' => 2 ) );
+
+        $newest = array_reverse( $theirs );
+        $params = array(
+            'per_page'    => 2,
+            'ext_filters' => array(
+                'acme/owner'  => 'theirs',
+                'acme/secret' => 'on',
+                'acme/other'  => 'x',
+            ),
+        );
+
+        $first = $this->list_articles( $params );
+
+        $this->assertSame( array_slice( $newest, 0, 2 ), $first['items'] );
+        $this->assertSame( array( 5, 3 ), array( $first['total'], $first['pages'] ) );
+        $this->assertSame( array( 'acme/owner' => 'theirs' ), $seen[0], 'A filter the user may not use and an unknown key never reach the hook.' );
+
+        $past = $this->list_articles( array_merge( $params, array( 'page' => 9 ) ) );
+
+        $this->assertSame( array( array(), 5, 3 ), array( $past['items'], $past['total'], $past['pages'] ), 'Past the end the narrowed matches are counted again.' );
+
+        $ids = $this->ids( $params );
+
+        $this->assertSame( array( $newest, 5, false ), array( $ids['ids'], $ids['total'], $ids['truncated'] ), 'Select all matching gets exactly the filtered set.' );
+
+        $bogus = $this->list_articles( array( 'ext_filters' => array( 'acme/owner' => 'mine' ) ) );
+
+        $this->assertSame( 7, $bogus['total'], 'An option the filter did not declare is dropped, so the list is not narrowed.' );
+        $this->assertSame( array(), end( $seen ) );
     }
 }

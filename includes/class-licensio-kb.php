@@ -234,7 +234,7 @@ final class Licensio_KB {
      *
      * @since 1.0.0
      * @since 1.0.0 Hooks the notice for a missing admin app build.
-     * @since 1.1.0 Builds the extension registry of the content manager apps.
+     * @since 1.1.0 Builds the extension registry of the content manager apps, and hands the content manager the Articles app's extension filters.
      *
      * @return void
      */
@@ -619,6 +619,7 @@ final class Licensio_KB {
      * Get the content manager.
      *
      * @since 1.0.0
+     * @since 1.1.0 Hands it the Articles app's extension filters.
      *
      * @return Licensio_KB_Content_Manager
      */
