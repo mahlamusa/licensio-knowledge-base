@@ -870,7 +870,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      * Sorting by an extension column is left to the plugin that declared it,
      * on `licensio_kb_articles_query_args`; the list keeps its date order
      * until the plugin replaces it. An extension column the current user may
-     * not see sorts by date.
+     * not see sorts by date (see filtered_query_args()).
      *
      * @since 1.0.0
      * @since 1.1.0 Filters the query through `licensio_kb_articles_query_args`, where a plugin sorts by its sortable extension column.
@@ -880,12 +880,6 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      * @return WP_REST_Response|WP_Error The page.
      */
     public function get_items( $request ) {
-        $orderby = (string) $request->get_param( 'orderby' );
-
-        if ( '' !== $orderby && ! in_array( $orderby, self::ORDERBY, true ) && ! self::extension_columns()->can_sort_by( $orderby ) ) {
-            $request->set_param( 'orderby', 'date' );
-        }
-
         $params = $request->get_params();
         $args   = $this->filtered_query_args( $request, false );
         $query  = $this->run_query( $args );
@@ -927,7 +921,9 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      * The WP_Query arguments of a list or IDs request, after the extensions.
      *
      * The one place `licensio_kb_articles_query_args` runs, so the page and
-     * "select all matching" always narrow the list the same way.
+     * "select all matching" always narrow the list the same way. A sort by an
+     * extension column the current user may not see becomes a sort by date
+     * first, so no plugin sorts by it for them.
      *
      * @since 1.1.0
      *
@@ -937,6 +933,12 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      * @return array<string, mixed> The query arguments.
      */
     private function filtered_query_args( WP_REST_Request $request, bool $ids_only ): array {
+        $orderby = (string) $request->get_param( 'orderby' );
+
+        if ( '' !== $orderby && ! in_array( $orderby, self::ORDERBY, true ) && ! self::extension_columns()->can_sort_by( $orderby ) ) {
+            $request->set_param( 'orderby', 'date' );
+        }
+
         $args = $this->query_args( $request->get_params(), $ids_only );
 
         /**
@@ -1798,7 +1800,12 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
     /**
      * Save the current user's list preferences.
      *
+     * The user saved with every extension column they may see offered in
+     * the Columns picker, so all of them are stored as known: a default
+     * column they hid stays hidden.
+     *
      * @since 1.0.0
+     * @since 1.1.0 Stores the extension columns the user may see as known.
      *
      * @param WP_REST_Request $request The request.
      *
@@ -1807,10 +1814,11 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
     public function update_preferences( $request ) {
         $preferences = self::sanitize_preferences(
             array(
-                'columns'        => $request->get_param( 'columns' ),
-                'per_page'       => $request->get_param( 'per_page' ),
-                'columns_chosen' => $request->get_param( 'columns_chosen' ),
-                'medium_columns' => $request->get_param( 'medium_columns' ),
+                'columns'          => $request->get_param( 'columns' ),
+                'per_page'         => $request->get_param( 'per_page' ),
+                'columns_chosen'   => $request->get_param( 'columns_chosen' ),
+                'medium_columns'   => $request->get_param( 'medium_columns' ),
+                'known_extensions' => self::extension_columns()->allowed_keys(),
             )
         );
 
@@ -1822,14 +1830,26 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
     /**
      * A user's list preferences, with the defaults filled in.
      *
+     * Saved columns gain the extension columns declared visible by default
+     * that the user was not offered when they last saved, such as those of
+     * a plugin activated since. Nothing is stored until the user saves.
+     *
      * @since 1.0.0
+     * @since 1.1.0 Shows the default extension columns the user was not offered yet.
      *
      * @param int $user_id The user ID.
      *
-     * @return array{columns: string[], per_page: int, columns_chosen: bool, medium_columns: string[]} The preferences.
+     * @return array{columns: string[], per_page: int, columns_chosen: bool, medium_columns: string[], known_extensions: string[]} The preferences.
      */
     public static function preferences( $user_id ) {
-        return self::sanitize_preferences( get_user_meta( (int) $user_id, self::PREFERENCES_META, true ) );
+        $stored = get_user_meta( (int) $user_id, self::PREFERENCES_META, true );
+
+        if ( is_array( $stored ) && isset( $stored['columns'] ) && is_array( $stored['columns'] ) ) {
+            $known             = isset( $stored['known_extensions'] ) && is_array( $stored['known_extensions'] ) ? array_map( 'strval', $stored['known_extensions'] ) : array();
+            $stored['columns'] = array_merge( $stored['columns'], self::extension_columns()->new_default_keys( $known ) );
+        }
+
+        return self::sanitize_preferences( $stored );
     }
 
     /**
@@ -1846,28 +1866,32 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      *
      * The extension columns the current user may see are allowed too, after
      * the core ones, and the ones declared visible by default join the
-     * defaults. The key of a column that is no longer declared, because its
-     * plugin was deactivated, is dropped.
+     * defaults. `known_extensions` lists the extension columns the user was
+     * offered when they last saved, so a default column added later shows
+     * once (see preferences()). The key of a column that is no longer
+     * declared, because its plugin was deactivated, is dropped from both.
      *
      * @since 1.0.0 Counts columns stored without `columns_chosen` as chosen, and adds `medium_columns`.
-     * @since 1.1.0 Allows the extension columns the current user may see.
+     * @since 1.1.0 Allows the extension columns the current user may see, and adds `known_extensions`.
      *
      * @param mixed $value The stored or submitted preferences.
      *
-     * @return array{columns: string[], per_page: int, columns_chosen: bool, medium_columns: string[]} The clean preferences.
+     * @return array{columns: string[], per_page: int, columns_chosen: bool, medium_columns: string[], known_extensions: string[]} The clean preferences.
      */
     public static function sanitize_preferences( $value ) {
         $extension = self::extension_columns();
+        $allowed   = $extension->allowed_keys();
         $value     = is_array( $value ) ? $value : array();
         $columns   = isset( $value['columns'] ) && is_array( $value['columns'] ) ? $value['columns'] : array_merge( self::DEFAULT_COLUMNS, $extension->default_keys() );
         $per_page  = isset( $value['per_page'] ) ? (int) $value['per_page'] : 0;
 
         return array(
             // Kept in table order, whatever order they were sent in.
-            'columns'        => array_values( array_intersect( array_merge( self::COLUMNS, $extension->allowed_keys() ), array_map( 'strval', $columns ) ) ),
-            'per_page'       => in_array( $per_page, self::PER_PAGE_OPTIONS, true ) ? $per_page : self::PER_PAGE_OPTIONS[0],
-            'columns_chosen' => array_key_exists( 'columns_chosen', $value ) ? ! empty( $value['columns_chosen'] ) : isset( $value['columns'] ),
-            'medium_columns' => isset( $value['medium_columns'] ) && is_array( $value['medium_columns'] ) ? array_values( array_intersect( self::COLUMNS, array_map( 'strval', $value['medium_columns'] ) ) ) : array(),
+            'columns'          => array_values( array_intersect( array_merge( self::COLUMNS, $allowed ), array_map( 'strval', $columns ) ) ),
+            'per_page'         => in_array( $per_page, self::PER_PAGE_OPTIONS, true ) ? $per_page : self::PER_PAGE_OPTIONS[0],
+            'columns_chosen'   => array_key_exists( 'columns_chosen', $value ) ? ! empty( $value['columns_chosen'] ) : isset( $value['columns'] ),
+            'medium_columns'   => isset( $value['medium_columns'] ) && is_array( $value['medium_columns'] ) ? array_values( array_intersect( self::COLUMNS, array_map( 'strval', $value['medium_columns'] ) ) ) : array(),
+            'known_extensions' => isset( $value['known_extensions'] ) && is_array( $value['known_extensions'] ) ? array_values( array_intersect( $allowed, array_map( 'strval', $value['known_extensions'] ) ) ) : array(),
         );
     }
 

@@ -122,4 +122,17 @@ class Licensio_KB_Article_Extension_Columns_Test extends Licensio_KB_Test_Case {
         );
         $this->assertSame( array(), $this->columns->visible_keys( array( 'author', 'date' ) ) );
     }
+
+    /**
+     * The new default keys are the default columns the user may see and was not offered.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_the_new_default_keys_skip_the_known_columns() {
+        $this->assertSame( array( 'acme/score' ), $this->columns->new_default_keys( array() ) );
+        $this->assertSame( array( 'acme/score' ), $this->columns->new_default_keys( array( 'acme/note', 'acme/gone' ) ) );
+        $this->assertSame( array(), $this->columns->new_default_keys( array( 'acme/score' ) ) );
+    }
 }

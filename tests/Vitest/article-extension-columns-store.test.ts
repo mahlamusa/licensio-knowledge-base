@@ -126,3 +126,53 @@ describe( 'turning an extension column on', () => {
 		expect( store.sortKeys ).toContain( 'acme/score' );
 	} );
 } );
+
+describe( 'a default visible extension column', () => {
+	/**
+	 * Give the page saved preferences in which the server added the column.
+	 *
+	 * The server adds a default visible column the user was not offered when
+	 * they last saved; the app shows what it is given.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return {void}
+	 */
+	function savedWithTheColumn(): void {
+		window.licensioKbArticles = {
+			...window.licensioKbArticles,
+			preferences: {
+				columns: [ 'author', 'acme/score' ],
+				per_page: 20,
+				columns_chosen: true,
+				medium_columns: [],
+			},
+		};
+		window.licensioKbArticles.extensions!.columns[ 0 ].defaultVisible = true;
+	}
+
+	it( 'shows when the saved preferences hold it', () => {
+		savedWithTheColumn();
+
+		expect( useArticlesStore().visibleColumns ).toEqual( [
+			'author',
+			'acme/score',
+		] );
+	} );
+
+	it( 'saves without it when hidden, and the app never adds it back', async () => {
+		savedWithTheColumn();
+
+		const store = useArticlesStore();
+
+		store.pickColumns( [ 'author' ] );
+		await vi.advanceTimersByTimeAsync( 600 );
+
+		expect( api.savePreferences ).toHaveBeenCalledTimes( 1 );
+		expect( api.savePreferences.mock.calls[ 0 ][ 0 ].columns ).toEqual( [
+			'author',
+		] );
+		expect( api.fetchArticles ).not.toHaveBeenCalled();
+		expect( store.visibleColumns ).toEqual( [ 'author' ] );
+	} );
+} );

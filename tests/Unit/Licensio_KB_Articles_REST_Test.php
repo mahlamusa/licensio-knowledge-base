@@ -760,10 +760,11 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
     public function test_preferences_are_allow_listed() {
         $this->assertSame(
             array(
-                'columns'        => array( 'author', 'views', 'modified' ),
-                'per_page'       => 50,
-                'columns_chosen' => true,
-                'medium_columns' => array( 'rating', 'views' ),
+                'columns'          => array( 'author', 'views', 'modified' ),
+                'per_page'         => 50,
+                'columns_chosen'   => true,
+                'medium_columns'   => array( 'rating', 'views' ),
+                'known_extensions' => array(),
             ),
             Licensio_KB_Articles_REST_Controller::sanitize_preferences(
                 array(
@@ -1687,6 +1688,149 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * Declare a default visible column the user may see and one they may not.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    private function add_default_visible_columns() {
+        $this->denied = array( 'secret' );
+
+        $this->extensions->add_column(
+            'articles',
+            'acme/score',
+            array(
+                'label'           => 'Score',
+                'default_visible' => true,
+                'capability'      => 'edit_posts',
+            )
+        );
+        $this->extensions->add_column(
+            'articles',
+            'acme/secret',
+            array(
+                'label'           => 'Secret',
+                'default_visible' => true,
+                'capability'      => 'secret',
+            )
+        );
+    }
+
+    /**
+     * A user who never saved columns sees the default extension columns.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_a_default_extension_column_shows_for_a_user_who_never_saved() {
+        $this->add_default_visible_columns();
+
+        $preferences = Licensio_KB_Articles_REST_Controller::preferences( 1 );
+
+        $this->assertSame( array_merge( Licensio_KB_Articles_REST_Controller::DEFAULT_COLUMNS, array( 'acme/score' ) ), $preferences['columns'] );
+        $this->assertSame( array(), $preferences['known_extensions'] );
+    }
+
+    /**
+     * A user who saved columns before the extension was active sees its default column.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_a_default_extension_column_shows_for_a_user_who_saved_before_it_existed() {
+        $this->add_default_visible_columns();
+
+        $this->saved_preferences = array(
+            'columns'        => array( 'author', 'views' ),
+            'per_page'       => 50,
+            'columns_chosen' => true,
+            'medium_columns' => array(),
+        );
+
+        $this->assertSame( array( 'author', 'views', 'acme/score' ), Licensio_KB_Articles_REST_Controller::preferences( 1 )['columns'] );
+
+        $this->saved_preferences['known_extensions'] = array( 'acme/other' );
+
+        $this->assertSame(
+            array( 'author', 'views', 'acme/score' ),
+            Licensio_KB_Articles_REST_Controller::preferences( 1 )['columns'],
+            'Knowing other extension columns does not hide a new one.'
+        );
+    }
+
+    /**
+     * A default extension column the user hid and saved stays hidden.
+     *
+     * Saving stores every extension column the user may see as known, so
+     * the next read does not add the hidden one back.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_a_default_extension_column_the_user_hid_stays_hidden() {
+        $this->add_default_visible_columns();
+
+        Functions\when( 'update_user_meta' )->alias(
+            function ( $user_id, $key, $value ) {
+                $this->saved_preferences = $value;
+
+                return true;
+            }
+        );
+
+        $saved = $this->controller->update_preferences(
+            new WP_REST_Request(
+                array(),
+                '/licensio-kb/v1/preferences',
+                array(
+                    'columns'        => array( 'author', 'views' ),
+                    'per_page'       => 20,
+                    'columns_chosen' => true,
+                    'medium_columns' => array(),
+                )
+            )
+        );
+
+        $this->assertSame( array( 'author', 'views' ), $saved['columns'], 'Saving does not add the hidden column back.' );
+        $this->assertSame( array( 'acme/score' ), $this->saved_preferences['known_extensions'], 'A column the user may not see is not stored as known.' );
+        $this->assertSame( array( 'author', 'views' ), Licensio_KB_Articles_REST_Controller::preferences( 1 )['columns'] );
+    }
+
+    /**
+     * A removed extension's column is dropped from the columns and the known columns.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_a_removed_extension_column_is_dropped_silently() {
+        $this->extensions->add_column(
+            'articles',
+            'acme/score',
+            array(
+                'label'           => 'Score',
+                'default_visible' => true,
+                'capability'      => 'edit_posts',
+            )
+        );
+
+        $this->saved_preferences = array(
+            'columns'          => array( 'author', 'acme/gone', 'acme/score' ),
+            'columns_chosen'   => true,
+            'known_extensions' => array( 'acme/gone', 'acme/score' ),
+        );
+
+        $preferences = Licensio_KB_Articles_REST_Controller::preferences( 1 );
+
+        $this->assertSame( array( 'author', 'acme/score' ), $preferences['columns'] );
+        $this->assertSame( array( 'acme/score' ), $preferences['known_extensions'] );
+    }
+
+    /**
      * Each row carries the data of the extension columns the user shows, and only those.
      *
      * The batch filter runs once for the page, and each row starts from what
@@ -1807,7 +1951,7 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
         $sorted = array();
 
         Filters\expectApplied( 'licensio_kb_articles_query_args' )
-            ->twice()
+            ->times( 4 )
             ->andReturnUsing(
                 function ( $args, $ext_filters, $request ) use ( &$sorted ) {
                     $sorted[] = $request->get_param( 'orderby' );
@@ -1824,8 +1968,10 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
 
         $controller->get_items( new WP_REST_Request( array(), '/licensio-kb/v1/articles', array( 'orderby' => 'acme/score' ) ) );
         $controller->get_items( new WP_REST_Request( array(), '/licensio-kb/v1/articles', array( 'orderby' => 'acme/secret' ) ) );
+        $controller->get_items( new WP_REST_Request( array(), '/licensio-kb/v1/articles', array( 'orderby' => 'acme/gone' ) ) );
+        $controller->get_ids( new WP_REST_Request( array(), '/licensio-kb/v1/articles/ids', array( 'orderby' => 'acme/secret' ) ) );
 
-        $this->assertSame( array( 'acme/score', 'date' ), $sorted );
+        $this->assertSame( array( 'acme/score', 'date', 'date', 'date' ), $sorted, 'A column the user may not see, or one no longer declared, never reaches the filter, on the page or the IDs.' );
         $this->assertSame( array( 'meta_value_num' => 'DESC' ), $controller->calls[0]['orderby'], 'The filtered arguments run.' );
         $this->assertSame(
             array(

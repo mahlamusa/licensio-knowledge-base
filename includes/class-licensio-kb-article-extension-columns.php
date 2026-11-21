@@ -96,6 +96,23 @@ class Licensio_KB_Article_Extension_Columns {
     }
 
     /**
+     * The default columns the user has not been offered yet.
+     *
+     * A column declared visible by default after the user saved their
+     * columns shows once for them; once they save again it is known, and
+     * stays hidden if they hid it.
+     *
+     * @since 1.1.0
+     *
+     * @param string[] $known The extension column keys the user was offered when they last saved.
+     *
+     * @return string[] The keys, in the order they were declared.
+     */
+    public function new_default_keys( array $known ) {
+        return array_values( array_diff( $this->default_keys(), $known ) );
+    }
+
+    /**
      * Whether the current user may sort the list by a column.
      *
      * @since 1.1.0
