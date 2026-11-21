@@ -201,6 +201,7 @@ describe( 'BulkBar extension bulk actions', () => {
 			.find( ( button ) => 'Apply' === button.text() );
 
 		await apply?.trigger( 'click' );
+		await flushPromises();
 
 		expect( run ).toHaveBeenCalledTimes( 1 );
 		expect( run.mock.calls[ 0 ][ 0 ] ).toEqual( [ 4, 9 ] );
@@ -263,6 +264,10 @@ describe( 'BulkBar extension bulk actions', () => {
 	] )(
 		'shows an error toast and frees the bar when the handler %s',
 		async ( _how, handler ) => {
+			const logged = vi
+				.spyOn( console, 'error' )
+				.mockImplementation( () => undefined );
+
 			run.mockImplementation( handler );
 			( window as unknown as { wp: unknown } ).wp = {
 				i18n: {
@@ -280,6 +285,11 @@ describe( 'BulkBar extension bulk actions', () => {
 			expect( message.error ).toHaveBeenCalledWith(
 				'Optimise could not be completed.'
 			);
+			expect( logged ).toHaveBeenCalledWith(
+				'Bulk action acme/optimise failed:',
+				expect.any( Error )
+			);
+			logged.mockRestore();
 			expect( chooser( wrapper ).attributes( 'disabled' ) ).toBe(
 				'false'
 			);

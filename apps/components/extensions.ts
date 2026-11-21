@@ -66,9 +66,11 @@ export interface ColumnHandler< Row extends ExtensionRow = ExtensionRow > {
 /**
  * Runs a bulk action on the selected row IDs. "Select all matching" can pass
  * up to 10,000 IDs, so a handler that sends a request per ID or a list of IDs
- * should batch its own work. When it throws or returns a promise that
- * rejects, the app shows an error toast. The Articles Trash view offers no
- * extension bulk actions.
+ * should batch its own work. The bulk bar stays busy until the returned value
+ * settles, with no timeout, so a promise that never settles keeps it busy
+ * until the page reloads. When it throws or returns a promise that rejects,
+ * the app shows an error toast. The Articles Trash view offers no extension
+ * bulk actions.
  */
 export interface BulkActionHandler {
 	run: ( ids: number[], ctx: ExtensionContext ) => unknown;

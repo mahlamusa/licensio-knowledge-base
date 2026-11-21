@@ -25,11 +25,11 @@
  * @since 1.1.0 Offers the extension bulk actions.
  */
 
-import { message } from 'ant-design-vue';
 import { computed, ref, watch } from 'vue';
 import ConfirmButton from '../../components/ConfirmButton.vue';
 import TermSelect from '../../components/TermSelect.vue';
 import { actionEntries, extensionHandlers } from '../../components/extensions';
+import { runExtensionBulkAction } from '../../components/extension-row-action';
 import { __, _n, sprintf } from '../../components/i18n';
 import { config } from '../api';
 import { confirmTitle, performAction } from '../actions';
@@ -296,8 +296,7 @@ async function apply(): Promise< void > {
 /**
  * Hand the selection to the chosen extension action and wait for it.
  *
- * A handler that throws, or returns a promise that rejects, gets the app's
- * error toast with a generic message; the extension can still show its own.
+ * A handler that fails gets the shared error toast and console message.
  *
  * @since 1.1.0
  *
@@ -312,20 +311,10 @@ async function applyExtension(): Promise< void > {
 
 	extensionRunning.value = true;
 
-	try {
-		await entry.run( [ ...store.selected ] );
-	} catch {
-		message.error(
-			sprintf(
-				/* translators: %s: the bulk action's label. */
-				__( '%s could not be completed.', 'licensio-knowledge-base' ),
-				entry.label
-			)
-		);
-	} finally {
-		extensionRunning.value = false;
-		choice.value = undefined;
-	}
+	await runExtensionBulkAction( entry, [ ...store.selected ] );
+
+	extensionRunning.value = false;
+	choice.value = undefined;
 }
 
 watch( choice, () => {
