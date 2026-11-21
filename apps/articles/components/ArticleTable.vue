@@ -10,27 +10,53 @@
  * in place under the row. A locked row shows who is editing it and cannot be
  * quick edited. While a bulk action runs the row actions are paused, and
  * hovering them says why. A page change from the pager keeps focus in the
- * pager, on the current page once the control pressed is disabled.
+ * pager, on the current page once the control pressed is disabled. Row
+ * actions other plugins registered follow the app's own, outside the Trash
+ * view; one runs once at a time per row and shows an error toast when it
+ * fails.
+ *
+ * Extension columns sit where their `position` puts them and render through
+ * `ExtensionCell`; the sortable ones sort like core columns.
  *
  * @since 1.0.0
+ * @since 1.1.0 Shows and sorts by the extension columns, and shows the extension row actions.
  */
 
 import { computed, nextTick, ref } from 'vue';
 import { LockOutlined } from '@ant-design/icons-vue';
 import ConfirmButton from '../../components/ConfirmButton.vue';
+import ExtensionCell from '../../components/ExtensionCell.vue';
 import { changePageKeepingFocus } from '../../components/pager-focus';
 import { __, sprintf } from '../../components/i18n';
 import { statusLabel } from '../../components/status';
+import { orderColumns } from '../../components/column-order';
+import {
+	isExtensionRowActionRunning,
+	runExtensionRowAction,
+} from '../../components/extension-row-action';
+import { rowActionEntries } from '../../components/row-actions';
 import { config } from '../api';
 import { confirmTitle, performAction } from '../actions';
+import { isExtensionKey } from '../columns';
+import { articlesExtensionContext } from '../extension-context';
 import { useArticlesStore } from '../store';
-import { ORDER_BY } from '../url';
 import QuickEditRow from './QuickEditRow.vue';
-import type { ArticleColumn, ArticleItem, ArticleOrderBy } from '../types';
+import type {
+	ArticleColumn,
+	ArticleItem,
+	ListColumn,
+	ListOrderBy,
+} from '../types';
 
 const store = useArticlesStore();
 const settings = config();
 const root = ref< HTMLElement | null >( null );
+const ctx = articlesExtensionContext();
+const extensionActions = rowActionEntries< ArticleItem >(
+	'articles',
+	settings.extensions.rowActions,
+	ctx
+);
 
 /**
  * The current sort of a column, in Ant's terms.
@@ -53,6 +79,7 @@ function sortOrder( key: string ): 'ascend' | 'descend' | null {
  * One column definition.
  *
  * @since 1.0.0
+ * @since 1.1.0 Sortable extension columns sort too.
  *
  * @param {string} key   The column key.
  * @param {string} title The heading.
@@ -61,7 +88,7 @@ function sortOrder( key: string ): 'ascend' | 'descend' | null {
  * @return {Object} The column.
  */
 function column( key: string, title: string, width?: number ) {
-	const sortable = ORDER_BY.includes( key as ArticleOrderBy );
+	const sortable = store.sortKeys.includes( key as ListOrderBy );
 
 	return {
 		key,
@@ -74,7 +101,7 @@ function column( key: string, title: string, width?: number ) {
 }
 
 const columns = computed( () => {
-	const optional: Array< [ ArticleColumn, string, number? ] > = [
+	const core: Array< [ ArticleColumn, string, number? ] > = [
 		[ 'author', __( 'Author', 'licensio-knowledge-base' ), 140 ],
 		[ 'categories', __( 'Categories', 'licensio-knowledge-base' ) ],
 		[ 'tags', __( 'Tags', 'licensio-knowledge-base' ) ],
@@ -89,12 +116,31 @@ const columns = computed( () => {
 		[ 'date', __( 'Date', 'licensio-knowledge-base' ), 150 ],
 		[ 'modified', __( 'Modified', 'licensio-knowledge-base' ), 150 ],
 	];
+	const extensions = settings.extensions.columns;
+	const headings = new Map< string, { title: string; width?: number } >();
+
+	core.forEach( ( [ key, title, width ] ) =>
+		headings.set( key, { title, width } )
+	);
+	extensions.forEach( ( { key, label } ) =>
+		headings.set( key, { title: label } )
+	);
 
 	return [
 		column( 'title', __( 'Title', 'licensio-knowledge-base' ) ),
-		...optional
-			.filter( ( [ key ] ) => store.shows( key ) )
-			.map( ( [ key, title, width ] ) => column( key, title, width ) ),
+		...orderColumns(
+			[ 'title', ...core.map( ( [ key ] ) => key ) ],
+			extensions
+		)
+			.filter(
+				( key ) =>
+					headings.has( key ) && store.shows( key as ListColumn )
+			)
+			.map( ( key ) => {
+				const { title, width } = headings.get( key ) ?? { title: key };
+
+				return column( key, title, width );
+			} ),
 	];
 } );
 
@@ -130,6 +176,7 @@ function feedbackUrl( id: number ): string {
  * Handle a paging or sort change from the table.
  *
  * @since 1.0.0
+ * @since 1.1.0 Sorts by the sortable extension columns too.
  *
  * @param {Object}  pagination           The table pagination.
  * @param {number}  [pagination.current] The page now shown.
@@ -150,11 +197,11 @@ function onChange(
 
 	if (
 		typeof key === 'string' &&
-		ORDER_BY.includes( key as ArticleOrderBy ) &&
+		store.sortKeys.includes( key as ListOrderBy ) &&
 		order &&
 		( key !== store.query.orderby || direction !== store.query.order )
 	) {
-		store.setSort( key as ArticleOrderBy, direction );
+		store.setSort( key as ListOrderBy, direction );
 		return;
 	}
 
@@ -446,6 +493,29 @@ const expandedKeys = computed( () =>
 										__( 'Trash', 'licensio-knowledge-base' )
 									}}
 								</ConfirmButton>
+								<a-button
+									v-for="action in extensionActions"
+									:key="action.key"
+									type="link"
+									size="small"
+									class="lkb-rowactions__button"
+									:disabled="store.bulk.running"
+									:data-row-action="action.key"
+									:aria-busy="
+										isExtensionRowActionRunning(
+											action,
+											record as ArticleItem
+										)
+									"
+									@click="
+										runExtensionRowAction(
+											action,
+											record as ArticleItem
+										)
+									"
+								>
+									{{ action.label }}
+								</a-button>
 							</template>
 							<template v-else>
 								<a-button
@@ -558,6 +628,15 @@ const expandedKeys = computed( () =>
 					v-else-if="'date' === col.key || 'modified' === col.key"
 				>
 					{{ displayDate( record[ col.key ] ) }}
+				</template>
+
+				<template v-else-if="isExtensionKey( String( col.key ) )">
+					<ExtensionCell
+						screen="articles"
+						:column-key="String( col.key )"
+						:row="record as ArticleItem"
+						:ctx="ctx"
+					/>
 				</template>
 
 				<template v-else>

@@ -19,16 +19,23 @@
  * Only the answer of the latest list request is kept, so a slow earlier
  * request can never overwrite a later one.
  *
+ * `refresh( ids )` re-reads just those rows of the page for an extension and
+ * swaps them in place, leaving the filters, the URL and any list request in
+ * flight alone; an answer that a page load overtook is dropped.
+ *
  * @since 1.0.0
+ * @since 1.1.0 Refreshes single rows for the extensions.
  */
 
 import { defineStore } from 'pinia';
 import { errorMessage } from '../components/rest';
+import { refreshIds, replaceRows } from '../components/term-extensions';
 import {
 	convertTags,
 	createTag,
 	deleteTags,
 	fetchTags,
+	fetchTagsById,
 	mergeTags,
 	settings,
 	updateTag,
@@ -203,6 +210,62 @@ export const useTagsStore = defineStore( 'licensioKBTags', {
 			} finally {
 				if ( request === latestRequest ) {
 					this.loading = false;
+				}
+			}
+		},
+
+		/**
+		 * Re-read rows an extension changed.
+		 *
+		 * - No IDs: the page loads again.
+		 * - Otherwise only the rows of the page among them are read and
+		 *   swapped in where they are; nothing is read when none is on the
+		 *   page. The page holds at most 100 rows, as many as one request may
+		 *   ask for.
+		 * - When one of them no longer exists, the page loads again, so the
+		 *   rows, the total and the selection stay right.
+		 *
+		 * Like `load()`, it clears `error` first and never rejects: a failure
+		 * shows in `error`. An answer that a page load overtook is dropped.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param {number[]} [ids] The tags.
+		 *
+		 * @return {Promise<void>} Resolves once the rows are in state.
+		 */
+		async refresh( ids?: number[] ): Promise< void > {
+			if ( ! ids?.length ) {
+				await this.load();
+				return;
+			}
+
+			const wanted = refreshIds( this.items, ids );
+
+			if ( ! wanted.length ) {
+				return;
+			}
+
+			const request = latestRequest;
+
+			this.error = '';
+
+			try {
+				const fresh = await fetchTagsById( wanted );
+
+				if ( request !== latestRequest ) {
+					return;
+				}
+
+				if ( fresh.length < wanted.length ) {
+					await this.load();
+					return;
+				}
+
+				this.items = replaceRows( this.items, fresh );
+			} catch ( error ) {
+				if ( request === latestRequest ) {
+					this.error = errorMessage( error );
 				}
 			}
 		},

@@ -98,7 +98,7 @@ describe( 'extension filter helpers', () => {
 describe( 'the Articles URL state', () => {
 	it( 'round-trips the extension filters with the core filters', () => {
 		const query = {
-			...readQuery( '', 20, declared ),
+			...readQuery( '', 20, [], declared ),
 			search: 'licence',
 			status: 'draft' as const,
 			category: 4,
@@ -109,7 +109,7 @@ describe( 'the Articles URL state', () => {
 		expect(
 			new URL( href ).searchParams.get( 'ext_filters[seo/status]' )
 		).toBe( 'missing_meta' );
-		expect( readQuery( new URL( href ).search, 20, declared ) ).toEqual(
+		expect( readQuery( new URL( href ).search, 20, [], declared ) ).toEqual(
 			query
 		);
 	} );
@@ -117,7 +117,7 @@ describe( 'the Articles URL state', () => {
 	it( 'reads the redirect form and drops a cleared filter from the URL', () => {
 		const redirected =
 			'?page=licensio-kb-articles&status=draft&ext_filters[seo/status]=missing_meta';
-		const query = readQuery( redirected, 20, declared );
+		const query = readQuery( redirected, 20, [], declared );
 
 		expect( query.ext_filters ).toEqual( { 'seo/status': 'missing_meta' } );
 		expect( query.status ).toBe( 'draft' );
@@ -132,13 +132,13 @@ describe( 'the Articles URL state', () => {
 
 		expect( cleared ).not.toContain( 'ext_filters' );
 		expect(
-			readQuery( new URL( cleared ).search, 20, declared ).ext_filters
+			readQuery( new URL( cleared ).search, 20, [], declared ).ext_filters
 		).toEqual( {} );
 	} );
 
 	it( 'ignores a filter the page did not declare', () => {
 		expect(
-			readQuery( '?ext_filters[seo/status]=missing_meta', 20, [] )
+			readQuery( '?ext_filters[seo/status]=missing_meta', 20, [], [] )
 				.ext_filters
 		).toEqual( {} );
 	} );

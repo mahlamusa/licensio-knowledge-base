@@ -12,7 +12,7 @@
  * `ext_filters[{key}]`, read only for the filters the page declared.
  *
  * @since 1.0.0
- * @since 1.1.0 Reads and writes the extension filters.
+ * @since 1.1.0 Keeps a sort by a sortable extension column, and reads and writes the extension filters.
  */
 
 import type { ExtensionFilter } from '../components/extensions';
@@ -20,6 +20,8 @@ import { readExtFilters, writeExtFilters } from './ext-filters';
 import type {
 	ArticleOrderBy,
 	ArticleQuery,
+	ExtensionColumnKey,
+	ListOrderBy,
 	MetricsWindow,
 	PerPage,
 	StatusFilter,
@@ -99,24 +101,27 @@ function positive( value: string | null ): number {
  * Unknown or malformed values fall back to their defaults.
  *
  * @since 1.0.0
- * @since 1.1.0 Reads the extension filters the page declared.
+ * @since 1.1.0 Takes the sortable extension columns, which `orderby` may name, and reads the extension filters the page declared.
  *
- * @param {string}            search           `location.search`.
- * @param {PerPage}           perPage          The user's rows per page.
- * @param {ExtensionFilter[]} extensionFilters The extension filters the page declared.
+ * @param {string}               search           `location.search`.
+ * @param {PerPage}              perPage          The user's rows per page.
+ * @param {ExtensionColumnKey[]} extension        The sortable extension column keys.
+ * @param {ExtensionFilter[]}    extensionFilters The extension filters the page declared.
  *
  * @return {ArticleQuery} The query.
  */
 export function readQuery(
 	search: string,
 	perPage: PerPage,
+	extension: ExtensionColumnKey[],
 	extensionFilters: ExtensionFilter[]
 ): ArticleQuery {
 	const params = new URLSearchParams( search );
 	const query = defaultQuery( perPage );
+	const sorts: ListOrderBy[] = [ ...ORDER_BY, ...extension ];
 
 	const status = params.get( 'status' ) as StatusFilter | null;
-	const orderby = params.get( 'orderby' ) as ArticleOrderBy | null;
+	const orderby = params.get( 'orderby' ) as ListOrderBy | null;
 	const order = params.get( 'order' );
 	const window = positive( params.get( 'window' ) ) as MetricsWindow;
 	const after = params.get( 'after' ) ?? '';
@@ -126,7 +131,7 @@ export function readQuery(
 		query.status = status;
 	}
 
-	if ( orderby && ORDER_BY.includes( orderby ) ) {
+	if ( orderby && sorts.includes( orderby ) ) {
 		query.orderby = orderby;
 	}
 

@@ -39,7 +39,10 @@ export interface ExtensionCellData {
 export interface ExtensionContext {
 	/** Reload the given rows, or the whole page when no IDs are given. */
 	refresh: ( ids?: number[] ) => Promise< void >;
-	/** Clear the list's selection. */
+	/**
+	 * Clear the list's selection. Does nothing in the Categories app, whose
+	 * tree has no multiple selection.
+	 */
 	clearSelection: () => void;
 	/** The app the handler runs in. */
 	screen: ExtensionScreen;
@@ -65,7 +68,13 @@ export interface BulkActionHandler {
 	run: ( ids: number[], ctx: ExtensionContext ) => unknown;
 }
 
-/** Runs a row action on one row. */
+/**
+ * Runs a row action on one row. While its promise is pending, the same
+ * action does not run again on that row. When it throws or returns a promise
+ * that rejects, the app shows a generic error toast and logs the error to the
+ * console with the action's key. Rows in the Articles Trash view show no
+ * extension row actions.
+ */
 export interface RowActionHandler< Row extends ExtensionRow = ExtensionRow > {
 	run: ( row: Row, ctx: ExtensionContext ) => unknown;
 }

@@ -5,10 +5,13 @@
  * the server is a compile error here rather than an undefined at runtime.
  *
  * @since 1.0.0
- * @since 1.1.0 Adds the `extensions` config.
+ * @since 1.1.0 Adds the `extensions` config and each tag's extension column data.
  */
 
-import type { ExtensionsConfig } from '../components/extensions';
+import type {
+	ExtensionCellData,
+	ExtensionsConfig,
+} from '../components/extensions';
 
 /**
  * One tag. The name is plain text; the description is as stored, so an
@@ -20,6 +23,8 @@ export interface TagItem {
 	slug: string;
 	description: string;
 	count: number;
+	/** The visible extension columns' data, keyed by column key; absent when none. */
+	extensions?: Record< string, ExtensionCellData >;
 }
 
 /**

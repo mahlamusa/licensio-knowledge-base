@@ -10,7 +10,7 @@
  *
  * @package Licensio_KB
  * @since   1.0.0
- * @since   1.1.0 Covers the FAQ entries.
+ * @since   1.1.0 Covers the FAQ entries and their per-request memo.
  */
 
 use Brain\Monkey\Filters;
@@ -57,6 +57,25 @@ class Licensio_KB_Blocks_Test extends Licensio_KB_Test_Case {
     private $query_args = array();
 
     /**
+     * How many times get_posts() ran.
+     *
+     * @since 1.1.0
+     * @var int
+     */
+    private $queries = 0;
+
+    /**
+     * The `last_changed` value of each cache group, as WordPress reports it.
+     *
+     * Unique per test, so the FAQ entries memo never carries one test's
+     * articles into the next.
+     *
+     * @since 1.1.0
+     * @var array<string, string>
+     */
+    private $last_changed = array();
+
+    /**
      * The articles get_posts() answers with.
      *
      * @since 1.0.0
@@ -84,6 +103,7 @@ class Licensio_KB_Blocks_Test extends Licensio_KB_Test_Case {
      * Stub the WordPress surface the blocks and their templates touch.
      *
      * @since 1.0.0
+     * @since 1.1.0 Stubs the cache last_changed values and counts the article queries.
      *
      * @return void
      */
@@ -93,8 +113,20 @@ class Licensio_KB_Blocks_Test extends Licensio_KB_Test_Case {
         $this->shortcodes = array();
         $this->registered = array();
         $this->query_args = array();
+        $this->queries    = 0;
         $this->articles   = array();
         $this->categories = array();
+
+        $this->last_changed = array(
+            'posts' => uniqid( 'posts', true ),
+            'terms' => uniqid( 'terms', true ),
+        );
+
+        Functions\when( 'wp_cache_get_last_changed' )->alias(
+            function ( $group ) {
+                return $this->last_changed[ $group ];
+            }
+        );
 
         Functions\when( 'untrailingslashit' )->alias(
             function ( $value ) {
@@ -144,6 +176,7 @@ class Licensio_KB_Blocks_Test extends Licensio_KB_Test_Case {
         Functions\when( 'get_posts' )->alias(
             function ( $args = array() ) {
                 $this->query_args = (array) $args;
+                ++$this->queries;
 
                 return $this->articles;
             }
@@ -319,9 +352,23 @@ class Licensio_KB_Blocks_Test extends Licensio_KB_Test_Case {
     }
 
     /**
+     * Move a cache group's `last_changed` value, as WordPress does on a write.
+     *
+     * @since 1.1.0
+     *
+     * @param string $group The cache group, `posts` or `terms`.
+     *
+     * @return void
+     */
+    private function change( $group ) {
+        $this->last_changed[ $group ] = uniqid( $group, true );
+    }
+
+    /**
      * Stub the post functions around a set of articles.
      *
      * @since 1.0.0
+     * @since 1.1.0 Moves the posts last_changed value, as saving the articles would.
      *
      * @param array<int, array{id: int, title: string, excerpt?: string}> $articles The articles.
      *
@@ -347,6 +394,7 @@ class Licensio_KB_Blocks_Test extends Licensio_KB_Test_Case {
         }
 
         $this->articles = $posts;
+        $this->change( 'posts' );
 
         Functions\when( 'get_post' )->alias(
             function ( $post = null ) {
@@ -1143,7 +1191,7 @@ class Licensio_KB_Blocks_Test extends Licensio_KB_Test_Case {
      * given, or no category at all, is left alone.
      *
      * @since 1.0.0
-     * @since 1.1.0 Checks the entries follow the same order.
+     * @since 1.1.0 Checks the entries follow the same order, and that reordering drops the stored entries.
      *
      * @return void
      */
@@ -1151,7 +1199,6 @@ class Licensio_KB_Blocks_Test extends Licensio_KB_Test_Case {
         $this->stub_articles( array() );
 
         // No object cache, so each render asks the double again.
-        Functions\when( 'wp_cache_get_last_changed' )->justReturn( '1' );
         Functions\when( 'wp_cache_get' )->justReturn( false );
         Functions\when( 'wp_cache_set' )->justReturn( true );
 
@@ -1223,6 +1270,7 @@ class Licensio_KB_Blocks_Test extends Licensio_KB_Test_Case {
         $this->assertSame( Licensio_KB_Article_Order::ORDERBY, $this->query_args['orderby'], 'The entries follow the same order.' );
 
         $ordered = false;
+        $this->change( 'posts' );
 
         $block( array( 'category' => 'billing' ), '', null );
         $this->assertSame( 'menu_order', $this->query_args['orderby'], 'A category nobody ordered keeps the current order.' );
@@ -1960,7 +2008,10 @@ class Licensio_KB_Blocks_Test extends Licensio_KB_Test_Case {
         ) as $attributes ) {
             $markup        = $block( $attributes, '', null );
             $rendered_args = $this->query_args;
-            $entries       = Licensio_KB_FAQ_Block::entries( $attributes );
+
+            // Drop the memo, so entries() runs its own query to compare.
+            $this->change( 'posts' );
+            $entries = Licensio_KB_FAQ_Block::entries( $attributes );
 
             $this->assertSame( $rendered_args, $this->query_args, 'entries() must run the query the block runs.' );
 
@@ -2036,6 +2087,115 @@ class Licensio_KB_Blocks_Test extends Licensio_KB_Test_Case {
             ->with( Mockery::type( 'array' ), 'licensio-kb/faq' );
 
         $this->assertSame( array(), Licensio_KB_FAQ_Block::entries( array() ) );
+    }
+
+    /**
+     * Equivalent FAQ attributes run the article query once per request.
+     *
+     * The block hands over typed attributes and a plugin reading the post
+     * content hands over the raw ones; whichever comes first queries and the
+     * other reuses the result.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_the_faq_entries_run_the_query_once_for_equivalent_attributes() {
+        $this->stub_articles(
+            array(
+                array(
+                    'id'    => 31,
+                    'title' => 'How do I update my card?',
+                ),
+            )
+        );
+
+        $entries = Licensio_KB_FAQ_Block::entries(
+            array(
+                'count'       => '5',
+                'showexcerpt' => 'true',
+                'unknown'     => 'dropped',
+            )
+        );
+        $markup  = $this->render_callback( 'licensio-kb/faq' )(
+            array(
+                'count'       => 5,
+                'showExcerpt' => true,
+            ),
+            '',
+            null
+        );
+
+        $this->assertSame( 1, $this->queries, 'The render reuses the entries.' );
+        $this->assertStringContainsString( 'How do I update my card?', $markup );
+        $this->assertSame( $entries, Licensio_KB_FAQ_Block::entries( array( 'count' => 5 ) ) );
+        $this->assertSame( 1, $this->queries, 'A third equivalent call reuses them too.' );
+    }
+
+    /**
+     * Different FAQ attributes run their own queries.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_the_faq_entries_run_a_query_per_set_of_attributes() {
+        $this->stub_articles( array() );
+
+        Licensio_KB_FAQ_Block::entries( array( 'count' => 5 ) );
+        Licensio_KB_FAQ_Block::entries( array( 'count' => 6 ) );
+        Licensio_KB_FAQ_Block::entries( array( 'showExcerpt' => false ) );
+        Licensio_KB_FAQ_Block::entries( array( 'count' => 6 ) );
+
+        $this->assertSame( 3, $this->queries );
+        $this->assertSame( 10, $this->query_args['posts_per_page'], 'The repeated set did not query again.' );
+    }
+
+    /**
+     * A write to posts or terms drops the FAQ entries computed before it.
+     *
+     * WordPress moves the posts `last_changed` value when an article is saved,
+     * trashed or deleted, or its meta changes, which covers the per-category
+     * order, and the terms value when its terms change. A save and a render in
+     * one request must not read the entries from before the save.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_the_faq_entries_are_recomputed_after_a_post_or_term_change() {
+        $this->stub_articles(
+            array(
+                array(
+                    'id'    => 31,
+                    'title' => 'How do I update my card?',
+                ),
+            )
+        );
+
+        $before = Licensio_KB_FAQ_Block::entries( array() );
+
+        $this->stub_articles(
+            array(
+                array(
+                    'id'    => 31,
+                    'title' => 'How do I change my card?',
+                ),
+            )
+        );
+
+        $after = Licensio_KB_FAQ_Block::entries( array() );
+
+        $this->assertSame( 2, $this->queries, 'Saving an article drops the entries.' );
+        $this->assertSame( 'How do I update my card?', $before[0]['question'] );
+        $this->assertSame( 'How do I change my card?', $after[0]['question'] );
+
+        Licensio_KB_FAQ_Block::entries( array() );
+        $this->assertSame( 2, $this->queries, 'Nothing changed since, so the entries are reused.' );
+
+        $this->change( 'terms' );
+        Licensio_KB_FAQ_Block::entries( array() );
+        $this->assertSame( 3, $this->queries, 'Changing terms drops the entries.' );
     }
 
     /**

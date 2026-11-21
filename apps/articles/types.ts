@@ -6,10 +6,13 @@
  * admin page localises (`Licensio_KB_Articles_Admin::app_data()`).
  *
  * @since 1.0.0
- * @since 1.1.0 Adds the `extensions` config and the extension filters.
+ * @since 1.1.0 Adds the `extensions` config, the extension columns, each row's extension data and the extension filters.
  */
 
-import type { ExtensionsConfig } from '../components/extensions';
+import type {
+	ExtensionCellData,
+	ExtensionsConfig,
+} from '../components/extensions';
 import type { ExtFilterValues } from './ext-filters';
 import type { TermTaxonomy, TermValue } from '../components/types/terms';
 
@@ -22,6 +25,12 @@ export type StatusFilter = 'all' | ArticleStatus;
 
 /** The sortable columns. */
 export type ArticleOrderBy = 'date' | 'modified' | 'title' | 'views' | 'rating';
+
+/** An extension column's key, `{namespace}/{name}`. */
+export type ExtensionColumnKey = `${ string }/${ string }`;
+
+/** What the list can be sorted by: a core column or a sortable extension column. */
+export type ListOrderBy = ArticleOrderBy | ExtensionColumnKey;
 
 /** The metrics window, in days. */
 export type MetricsWindow = 7 | 30 | 90;
@@ -37,6 +46,9 @@ export type ArticleColumn =
 	| 'reading_time'
 	| 'date'
 	| 'modified';
+
+/** A column the user can show: a core one or an extension one. */
+export type ListColumn = ArticleColumn | ExtensionColumnKey;
 
 /** Rows per page. */
 export type PerPage = 20 | 50 | 100;
@@ -95,6 +107,8 @@ export interface ArticleItem {
 	edit_url: string;
 	/** Permalink, or the preview link for an unpublished article. */
 	view_url: string;
+	/** The data of the extension columns the user shows, by column key. */
+	extensions: Record< string, ExtensionCellData >;
 }
 
 /** Status counts, as `wp_count_posts()` reports them; `all` excludes trash. */
@@ -129,7 +143,7 @@ export interface ArticleFilters {
  * The full list query: filters plus sort and page.
  */
 export interface ArticleQuery extends ArticleFilters {
-	orderby: ArticleOrderBy;
+	orderby: ListOrderBy;
 	order: 'asc' | 'desc';
 	page: number;
 	per_page: PerPage;
@@ -255,7 +269,7 @@ export interface AuthorPage {
  * `GET` / `PUT preferences`.
  */
 export interface ListPreferences {
-	columns: ArticleColumn[];
+	columns: ListColumn[];
 	per_page: PerPage;
 	/** True once the user picked their columns in the Columns picker. */
 	columns_chosen: boolean;

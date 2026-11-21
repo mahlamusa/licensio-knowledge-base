@@ -38,13 +38,34 @@
  * A save closes its row only if that row is still the one open: the user may
  * have cancelled and opened another tag while the request was on its way.
  *
+ * Extension columns show after the column their `position` names, the
+ * default visible ones only, as the table has no column picker. When one
+ * sits between Name and Description, an open Quick edit row's shared cell
+ * spans it too. Extension row actions follow Edit and Quick edit under the
+ * name, on lines of their own that wrap, so they never widen the Name
+ * column; they are disabled with them while a row is open. A running one is
+ * marked busy and ignores more clicks; a failure shows a generic toast.
+ *
  * @since 1.0.0
+ * @since 1.1.0 Shows extension columns and row actions.
  */
 
 import { computed, nextTick, reactive, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
+import ExtensionCell from '../../components/ExtensionCell.vue';
+import type {
+	ExtensionColumn,
+	ExtensionContext,
+} from '../../components/extensions';
 import { __, sprintf } from '../../components/i18n';
 import { changePageKeepingFocus } from '../../components/pager-focus';
+import {
+	isExtensionRowActionRunning,
+	runExtensionRowAction,
+} from '../../components/extension-row-action';
+import { rowActionEntries } from '../../components/row-actions';
+import { orderColumns } from '../../components/column-order';
+import { shownColumns } from '../../components/term-extensions';
 import { settings } from '../api';
 import { useTagsStore } from '../store';
 import type { TagFields, TagItem, TagOrder, TagOrderBy } from '../types';
@@ -63,7 +84,27 @@ const emit = defineEmits< {
 } >();
 
 const store = useTagsStore();
-const { articlesUrl } = settings();
+const { articlesUrl, extensions, root: restRoot, nonce } = settings();
+
+const ctx: ExtensionContext = {
+	refresh: ( ids ) => store.refresh( ids ),
+	clearSelection: () => {
+		store.selected = [];
+	},
+	screen: 'tags',
+	rest: { root: restRoot, nonce },
+};
+
+// Read once: every extension script registered before the app mounted.
+const extensionColumns = shownColumns( extensions.columns );
+const extensionKeys = new Set(
+	extensionColumns.map( ( column ) => column.key )
+);
+const extensionActions = rowActionEntries< TagItem >(
+	'tags',
+	extensions.rowActions,
+	ctx
+);
 
 const root = ref< HTMLElement | null >( null );
 const editingId = ref< number | null >( null );
@@ -146,12 +187,13 @@ function sortOrder( key: TagOrderBy ): 'ascend' | 'descend' | null {
 
 /**
  * The cell attributes of a column that an open Quick edit row spans: its
- * Name cell takes the Slug and Description columns too, which then have no
+ * Name cell takes every column up to Description too, which then have no
  * cell of their own in that row.
  *
  * @since 1.0.0
+ * @since 1.1.0 The span covers the extension columns placed in between.
  *
- * @param {number} span The open row's column span: 3 for Name, 0 otherwise.
+ * @param {number} span The open row's column span on Name, 0 otherwise.
  *
  * @return {Function} The column's `customCell`.
  */
@@ -160,35 +202,76 @@ function quickEditCell( span: number ) {
 		editingId.value === record.id ? { colSpan: span } : {};
 }
 
-const columns = computed( () => [
-	{
-		title: __( 'Name', 'licensio-knowledge-base' ),
-		key: 'name',
-		sorter: true,
-		sortOrder: sortOrder( 'name' ),
-		sortDirections: [ 'ascend', 'descend', 'ascend' ],
-		customCell: quickEditCell( 3 ),
-	},
-	{
-		title: __( 'Slug', 'licensio-knowledge-base' ),
-		key: 'slug',
-		customCell: quickEditCell( 0 ),
-	},
-	{
-		title: __( 'Description', 'licensio-knowledge-base' ),
-		key: 'description',
-		customCell: quickEditCell( 0 ),
-	},
-	{
-		title: __( 'Published', 'licensio-knowledge-base' ),
-		key: 'count',
-		class: 'lkb-tags__count',
-		width: 110,
-		sorter: true,
-		sortOrder: sortOrder( 'count' ),
-		sortDirections: [ 'descend', 'ascend', 'descend' ],
-	},
-] );
+/**
+ * A table column for an extension column.
+ *
+ * @since 1.1.0
+ *
+ * @param {ExtensionColumn} column The declared column.
+ *
+ * @return {Object} The table column.
+ */
+function extensionColumn( column: ExtensionColumn ) {
+	return {
+		title: column.label,
+		key: column.key,
+		className: 'lkb-tags__extension',
+	};
+}
+
+const columns = computed( () => {
+	const core = [
+		{
+			title: __( 'Name', 'licensio-knowledge-base' ),
+			key: 'name',
+			sorter: true,
+			sortOrder: sortOrder( 'name' ),
+			sortDirections: [ 'ascend', 'descend', 'ascend' ],
+		},
+		{
+			title: __( 'Slug', 'licensio-knowledge-base' ),
+			key: 'slug',
+		},
+		{
+			title: __( 'Description', 'licensio-knowledge-base' ),
+			key: 'description',
+		},
+		{
+			title: __( 'Published', 'licensio-knowledge-base' ),
+			key: 'count',
+			class: 'lkb-tags__count',
+			width: 110,
+			sorter: true,
+			sortOrder: sortOrder( 'count' ),
+			sortDirections: [ 'descend', 'ascend', 'descend' ],
+		},
+	];
+	const byKey = new Map< string, Record< string, unknown > >(
+		core.map( ( column ) => [ column.key, column ] )
+	);
+
+	extensionColumns.forEach( ( column ) =>
+		byKey.set( column.key, extensionColumn( column ) )
+	);
+
+	const placed = orderColumns(
+		core.map( ( column ) => column.key ),
+		extensionColumns
+	).map( ( key ) => ( { ...byKey.get( key ), key } ) );
+	const first = placed.findIndex( ( column ) => 'name' === column.key );
+	const last = placed.findIndex( ( column ) => 'description' === column.key );
+
+	return placed.map( ( column, index ) => {
+		if ( index < first || index > last ) {
+			return column;
+		}
+
+		return {
+			...column,
+			customCell: quickEditCell( index === first ? last - first + 1 : 0 ),
+		};
+	} );
+} );
 
 /**
  * Pass a page or sort change to the store.
@@ -533,6 +616,55 @@ watch(
 							{{ __( 'Quick edit', 'licensio-knowledge-base' ) }}
 						</a-button>
 					</div>
+					<div
+						v-if="
+							editingId !== record.id && extensionActions.length
+						"
+						class="lkb-rowactions lkb-rowactions--extensions"
+					>
+						<a-button
+							v-for="action in extensionActions"
+							:key="action.key"
+							type="link"
+							size="small"
+							:data-lkb-extension-action="action.key"
+							:disabled="null !== editingId"
+							:aria-busy="
+								isExtensionRowActionRunning(
+									action,
+									record as TagItem
+								) || undefined
+							"
+							:aria-label="
+								sprintf(
+									/* translators: 1: the action's label, 2: the tag's name. */
+									__(
+										'%1$s “%2$s”',
+										'licensio-knowledge-base'
+									),
+									action.label,
+									record.name
+								)
+							"
+							@click="
+								runExtensionRowAction(
+									action,
+									record as TagItem
+								)
+							"
+						>
+							{{ action.label }}
+						</a-button>
+					</div>
+				</template>
+
+				<template v-else-if="extensionKeys.has( String( column.key ) )">
+					<ExtensionCell
+						screen="tags"
+						:column-key="String( column.key )"
+						:row="record as TagItem"
+						:ctx="ctx"
+					/>
 				</template>
 
 				<template v-else-if="'slug' === column.key">
@@ -582,19 +714,29 @@ watch(
  * A name that is one long word breaks inside the Name column instead of
  * widening the table past its card. The row actions under it stay on one
  * line, so they set the column's narrowest width and a normal word still
- * fits whole.
+ * fits whole. Extension row actions go on lines of their own below and wrap,
+ * so they never widen the column.
  */
 .lkb-tags__name {
 	overflow-wrap: anywhere;
 }
 
-.lkb-tablecard--core .lkb-rowactions:not( .is-open ) {
+.lkb-tablecard--core
+	.lkb-rowactions:not( .is-open ):not( .lkb-rowactions--extensions ) {
 	flex-wrap: nowrap;
 	white-space: nowrap;
 }
 
 .lkb-tags__description {
 	color: var( --lkb-ink-muted );
+}
+
+/*
+ * An extension cell's long word breaks inside its column instead of
+ * widening the table past its card.
+ */
+.lkb-tablecard--core :deep( td.lkb-tags__extension ) {
+	overflow-wrap: anywhere;
 }
 
 /*
