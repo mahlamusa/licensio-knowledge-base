@@ -278,6 +278,9 @@ class Licensio_KB_Extensions {
     /**
      * Add an action to the menu of each row in an app's list.
      *
+     * Rows in the Articles app's Trash view do not show it: their only
+     * actions are Restore and Delete permanently, as on core's list screens.
+     *
      * @since 1.1.0
      *
      * @param string               $screen `articles`, `categories` or `tags`.

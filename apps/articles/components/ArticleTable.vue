@@ -10,13 +10,16 @@
  * in place under the row. A locked row shows who is editing it and cannot be
  * quick edited. While a bulk action runs the row actions are paused, and
  * hovering them says why. A page change from the pager keeps focus in the
- * pager, on the current page once the control pressed is disabled.
+ * pager, on the current page once the control pressed is disabled. Row
+ * actions other plugins registered follow the app's own, outside the Trash
+ * view; one runs once at a time per row and shows an error toast when it
+ * fails.
  *
  * Extension columns sit where their `position` puts them and render through
  * `ExtensionCell`; the sortable ones sort like core columns.
  *
  * @since 1.0.0
- * @since 1.1.0 Shows and sorts by the extension columns.
+ * @since 1.1.0 Shows and sorts by the extension columns, and shows the extension row actions.
  */
 
 import { computed, nextTick, ref } from 'vue';
@@ -26,10 +29,15 @@ import ExtensionCell from '../../components/ExtensionCell.vue';
 import { changePageKeepingFocus } from '../../components/pager-focus';
 import { __, sprintf } from '../../components/i18n';
 import { statusLabel } from '../../components/status';
+import { rowActionEntries } from '../../components/row-actions';
 import { config } from '../api';
 import { confirmTitle, performAction } from '../actions';
 import { isExtensionKey, orderColumns } from '../columns';
 import { articlesExtensionContext } from '../extension-context';
+import {
+	isExtensionRowActionRunning,
+	runExtensionRowAction,
+} from '../extension-row-action';
 import { useArticlesStore } from '../store';
 import QuickEditRow from './QuickEditRow.vue';
 import type {
@@ -43,6 +51,11 @@ const store = useArticlesStore();
 const settings = config();
 const root = ref< HTMLElement | null >( null );
 const ctx = articlesExtensionContext();
+const extensionActions = rowActionEntries< ArticleItem >(
+	'articles',
+	settings.extensions.rowActions,
+	ctx
+);
 
 /**
  * The current sort of a column, in Ant's terms.
@@ -479,6 +492,29 @@ const expandedKeys = computed( () =>
 										__( 'Trash', 'licensio-knowledge-base' )
 									}}
 								</ConfirmButton>
+								<a-button
+									v-for="action in extensionActions"
+									:key="action.key"
+									type="link"
+									size="small"
+									class="lkb-rowactions__button"
+									:disabled="store.bulk.running"
+									:data-row-action="action.key"
+									:aria-busy="
+										isExtensionRowActionRunning(
+											action,
+											record as ArticleItem
+										)
+									"
+									@click="
+										runExtensionRowAction(
+											action,
+											record as ArticleItem
+										)
+									"
+								>
+									{{ action.label }}
+								</a-button>
 							</template>
 							<template v-else>
 								<a-button
