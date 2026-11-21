@@ -1,16 +1,14 @@
 /**
  * Unit tests of the term apps' extension helpers.
  *
- * Only default visible columns show; columns are placed after their
- * `position` in declared order; a refresh asks only for listed rows and
- * swaps the answer in place, dropping requested rows that are gone.
+ * Only default visible columns show; a refresh asks only for listed rows and
+ * swaps the answer in place.
  *
  * @since 1.1.0
  */
 
 import { describe, expect, it } from 'vitest';
 import {
-	placeColumns,
 	refreshIds,
 	replaceRows,
 	shownColumns,
@@ -23,78 +21,30 @@ import type { ExtensionColumn } from '../../apps/components/extensions';
  * @since 1.1.0
  *
  * @param {string}  key            The column key.
- * @param {string}  position       The column it follows; empty for the end.
  * @param {boolean} defaultVisible Whether it shows by default.
  *
  * @return {ExtensionColumn} The column.
  */
-function column(
-	key: string,
-	position = '',
-	defaultVisible = true
-): ExtensionColumn {
+function column( key: string, defaultVisible = true ): ExtensionColumn {
 	return {
 		key,
 		label: key,
 		group: '',
 		defaultVisible,
 		sortable: false,
-		position,
+		position: '',
 	};
 }
-
-const core = [ { key: 'name' }, { key: 'slug' }, { key: 'count' } ];
-const make = ( extension: ExtensionColumn ) => ( { key: extension.key } );
-const keys = ( columns: Array< { key: string } > ) =>
-	columns.map( ( one ) => one.key );
 
 describe( 'shownColumns', () => {
 	it( 'keeps the default visible columns in order', () => {
 		expect(
-			keys(
-				shownColumns( [
-					column( 'acme/a' ),
-					column( 'acme/b', '', false ),
-					column( 'acme/c' ),
-				] )
-			)
+			shownColumns( [
+				column( 'acme/a' ),
+				column( 'acme/b', false ),
+				column( 'acme/c' ),
+			] ).map( ( one ) => one.key )
 		).toEqual( [ 'acme/a', 'acme/c' ] );
-	} );
-} );
-
-describe( 'placeColumns', () => {
-	it( 'puts columns with no or an unknown position at the end', () => {
-		expect(
-			keys(
-				placeColumns(
-					core,
-					[ column( 'acme/a' ), column( 'acme/b', 'nope' ) ],
-					make
-				)
-			)
-		).toEqual( [ 'name', 'slug', 'count', 'acme/a', 'acme/b' ] );
-	} );
-
-	it( 'puts a column after its position, keeping the declared order', () => {
-		expect(
-			keys(
-				placeColumns(
-					core,
-					[
-						column( 'acme/a', 'name' ),
-						column( 'acme/b', 'name' ),
-						column( 'acme/c', 'acme/a' ),
-					],
-					make
-				)
-			)
-		).toEqual( [ 'name', 'acme/a', 'acme/b', 'acme/c', 'slug', 'count' ] );
-	} );
-
-	it( 'leaves the core list alone', () => {
-		placeColumns( core, [ column( 'acme/a', 'name' ) ], make );
-
-		expect( keys( core ) ).toEqual( [ 'name', 'slug', 'count' ] );
 	} );
 } );
 

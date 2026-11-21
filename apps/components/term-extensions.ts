@@ -3,8 +3,8 @@
  *
  * Neither term app has a column picker, so an extension column shows when
  * PHP declared it `default_visible`; the REST list fills row data for the
- * same columns (`Licensio_KB_Term_Extension_Data`). A table places each
- * column after the column its `position` names, or at the end.
+ * same columns (`Licensio_KB_Term_Extension_Data`). The Tags table places
+ * them with `orderColumns()` (`column-order.ts`), as the Articles table does.
  *
  * `ctx.refresh( ids )` re-reads only the given rows (`include[]` on the
  * list route) and swaps them into the list in place; when one is no longer
@@ -33,59 +33,6 @@ export const REFRESH_MAX_IDS = 100;
  */
 export function shownColumns( columns: ExtensionColumn[] ): ExtensionColumn[] {
 	return columns.filter( ( column ) => column.defaultVisible );
-}
-
-/**
- * Place extension columns among a table's own columns.
- *
- * Each goes after the column its `position` names, which may be an earlier
- * extension column, and after any extension columns already right after it,
- * so columns that name the same position keep their declared order. One with
- * no position, or a position that is not a column, goes at the end.
- *
- * @since 1.1.0
- *
- * @template Column
- *
- * @param {Column[]}          core       The table's own columns, in order.
- * @param {ExtensionColumn[]} extensions The extension columns to show.
- * @param {Function}          make       Builds a table column from an extension column.
- *
- * @return {Column[]} Every column, in order.
- */
-export function placeColumns< Column extends { key: string } >(
-	core: Column[],
-	extensions: ExtensionColumn[],
-	make: ( column: ExtensionColumn ) => Column
-): Column[] {
-	const placed = [ ...core ];
-	const added = new Set< string >();
-
-	extensions.forEach( ( extension ) => {
-		let at =
-			'' === extension.position
-				? -1
-				: placed.findIndex(
-						( column ) => column.key === extension.position
-					);
-
-		if ( -1 === at ) {
-			placed.push( make( extension ) );
-		} else {
-			while (
-				at + 1 < placed.length &&
-				added.has( placed[ at + 1 ].key )
-			) {
-				at++;
-			}
-
-			placed.splice( at + 1, 0, make( extension ) );
-		}
-
-		added.add( extension.key );
-	} );
-
-	return placed;
 }
 
 /**

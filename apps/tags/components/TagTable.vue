@@ -64,7 +64,8 @@ import {
 	runExtensionRowAction,
 } from '../../components/extension-row-action';
 import { rowActionEntries } from '../../components/row-actions';
-import { placeColumns, shownColumns } from '../../components/term-extensions';
+import { orderColumns } from '../../components/column-order';
+import { shownColumns } from '../../components/term-extensions';
 import { settings } from '../api';
 import { useTagsStore } from '../store';
 import type { TagFields, TagItem, TagOrder, TagOrderBy } from '../types';
@@ -219,36 +220,44 @@ function extensionColumn( column: ExtensionColumn ) {
 }
 
 const columns = computed( () => {
-	const placed = placeColumns(
-		[
-			{
-				title: __( 'Name', 'licensio-knowledge-base' ),
-				key: 'name',
-				sorter: true,
-				sortOrder: sortOrder( 'name' ),
-				sortDirections: [ 'ascend', 'descend', 'ascend' ],
-			},
-			{
-				title: __( 'Slug', 'licensio-knowledge-base' ),
-				key: 'slug',
-			},
-			{
-				title: __( 'Description', 'licensio-knowledge-base' ),
-				key: 'description',
-			},
-			{
-				title: __( 'Published', 'licensio-knowledge-base' ),
-				key: 'count',
-				class: 'lkb-tags__count',
-				width: 110,
-				sorter: true,
-				sortOrder: sortOrder( 'count' ),
-				sortDirections: [ 'descend', 'ascend', 'descend' ],
-			},
-		] as Array< Record< string, unknown > & { key: string } >,
-		extensionColumns,
-		extensionColumn
+	const core = [
+		{
+			title: __( 'Name', 'licensio-knowledge-base' ),
+			key: 'name',
+			sorter: true,
+			sortOrder: sortOrder( 'name' ),
+			sortDirections: [ 'ascend', 'descend', 'ascend' ],
+		},
+		{
+			title: __( 'Slug', 'licensio-knowledge-base' ),
+			key: 'slug',
+		},
+		{
+			title: __( 'Description', 'licensio-knowledge-base' ),
+			key: 'description',
+		},
+		{
+			title: __( 'Published', 'licensio-knowledge-base' ),
+			key: 'count',
+			class: 'lkb-tags__count',
+			width: 110,
+			sorter: true,
+			sortOrder: sortOrder( 'count' ),
+			sortDirections: [ 'descend', 'ascend', 'descend' ],
+		},
+	];
+	const byKey = new Map< string, Record< string, unknown > >(
+		core.map( ( column ) => [ column.key, column ] )
 	);
+
+	extensionColumns.forEach( ( column ) =>
+		byKey.set( column.key, extensionColumn( column ) )
+	);
+
+	const placed = orderColumns(
+		core.map( ( column ) => column.key ),
+		extensionColumns
+	).map( ( key ) => ( { ...byKey.get( key ), key } ) );
 	const first = placed.findIndex( ( column ) => 'name' === column.key );
 	const last = placed.findIndex( ( column ) => 'description' === column.key );
 
