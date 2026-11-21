@@ -81,11 +81,13 @@ class Licensio_KB_Articles_REST_Live_Controller extends Licensio_KB_Articles_RES
      * Constructor.
      *
      * @since 1.0.0
+     * @since 1.1.0 Takes the extension columns.
      *
-     * @param Licensio_KB_Live_WPDB $wpdb The live $wpdb adapter on the scratch tables.
+     * @param Licensio_KB_Live_WPDB                 $wpdb              The live $wpdb adapter on the scratch tables.
+     * @param Licensio_KB_Article_Extension_Columns $extension_columns The extension columns.
      */
-    public function __construct( Licensio_KB_Live_WPDB $wpdb ) {
-        parent::__construct( new Licensio_KB_Article_Metrics( 50, 5 ), new Licensio_KB_Article_Bulk() );
+    public function __construct( Licensio_KB_Live_WPDB $wpdb, Licensio_KB_Article_Extension_Columns $extension_columns ) {
+        parent::__construct( new Licensio_KB_Article_Metrics( 50, 5 ), new Licensio_KB_Article_Bulk(), $extension_columns );
 
         $this->wpdb = $wpdb;
     }
