@@ -13,11 +13,12 @@
  *
  * `entries()` is the public way to read the questions and answers a block
  * lists, for another plugin that marks them up, e.g. as `FAQPage` structured
- * data. The markup is built from the same call, so the two never disagree.
+ * data. The markup is built from the same call, so the two never disagree,
+ * and the second caller in a request reuses the first caller's query.
  *
  * @package Licensio_KB
  * @since   1.0.0
- * @since   1.1.0 Adds entries(), the public list of the questions the block renders.
+ * @since   1.1.0 Adds entries(), the public list of the questions the block renders, computed once per request.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -26,7 +27,7 @@ defined( 'ABSPATH' ) || exit;
  * Renders knowledge base articles as a frequently-asked-questions list.
  *
  * @since 1.0.0
- * @since 1.1.0 Adds entries(), the public list of the questions the block renders.
+ * @since 1.1.0 Adds entries(), the public list of the questions the block renders, computed once per request.
  */
 class Licensio_KB_FAQ_Block extends Licensio_KB_Block {
 
@@ -37,6 +38,22 @@ class Licensio_KB_FAQ_Block extends Licensio_KB_Block {
      * @var string[]
      */
     const ORDER_BY = array( 'menu_order', 'date', 'title' );
+
+    /**
+     * The entries already computed in this request, keyed by the normalised attributes.
+     *
+     * @since 1.1.0
+     * @var array<string, array<int, array{question: string, answer: string, url: string, post_id: int}>>
+     */
+    private static $entries = array();
+
+    /**
+     * The posts and terms `last_changed` values the stored entries were computed under.
+     *
+     * @since 1.1.0
+     * @var string
+     */
+    private static $entries_stamp = '';
 
     /**
      * The block name.
@@ -160,6 +177,16 @@ class Licensio_KB_FAQ_Block extends Licensio_KB_Block {
      * them for HTML, or strip the tags and decode the entities for structured
      * data.
      *
+     * The block and a plugin marking up the same block both call this on one
+     * page view, in either order, so the result is kept for the rest of the
+     * request, keyed by the normalised attributes: the second call reuses the
+     * first call's query. Nothing is kept across requests. The stored entries
+     * are dropped as soon as the posts or terms `last_changed` value moves,
+     * which WordPress does when an article is saved, trashed or deleted, its
+     * meta or terms change, or a term is edited or deleted, and which saving
+     * or merging a category's article order does too. So a save followed by a
+     * render in the same request never reads stale entries.
+     *
      * Part of the extension API, detectable through `LICENSIO_KB_EXTENSIONS_API`.
      *
      * @since 1.1.0
@@ -170,7 +197,33 @@ class Licensio_KB_FAQ_Block extends Licensio_KB_Block {
      */
     public static function entries( array $attributes ) {
         $attributes = static::normalize( $attributes );
-        $orderby    = (string) $attributes['orderBy'];
+        $stamp      = wp_cache_get_last_changed( 'posts' ) . ':' . wp_cache_get_last_changed( 'terms' );
+
+        if ( $stamp !== self::$entries_stamp ) {
+            self::$entries       = array();
+            self::$entries_stamp = $stamp;
+        }
+
+        $key = http_build_query( $attributes );
+
+        if ( ! isset( self::$entries[ $key ] ) ) {
+            self::$entries[ $key ] = self::query_entries( $attributes );
+        }
+
+        return self::$entries[ $key ];
+    }
+
+    /**
+     * Run the block's article query and turn the articles into entries.
+     *
+     * @since 1.1.0
+     *
+     * @param array<string, bool|int|string> $attributes The normalised attributes.
+     *
+     * @return array<int, array{question: string, answer: string, url: string, post_id: int}> One entry per article, in display order.
+     */
+    private static function query_entries( array $attributes ) {
+        $orderby = (string) $attributes['orderBy'];
 
         if ( '' !== (string) $attributes['category'] && 'menu_order' === $orderby ) {
             $term = get_term_by( 'slug', (string) $attributes['category'], Licensio_KB_Post_Types::TAXONOMY_CATEGORY );
