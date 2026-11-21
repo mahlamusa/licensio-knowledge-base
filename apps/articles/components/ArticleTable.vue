@@ -12,7 +12,8 @@
  * hovering them says why. A page change from the pager keeps focus in the
  * pager, on the current page once the control pressed is disabled. Row
  * actions other plugins registered follow the app's own, outside the Trash
- * view; one that fails shows an error toast.
+ * view; one runs once at a time per row and shows an error toast when it
+ * fails.
  *
  * @since 1.0.0
  * @since 1.1.0 Shows the extension row actions.
@@ -28,7 +29,10 @@ import { rowActionEntries } from '../../components/row-actions';
 import { config } from '../api';
 import { confirmTitle, performAction } from '../actions';
 import { articlesExtensionContext } from '../extension-context';
-import { runExtensionRowAction } from '../extension-row-action';
+import {
+	isExtensionRowActionRunning,
+	runExtensionRowAction,
+} from '../extension-row-action';
 import { useArticlesStore } from '../store';
 import { ORDER_BY } from '../url';
 import QuickEditRow from './QuickEditRow.vue';
@@ -465,6 +469,12 @@ const expandedKeys = computed( () =>
 									class="lkb-rowactions__button"
 									:disabled="store.bulk.running"
 									:data-row-action="action.key"
+									:aria-busy="
+										isExtensionRowActionRunning(
+											action,
+											record as ArticleItem
+										)
+									"
 									@click="
 										runExtensionRowAction(
 											action,

@@ -66,9 +66,11 @@ export interface BulkActionHandler {
 }
 
 /**
- * Runs a row action on one row. When it throws or returns a promise that
- * rejects, the app shows an error toast. Rows in the Articles Trash view
- * show no extension row actions.
+ * Runs a row action on one row. While its promise is pending, the same
+ * action does not run again on that row. When it throws or returns a promise
+ * that rejects, the app shows a generic error toast and logs the error to the
+ * console with the action's key. Rows in the Articles Trash view show no
+ * extension row actions.
  */
 export interface RowActionHandler< Row extends ExtensionRow = ExtensionRow > {
 	run: ( row: Row, ctx: ExtensionContext ) => unknown;

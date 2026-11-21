@@ -7,8 +7,9 @@
  * own actions, on hover and on keyboard focus, and none show in the Trash
  * view. Running one calls the handler with the row and the app's context,
  * and `ctx.refresh( [ id ] )` fetches just that row again, so the new title
- * shows without a page reload and focus stays on the action. A handler that
- * rejects gets the app's error toast and leaves the row usable.
+ * shows without a page reload and focus stays on the action. A double click
+ * runs it once. A handler that rejects gets the app's error toast, its error
+ * is logged to the console, and the row stays usable.
  *
  * Needs a running WordPress with this plugin and the example extension active
  * and an administrator account, so it is skipped unless `LICENSIO_KB_E2E=1`
@@ -230,9 +231,43 @@ test.describe( 'Extension row actions', () => {
 		expect( lists[ 0 ] ).toContain( `include[]=${ id }` );
 	} );
 
+	test( 'a double click runs the action once', async ( { page } ) => {
+		const app = contentManagerMount( page, 'articles' );
+		const row = app.locator( '.ant-table-row', { hasText: title } );
+
+		await row.hover();
+		await row.getByRole( 'button', { name: 'Example retitle' } ).dblclick();
+
+		await expect(
+			row.getByRole( 'link', { name: `${ title } (retitled)` } )
+		).toBeVisible();
+		await expect(
+			row.getByRole( 'button', { name: 'Example retitle' } )
+		).toHaveAttribute( 'aria-busy', 'false' );
+
+		const runs = await page.evaluate(
+			() =>
+				(
+					window as unknown as {
+						licensioKbExampleRowRuns?: unknown[];
+					}
+				 ).licensioKbExampleRowRuns
+		);
+
+		expect( runs ).toHaveLength( 1 );
+	} );
+
 	test( 'a failing action shows an error and leaves the row usable', async ( {
 		page,
 	} ) => {
+		const logged: string[] = [];
+
+		page.on( 'console', ( entry ) => {
+			if ( 'error' === entry.type() ) {
+				logged.push( entry.text() );
+			}
+		} );
+
 		const app = contentManagerMount( page, 'articles' );
 		const row = app.locator( '.ant-table-row', { hasText: title } );
 
@@ -241,6 +276,10 @@ test.describe( 'Extension row actions', () => {
 
 		await expect( page.locator( '.ant-message' ) ).toContainText(
 			'Example fails could not be completed.'
+		);
+		// The original error is logged for the extension's author.
+		expect( logged.join( '\n' ) ).toContain(
+			'Row action example/fails failed:'
 		);
 
 		await row.getByRole( 'button', { name: 'Example retitle' } ).click();
