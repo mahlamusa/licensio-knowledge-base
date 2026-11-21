@@ -30,13 +30,14 @@ example plugin you can copy into `wp-content/plugins/`.
 | Columns | Yes, in the Columns picker | Yes, `default_visible` ones only | Yes, `default_visible` ones only |
 | Column `position` | Yes | No, always between the name and the count | Yes |
 | Sortable columns | Yes | No | No |
-| Filters | Yes | No | No |
-| Bulk actions | Yes, not in the Trash view | No | No |
+| Filters | Yes | No, refused | No, refused |
+| Bulk actions | Yes, not in the Trash view | No, refused | No, refused |
 | Row actions | Yes, not in the Trash view | Yes | Yes |
 | `ctx.clearSelection()` | Clears the selection | Does nothing (no multiple selection) | Clears the selection |
 
-The registry accepts a filter or a bulk action for `categories` and `tags`,
-but in 1.1.0 neither app shows them.
+The Categories and Tags apps show no filters or bulk actions, so the registry
+refuses them for `categories` and `tags`: `add_filter()` and
+`add_bulk_action()` return `false` there and call `_doing_it_wrong()`.
 
 ## Detecting the API
 
@@ -86,9 +87,10 @@ replaces the earlier item of that kind.
 
 Each method takes the screen (`articles`, `categories` or `tags`), the key and
 an array of arguments, and returns `true` when the item was added. An unknown
-screen, a malformed key, a missing label, a capability that is not a string,
-or a filter with no options is refused: the method returns `false` and calls
-`_doing_it_wrong()`, so the notice shows with `WP_DEBUG` on.
+screen, a filter or bulk action for `categories` or `tags`, a malformed key, a
+missing label, a capability that is not a string, or a filter with no options
+is refused: the method returns `false` and calls `_doing_it_wrong()`, so the
+notice shows with `WP_DEBUG` on.
 
 #### `add_column( $screen, $key, $args )`
 
@@ -116,7 +118,8 @@ silently.
 | `query_arg` | string | none | The query argument a core list link uses for this filter, such as `acme_reviewed`. With it, `edit.php?post_type=licensio_article&acme_reviewed=no` opens the Articles app with the filter set. Passed through `sanitize_key()`. |
 | `capability` | string | the app page's | Who sees the filter. |
 
-KB renders the dropdown; no JavaScript is needed. You apply the chosen option
+Only `articles` takes filters; `categories` and `tags` are refused. KB
+renders the dropdown; no JavaScript is needed. You apply the chosen option
 on [`licensio_kb_articles_query_args`](#narrowing-and-sorting-the-articles-list).
 
 #### `add_bulk_action( $screen, $key, $args )` and `add_row_action( $screen, $key, $args )`
@@ -128,7 +131,8 @@ on [`licensio_kb_articles_query_args`](#narrowing-and-sorting-the-articles-list)
 
 An action shows only when your script registered a `run` handler for it. Row
 actions follow the app's own row actions (in Categories, in each row's
-menu); bulk actions follow the built-in ones in the Articles bulk bar.
+menu); bulk actions follow the built-in ones in the Articles bulk bar. Only
+`articles` takes bulk actions; `categories` and `tags` are refused.
 
 #### Reading the registry
 
@@ -220,11 +224,14 @@ it, with the ID as a tiebreak so paging stays stable. Articles with no score
 come first when ascending and last when descending. It assumes one
 `_acme_score` row per article; a second row would list the article twice.
 
-Do not sort with `meta_key`, or with a `meta_query` that pairs the key with
-`NOT EXISTS`. `meta_key` leaves out the articles that have no score, so the
-sorted list shows fewer articles than the unsorted one. The `NOT EXISTS`
-pair keeps them, but sorts an article that has other meta and no score by
-one of those other values.
+Do not sort with `meta_key`: it leaves out the articles that have no score,
+so the sorted list shows fewer articles than the unsorted one. A `meta_query`
+that pairs an `EXISTS` clause on the key with a `NOT EXISTS` clause (relation
+`OR`) keeps them, but only the `NOT EXISTS` clause gets a join limited to your
+key; the `EXISTS` clause joins every meta row of the article. An `orderby`
+that names the `EXISTS` clause therefore sorts an article that has other meta
+and no score by one of those other values. Name the `NOT EXISTS` clause
+instead, or join the key yourself as above.
 
 ## Enqueueing your script
 

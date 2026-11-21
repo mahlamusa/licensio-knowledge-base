@@ -211,9 +211,12 @@ class Licensio_KB_Extensions {
     /**
      * Add a filter dropdown to an app's filter bar.
      *
+     * Only the Articles app has extension filters. A filter for `categories`
+     * or `tags` is refused, as the Categories and Tags apps show none.
+     *
      * @since 1.1.0
      *
-     * @param string               $screen `articles`, `categories` or `tags`.
+     * @param string               $screen `articles`.
      * @param string               $key    The namespaced key, `{namespace}/{name}`.
      * @param array<string, mixed> $args {
      *     The filter.
@@ -228,6 +231,12 @@ class Licensio_KB_Extensions {
      * @return bool True when the filter was added.
      */
     public function add_filter( $screen, $key, array $args ) {
+        if ( self::is_term_screen( $screen ) ) {
+            self::doing_it_wrong( __METHOD__, __( 'Extension filters can only be added to the articles screen. The Categories and Tags apps show none.', 'licensio-knowledge-base' ) );
+
+            return false;
+        }
+
         $item = $this->base_item( $screen, $key, $args, __METHOD__ );
 
         if ( null === $item ) {
@@ -265,9 +274,13 @@ class Licensio_KB_Extensions {
      * Articles app's Trash view does not offer it: its only actions are
      * Restore and Delete permanently, as on core's list screens.
      *
+     * Only the Articles app has a bulk action bar. A bulk action for
+     * `categories` or `tags` is refused, as the Categories and Tags apps
+     * show none.
+     *
      * @since 1.1.0
      *
-     * @param string               $screen `articles`, `categories` or `tags`.
+     * @param string               $screen `articles`.
      * @param string               $key    The namespaced key, `{namespace}/{name}`.
      * @param array<string, mixed> $args {
      *     The bulk action.
@@ -279,6 +292,12 @@ class Licensio_KB_Extensions {
      * @return bool True when the bulk action was added.
      */
     public function add_bulk_action( $screen, $key, array $args ) {
+        if ( self::is_term_screen( $screen ) ) {
+            self::doing_it_wrong( __METHOD__, __( 'Extension bulk actions can only be added to the articles screen. The Categories and Tags apps show none.', 'licensio-knowledge-base' ) );
+
+            return false;
+        }
+
         $item = $this->base_item( $screen, $key, $args, __METHOD__ );
 
         return null === $item ? false : $this->store( $screen, 'bulk_actions', $key, $item );
@@ -415,6 +434,19 @@ class Licensio_KB_Extensions {
         $this->items[ $screen ][ $type ][ $key ] = $item;
 
         return true;
+    }
+
+    /**
+     * Whether a screen is the Categories or the Tags app.
+     *
+     * @since 1.1.0
+     *
+     * @param mixed $screen The screen given.
+     *
+     * @return bool True for `categories` and `tags`.
+     */
+    private static function is_term_screen( $screen ) {
+        return in_array( $screen, array( self::SCREEN_CATEGORIES, self::SCREEN_TAGS ), true );
     }
 
     /**

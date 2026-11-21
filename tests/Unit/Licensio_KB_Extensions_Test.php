@@ -140,7 +140,8 @@ class Licensio_KB_Extensions_Test extends Licensio_KB_Test_Case {
                 )
             )
         );
-        $this->assertTrue( $this->extensions->add_bulk_action( 'categories', 'acme/check', array( 'label' => 'Check' ) ) );
+        $this->assertTrue( $this->extensions->add_bulk_action( 'articles', 'acme/check', array( 'label' => 'Check' ) ) );
+        $this->assertTrue( $this->extensions->add_row_action( 'categories', 'acme/check', array( 'label' => 'Check' ) ) );
         $this->assertTrue( $this->extensions->add_row_action( 'tags', 'acme/edit', array( 'label' => 'Edit' ) ) );
 
         $this->assertSame(
@@ -174,7 +175,8 @@ class Licensio_KB_Extensions_Test extends Licensio_KB_Test_Case {
             $this->extensions->items( 'articles', 'filters' )['acme/seo']['options']
         );
         $this->assertSame( 'seo_filter', $this->extensions->items( 'articles', 'filters' )['acme/seo']['query_arg'] );
-        $this->assertSame( 'manage_licensio_kb', $this->extensions->items( 'categories', 'bulk_actions' )['acme/check']['capability'], 'The Categories app needs the management capability.' );
+        $this->assertSame( 'edit_licensio_articles', $this->extensions->items( 'articles', 'bulk_actions' )['acme/check']['capability'] );
+        $this->assertSame( 'manage_licensio_kb', $this->extensions->items( 'categories', 'row_actions' )['acme/check']['capability'], 'The Categories app needs the management capability.' );
         $this->assertSame( 'manage_licensio_kb', $this->extensions->items( 'tags', 'row_actions' )['acme/edit']['capability'], 'The Tags app needs the management capability.' );
         $this->assertSame( array(), $this->extensions->items( 'tags', 'columns' ) );
         $this->assertSame( array(), $this->refused );
@@ -241,6 +243,49 @@ class Licensio_KB_Extensions_Test extends Licensio_KB_Test_Case {
                 $this->assertSame( array(), $this->extensions->items( $screen, $type ) );
             }
         }
+    }
+
+    /**
+     * The Categories and Tags apps show no filters or bulk actions, so both are refused there.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_filters_and_bulk_actions_are_refused_on_the_term_screens() {
+        $filter = array(
+            'label'   => 'SEO',
+            'options' => array( 'missing' => 'Missing meta' ),
+        );
+
+        foreach ( array( 'categories', 'tags' ) as $screen ) {
+            $this->assertFalse( $this->extensions->add_filter( $screen, 'acme/seo', $filter ), $screen );
+            $this->assertFalse( $this->extensions->add_bulk_action( $screen, 'acme/check', array( 'label' => 'Check' ) ), $screen );
+
+            $this->assertSame( array(), $this->extensions->items( $screen, 'filters' ), $screen );
+            $this->assertSame( array(), $this->extensions->items( $screen, 'bulk_actions' ), $screen );
+
+            $config = Licensio_KB_Extension_Config::for_screen( $this->extensions, $screen );
+
+            $this->assertSame( array(), $config['filters'], $screen );
+            $this->assertSame( array(), $config['bulkActions'], $screen );
+        }
+
+        $this->assertSame(
+            array(
+                'Extension filters can only be added to the articles screen. The Categories and Tags apps show none.',
+                'Extension bulk actions can only be added to the articles screen. The Categories and Tags apps show none.',
+                'Extension filters can only be added to the articles screen. The Categories and Tags apps show none.',
+                'Extension bulk actions can only be added to the articles screen. The Categories and Tags apps show none.',
+            ),
+            $this->refused,
+            'Each refusal names the screen that supports it.'
+        );
+
+        $this->assertTrue( $this->extensions->add_filter( 'articles', 'acme/seo', $filter ), 'The Articles app still takes filters.' );
+        $this->assertTrue( $this->extensions->add_bulk_action( 'articles', 'acme/check', array( 'label' => 'Check' ) ), 'The Articles app still takes bulk actions.' );
+        $this->assertFalse( $this->extensions->add_filter( 'posts', 'acme/seo', $filter ) );
+        $this->assertStringStartsWith( 'Unknown screen', end( $this->refused ), 'An unknown screen keeps its own notice.' );
     }
 
     /**
