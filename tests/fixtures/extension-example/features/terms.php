@@ -8,7 +8,9 @@
  *   the term meta `licensio_kb_example_note` (a counter) through the batch
  *   filter, in one meta query per page;
  * - `example/term-text`, a default visible column with no script, so the app
- *   shows the `text` the per-term filter fills;
+ *   shows the `text` the per-term filter fills, placed after Slug, so in the
+ *   Tags table it sits between Name and Description, under the Quick edit
+ *   row's shared cell;
  * - `example/term-hidden`, a column that is not default visible, so neither
  *   app shows it and the REST list does not fill it;
  * - `example/term-bump`, a row action whose script adds one to the counter
@@ -89,6 +91,7 @@ function licensio_kb_example_terms_declare( $extensions ) {
             array(
                 'label'           => 'Example text',
                 'default_visible' => true,
+                'position'        => 'slug',
             )
         );
         $extensions->add_column( $screen, 'example/term-hidden', array( 'label' => 'Example hidden' ) );

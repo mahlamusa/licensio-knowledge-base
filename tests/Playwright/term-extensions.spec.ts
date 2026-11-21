@@ -8,9 +8,10 @@
  * hidden, a row action that bumps the counter and refreshes the row through
  * `ctx.refresh( [ id ] )`, and a declared row action with no script that the
  * menu leaves out. The refresh must ask for just that row (`include[]`) and
- * clean up the cell's last render before it renders again. A double click on
- * the Tags action runs it once, and an action that fails shows the generic
- * error toast.
+ * clean up the cell's last render before it renders again. The text column
+ * sits after Slug, so an open Tags Quick edit row's shared cell spans it. A
+ * double click on the Tags action runs it once, and an action that fails
+ * shows the generic error toast.
  *
  * The extra columns also keep the page from scrolling sideways: at 1024px
  * the Tags table has no room to spare, so it scrolls inside its card, an
@@ -171,7 +172,7 @@ test.describe( 'term app extensions @one-at-a-time', () => {
 				.locator(
 					`tr[data-row-key="${ tagId }"] td.lkb-tags__extension`
 				)
-				.last();
+				.filter( { hasText: word } );
 
 			await expect( cell ).toContainText( word );
 			expect(
@@ -301,6 +302,35 @@ test.describe( 'term app extensions @one-at-a-time', () => {
 				row.locator( `[data-example-note="${ id }"]` )
 			).toHaveText( 'Rendered 1' );
 			expect( await cleanups( page ) ).toContain( id );
+
+			// The text column, placed after Slug, sits between Name and
+			// Description, so an open Quick edit row's Name cell spans it.
+			await expect( table.locator( 'thead th' ) ).toHaveText( [
+				'',
+				/^Name/,
+				'Slug',
+				'Example text',
+				'Description',
+				/^Published/,
+				'Example note',
+			] );
+			await expect( row.locator( 'td' ).nth( 3 ) ).toHaveText(
+				`Text for ${ name }`
+			);
+			await row.hover();
+			await row.locator( '[data-lkb-quick]' ).click();
+
+			const open = table.locator( 'tr.ant-table-row' ).filter( {
+				has: page.locator( 'textarea' ),
+			} );
+
+			await expect( open.locator( 'td' ) ).toHaveCount( 4 );
+			await expect( open.locator( 'td' ).nth( 1 ) ).toHaveAttribute(
+				'colspan',
+				'4'
+			);
+			await open.getByRole( 'button', { name: 'Cancel' } ).click();
+			await expect( row.locator( 'td' ) ).toHaveCount( 7 );
 
 			// The double click ran the action once.
 			await page.reload();
