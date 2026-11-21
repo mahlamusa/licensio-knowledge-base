@@ -414,7 +414,12 @@ callers decide whether to skip it. An untitled article has an empty question,
 which the block does not print. The question and answer are what
 `get_the_title()` and `get_the_excerpt()` return, not escaped, so they may carry
 HTML entities or tags: escape them for HTML, or strip the tags and decode the
-entities for structured data. Available from extension API version 1.
+entities for structured data. The result is computed once per request for each
+set of attributes, so the block and a caller share one query, and it is dropped
+when a post or term changes. The filters are applied by that first call only: a
+callback added later in the request, or one whose answer depends on where it
+runs (the current user or post), does not change the stored entries. Available
+from extension API version 1.
 
 Blocks are registered from `dist/blocks/<name>` when the plugin has been built
 and from `blocks/<name>` otherwise, so a checkout that has never run
