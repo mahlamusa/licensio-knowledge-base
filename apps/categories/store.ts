@@ -11,7 +11,12 @@
  * The category writes go through here; they throw on failure so the dialog
  * that asked can show the error where the user is looking.
  *
+ * `refresh( ids )` re-reads just those categories for an extension and swaps
+ * them into the list in place, without touching a load in flight; an answer
+ * that a load or a saved order overtook is dropped.
+ *
  * @since 1.0.0
+ * @since 1.1.0 Refreshes single categories for the extensions.
  */
 
 import { defineStore } from 'pinia';
@@ -19,6 +24,7 @@ import {
 	createCategory,
 	deleteCategory,
 	fetchCategories,
+	fetchCategoriesById,
 	mergeCategories,
 	saveCategoryOrder,
 	updateCategory,
@@ -26,6 +32,11 @@ import {
 import { __ } from '../components/i18n';
 import { useConfirm } from '../components/confirm';
 import { errorMessage } from '../components/rest';
+import {
+	REFRESH_MAX_IDS,
+	refreshIds,
+	replaceRows,
+} from '../components/term-extensions';
 import type {
 	ArticleReassignment,
 	CategoryDeleted,
@@ -337,6 +348,62 @@ export const useCategoriesStore = defineStore( 'licensioKBCategories', {
 			} finally {
 				if ( ticket === listTicket ) {
 					this.loading = false;
+				}
+			}
+		},
+
+		/**
+		 * Re-read categories an extension changed.
+		 *
+		 * - No IDs, or more listed ones than one request may ask for: the
+		 *   whole list loads again.
+		 * - Otherwise only the listed categories among them are read and
+		 *   swapped in where they are; nothing is read when none is listed.
+		 * - When one of them no longer exists, the whole list loads again, so
+		 *   its children show under their new parent.
+		 *
+		 * Like `load()`, it clears `error` first and never rejects: a failure
+		 * shows in `error`. An answer that a load or a saved order overtook is
+		 * dropped.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param {number[]} [ids] The categories.
+		 *
+		 * @return {Promise<void>} Resolves once the rows are in state.
+		 */
+		async refresh( ids?: number[] ): Promise< void > {
+			const wanted = ids?.length ? refreshIds( this.items, ids ) : [];
+
+			if ( ! ids?.length || wanted.length > REFRESH_MAX_IDS ) {
+				await this.load();
+				return;
+			}
+
+			if ( ! wanted.length ) {
+				return;
+			}
+
+			const ticket = listTicket;
+
+			this.error = '';
+
+			try {
+				const fresh = await fetchCategoriesById( wanted );
+
+				if ( ticket !== listTicket ) {
+					return;
+				}
+
+				if ( fresh.length < wanted.length ) {
+					await this.load();
+					return;
+				}
+
+				this.items = replaceRows( this.items, fresh );
+			} catch ( error ) {
+				if ( ticket === listTicket ) {
+					this.error = errorMessage( error );
 				}
 			}
 		},

@@ -1,5 +1,6 @@
 /**
- * Unit tests of `runExtensionRowAction()`.
+ * Unit tests of `runExtensionRowAction()`, shared by the Articles,
+ * Categories and Tags apps.
  *
  * The handler gets the row. One that throws or rejects gets the app's error
  * toast with the action's label, the error is logged with the action's key,
@@ -14,10 +15,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
 	isExtensionRowActionRunning,
 	runExtensionRowAction,
-} from '../../apps/articles/extension-row-action';
-import type { ArticleItem } from '../../apps/articles/types';
+} from '../../apps/components/extension-row-action';
 
-const row = { id: 7 } as ArticleItem;
+const row = { id: 7 };
 const logged = vi.fn();
 
 beforeEach( () => {
@@ -87,7 +87,7 @@ describe( 'runExtensionRowAction', () => {
 				} )
 		);
 		const entry = { key: 'acme/slow', label: 'Slow', run };
-		const other = { id: 8 } as ArticleItem;
+		const other = { id: 8 };
 
 		const first = runExtensionRowAction( entry, row );
 		const second = runExtensionRowAction( entry, row );

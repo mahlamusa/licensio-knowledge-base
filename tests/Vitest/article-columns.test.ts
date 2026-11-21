@@ -1,8 +1,8 @@
 /**
  * Unit tests of the Articles table's column helpers.
  *
- * Extension columns sit after their position, in the declared order, or at
- * the end; the Columns picker groups them; only the sortable ones sort.
+ * The Columns picker groups the extension columns, and only the sortable
+ * ones sort. Their placement is tested in `column-order.test.ts`.
  *
  * @since 1.1.0
  */
@@ -11,7 +11,6 @@ import { describe, expect, it } from 'vitest';
 import {
 	groupColumns,
 	isExtensionKey,
-	orderColumns,
 	sortableKeys,
 } from '../../apps/articles/columns';
 import type { ExtensionColumn } from '../../apps/components/extensions';
@@ -45,54 +44,6 @@ describe( 'isExtensionKey', () => {
 	it( 'tells extension keys from core ones', () => {
 		expect( isExtensionKey( 'acme/score' ) ).toBe( true );
 		expect( isExtensionKey( 'author' ) ).toBe( false );
-	} );
-} );
-
-describe( 'orderColumns', () => {
-	const core = [ 'title', 'author', 'tags', 'date' ];
-
-	it( 'keeps the core order with no extension columns', () => {
-		expect( orderColumns( core, [] ) ).toEqual( core );
-	} );
-
-	it( 'places each column after its position, in declared order', () => {
-		expect(
-			orderColumns( core, [
-				declared( 'acme/a', { position: 'author' } ),
-				declared( 'acme/b', { position: 'author' } ),
-				declared( 'acme/c', { position: 'title' } ),
-				declared( 'acme/d', { position: 'acme/c' } ),
-			] )
-		).toEqual( [
-			'title',
-			'acme/c',
-			'acme/d',
-			'author',
-			'acme/a',
-			'acme/b',
-			'tags',
-			'date',
-		] );
-	} );
-
-	it( 'puts columns with no or an unknown position at the end', () => {
-		expect(
-			orderColumns( core, [
-				declared( 'acme/a' ),
-				declared( 'acme/b', { position: 'nowhere' } ),
-				declared( 'acme/c', { position: 'acme/later' } ),
-				declared( 'acme/later', { position: 'tags' } ),
-			] )
-		).toEqual( [
-			'title',
-			'author',
-			'tags',
-			'acme/later',
-			'date',
-			'acme/a',
-			'acme/b',
-			'acme/c',
-		] );
 	} );
 } );
 

@@ -13,13 +13,31 @@
  * links to the Articles app filtered by that category. The category the
  * app's form holds is marked with `aria-current` and an accent bar.
  *
+ * Extension columns show in each row between the name and the count, the
+ * default visible ones only, as the tree has no column picker; each cell
+ * carries its column label for screen readers and on hover. Extension row
+ * actions follow the app's own actions in the row menu, before Delete; a
+ * running one is marked busy and ignores more clicks, and a failure shows a
+ * generic toast. The extensions' `ctx.clearSelection()` does nothing here:
+ * the tree has no multiple selection, and the selected category's unsaved
+ * article order must not be dropped behind the user's back.
+ *
  * @since 1.0.0
+ * @since 1.1.0 Shows extension columns and row actions.
  */
 
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
+import ExtensionCell from '../../components/ExtensionCell.vue';
+import type { ExtensionContext } from '../../components/extensions';
 import { __, sprintf } from '../../components/i18n';
 import { errorMessage } from '../../components/rest';
+import {
+	isExtensionRowActionRunning,
+	runExtensionRowAction,
+} from '../../components/extension-row-action';
+import { rowActionEntries } from '../../components/row-actions';
+import { shownColumns } from '../../components/term-extensions';
 import { settings } from '../api';
 import {
 	applyMove,
@@ -56,7 +74,25 @@ const emit = defineEmits< {
 } >();
 
 const store = useCategoriesStore();
-const { articlesUrl } = settings();
+const { articlesUrl, extensions, root, nonce } = settings();
+
+const ctx: ExtensionContext = {
+	refresh: ( ids ) => store.refresh( ids ),
+	clearSelection: () => undefined,
+	screen: 'categories',
+	rest: { root, nonce },
+};
+
+// Read once: every extension script registered before the app mounted.
+const extensionColumns = shownColumns( extensions.columns );
+const extensionActions = rowActionEntries< CategoryItem >(
+	'categories',
+	extensions.rowActions,
+	ctx
+);
+
+/** The menu key prefix of an extension row action. */
+const EXTENSION_ACTION = 'extension:';
 
 const saving = ref( false );
 const collapsed = ref< number[] >( [] );
@@ -488,6 +524,24 @@ function onMenuKey( event: KeyboardEvent, id: number ): void {
 }
 
 /**
+ * Run an extension row action from a category's menu.
+ *
+ * @since 1.1.0
+ *
+ * @param {CategoryItem} item The category.
+ * @param {string}       key  The action's key.
+ *
+ * @return {void}
+ */
+function runExtensionAction( item: CategoryItem, key: string ): void {
+	const action = extensionActions.find( ( entry ) => entry.key === key );
+
+	if ( action ) {
+		runExtensionRowAction( action, item );
+	}
+}
+
+/**
  * Run an item from a category's actions menu.
  *
  * @since 1.0.0
@@ -499,6 +553,11 @@ function onMenuKey( event: KeyboardEvent, id: number ): void {
  */
 function onMenu( item: CategoryItem, key: string ): void {
 	menuFor.value = null;
+
+	if ( key.startsWith( EXTENSION_ACTION ) ) {
+		runExtensionAction( item, key.slice( EXTENSION_ACTION.length ) );
+		return;
+	}
 
 	if ( 'up' === key ) {
 		step( item, -1 );
@@ -564,6 +623,7 @@ function onMenu( item: CategoryItem, key: string ): void {
 						class="lkb-tree__node"
 						:class="{
 							'is-editing': props.editingId === itemOf( node ).id,
+							'has-extensions': extensionColumns.length > 0,
 						}"
 						:aria-current="
 							props.editingId === itemOf( node ).id
@@ -574,6 +634,25 @@ function onMenu( item: CategoryItem, key: string ): void {
 						<span class="lkb-tree__name">{{
 							itemOf( node ).name
 						}}</span>
+						<span
+							v-for="column in extensionColumns"
+							:key="column.key"
+							class="lkb-tree__extension"
+							draggable="false"
+							:title="column.label"
+							:data-lkb-column="column.key"
+							@click.stop
+						>
+							<span class="screen-reader-text"
+								>{{ column.label }}:
+							</span>
+							<ExtensionCell
+								screen="categories"
+								:column-key="column.key"
+								:row="itemOf( node )"
+								:ctx="ctx"
+							/>
+						</span>
 						<a
 							class="lkb-tree__count"
 							draggable="false"
@@ -702,6 +781,18 @@ function onMenu( item: CategoryItem, key: string ): void {
 											)
 										}}
 									</a-menu-item>
+									<a-menu-item
+										v-for="action in extensionActions"
+										:key="EXTENSION_ACTION + action.key"
+										:aria-busy="
+											isExtensionRowActionRunning(
+												action,
+												itemOf( node )
+											) || undefined
+										"
+									>
+										{{ action.label }}
+									</a-menu-item>
 									<a-menu-item key="delete" danger>
 										{{
 											__(
@@ -803,5 +894,38 @@ function onMenu( item: CategoryItem, key: string ): void {
 
 .lkb-tree__actions {
 	flex: none;
+}
+
+/*
+ * Extension cells shrink and wrap before the name does: the name keeps at
+ * least a third of the row. On a phone the name takes a line of its own and
+ * the cells, the count and the menu go under it, so nothing in the row is
+ * squeezed to a letter per line.
+ */
+.lkb-tree__node.has-extensions .lkb-tree__name {
+	min-width: min( 8em, 34% );
+}
+
+.lkb-tree__extension {
+	flex: 0 1 auto;
+	min-width: 0;
+	max-width: 30%;
+	overflow-wrap: anywhere;
+	font-size: 12px;
+}
+
+@media ( max-width: 782px ) {
+	.lkb-tree__node.has-extensions {
+		flex-wrap: wrap;
+		row-gap: 4px;
+	}
+
+	.lkb-tree__node.has-extensions .lkb-tree__name {
+		flex-basis: 100%;
+	}
+
+	.lkb-tree__extension {
+		max-width: none;
+	}
 }
 </style>

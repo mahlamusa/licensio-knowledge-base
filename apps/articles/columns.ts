@@ -2,15 +2,10 @@
  * The Articles table's columns, core and extension.
  *
  * Pure helpers over the extension columns PHP declared for the Articles app
- * (`extensions.columns` in its config): where each one sits in the table,
- * how the Columns picker groups them, and which ones the list can sort by.
- *
- * An extension column follows the column named by its `position`, a core
- * column key (`title` included) or another extension column's key, and any
- * extension columns already placed right after that column, so columns
- * sharing a position keep the order they were declared in. A column with no
- * position, or one whose position names no column placed before it, goes at
- * the end.
+ * (`extensions.columns` in its config): how the Columns picker groups them,
+ * and which ones the list can sort by. Where each one sits in the table is
+ * `orderColumns()` in `apps/components/column-order.ts`, shared with the Tags
+ * app.
  *
  * Consumed by the store, `ArticleTable.vue` and `ColumnPicker.vue`.
  *
@@ -38,45 +33,6 @@ export interface ColumnGroup {
  */
 export function isExtensionKey( key: string ): key is ExtensionColumnKey {
 	return key.includes( '/' );
-}
-
-/**
- * Every column key in table order.
- *
- * @since 1.1.0
- *
- * @param {string[]}          core       The core column keys, in table order.
- * @param {ExtensionColumn[]} extensions The extension columns, as declared.
- *
- * @return {string[]} The keys, each extension column after its position.
- */
-export function orderColumns(
-	core: string[],
-	extensions: ExtensionColumn[]
-): string[] {
-	const order = [ ...core ];
-	const placed = new Set< string >();
-	const trailing: string[] = [];
-
-	extensions.forEach( ( column ) => {
-		const after = column.position ? order.indexOf( column.position ) : -1;
-
-		if ( after < 0 ) {
-			trailing.push( column.key );
-			return;
-		}
-
-		let at = after + 1;
-
-		while ( at < order.length && placed.has( order[ at ] ) ) {
-			at++;
-		}
-
-		order.splice( at, 0, column.key );
-		placed.add( column.key );
-	} );
-
-	return [ ...order, ...trailing ];
 }
 
 /**

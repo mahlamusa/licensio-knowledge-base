@@ -7,7 +7,10 @@
  *   icon_svg, icon_data, image_id, icon_url, image_url }`. Siblings come in their manual
  *   order (`licensio_order`), then by name. Names are plain text: core
  *   stores `&` as `&amp;`, so they are decoded here. Descriptions are
- *   answered exactly as stored.
+ *   answered exactly as stored. `include[]` (up to 100 IDs) answers just
+ *   those categories, so the app can refresh the rows an extension changed.
+ *   When the Categories app shows extension columns, each category also
+ *   carries their data as `extensions` (see `Licensio_KB_Term_Extension_Data`).
  * - `POST /categories` creates a category and `PATCH /categories/{id}`
  *   updates one. Only the fields sent are written. The icon and image fields
  *   go through the same sanitisers as the term meta registration; a Base64
@@ -37,6 +40,7 @@
  *
  * @package Licensio_KB
  * @since   1.0.0
+ * @since   1.1.0 Adds `include` and the extension column data to the list.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -73,6 +77,14 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
     const MAX_ORDER_IDS = 1000;
 
     /**
+     * The most categories one list request may ask for by ID.
+     *
+     * @since 1.1.0
+     * @var int
+     */
+    const MAX_INCLUDE = 100;
+
+    /**
      * The gap between two siblings' `licensio_order` values.
      *
      * @since 1.0.0 Shares the step new categories are placed with.
@@ -103,6 +115,14 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
     private $operations;
 
     /**
+     * The extension column data of the list rows.
+     *
+     * @since 1.1.0
+     * @var Licensio_KB_Term_Extension_Data
+     */
+    private $extension_data;
+
+    /**
      * Each category's stored order before `reparent()` moved it, for a rollback.
      *
      * @since 1.0.0
@@ -114,18 +134,23 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      * Build the controller.
      *
      * @since 1.0.0
+     * @since 1.1.0 Takes the term extension data.
      *
-     * @param Licensio_KB_Term_Operations|null $operations The term operations. Created when omitted, so the
-     *                                                     REST registrar can build the controller with no arguments.
+     * @param Licensio_KB_Term_Operations|null     $operations     The term operations. Created when omitted, so the
+     *                                                             REST registrar can build the controller with no arguments.
+     * @param Licensio_KB_Term_Extension_Data|null $extension_data The extension column data. Built over the plugin's
+     *                                                             extension registry when omitted, for the same reason.
      */
-    public function __construct( $operations = null ) {
-        $this->operations = $operations instanceof Licensio_KB_Term_Operations ? $operations : new Licensio_KB_Term_Operations();
+    public function __construct( $operations = null, $extension_data = null ) {
+        $this->operations     = $operations instanceof Licensio_KB_Term_Operations ? $operations : new Licensio_KB_Term_Operations();
+        $this->extension_data = $extension_data instanceof Licensio_KB_Term_Extension_Data ? $extension_data : new Licensio_KB_Term_Extension_Data( licensio_kb()->extensions() );
     }
 
     /**
      * Register the category routes.
      *
      * @since 1.0.0
+     * @since 1.1.0 The list takes `include`.
      *
      * @return void
      */
@@ -138,7 +163,7 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
                     'methods'             => 'GET',
                     'callback'            => array( $this, 'get_items' ),
                     'permission_callback' => array( $this, 'get_items_permissions_check' ),
-                    'args'                => array(),
+                    'args'                => $this->get_items_args(),
                 ),
                 array(
                     'methods'             => 'POST',
@@ -192,6 +217,28 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
                     'args'                => $this->merge_args(),
                 ),
             )
+        );
+    }
+
+    /**
+     * The accepted arguments for the category list.
+     *
+     * @since 1.1.0
+     *
+     * @return array<string, array<string, mixed>> The argument schema.
+     */
+    public function get_items_args() {
+        return array(
+            'include' => array(
+                'type'        => 'array',
+                'items'       => array(
+                    'type'    => 'integer',
+                    'minimum' => 1,
+                ),
+                'maxItems'    => self::MAX_INCLUDE,
+                'default'     => array(),
+                'description' => __( 'Return only these category IDs.', 'licensio-knowledge-base' ),
+            ),
         );
     }
 
@@ -743,22 +790,36 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
     }
 
     /**
-     * Answer every category.
+     * Answer every category, or the ones `include` names.
      *
      * @since 1.0.0
+     * @since 1.1.0 Answers only the `include` IDs when given.
      *
      * @param WP_REST_Request $request The request.
      *
      * @return WP_REST_Response|WP_Error The categories, or the query error.
      */
     public function get_items( $request ) {
-        unset( $request );
+        return $this->list_response( self::id_list( $request->get_param( 'include' ) ) );
+    }
 
-        $items = $this->all_items();
+    /**
+     * The list answer: the categories with their extension column data.
+     *
+     * @since 1.1.0
+     *
+     * @param int[] $ids The category IDs to answer, or none for every category.
+     *
+     * @return WP_REST_Response|WP_Error The categories, or the query error.
+     */
+    private function list_response( array $ids ) {
+        $items = $this->all_items( $ids );
 
         if ( is_wp_error( $items ) ) {
             return $items;
         }
+
+        $items = $this->extension_data->add( Licensio_KB_Extensions::SCREEN_CATEGORIES, Licensio_KB_Post_Types::TAXONOMY_CATEGORY, $items );
 
         return rest_ensure_response( $items );
     }
@@ -1032,6 +1093,7 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
      *
      * @since 1.0.0
      * @since 1.0.0 Leaves out listed categories that were deleted.
+     * @since 1.1.0 Always answers the whole list, whatever the request carries.
      *
      * @param WP_REST_Request $request The request.
      *
@@ -1074,7 +1136,7 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
             update_term_meta( $id, Licensio_KB_Term_Meta::META_ORDER, ( $index + 1 ) * self::ORDER_STEP );
         }
 
-        return $this->get_items( $request );
+        return $this->list_response( array() );
     }
 
     /**
@@ -1336,20 +1398,24 @@ class Licensio_KB_Categories_REST_Controller extends Licensio_KB_REST_Controller
     }
 
     /**
-     * Every category, prepared and sorted.
+     * Every category, or the given ones, prepared and sorted.
      *
      * One term query primes the term meta, and one more primes the icon and
      * image attachments, so preparing each category costs no further queries.
      *
      * @since 1.0.0
+     * @since 1.1.0 Takes the IDs of the only categories to answer.
+     *
+     * @param int[] $ids The category IDs to answer, or none for every category.
      *
      * @return array<int, array<string, mixed>>|WP_Error The categories, siblings in order then by name.
      */
-    private function all_items() {
+    private function all_items( array $ids ) {
         $terms = get_terms(
             array(
                 'taxonomy'               => Licensio_KB_Post_Types::TAXONOMY_CATEGORY,
                 'hide_empty'             => false,
+                'include'                => $ids,
                 'update_term_meta_cache' => true,
             )
         );

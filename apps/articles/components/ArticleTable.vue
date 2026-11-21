@@ -29,15 +29,16 @@ import ExtensionCell from '../../components/ExtensionCell.vue';
 import { changePageKeepingFocus } from '../../components/pager-focus';
 import { __, sprintf } from '../../components/i18n';
 import { statusLabel } from '../../components/status';
-import { rowActionEntries } from '../../components/row-actions';
-import { config } from '../api';
-import { confirmTitle, performAction } from '../actions';
-import { isExtensionKey, orderColumns } from '../columns';
-import { articlesExtensionContext } from '../extension-context';
+import { orderColumns } from '../../components/column-order';
 import {
 	isExtensionRowActionRunning,
 	runExtensionRowAction,
-} from '../extension-row-action';
+} from '../../components/extension-row-action';
+import { rowActionEntries } from '../../components/row-actions';
+import { config } from '../api';
+import { confirmTitle, performAction } from '../actions';
+import { isExtensionKey } from '../columns';
+import { articlesExtensionContext } from '../extension-context';
 import { useArticlesStore } from '../store';
 import QuickEditRow from './QuickEditRow.vue';
 import type {

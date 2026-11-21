@@ -6,6 +6,7 @@
  * @since   1.0.0
  */
 
+use Brain\Monkey\Filters;
 use Brain\Monkey\Functions;
 
 /**
@@ -70,6 +71,7 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
      * and Billing (21) which has the same slug as the Billing tag.
      *
      * @since 1.0.0
+     * @since 1.1.0 Hands the controller empty extension data.
      *
      * @return void
      */
@@ -210,7 +212,7 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
             }
         );
 
-        ( new Licensio_KB_Tags_REST_Controller() )->register_routes();
+        ( new Licensio_KB_Tags_REST_Controller( null, new Licensio_KB_Term_Extension_Data( new Licensio_KB_Extensions() ) ) )->register_routes();
     }
 
     /**
@@ -854,6 +856,7 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
      * Merge hands the tag taxonomy to the shared term operations.
      *
      * @since 1.0.0
+     * @since 1.1.0 Hands the controller empty extension data.
      *
      * @return void
      */
@@ -890,7 +893,7 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
         };
 
         $this->routes = array();
-        ( new Licensio_KB_Tags_REST_Controller( $operations ) )->register_routes();
+        ( new Licensio_KB_Tags_REST_Controller( $operations, new Licensio_KB_Term_Extension_Data( new Licensio_KB_Extensions() ) ) )->register_routes();
 
         $result = $this->call(
             '/tags/merge',
@@ -915,6 +918,7 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
      * left as it was.
      *
      * @since 1.0.0
+     * @since 1.1.0 Hands the controller empty extension data.
      *
      * @return void
      */
@@ -934,7 +938,7 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
         $operations->shouldNotReceive( 'merge_terms', 'move_across_taxonomies' );
 
         $this->routes = array();
-        ( new Licensio_KB_Tags_REST_Controller( $operations ) )->register_routes();
+        ( new Licensio_KB_Tags_REST_Controller( $operations, new Licensio_KB_Term_Extension_Data( new Licensio_KB_Extensions() ) ) )->register_routes();
 
         $merged = $this->call(
             '/tags/merge',
@@ -1051,5 +1055,151 @@ class Licensio_KB_Tags_REST_Test extends Licensio_KB_Test_Case {
 
         $this->assertSame( array( 'Other', 'Licensio_KB_Tags_REST_Controller' ), $admin->register_rest_controller( array( 'Other' ) ) );
         $this->assertSame( array( 'Licensio_KB_Tags_REST_Controller' ), $admin->register_rest_controller( null ) );
+    }
+
+    /**
+     * Each listed tag carries the data of the Tags app's visible extension columns.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_the_list_carries_the_extension_data() {
+        $registry = new Licensio_KB_Extensions();
+
+        Functions\when( 'sanitize_text_field' )->returnArg();
+        Functions\when( '_prime_term_caches' )->justReturn( null );
+        Functions\when( 'rest_sanitize_boolean' )->alias( 'boolval' );
+
+        $registry->add_column(
+            'tags',
+            'acme/seo',
+            array(
+                'label'           => 'SEO',
+                'default_visible' => true,
+            )
+        );
+
+        // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- The list query's database double.
+        $GLOBALS['wpdb'] = new class() {
+            /**
+             * The terms table name.
+             *
+             * @since 1.1.0
+             * @var string
+             */
+            public $terms = 'wp_terms';
+
+            /**
+             * The term_taxonomy table name.
+             *
+             * @since 1.1.0
+             * @var string
+             */
+            public $term_taxonomy = 'wp_term_taxonomy';
+
+            /**
+             * The term_relationships table name.
+             *
+             * @since 1.1.0
+             * @var string
+             */
+            public $term_relationships = 'wp_term_relationships';
+
+            /**
+             * The posts table name.
+             *
+             * @since 1.1.0
+             * @var string
+             */
+            public $posts = 'wp_posts';
+
+            /**
+             * Escape a LIKE value; nothing to escape here.
+             *
+             * @since 1.1.0
+             *
+             * @param string $text The text.
+             *
+             * @return string The text.
+             */
+            public function esc_like( $text ) {
+                return $text;
+            }
+
+            /**
+             * Keep the query as it is.
+             *
+             * @since 1.1.0
+             *
+             * @param string $query The query.
+             *
+             * @return string The query.
+             */
+            public function prepare( $query ) {
+                return $query;
+            }
+
+            /**
+             * The match count.
+             *
+             * @since 1.1.0
+             *
+             * @return string The count.
+             */
+            public function get_var() {
+                return '2';
+            }
+
+            /**
+             * The page of tag rows.
+             *
+             * @since 1.1.0
+             *
+             * @return object[] The rows.
+             */
+            public function get_results() {
+                return array(
+                    (object) array(
+                        'term_id'     => '10',
+                        'name'        => 'Billing',
+                        'slug'        => 'billing',
+                        'description' => '',
+                        'count'       => '1',
+                    ),
+                    (object) array(
+                        'term_id'     => '11',
+                        'name'        => 'Invoices',
+                        'slug'        => 'invoices',
+                        'description' => '',
+                        'count'       => '0',
+                    ),
+                );
+            }
+        };
+
+        Filters\expectApplied( 'licensio_kb_term_extension_data' )->twice()->andReturnUsing(
+            function ( $cells, $term ) {
+                unset( $cells );
+
+                return array( 'acme/seo' => array( 'text' => $term->name ) );
+            }
+        );
+
+        $this->routes = array();
+        ( new Licensio_KB_Tags_REST_Controller( null, new Licensio_KB_Term_Extension_Data( $registry ) ) )->register_routes();
+
+        $page = $this->call(
+            '/tags',
+            'GET',
+            array(
+                'include'  => array( 10, 11 ),
+                'per_page' => 2,
+            )
+        );
+
+        $this->assertSame( 2, $page['total'] );
+        $this->assertEquals( (object) array( 'acme/seo' => array( 'text' => 'Billing' ) ), $page['items'][0]['extensions'] );
+        $this->assertEquals( (object) array( 'acme/seo' => array( 'text' => 'Invoices' ) ), $page['items'][1]['extensions'] );
     }
 }
