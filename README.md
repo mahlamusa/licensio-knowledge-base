@@ -140,7 +140,7 @@ apps/                        Vue admin apps                 (#8, #9, #10)
 assets/                      frontend css + js sources
 tools/                       build helpers and the disposable migrator (#12); never shipped
 pro/                         pro-only code; excluded from the free build
-docs/                        design notes and the listing icon and banner sources (brand/); never shipped
+docs/                        design notes, developer guides (extension-api.md) and the listing icon and banner sources (brand/); never shipped
 .wordpress-org/              WordPress.org listing screenshots, icons and banners (SVN assets/); never shipped
 tests/                       PHPUnit (tests/Unit) and Playwright (tests/Playwright)
 ```
@@ -456,6 +456,17 @@ wp_enqueue_script( 'licensio-kb-search', …, array( 'licensio-kb' ) );
 
 It cannot be a module: module scripts are always deferred and execute after every classic script, so a classic `search.js` depending on a module namespace would run first and find `window.licensioKB` undefined. That is a browser execution-order rule, and declared dependency order cannot fix it.
 
+### Extending the content manager apps
+
+Other plugins can add columns, filters, bulk actions and row actions to the All
+Articles, Categories and Tags apps through the extension API (detected by the
+`LICENSIO_KB_EXTENSIONS_API` constant, `1` since 1.1.0). PHP declares the items
+on `licensio_kb_register_extensions` and fills the row data; a classic script
+enqueued on `licensio_kb_enqueue_app_extensions` registers their behaviour on
+`window.licensioKb.extensions`. The developer guide, with every hook, the
+`ctx` object, the limits and a complete example plugin, is
+[`docs/extension-api.md`](docs/extension-api.md).
+
 ## Filters and actions introduced here
 
 | Name | Kind | Purpose |
@@ -487,6 +498,11 @@ It cannot be a module: module scripts are always deferred and execute after ever
 | `licensio_block_category_grid_terms` | filter | The categories a category grid lists, before ordering and trimming. |
 | `licensio_custom_properties` | filter | The CSS custom properties printed on `.licensio-kb`. |
 | `licensio_dev_server_host`, `licensio_dev_server_port` | filter | Vite dev server location. |
+| `licensio_kb_register_extensions` | action | Declare columns, filters, bulk actions and row actions for the content manager apps. Passed the `Licensio_KB_Extensions` registry. See [`docs/extension-api.md`](docs/extension-api.md). |
+| `licensio_kb_enqueue_app_extensions` | action | An app's script was enqueued; enqueue extension scripts here. Passed the screen and the hook suffix. |
+| `licensio_kb_article_extension_data_batch`, `licensio_kb_article_extension_data` | filter | The extension column data of a page of articles, and of each article. |
+| `licensio_kb_term_extension_data_batch`, `licensio_kb_term_extension_data` | filter | The extension column data of a page of categories or tags, and of each term. |
+| `licensio_kb_articles_query_args` | filter | The `WP_Query` arguments of the Articles list, with the chosen extension filters, to narrow or sort by an extension. |
 
 ### Feedback and voting
 
