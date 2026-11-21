@@ -40,7 +40,7 @@
  *
  * @package Licensio_KB
  * @since   1.0.0
- * @since   1.1.0 Other plugins can change the list query through `licensio_kb_articles_query_args`.
+ * @since   1.1.0 Other plugins can change the list query through `licensio_kb_articles_query_args`, and narrow it by the extension filters in `ext_filters`.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -49,6 +49,7 @@ defined( 'ABSPATH' ) || exit;
  * Serves the Articles app.
  *
  * @since 1.0.0
+ * @since 1.1.0 Extension filters through `ext_filters` and `licensio_kb_articles_query_args`.
  */
 class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
 
@@ -272,6 +273,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      * The filters `GET articles` and `GET articles/ids` share.
      *
      * @since 1.0.0
+     * @since 1.1.0 Adds `ext_filters`, the extension filters.
      *
      * @return array<string, array<string, mixed>> The argument schema.
      */
@@ -319,7 +321,26 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
                 'default'     => Licensio_KB_Article_Metrics::DEFAULT_WINDOW,
                 'description' => __( 'The days the views and rating cover.', 'licensio-knowledge-base' ),
             ),
+            'ext_filters'     => array(
+                'type'              => 'object',
+                'default'           => array(),
+                'sanitize_callback' => array( __CLASS__, 'sanitize_ext_filters' ),
+                'description'       => __( 'Extension filters, as filter key => option. Unknown keys and options are ignored.', 'licensio-knowledge-base' ),
+            ),
         );
+    }
+
+    /**
+     * Keep the extension filters the current user may use, each set to one of its options.
+     *
+     * @since 1.1.0
+     *
+     * @param mixed $value The raw `ext_filters` map.
+     *
+     * @return array<string, string> The chosen option of each filter, keyed by filter key.
+     */
+    public static function sanitize_ext_filters( $value ) {
+        return Licensio_KB_Extension_Filters::sanitize( licensio_kb()->extensions(), Licensio_KB_Extensions::SCREEN_ARTICLES, $value );
     }
 
     /**
@@ -953,7 +974,8 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
     /**
      * The registered extension filter values of a request.
      *
-     * Empty until the Articles app sends extension filters.
+     * Only the filters the current user may use, each set to one of its
+     * options; anything else in `ext_filters` is dropped.
      *
      * @since 1.1.0
      *
@@ -962,9 +984,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      * @return array<string, string> The values, keyed by filter key.
      */
     public function ext_filters( WP_REST_Request $request ): array {
-        unset( $request );
-
-        return array();
+        return self::sanitize_ext_filters( $request->get_param( 'ext_filters' ) );
     }
 
     /**

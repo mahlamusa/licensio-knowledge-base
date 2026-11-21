@@ -30,6 +30,14 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
     private $submenus = array();
 
     /**
+     * The extension registry `licensio_kb()->extensions()` hands out.
+     *
+     * @since 1.1.0
+     * @var Licensio_KB_Extensions
+     */
+    private $extensions;
+
+    /**
      * Stub the URL helpers the redirect map builds on.
      *
      * @since 1.0.0
@@ -60,6 +68,44 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
         Functions\when( 'absint' )->alias(
             function ( $value ) {
                 return abs( (int) $value );
+            }
+        );
+
+        $this->extensions = new Licensio_KB_Extensions();
+        $extensions       = $this->extensions;
+
+        Functions\when( 'licensio_kb' )->justReturn(
+            new class( $extensions ) {
+
+                /**
+                 * The registry.
+                 *
+                 * @since 1.1.0
+                 * @var Licensio_KB_Extensions
+                 */
+                private $extensions;
+
+                /**
+                 * Keep the registry.
+                 *
+                 * @since 1.1.0
+                 *
+                 * @param Licensio_KB_Extensions $extensions The registry.
+                 */
+                public function __construct( Licensio_KB_Extensions $extensions ) {
+                    $this->extensions = $extensions;
+                }
+
+                /**
+                 * The registry.
+                 *
+                 * @since 1.1.0
+                 *
+                 * @return Licensio_KB_Extensions The registry.
+                 */
+                public function extensions() {
+                    return $this->extensions;
+                }
             }
         );
     }
@@ -652,6 +698,98 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
                     'paged'     => '2',
                 )
             )
+        );
+    }
+
+    /**
+     * An extension filter's `query_arg` reaches the Articles app as its URL state.
+     *
+     * Only a filter the user may use, with one of its options, is carried
+     * over; a filter without a `query_arg` never is.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_the_article_list_redirects_with_its_extension_filters() {
+        Functions\when( 'current_user_can' )->alias(
+            function ( $capability ) {
+                return 'manage_seo' !== $capability;
+            }
+        );
+
+        $this->extensions->add_filter(
+            'articles',
+            'seo/status',
+            array(
+                'label'      => 'SEO',
+                'query_arg'  => 'seo_filter',
+                'capability' => 'edit_licensio_articles',
+                'options'    => array(
+                    'missing_meta' => 'Missing meta',
+                    'noindex'      => 'Noindex',
+                ),
+            )
+        );
+        $this->extensions->add_filter(
+            'articles',
+            'seo/score',
+            array(
+                'label'      => 'Score',
+                'query_arg'  => 'seo_score',
+                'capability' => 'manage_seo',
+                'options'    => array( 'low' => 'Low' ),
+            )
+        );
+        $this->extensions->add_filter(
+            'articles',
+            'example/plain',
+            array(
+                'label'      => 'Plain',
+                'capability' => 'edit_licensio_articles',
+                'options'    => array( 'yes' => 'Yes' ),
+            )
+        );
+
+        $manager = new Licensio_KB_Content_Manager( $this->settings() );
+
+        $this->assertSame(
+            'https://example.test/wp-admin/admin.php?page=licensio-kb-articles&status=draft&ext_filters[seo/status]=missing_meta',
+            $manager->redirect_url(
+                'edit.php',
+                array(
+                    'post_type'   => 'licensio_article',
+                    'post_status' => 'draft',
+                    'seo_filter'  => 'missing_meta',
+                    'seo_score'   => 'low',
+                    'yes'         => 'yes',
+                )
+            ),
+            'A filter the user may not use is dropped.'
+        );
+
+        $this->assertSame(
+            'https://example.test/wp-admin/admin.php?page=licensio-kb-articles',
+            $manager->redirect_url(
+                'edit.php',
+                array(
+                    'post_type'  => 'licensio_article',
+                    'seo_filter' => 'unknown',
+                )
+            ),
+            'A value that is not an option is dropped.'
+        );
+
+        $this->assertSame(
+            'https://example.test/wp-admin/admin.php?page=licensio-kb-articles',
+            $manager->redirect_url(
+                'edit.php',
+                array(
+                    'post_type'  => 'licensio_article',
+                    'seo_filter' => array( 'missing_meta' ),
+                )
+            ),
+            'A value that is not scalar is dropped.'
         );
     }
 

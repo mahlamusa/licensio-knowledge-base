@@ -583,10 +583,12 @@ class Licensio_KB_Content_Manager {
      * - `term.php` for either plugin taxonomy goes to the same app with the
      *   term's ID as `term`, so the app opens that term.
      *
-     * Only these known arguments are carried over. Everything else returns an
-     * empty string, meaning no redirect.
+     * Only these known arguments, and the `query_arg` of each registered
+     * extension filter on the article list, are carried over. Everything else
+     * returns an empty string, meaning no redirect.
      *
      * @since 1.0.0
+     * @since 1.1.0 Carries the article list's extension filters over by their `query_arg`.
      *
      * @param string               $screen The admin file being loaded, e.g. `edit.php`.
      * @param array<string, mixed> $query  The request's query arguments, unslashed.
@@ -639,6 +641,11 @@ class Licensio_KB_Content_Manager {
      * a positive ID, the sort only when the app can sort by it, and the page
      * only past the first. A negative number is dropped, not made positive.
      *
+     * An extension filter declared with a `query_arg` is carried over too,
+     * when the user may use it and the value is one of its options: for
+     * example `seo_filter=missing_meta` becomes
+     * `ext_filters[{key}]=missing_meta`, the app's URL state for it.
+     *
      * After an article is trashed in the block editor, core sends the user to
      * the article list with `trashed=1&ids=…` so its list can offer Undo. The
      * app offers the same Undo: the articles still in the trash that the user
@@ -650,6 +657,7 @@ class Licensio_KB_Content_Manager {
      * takes it out of the address before the app can read it.
      *
      * @since 1.0.0 Carries the block editor's trash over as an Undo, one snapshot per user and articles.
+     * @since 1.1.0 Carries the extension filters over by their `query_arg`.
      *
      * @param array<string, mixed> $query The request's query arguments, unslashed.
      *
@@ -710,6 +718,10 @@ class Licensio_KB_Content_Manager {
 
         if ( $paged > 1 ) {
             $args['paged'] = $paged;
+        }
+
+        foreach ( Licensio_KB_Extension_Filters::from_query_args( licensio_kb()->extensions(), Licensio_KB_Extensions::SCREEN_ARTICLES, $query ) as $key => $value ) {
+            $args[ Licensio_KB_Extension_Filters::PARAM . '[' . $key . ']' ] = $value;
         }
 
         if ( '' !== self::arg( $query, 'trashed' ) ) {

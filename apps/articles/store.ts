@@ -9,7 +9,7 @@
  * new one, so back and forward step through pages and sorts.
  *
  * @since 1.0.0
- * @since 1.1.0 Refreshes rows in place for the extensions.
+ * @since 1.1.0 Refreshes rows in place for the extensions, and holds the extension filters.
  */
 
 import { ref } from 'vue';
@@ -24,6 +24,7 @@ import {
 	runBulk,
 	savePreferences,
 } from './api';
+import { withExtFilter } from './ext-filters';
 import { defaultQuery, readQuery, writeQuery } from './url';
 import type {
 	ArticleColumn,
@@ -181,11 +182,13 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 				untagged: q.untagged,
 				needs_attention: q.needs_attention,
 				window: q.window,
+				ext_filters: q.ext_filters,
 			};
 		},
 
 		/**
-		 * How many filters besides status, search and window are set.
+		 * How many filters besides status, search and window are set,
+		 * extension filters included.
 		 *
 		 * @param {State} state The store state.
 		 *
@@ -194,15 +197,17 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 		activeFilterCount( state ): number {
 			const q = state.query;
 
-			return [
-				q.category > 0,
-				q.tag > 0,
-				q.author > 0,
-				'' !== q.after || '' !== q.before,
-				q.uncategorised,
-				q.untagged,
-				q.needs_attention,
-			].filter( Boolean ).length;
+			return (
+				[
+					q.category > 0,
+					q.tag > 0,
+					q.author > 0,
+					'' !== q.after || '' !== q.before,
+					q.uncategorised,
+					q.untagged,
+					q.needs_attention,
+				].filter( Boolean ).length + Object.keys( q.ext_filters ).length
+			);
 		},
 
 		/**
@@ -278,19 +283,24 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 		 * Read the view from the URL and load it.
 		 *
 		 * @since 1.0.0
+		 * @since 1.1.0 Reads the extension filters the page declared.
 		 *
 		 * @return {Promise<void>} Resolves once the page is loaded.
 		 */
 		async init(): Promise< void > {
+			const extensionFilters = config().extensions.filters;
+
 			this.query = readQuery(
 				window.location.search,
-				this.preferences.per_page
+				this.preferences.per_page,
+				extensionFilters
 			);
 
 			window.addEventListener( 'popstate', () => {
 				this.query = readQuery(
 					window.location.search,
-					this.preferences.per_page
+					this.preferences.per_page,
+					extensionFilters
 				);
 				this.clearSelection();
 				this.load();
@@ -408,9 +418,30 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 		},
 
 		/**
+		 * Set one extension filter, or clear it with an empty value.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param {string} key   The filter key.
+		 * @param {string} value The option, or an empty string for any.
+		 *
+		 * @return {Promise<void>} Resolves once loaded.
+		 */
+		async setExtFilter( key: string, value: string ): Promise< void > {
+			await this.setFilters( {
+				ext_filters: withExtFilter(
+					this.query.ext_filters,
+					key,
+					value
+				),
+			} );
+		},
+
+		/**
 		 * Clear every filter except the status.
 		 *
 		 * @since 1.0.0
+		 * @since 1.1.0 Clears the extension filters too.
 		 *
 		 * @return {Promise<void>} Resolves once loaded.
 		 */
@@ -425,6 +456,7 @@ export const useArticlesStore = defineStore( 'licensioKbArticles', {
 				uncategorised: false,
 				untagged: false,
 				needs_attention: false,
+				ext_filters: {},
 				status: 'all',
 			} );
 		},

@@ -6,12 +6,13 @@
  * must have run first; `index.ts` does that before mounting.
  *
  * @since 1.0.0
- * @since 1.1.0 Falls back to no extensions, and fetches rows by ID.
+ * @since 1.1.0 Falls back to no extensions, fetches rows by ID, and sends the extension filters.
  */
 
 import { noExtensions } from '../components/extensions';
 import { get, patch, PER_PAGE, post, put } from '../components/rest';
 import type { Query } from '../components/rest';
+import { extFilterArgs } from './ext-filters';
 import type {
 	ArticleFilters,
 	ArticleIds,
@@ -91,6 +92,7 @@ export function config(): ArticlesConfig {
  * The filters as query arguments; empty and false values are left out.
  *
  * @since 1.0.0
+ * @since 1.1.0 Adds the extension filters as `ext_filters[{key}]`.
  *
  * @param {ArticleFilters} filters The filters.
  *
@@ -109,6 +111,7 @@ function filterQuery( filters: ArticleFilters ): Query {
 		untagged: filters.untagged ? 1 : undefined,
 		needs_attention: filters.needs_attention ? 1 : undefined,
 		window: filters.window,
+		...extFilterArgs( filters.ext_filters ),
 	};
 }
 
