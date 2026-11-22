@@ -155,6 +155,7 @@ class Licensio_KB_Content_Manager {
      *
      * @since 1.0.0
      * @since 1.0.0 Sends a refused app page bookmark to its classic screen.
+     * @since 1.1.0 Sends a refused core article list to the Articles app.
      *
      * @return void
      */
@@ -171,6 +172,7 @@ class Licensio_KB_Content_Manager {
         add_action( 'load-edit-tags.php', array( $this, 'maybe_redirect' ) );
         add_action( 'load-term.php', array( $this, 'maybe_redirect' ) );
         add_action( 'admin_page_access_denied', array( $this, 'maybe_redirect_to_classic' ) );
+        add_action( 'admin_page_access_denied', array( $this, 'maybe_redirect_refused_article_list' ) );
     }
 
     /**
@@ -513,6 +515,44 @@ class Licensio_KB_Content_Manager {
 
         wp_safe_redirect( $target );
         exit;
+    }
+
+    /**
+     * Send a refused core article list request to the Articles app.
+     *
+     * While the content manager is enabled the core article list has no
+     * menu item, so core checks `edit.php?post_type=licensio_article`
+     * against the Posts menu and refuses it to a user who may edit articles
+     * but not posts. That happens in `menu.php`, before `load-edit.php`
+     * where `maybe_redirect()` runs, so a link into the list, such as an
+     * extension filter's `query_arg` link, would never reach the app. Here
+     * the same redirect runs instead, for a user who may use the Articles
+     * app. Anyone else still gets the core refusal.
+     *
+     * `menu.php` also runs before `admin_init`, so the extension registry is
+     * filled first, which lets the redirect carry the extension filters over.
+     *
+     * Hooked to `admin_page_access_denied`, which core fires just before it
+     * refuses the page.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function maybe_redirect_refused_article_list() {
+        global $pagenow, $plugin_page;
+
+        if ( 'edit.php' !== $pagenow || ! empty( $plugin_page ) ) {
+            return;
+        }
+
+        if ( ! $this->enabled() || ! current_user_can( Licensio_KB_Articles_Admin::capability() ) ) {
+            return;
+        }
+
+        licensio_kb()->extensions()->register();
+
+        $this->maybe_redirect();
     }
 
     /**

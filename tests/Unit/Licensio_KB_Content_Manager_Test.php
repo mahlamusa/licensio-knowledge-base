@@ -11,6 +11,7 @@
  * @since   1.0.0
  */
 
+use Brain\Monkey\Actions;
 use Brain\Monkey\Filters;
 use Brain\Monkey\Functions;
 
@@ -289,6 +290,7 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
         $this->assertSame( 10, has_action( 'load-edit-tags.php', array( $manager, 'maybe_redirect' ) ) );
         $this->assertSame( 10, has_action( 'load-term.php', array( $manager, 'maybe_redirect' ) ) );
         $this->assertSame( 10, has_action( 'admin_page_access_denied', array( $manager, 'maybe_redirect_to_classic' ) ) );
+        $this->assertSame( 10, has_action( 'admin_page_access_denied', array( $manager, 'maybe_redirect_refused_article_list' ) ) );
     }
 
     /**
@@ -1365,6 +1367,209 @@ class Licensio_KB_Content_Manager_Test extends Licensio_KB_Test_Case {
         $this->assertSame( '', $this->classic_redirect_for( $missing, 'edit.php', '' ) );
         $this->assertSame( '', $this->classic_redirect_for( $missing, 'admin.php', Licensio_KB_Content_Manager::ARTICLES_SLUG ) );
         $this->assertSame( '', $this->classic_redirect_for( $built, 'edit.php', Licensio_KB_Content_Manager::ARTICLES_SLUG ) );
+    }
+
+    /**
+     * Run maybe_redirect_refused_article_list() for a refused page and report where it went.
+     *
+     * The current user may edit articles, through the article post type's
+     * `edit_posts` capability, only when `$may_edit` is true, and may do
+     * nothing else. `licensio_kb()` hands out the test's registry.
+     *
+     * @since 1.1.0
+     *
+     * @param Licensio_KB_Content_Manager $manager     The content manager.
+     * @param array<string, mixed>        $query       The query arguments.
+     * @param bool                        $may_edit    Whether the user may edit articles.
+     * @param string                      $screen      The admin file being loaded.
+     * @param string                      $plugin_page The requested page slug.
+     * @param string                      $method      The request method.
+     *
+     * @return string The redirect target, or an empty string when nothing redirected.
+     */
+    private function refused_list_redirect_for( Licensio_KB_Content_Manager $manager, array $query, $may_edit = true, $screen = 'edit.php', $plugin_page = '', $method = 'GET' ) {
+        global $pagenow;
+
+        $pagenow                   = $screen; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- The screen under test.
+        $GLOBALS['plugin_page']    = $plugin_page; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- The page under test.
+        $_GET                      = $query;
+        $_SERVER['REQUEST_METHOD'] = $method;
+
+        $extensions = $this->extensions;
+        $plugin     = new class( $extensions ) {
+
+            /**
+             * The registry handed out.
+             *
+             * @since 1.1.0
+             * @var Licensio_KB_Extensions
+             */
+            private $extensions;
+
+            /**
+             * Hand out a registry.
+             *
+             * @since 1.1.0
+             *
+             * @param Licensio_KB_Extensions $extensions The registry.
+             */
+            public function __construct( Licensio_KB_Extensions $extensions ) {
+                $this->extensions = $extensions;
+            }
+
+            /**
+             * The registry.
+             *
+             * @since 1.1.0
+             *
+             * @return Licensio_KB_Extensions The registry.
+             */
+            public function extensions() {
+                return $this->extensions;
+            }
+        };
+
+        Functions\when( 'licensio_kb' )->justReturn( $plugin );
+        Functions\when( 'get_post_type_object' )->justReturn( null );
+        Functions\when( 'current_user_can' )->alias(
+            function ( $capability ) use ( $may_edit ) {
+                return $may_edit && 'edit_licensio_articles' === $capability;
+            }
+        );
+
+        $target = '';
+
+        Functions\when( 'wp_safe_redirect' )->alias(
+            function ( $location ) use ( &$target ) {
+                $target = $location;
+
+                throw new UnexpectedValueException( 'Redirected.' );
+            }
+        );
+
+        try {
+            $manager->maybe_redirect_refused_article_list();
+        } catch ( UnexpectedValueException $redirect ) {
+            unset( $redirect );
+        } finally {
+            $GLOBALS['plugin_page'] = null; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Reset.
+            $_GET                   = array();
+            unset( $_SERVER['REQUEST_METHOD'] );
+        }
+
+        return $target;
+    }
+
+    /**
+     * Declare the example filter when the registry asks for extensions.
+     *
+     * Declared on the register action, not up front, so a redirect that
+     * reads the registry before filling it misses the filter.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    private function declare_filter_on_register() {
+        Actions\expectDone( 'licensio_kb_register_extensions' )->once()->whenHappen(
+            function ( Licensio_KB_Extensions $extensions ) {
+                $extensions->add_filter(
+                    'articles',
+                    'example/flag',
+                    array(
+                        'label'     => 'Example flag',
+                        'query_arg' => 'example_flag',
+                        'options'   => array(
+                            'flagged'   => 'Flagged',
+                            'unflagged' => 'Not flagged',
+                        ),
+                    )
+                );
+            }
+        );
+    }
+
+    /**
+     * A refused core article list goes to the Articles app with its filters.
+     *
+     * A user who may edit articles but not posts is refused the core list,
+     * because it has no menu item while the apps replace it. The registry is
+     * filled first, so the extension filter's `query_arg` is carried over,
+     * and the URL is the one the `load-edit.php` redirect builds for anyone
+     * else.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_a_refused_article_list_goes_to_the_articles_app() {
+        $this->declare_filter_on_register();
+
+        $manager = $this->active();
+        $query   = array(
+            'post_type'    => 'licensio_article',
+            'example_flag' => 'flagged',
+            'post_status'  => 'publish',
+        );
+        $target  = $this->refused_list_redirect_for( $manager, $query );
+
+        $this->assertSame(
+            'https://example.test/wp-admin/admin.php?page=licensio-kb-articles&status=publish&ext_filters[example/flag]=flagged',
+            $target
+        );
+        $this->assertSame( $target, $this->redirect_for( $manager, 'edit.php', $query ), 'The same URL as the load-edit.php redirect.' );
+    }
+
+    /**
+     * A user who may not use the Articles app still gets the core refusal.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_a_refused_article_list_stays_refused_without_the_capability() {
+        Actions\expectDone( 'licensio_kb_register_extensions' )->never();
+
+        $this->assertSame(
+            '',
+            $this->refused_list_redirect_for(
+                $this->active(),
+                array(
+                    'post_type'    => 'licensio_article',
+                    'example_flag' => 'flagged',
+                ),
+                false
+            )
+        );
+    }
+
+    /**
+     * Other refused pages, the classic screens and core form posts are left to core.
+     *
+     * @since 1.1.0
+     *
+     * @return void
+     */
+    public function test_other_refused_requests_are_not_sent_to_the_articles_app() {
+        $list = array( 'post_type' => 'licensio_article' );
+
+        $this->assertSame( '', $this->refused_list_redirect_for( $this->active( true ), $list ), 'Classic screens.' );
+        $this->assertSame( '', $this->refused_list_redirect_for( $this->active(), $list, true, 'edit.php', Licensio_KB_Content_Manager::CATEGORIES_SLUG ), 'An app page.' );
+        $this->assertSame( '', $this->refused_list_redirect_for( $this->active(), $list, true, 'edit-tags.php' ), 'Another screen.' );
+        $this->assertSame( '', $this->refused_list_redirect_for( $this->active(), $list, true, 'edit.php', '', 'POST' ), 'A form post.' );
+        $this->assertSame( '', $this->refused_list_redirect_for( $this->active(), array( 'post_type' => 'page' ) ), 'Another post type.' );
+        $this->assertSame( '', $this->refused_list_redirect_for( $this->active(), array( 'post_type' => 'post' ) ), 'The posts list.' );
+        $this->assertSame(
+            '',
+            $this->refused_list_redirect_for(
+                $this->active(),
+                array(
+                    'post_type' => 'licensio_article',
+                    'action'    => 'trash',
+                )
+            ),
+            'A list action.'
+        );
     }
 
     /**
