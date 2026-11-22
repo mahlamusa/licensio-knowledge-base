@@ -115,7 +115,7 @@ silently.
 |---|---|---|---|
 | `label` | string | required | The dropdown's label. |
 | `options` | array | required | Option value => label. Values pass through `sanitize_key()`, so use lowercase slugs. At least one option. |
-| `query_arg` | string | none | The query argument a core list link uses for this filter, such as `acme_reviewed`. With it, `edit.php?post_type=licensio_article&acme_reviewed=no` opens the Articles app with the filter set. Passed through `sanitize_key()`. |
+| `query_arg` | string | none | The query argument a core list link uses for this filter, such as `acme_reviewed`. With it, `edit.php?post_type=licensio_article&acme_reviewed=no` opens the Articles app with the filter set, for every user who may use the app, including a role with only the KB capabilities and no `edit_posts`. Other core list arguments, such as `post_status`, are carried over too. Passed through `sanitize_key()`. |
 | `capability` | string | the app page's | Who sees the filter. |
 
 Only `articles` takes filters; `categories` and `tags` are refused. KB
