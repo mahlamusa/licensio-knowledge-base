@@ -8,8 +8,9 @@
  * hidden, a row action that bumps the counter and refreshes the row through
  * `ctx.refresh( [ id ] )`, a declared row action with no script that the
  * menu leaves out, and a row action whose `visible( row )` shows it only on
- * terms named `Marked…`. The refresh must ask for just that row (`include[]`) and
- * clean up the cell's last render before it renders again. The text column
+ * terms named `Marked…`, in the Tags rows and in the Categories row menus.
+ * The refresh must ask for just that row (`include[]`) and clean up the
+ * cell's last render before it renders again. The text column
  * sits after Slug, so an open Tags Quick edit row's shared cell spans it. A
  * double click on the Tags action runs it once, and an action that fails
  * shows the generic error toast.
@@ -400,6 +401,63 @@ test.describe( 'term app extensions @one-at-a-time', () => {
 					name: `Marked action “${ markedName }”`,
 				} )
 			).toHaveCount( 1 );
+		} );
+	} );
+
+	test.describe( 'per row visibility in the Categories app', () => {
+		const plainName = `Plain category visibility ${ suffix }`;
+		const markedName = `Marked category visibility ${ suffix }`;
+		let plainId = 0;
+		let markedId = 0;
+
+		test.beforeAll( () => {
+			plainId = makeTerm( 'licensio_category', plainName );
+			markedId = makeTerm( 'licensio_category', markedName );
+		} );
+
+		test.afterAll( () => {
+			dropTerm( 'licensio_category', plainId );
+			dropTerm( 'licensio_category', markedId );
+		} );
+
+		test( 'hides a row action on the categories its visible check refuses', async ( {
+			page,
+		} ) => {
+			expect( plainId ).toBeGreaterThan( 0 );
+			expect( markedId ).toBeGreaterThan( 0 );
+
+			const menu = page.locator(
+				'.lkb-node-menu:not(.ant-dropdown-hidden)'
+			);
+
+			// Each menu first shows an action every row has, so a missing
+			// Marked action means the check hid it, not that the menu was
+			// empty. The page loads again for each row, so only its menu is open.
+			for ( const [ id, shown ] of [
+				[ plainId, 0 ],
+				[ markedId, 1 ],
+			] ) {
+				await page.goto(
+					`${ contentManagerUrl(
+						'categories'
+					) }&search=${ encodeURIComponent(
+						`category visibility ${ suffix }`
+					) }`
+				);
+
+				const node = page.locator(
+					`.lkb-tree__node:has([data-lkb-actions="${ id }"])`
+				);
+
+				await expect( node ).toBeVisible();
+				await node.locator( `[data-lkb-actions="${ id }"]` ).click();
+				await expect(
+					menu.getByRole( 'menuitem', { name: 'Bump note' } )
+				).toBeVisible();
+				await expect(
+					menu.getByRole( 'menuitem', { name: 'Marked action' } )
+				).toHaveCount( shown );
+			}
 		} );
 	} );
 

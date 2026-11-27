@@ -350,7 +350,8 @@ class Licensio_KB_Extensions {
      *
      * For use while a request is handled (localising an app, a REST callback),
      * once the current user is known. During `rest_api_init` the REST nonce
-     * has not been checked yet, so route schemas read `items()` instead.
+     * has not been checked yet, so route schemas name no extension key and
+     * check the value against this while the request is validated instead.
      *
      * @since 1.1.0
      *

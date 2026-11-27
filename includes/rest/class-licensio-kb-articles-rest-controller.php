@@ -361,7 +361,7 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      * an action changed without reloading the page.
      *
      * @since 1.0.0
-     * @since 1.1.0 Adds `include`, the IDs of the only rows to return, and sorting by the sortable extension columns.
+     * @since 1.1.0 Adds `include`, the IDs of the only rows to return, and sorting by the sortable extension columns the current user may see, checked while the request is validated.
      *
      * @return array<string, array<string, mixed>> The argument schema.
      */
@@ -370,9 +370,10 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
             $this->get_filter_args(),
             array(
                 'orderby'  => array(
-                    'type'    => 'string',
-                    'enum'    => array_merge( self::ORDERBY, $this->extension_columns->sortable_keys() ),
-                    'default' => 'date',
+                    'type'              => 'string',
+                    'default'           => 'date',
+                    'validate_callback' => array( $this->extension_columns, 'validate_orderby' ),
+                    'description'       => __( 'The sort: date, modified, title, views, rating, or a sortable extension column the current user may see.', 'licensio-knowledge-base' ),
                 ),
                 'order'    => array(
                     'type'    => 'string',
@@ -560,19 +561,20 @@ class Licensio_KB_Articles_REST_Controller extends Licensio_KB_REST_Controller {
      * The arguments of `PUT preferences`.
      *
      * @since 1.0.0
-     * @since 1.1.0 Accepts the extension column keys in `columns`.
+     * @since 1.1.0 Accepts in `columns` the extension column keys the current user may see, checked while the request is validated.
      *
      * @return array<string, array<string, mixed>> The argument schema.
      */
     public function get_preferences_args() {
         return array(
             'columns'        => array(
-                'type'     => 'array',
-                'required' => true,
-                'items'    => array(
+                'type'              => 'array',
+                'required'          => true,
+                'items'             => array(
                     'type' => 'string',
-                    'enum' => array_merge( self::COLUMNS, $this->extension_columns->keys() ),
                 ),
+                'validate_callback' => array( $this->extension_columns, 'validate_columns' ),
+                'description'       => __( 'The columns shown: core columns and extension columns the current user may see.', 'licensio-knowledge-base' ),
             ),
             'per_page'       => array(
                 'type'     => 'integer',

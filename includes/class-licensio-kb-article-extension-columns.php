@@ -8,9 +8,12 @@
  * user may see, which ones join the default columns and which ones the list
  * can be sorted by.
  *
- * Route schemas are built while the routes register, before the current
- * user is known, so they read every declared key; the request-time answers
- * keep only what the current user may see.
+ * Route schemas are built while the routes register, before the REST nonce
+ * is checked, so they name no extension key at all. The `orderby` and
+ * preferences `columns` arguments are checked against the keys the current
+ * user may see while the request is validated instead, so a column gated by
+ * a capability never shows up in an OPTIONS response, the REST index or a
+ * 400 message for anyone who may not see it.
  *
  * @package Licensio_KB
  * @since   1.1.0
@@ -45,25 +48,71 @@ class Licensio_KB_Article_Extension_Columns {
     }
 
     /**
-     * Every declared column key, whoever may see it, for the route schemas.
-     *
-     * @since 1.1.0
-     *
-     * @return string[] The keys, in the order they were declared.
-     */
-    public function keys() {
-        return array_keys( $this->extensions->items( Licensio_KB_Extensions::SCREEN_ARTICLES, 'columns' ) );
-    }
-
-    /**
-     * Every declared sortable column key, whoever may see it, for the route schemas.
+     * The sortable column keys the current user may see.
      *
      * @since 1.1.0
      *
      * @return string[] The keys, in the order they were declared.
      */
     public function sortable_keys() {
-        return self::sortable( $this->extensions->items( Licensio_KB_Extensions::SCREEN_ARTICLES, 'columns' ) );
+        return self::sortable( $this->allowed() );
+    }
+
+    /**
+     * Check a `GET articles` `orderby` against the sorts the current user may use.
+     *
+     * A `validate_callback`, so it runs once the request is authenticated:
+     * a core sort key or a sortable extension column the current user may see.
+     *
+     * @since 1.1.0
+     *
+     * @param mixed           $value   The value sent.
+     * @param WP_REST_Request $request The request.
+     * @param string          $param   The argument name.
+     *
+     * @return true|WP_Error True when valid, otherwise the error naming the accepted values.
+     */
+    public function validate_orderby( $value, $request, $param ) {
+        unset( $request );
+
+        return rest_validate_value_from_schema(
+            $value,
+            array(
+                'type' => 'string',
+                'enum' => array_merge( Licensio_KB_Articles_REST_Controller::ORDERBY, $this->sortable_keys() ),
+            ),
+            $param
+        );
+    }
+
+    /**
+     * Check a `PUT preferences` `columns` list against the columns the current user may see.
+     *
+     * A `validate_callback`, so it runs once the request is authenticated:
+     * each entry is a core column or an extension column the current user may see.
+     *
+     * @since 1.1.0
+     *
+     * @param mixed           $value   The value sent.
+     * @param WP_REST_Request $request The request.
+     * @param string          $param   The argument name.
+     *
+     * @return true|WP_Error True when valid, otherwise the error naming the accepted values.
+     */
+    public function validate_columns( $value, $request, $param ) {
+        unset( $request );
+
+        return rest_validate_value_from_schema(
+            $value,
+            array(
+                'type'  => 'array',
+                'items' => array(
+                    'type' => 'string',
+                    'enum' => array_merge( Licensio_KB_Articles_REST_Controller::COLUMNS, $this->allowed_keys() ),
+                ),
+            ),
+            $param
+        );
     }
 
     /**
@@ -122,7 +171,7 @@ class Licensio_KB_Article_Extension_Columns {
      * @return bool True for a sortable column the current user may see.
      */
     public function can_sort_by( $key ) {
-        return in_array( $key, self::sortable( $this->allowed() ), true );
+        return in_array( $key, $this->sortable_keys(), true );
     }
 
     /**

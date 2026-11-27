@@ -20,6 +20,7 @@ example plugin you can copy into `wp-content/plugins/`.
 - [REST additions](#rest-additions)
 - [Capabilities and escaping](#capabilities-and-escaping)
 - [Performance](#performance)
+- [Reading a FAQ block's questions](#reading-a-faq-blocks-questions)
 - [Example plugin](#example-plugin)
 
 ## What each app supports
@@ -141,7 +142,10 @@ menu); bulk actions follow the built-in ones in the Articles bulk bar. Only
   key in the order added.
 - `allowed( $screen, $type )` returns the ones the current user may see. Use
   it only while a request is being handled; during `rest_api_init` the REST
-  nonce has not been checked yet, so the current user is not known.
+  nonce has not been checked yet, so the current user is not known. That is
+  why the Articles route schemas name no extension key: `orderby` and the
+  preferences `columns` are checked against `allowed()` while the request is
+  validated.
 
 ## Row data
 
@@ -355,6 +359,12 @@ All under `licensio-kb/v1`.
   when the app shows an extension column, `{}` for a term with no data.
 - The Articles column preferences accept the extension column keys the user
   may see.
+- `orderby` and the preferences `columns` are checked against the columns the
+  current user may see, once the request is authenticated. A key the user may
+  not see is refused with a 400 like any unknown value, and the route schemas
+  (the OPTIONS response and the REST index) list no extension keys, so a
+  column gated by a capability is never named to someone who may not see
+  it.
 
 ## Capabilities and escaping
 
@@ -383,6 +393,45 @@ All under `licensio-kb/v1`.
 - Keep `visible( row )` synchronous and based on the row.
 - Batch bulk work: a bulk action can receive up to 10,000 IDs.
 - Refresh only the rows you changed: `ctx.refresh( ids )`, not `ctx.refresh()`.
+
+## Reading a FAQ block's questions
+
+`Licensio_KB_FAQ_Block::entries( $attributes )` returns the questions and
+answers a `licensio-kb/faq` block renders, for a plugin that marks them up,
+for example as `FAQPage` structured data. It is part of extension API
+version 1, so check `LICENSIO_KB_EXTENSIONS_API` before calling it.
+
+Pass the attributes as stored, such as `$block['attrs']` from
+`parse_blocks()` or a shortcode's attributes; they are normalised the way the
+block does it.
+
+```php
+if ( defined( 'LICENSIO_KB_EXTENSIONS_API' ) ) {
+    foreach ( Licensio_KB_FAQ_Block::entries( $block['attrs'] ) as $entry ) {
+        // $entry: question, answer, url (strings) and post_id (int).
+    }
+}
+```
+
+- One entry per article, in display order. The block renders its markup from
+  the same call, so the entries are the same articles in the same order: the
+  same query, the `licensio_block_article_query_args` filter and the
+  per-category article order.
+- `answer` is the excerpt, or an empty string when `showExcerpt` is off;
+  you decide whether to skip it. An untitled article has an empty `question`,
+  which the block does not print.
+- `question` and `answer` are what `get_the_title()` and `get_the_excerpt()`
+  return, not escaped, so they may carry HTML entities or tags. Escape them
+  for HTML, or strip the tags and decode the entities for structured data.
+- The result is computed once per request for each set of attributes, so the
+  block and your plugin share one query, whichever runs first. It is dropped
+  as soon as a post or term changes (the posts or terms `last_changed` value
+  moves), so a save followed by a read in the same request never sees stale
+  entries. Nothing is kept across requests.
+- The filters the query, title, excerpt and permalink pass through are
+  applied by the first call only. A callback added later in the request, or
+  one whose answer depends on where it runs (the current user or post), does
+  not change the stored entries.
 
 ## Example plugin
 
