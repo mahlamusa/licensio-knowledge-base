@@ -222,6 +222,7 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
      * Every route exists with the right method, permission and limits.
      *
      * @since 1.0.0
+     * @since 1.1.0 The sort is checked by the extension columns while the request is validated, not by a schema enum.
      *
      * @return void
      */
@@ -239,7 +240,8 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
         $this->assertSame( 100, $list['args']['per_page']['maximum'] );
         $this->assertSame( array( 7, 30, 90 ), $list['args']['window']['enum'] );
         $this->assertSame( 30, $list['args']['window']['default'] );
-        $this->assertSame( array( 'date', 'modified', 'title', 'views', 'rating' ), $list['args']['orderby']['enum'] );
+        $this->assertArrayNotHasKey( 'enum', $list['args']['orderby'] );
+        $this->assertSame( 'validate_orderby', $list['args']['orderby']['validate_callback'][1] );
         $this->assertSame( array( 'all', 'publish', 'future', 'draft', 'pending', 'private', 'trash' ), $list['args']['status']['enum'] );
 
         $this->assertArrayNotHasKey( 'page', $this->routes['/articles/ids'][0]['args'] );
@@ -1737,16 +1739,19 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
     }
 
     /**
-     * Extension columns join the preferences schema, and the sortable ones the sort keys.
+     * The sort and column checks accept the extension columns the user may see, and the schemas name none.
      *
-     * The schemas are built before the current user is known, so they list
-     * every declared column of the Articles app.
+     * The schemas are built while the routes register, before the REST nonce
+     * is checked, so they list no extension key: a column gated by a
+     * capability must not show up in an OPTIONS response or the REST index.
+     * The `validate_callback`s check `orderby` and the preferences `columns`
+     * once the request is authenticated, against what the current user may see.
      *
      * @since 1.1.0
      *
      * @return void
      */
-    public function test_extension_columns_join_the_schemas() {
+    public function test_extension_columns_join_the_request_checks_not_the_schemas() {
         $this->denied = array( 'secret' );
 
         $this->extensions->add_column(
@@ -1763,6 +1768,7 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
             'acme/note',
             array(
                 'label'      => 'Note',
+                'sortable'   => true,
                 'capability' => 'secret',
             )
         );
@@ -1776,12 +1782,29 @@ class Licensio_KB_Articles_REST_Test extends Licensio_KB_Test_Case {
         );
         $this->controller->register_routes();
 
-        $this->assertSame( array( 'date', 'modified', 'title', 'views', 'rating', 'acme/score' ), $this->routes['/articles'][0]['args']['orderby']['enum'] );
-        $this->assertSame(
-            array_merge( Licensio_KB_Articles_REST_Controller::COLUMNS, array( 'acme/score', 'acme/note' ) ),
-            $this->routes['/preferences'][1]['args']['columns']['items']['enum']
-        );
+        $orderby = $this->routes['/articles'][0]['args']['orderby'];
+        $columns = $this->routes['/preferences'][1]['args']['columns'];
+
+        $this->assertStringNotContainsString( 'acme/', (string) wp_json_encode( array( $orderby, $columns ) ), 'No extension key in the schemas.' );
         $this->assertSame( Licensio_KB_Articles_REST_Controller::COLUMNS, $this->routes['/preferences'][1]['args']['medium_columns']['items']['enum'], 'Only core columns are hidden on medium screens.' );
+
+        $enums = array();
+
+        Functions\when( 'rest_validate_value_from_schema' )->alias(
+            function ( $value, $schema, $param ) use ( &$enums ) {
+                $enums[ $param ] = isset( $schema['items'] ) ? $schema['items']['enum'] : $schema['enum'];
+
+                return true;
+            }
+        );
+
+        $request = new WP_REST_Request();
+
+        $this->assertTrue( call_user_func( $orderby['validate_callback'], 'acme/score', $request, 'orderby' ) );
+        $this->assertTrue( call_user_func( $columns['validate_callback'], array( 'acme/score' ), $request, 'columns' ) );
+
+        $this->assertSame( array( 'date', 'modified', 'title', 'views', 'rating', 'acme/score' ), $enums['orderby'] );
+        $this->assertSame( array_merge( Licensio_KB_Articles_REST_Controller::COLUMNS, array( 'acme/score' ) ), $enums['columns'] );
     }
 
     /**
